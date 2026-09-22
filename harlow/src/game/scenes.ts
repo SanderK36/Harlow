@@ -247,9 +247,9 @@ export const madeCoffee: Scene = {
 
   choices: [
     {
-      label: "Go back to the hallway",
-      action: "goHome",
-      nextScene: "hallway",
+      label: "Back to the kitchen",
+      action: "goKitchen",
+      nextScene: "kitchen",
       timeCost: 0,
     },
   ],
@@ -257,8 +257,8 @@ export const madeCoffee: Scene = {
   location: "Home",
 
   image: {
-    day: "./images/locations/home/homeHallway.jpg",
-    night: "./images/locations/home/homeHallway.jpg",
+    day: "./images/locations/home/kitchenDay.png",
+    night: "./images/locations/home/kitchenNight.png",
   },
 };
 
@@ -360,9 +360,9 @@ export const backYard: Scene = {
       timeCost: 2,
     },
     {
-      label: "Go back inside",
-      action: "goHome",
-      nextScene: "hallway",
+      label: "Go to the kitchen",
+      action: "goKitchen",
+      nextScene: "kitchen",
       timeCost: 5,
     },
   ],
@@ -662,6 +662,19 @@ export const kitchen: Scene = {
       timeCost: 0,
     },
     {
+      label: "Go to the backyard",
+      action: "goBackYard",
+      nextScene: "back-yard",
+      timeCost: 5,
+    },
+    {
+      label: "Make some coffee",
+      action: "makeCoffee",
+      nextScene: "made-coffee",
+      timeCost: 10,
+      effects: { stamina: 5 },
+    },
+    {
       label: "Go to the hallway",
       action: "goHome",
       nextScene: "hallway",
@@ -678,12 +691,6 @@ export const kitchen: Scene = {
       action: "goBathroom",
       nextScene: "bathroom",
       timeCost: 0,
-    },
-    {
-      label: "Go outside",
-      action: "leaveHouse",
-      nextScene: "front-yard",
-      timeCost: 5,
     },
   ],
 };

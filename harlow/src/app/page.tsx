@@ -36,6 +36,8 @@ const hotspotLabels: Record<string, string> = {
   pickUpCigarettes: "Cigarettes",
   goLivingRoom: "Living room",
   goKitchen: "Kitchen",
+  checkFridge: "Check the fridge",
+  makeCoffee: "Make some coffee",
   lookAtGarageBench: "Workbench",
   pickUpGarageFlashlight: "Flashlight",
   goHallway: "Hallway",
@@ -162,6 +164,10 @@ export default function Home() {
         ? ["pickUpCigarettes"]
         : currentScene.id === "hallway"
           ? ["goLivingRoom", "goKitchen"]
+          : currentScene.id === "kitchen"
+            ? ["checkFridge", "makeCoffee", "goBackYard"]
+          : currentScene.id === "back-yard"
+            ? ["goKitchen"]
           : currentScene.id === "basement"
             ? ["goHallway"]
           : currentScene.id === "garage"
