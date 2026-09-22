@@ -35,6 +35,8 @@ const hotspotLabels: Record<string, string> = {
   lookAtDesk: "Desk",
   pickUpCigarettes: "Cigarettes",
   goLivingRoom: "Living room",
+  talkToMom: "Talk to mom",
+  relaxOnCouch: "Relax on the couch",
   goKitchen: "Kitchen",
   checkFridge: "Check the fridge",
   makeCoffee: "Make some coffee",
@@ -158,7 +160,11 @@ export default function Home() {
       ? currentScene.image.night
       : currentScene.image.day);
   const hotspotActions =
-    currentScene.id === "ethan-room"
+    currentScene.id === "living-room"
+      ? activeCharacter?.name === "Linda"
+        ? ["talkToMom"]
+        : ["relaxOnCouch"]
+      : currentScene.id === "ethan-room"
       ? ["lookAtDesk"]
       : currentScene.id === "ethan-room-desk"
         ? ["pickUpCigarettes"]

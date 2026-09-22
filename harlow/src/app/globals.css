@@ -334,6 +334,20 @@ button {
   transform: translateY(0);
 }
 
+.scene-hotspot-living-room-talkToMom {
+  top: 3%;
+  left: 33%;
+  width: 33%;
+  height: 96%;
+}
+
+.scene-hotspot-living-room-relaxOnCouch {
+  top: 55%;
+  left: 24%;
+  width: 27%;
+  height: 40%;
+}
+
 .scene-hotspot-lookAtDesk {
   top: 41%;
   left: 55%;
@@ -406,7 +420,7 @@ button {
 
 .scene-hotspot-back-yard-goKitchen {
   top: 44%;
-  left: 39%;
+  left: 57.6%;
   right: auto;
   width: 5%;
   height: 14%;

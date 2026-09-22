@@ -242,6 +242,8 @@ export function useGame() {
       return;
     }
 
+    if (!isChoiceAvailable(choice)) return;
+
     if (choice.requirements?.money !== undefined && playerState.money < choice.requirements.money) {
       return;
     }
@@ -351,7 +353,7 @@ export function useGame() {
     const { action } = choice;
     const { time } = gameState;
 
-    if (action === "talkToMom") return time < 1080;
+    if (action === "talkToMom") return time >= 420 && time < 1080;
     if (action === "talkToJohnny") return time >= 480 && time < 840;
     if (action === "workNeedleGrooveShift") {
       return job === "needle-groove" && time >= 600 && time < 1140;

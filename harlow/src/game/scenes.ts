@@ -278,7 +278,12 @@ export const frontYard: Scene = {
 
   image: {
     day: "./images/locations/home/homeDayTime.jpg",
-    night: "./images/locations/home/homeNightTime.jpg",
+    night: "./images/locations/home/HomeNightTime.jpg",
+    weather: {
+      "Rainy": "./images/locations/home/homeOutsideRainy.png",
+      "Heavy rain": "./images/locations/home/homeOutsideRainy.png",
+      "Thunderstorm": "./images/locations/home/homeThunderstorm.png",
+    },
   },
   
   choices: [
@@ -350,6 +355,11 @@ export const backYard: Scene = {
   image: {
     day: "./images/locations/home/homeBackyardDaytime.jpg",
     night: "./images/locations/home/homeBackyardNightTime.jpg",
+    weather: {
+      "Rainy": "./images/locations/home/homeBackyardRainy.png",
+      "Heavy rain": "./images/locations/home/homeBackyardRainy.png",
+      "Thunderstorm": "./images/locations/home/homeBackyardThunderstorm.png",
+    },
   },
 
   choices: [
@@ -557,15 +567,24 @@ export const livingRoom: Scene = {
   id: "living-room",
   story: [
     narration("You walk into the living room."),
-    thought("Mom is here.", { until: 1080 }),
+    thought("It's quiet in here.", { until: 420 }),
+    thought("Mom is here.", { from: 420, until: 1080 }),
     thought("It's quiet in here when Mom's at work.", { from: 1080 })
   ],
 
   location: "Living room",
   image: {
-    day: "./images/locations/home/LindaParkerHome.jpg",
+    day: "./images/locations/home/livingRoomDay.png",
     night: "./images/locations/home/livingRoomNight.png",
   },
+  characters: [
+    {
+      name: "Linda",
+      from: 420,
+      until: 1080,
+      image: "./images/locations/home/LindaParkerHome.jpg",
+    },
+  ],
 
   choices: [
     {
@@ -619,7 +638,7 @@ export const livingRoomRelaxing: Scene = {
   location: "Living room",
   image: {
     day: "./images/characters/EthanParker/EthanRelaxing.png",
-    night: "./images/characters/EthanParker/EthanRelaxing.png",
+    night: "./images/characters/EthanParker/EthanRelaxinNight.png",
   },
   choices: [
     {
