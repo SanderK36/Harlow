@@ -1,0 +1,76 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(8,3,4,.78);
+  backdrop-filter: blur(8px);
+}
+
+.window {
+  position: relative;
+  width: min(460px, 100%);
+  padding: 30px;
+  background: linear-gradient(145deg, #251515, #100a0b);
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  box-shadow: 0 28px 80px rgba(0,0,0,.5);
+  animation: modalEnter .22s ease-out;
+}
+
+.window h2 {
+  margin: 0 0 24px;
+  color: var(--text);
+  font-size: 13px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.window p {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  padding: 13px 0;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+}
+
+.statsNumber {
+  color: var(--gold);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.closeButton {
+  position: absolute;
+  top: 13px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  color: var(--muted);
+  font-size: 20px;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  color: var(--text);
+  background: rgba(255,255,255,.08);
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+}

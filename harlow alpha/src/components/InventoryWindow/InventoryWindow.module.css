@@ -1,0 +1,107 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(8,3,4,.78);
+  backdrop-filter: blur(8px);
+}
+
+.window {
+  width: min(560px, 100%);
+  max-height: calc(100vh - 40px);
+  padding: 28px;
+  overflow-y: auto;
+  background: linear-gradient(145deg, #251515, #100a0b);
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  box-shadow: 0 28px 80px rgba(0,0,0,.5);
+  animation: modalEnter .22s ease-out;
+}
+
+.window h2 {
+  margin: 0 0 22px;
+  font-size: 13px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+}
+
+.slot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  padding: 9px;
+  background: rgba(255,255,255,.025);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.itemVisual {
+  position: relative;
+  width: 100%;
+}
+
+.itemImage {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: #10090a;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+
+.quantity {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  display: grid;
+  min-width: 21px;
+  min-height: 21px;
+  place-items: center;
+  padding: 2px;
+  color: #21090c;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  background: var(--gold);
+  border-radius: 50%;
+}
+
+.itemName {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.closeButton {
+  margin-top: 22px;
+}
+
+.closeButton button {
+  width: 100%;
+  text-align: center;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+}

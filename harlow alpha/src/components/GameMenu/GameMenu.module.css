@@ -1,0 +1,100 @@
+.menu {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 20;
+}
+
+.toggle {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  gap: 5px;
+  place-content: center;
+  padding: 0;
+  background: rgba(13, 7, 8, 0.72);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  box-shadow: 0 7px 18px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+}
+
+.toggle span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--text);
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.toggle:hover,
+.toggle:focus-visible {
+  background: rgba(169, 22, 36, 0.36);
+  border-color: rgba(237, 85, 98, 0.64);
+  outline: none;
+}
+
+.actions {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  display: grid;
+  width: 178px;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 7px;
+  background: rgba(23, 12, 13, 0.97);
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.38);
+  animation: menuAppear 140ms ease-out;
+}
+
+.actions button {
+  padding: 10px 12px;
+  color: var(--text);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-align: left;
+  text-transform: uppercase;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.actions button:hover,
+.actions button:focus-visible {
+  background: rgba(169, 22, 36, 0.28);
+  outline: none;
+}
+
+.actions button:disabled {
+  color: #806e70;
+  cursor: not-allowed;
+}
+
+.actions button:disabled:hover {
+  background: transparent;
+}
+
+@keyframes menuAppear {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .menu {
+    top: 15px;
+    right: 15px;
+  }
+}

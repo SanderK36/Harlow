@@ -1,0 +1,52 @@
+.actionButton {
+  position: relative;
+  overflow: hidden;
+  padding: 13px 16px;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.25;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.actionButton::after {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  color: var(--accent-bright);
+  content: "›";
+  font-size: 22px;
+  line-height: 1;
+  opacity: 0;
+  transform: translate(-5px, -52%);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.actionButton:hover:not(:disabled), .actionButton:focus-visible {
+  background: rgba(169, 22, 36, 0.16);
+  border-color: rgba(237, 85, 98, 0.58);
+  box-shadow: 0 9px 22px rgba(0, 0, 0, 0.16);
+  outline: none;
+  transform: translateY(-2px);
+}
+
+.actionButton:hover:not(:disabled)::after, .actionButton:focus-visible::after {
+  opacity: 1;
+  transform: translate(0, -52%);
+}
+
+.actionButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.actionButton:disabled {
+  color: #786868;
+  background: rgba(255, 255, 255, 0.018);
+  border-color: rgba(239, 221, 221, 0.07);
+  cursor: not-allowed;
+}

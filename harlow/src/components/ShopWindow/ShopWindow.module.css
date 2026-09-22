@@ -1,0 +1,116 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(8,3,4,.78);
+  backdrop-filter: blur(8px);
+}
+
+.window {
+  width: min(560px, 100%);
+  padding: 28px;
+  background: linear-gradient(145deg, #251515, #100a0b);
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  box-shadow: 0 28px 80px rgba(0,0,0,.5);
+  animation: modalEnter .22s ease-out;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: .13em;
+}
+
+.header span, .itemDetails span {
+  color: #ed8790;
+  font-weight: 700;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 10px;
+  background: rgba(255,255,255,.025);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.item img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 7px;
+}
+
+.itemDetails {
+  display: grid;
+  gap: 5px;
+}
+
+.itemDetails strong {
+  font-size: 15px;
+}
+
+.item button {
+  white-space: nowrap;
+}
+
+.closeButton {
+  margin-top: 20px;
+}
+
+.closeButton button {
+  width: 100%;
+  text-align: center;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+}
+
+@media (max-width: 480px) {
+  .item {
+    grid-template-columns: 56px 1fr;
+  }
+
+  .item img {
+    width: 56px;
+    height: 56px;
+  }
+
+  .item button {
+    grid-column: 1 / -1;
+    width: 100%;
+    text-align: center;
+  }
+
+}

@@ -1,0 +1,138 @@
+.storyLog {
+  position: relative;
+  max-height: 330px;
+  margin-top: 22px;
+  padding: 23px 25px;
+  overflow-y: auto;
+  color: #e8dcdc;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  scrollbar-color: rgba(169, 22, 36, .75) transparent;
+}
+
+.narrationLog {
+  background: linear-gradient(90deg, rgba(169, 22, 36, .26) 0 3px, transparent 3px), linear-gradient(135deg, rgba(255, 255, 255, .03), rgba(255, 255, 255, .01)), rgba(10, 5, 5, .62);
+}
+
+.narrationLog::after {
+  position: absolute;
+  right: 20px;
+  bottom: 12px;
+  color: rgba(237, 85, 98, .2);
+  content: "HARLOW";
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 27px;
+  font-style: italic;
+  letter-spacing: .12em;
+  pointer-events: none;
+}
+
+.storyLog p {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 14px;
+  line-height: 1.75;
+}
+
+.storyLog p:last-child {
+  margin-bottom: 0;
+}
+
+.storyEntry {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  animation: storyAppear .35s ease-out;
+}
+
+.storyLog::-webkit-scrollbar {
+  width: 7px;
+}
+
+.storyLog::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.storyLog::-webkit-scrollbar-thumb {
+  background: rgba(169,22,36,.48);
+  border-radius: 999px;
+}
+
+.storyLog::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+.conversationLog {
+  max-height: 420px;
+  margin-top: 18px;
+  background: rgba(12, 4, 5, .74);
+  border-color: rgba(237,85,98,.28);
+}
+
+.conversationLog .storyEntry {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.title {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 16px;
+  padding-bottom: 11px;
+  color: var(--accent-bright);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
+}
+
+.effect {
+  margin-left: 10px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 700;
+}
+
+.health {
+  color: #ff6d78;
+}
+
+.stamina {
+  color: #d95b66;
+}
+
+.fear {
+  color: #c9858c;
+}
+
+.money {
+  color: #ed8790;
+}
+
+@keyframes storyAppear {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+}
+
+@media (max-width: 480px) {
+  .storyLog {
+    padding: 19px;
+  }
+
+  .storyEntry {
+    font-size: 16px;
+  }
+
+  .narrationLog::after {
+    right: 14px;
+    font-size: 21px;
+  }
+
+}

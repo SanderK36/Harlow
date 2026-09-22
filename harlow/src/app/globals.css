@@ -1,0 +1,781 @@
+:root {
+  --bg: #080808;
+  --surface: #151010;
+  --surface-raised: #211515;
+  --line: rgba(239, 221, 221, 0.14);
+  --line-strong: rgba(239, 221, 221, 0.28);
+  --text: #f5eeee;
+  --muted: #bba9a9;
+  --accent: #a91624;
+  --accent-bright: #ed5562;
+  --gold: #d93443;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  position: relative;
+  min-width: 320px;
+  margin: 0;
+  color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Opening screen: artwork is kept separate from the content so the overlay
+   preserves legibility on both wide and narrow screens. */
+.mainMenu {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  overflow: hidden;
+  background: #080405;
+}
+
+.mainMenuArtwork,
+.mainMenuShade {
+  position: absolute;
+  inset: 0;
+}
+
+.mainMenuArtwork {
+  background: url("/mainMenu.png") center / cover no-repeat;
+  animation: menuArtworkEnter 800ms ease-out;
+}
+
+.mainMenuShade {
+  background:
+    linear-gradient(90deg, rgba(8, 4, 5, 0.82), rgba(8, 4, 5, 0.16) 62%, rgba(8, 4, 5, 0.56)),
+    linear-gradient(0deg, rgba(8, 4, 5, 0.72), transparent 55%);
+}
+
+.mainMenuBranding {
+  position: absolute;
+  z-index: 1;
+  top: clamp(20px, 3vw, 42px);
+  left: clamp(20px, 3vw, 42px);
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 1.4vw, 18px);
+}
+
+.mainMenuStudioLogo,
+.mainMenuSocialLink {
+  height: auto;
+  mix-blend-mode: screen;
+  opacity: 0.84;
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.72));
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.mainMenuStudioLogo {
+  width: clamp(88px, 11vw, 150px);
+  mix-blend-mode: normal;
+}
+
+.mainMenuStudioLogo:hover,
+.mainMenuSocialLink:hover,
+.mainMenuSocialLink:focus-visible {
+  opacity: 1;
+  transform: scale(1.08);
+}
+
+.mainMenuSocialLink {
+  display: block;
+  width: clamp(44px, 4.8vw, 68px);
+  border-radius: 50%;
+}
+
+.mainMenuSocialLink img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: invert(1);
+}
+
+.mainMenuSocialLink:focus-visible {
+  outline: 2px solid #f5eeee;
+  outline-offset: 4px;
+}
+.mainMenuContent {
+  position: relative;
+  justify-self: stretch;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 48px clamp(32px, 13vw, 180px);
+  text-align: left;
+  text-shadow: 0 5px 24px rgba(0, 0, 0, 0.85);
+  animation: menuContentEnter 700ms 150ms both ease-out;
+}
+
+.mainMenuCopyright {
+  position: absolute;
+  z-index: 1;
+  bottom: clamp(18px, 3vw, 34px);
+  left: 50%;
+  margin: 0;
+  color: rgba(245, 238, 238, 0.72);
+  font-size: clamp(10px, 1vw, 12px);
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.78);
+  transform: translateX(-50%);
+  font-size: 15px;
+}
+
+.mainMenuEyebrow {
+  margin: 0 0 18px;
+  padding-left: 15px;
+  color: #f7e5e6;
+  font-size: clamp(13px, 1.5vw, 17px);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.mainMenu h1 {
+  margin: 0;
+  color: var(--text);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(52px, 7.4vw, 100px);
+  font-weight: 400;
+  letter-spacing: 0.055em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.mainMenuActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 34px;
+}
+
+.mainMenuStart {
+  min-width: 176px;
+  padding: 13px 24px;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: rgba(169, 22, 36, 0.72);
+  border: 1px solid rgba(255, 220, 222, 0.55);
+  border-radius: 6px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.mainMenuStart:hover,
+.mainMenuStart:focus-visible {
+  background: var(--accent-bright);
+  box-shadow: 0 13px 32px rgba(0, 0, 0, 0.42);
+  outline: none;
+  transform: translateY(-2px);
+}
+
+.mainMenuStart:active {
+  transform: translateY(0);
+}
+
+.mainMenuContinue {
+  color: #f6e7e8;
+  background: rgba(20, 12, 13, 0.6);
+  border-color: rgba(255, 220, 222, 0.36);
+}
+
+.mainMenuContinue:hover,
+.mainMenuContinue:focus-visible {
+  background: rgba(93, 27, 35, 0.84);
+}
+
+.game {
+  position: relative;
+  z-index: 1;
+  width: min(1240px, 100%);
+  margin: 0 auto;
+  padding: clamp(16px, 3vw, 42px);
+}
+
+.gameClouds {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.62;
+  filter: brightness(1.18) saturate(1.05);
+  transition: opacity 600ms ease, filter 600ms ease;
+}
+
+.gameCloudsNight {
+  opacity: 0.16;
+  filter: brightness(0.5) saturate(0.65);
+}
+
+.gameCloud {
+  position: absolute;
+  top: 0;
+  width: 200%;
+  left: 0;
+  height: 100vh;
+  background-repeat: repeat-x;
+  background-position: 0 0;
+  background-size: 50% 100%;
+  will-change: transform;
+}
+
+.gameCloudOne {
+  background-image: url("https://s.cdpn.io/15514/clouds_2.png");
+  animation: cloudLoopOne 150s linear infinite;
+}
+
+.gameCloudTwo {
+  background-image: url("https://s.cdpn.io/15514/clouds_1.png");
+  animation: cloudLoopTwo 120s linear infinite;
+}
+
+.gameCloudThree {
+  background-image: url("https://s.cdpn.io/15514/clouds_3.png");
+  animation: cloudLoopThree 135s linear infinite;
+}
+
+.game-panel {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  padding: clamp(20px, 4vw, 48px);
+  background: linear-gradient(145deg, rgba(31, 17, 18, 0.97), rgba(12, 10, 10, 0.98));
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.35);
+}
+
+.game-panel > h1 {
+  margin: 0 0 2px;
+  color: var(--text);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(32px, 6vw, 54px);
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-shadow: 0 8px 24px rgba(0, 0, 0, 0.42);
+}
+
+.scene-image-frame {
+  position: relative;
+  width: min(100%, 900px);
+  margin: 28px auto 0;
+}
+
+.scene-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.32);
+  animation: sceneImageEnter 420ms ease-out;
+}
+
+.scene-hotspot {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: #fff4f4;
+  background: rgba(217, 52, 67, 0);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.scene-hotspot span {
+  box-sizing: border-box;
+  max-width: calc(100% - 4px);
+  padding: 2px 3px;
+  font-size: clamp(7px, 1.2vw, 11px);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.15;
+  opacity: 0;
+  overflow-wrap: anywhere;
+  text-align: center;
+  text-transform: uppercase;
+  text-shadow: 0 2px 5px #000;
+  transform: translateY(3px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.scene-hotspot:hover,
+.scene-hotspot:focus-visible {
+  background: rgba(217, 52, 67, 0.2);
+  border-color: rgba(255, 220, 222, 0.8);
+  box-shadow: inset 0 0 28px rgba(255, 89, 102, 0.4), 0 0 16px rgba(217, 52, 67, 0.48);
+  outline: none;
+}
+
+.scene-hotspot:hover span,
+.scene-hotspot:focus-visible span {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.scene-hotspot-lookAtDesk {
+  top: 41%;
+  left: 55%;
+  width: 15%;
+  height: 10%;
+}
+
+.scene-hotspot-pickUpCigarettes {
+  top: 58%;
+  left: 46%;
+  width: 23%;
+  height: 25%;
+}
+
+.scene-hotspot-front-yard-goBackYard {
+  top: 45%;
+  left: 5%;
+  width: 9%;
+  height: 15%;
+}
+
+.scene-hotspot-light-pole-chooseNeedleGrooveJob {
+  top: 3%;
+  left: 12%;
+  width: 30%;
+  height: 21%;
+}
+
+.scene-hotspot-light-pole-chooseGasStationJob {
+  top: 25%;
+  left: 36%;
+  width: 24%;
+  height: 31%;
+}
+
+.scene-hotspot-light-pole-chooseScrapyardJob {
+  top: 57%;
+  left: 13%;
+  width: 34%;
+  height: 35%;
+}
+
+.scene-hotspot-front-yard-goHome {
+  top: 43%;
+  left: 43%;
+  width: 6%;
+  height: 15%;
+}
+
+.scene-hotspot-front-yard-enterGarage {
+  top: 46%;
+  left: 79%;
+  width: 17%;
+  height: 15%;
+}
+
+.scene-hotspot-goLivingRoom {
+  top: 13%;
+  left: 0;
+  width: 28%;
+  height: 72%;
+}
+
+.scene-hotspot-goKitchen {
+  top: 8%;
+  right: 0;
+  width: 23%;
+  height: 84%;
+}
+
+.scene-hotspot-lookAtGarageBench {
+  top: 37%;
+  left: 2%;
+  width: 15%;
+  height: 15%;
+}
+
+.scene-hotspot-pickUpGarageFlashlight {
+  top: 51%;
+  left: 38%;
+  width: 29%;
+  height: 23%;
+}
+
+.scene-hotspot-goHallway {
+  top: 11%;
+  left: 23%;
+  width: 10%;
+  height: 52%;
+}
+
+.scene-hotspot-basement-goHallway {
+  top: 24%;
+  left: 0;
+  width: 18%;
+  height: 65%;
+}
+
+.scene-hotspot-enterNeedleAndGroove {
+  top: 45%;
+  left: 51%;
+  width: 9%;
+  height: 39%;
+}
+
+.scene-hotspot-talkToJohnny {
+  top: 23%;
+  left: 48%;
+  width: 15%;
+  height: 30%;
+}
+
+.scene-hotspot-enterNeedleAndGrooveBackroom {
+  top: 30%;
+  left: 18%;
+  width: 13%;
+  height: 35%;
+}
+
+.scene-hotspot-enterPoliceStation {
+  top: 47%;
+  left: 43%;
+  width: 14%;
+  height: 17%;
+}
+
+.scene-hotspot-leavePoliceStation {
+  top: 18%;
+  left: 1%;
+  width: 13%;
+  height: 50%;
+}
+
+.scene-hotspot-enterHospital {
+  top: 56%;
+  left: 40%;
+  width: 22%;
+  height: 15%;
+}
+
+.scene-hotspot-goToMarleneCounter {
+  top: 32%;
+  left: 30%;
+  width: 20%;
+  height: 20%;
+}
+
+.scene-hotspot-talkToMarlene {
+  top: 7%;
+  left: 18%;
+  width: 65%;
+  height: 82%;
+}
+
+.scene-hotspot-goToHospitalRoom {
+  top: 26%;
+  left: 68%;
+  width: 16%;
+  height: 44%;
+}
+
+.scene-hotspot-scrapyard-enterScrapyard {
+  top: 36%;
+  left: 79%;
+  width: 18%;
+  height: 20%;
+}
+
+.scene-hotspot-gas-station-enterGasStation {
+  top: 45%;
+  left: 34%;
+  width: 16%;
+  height: 27%;
+}
+
+.scene-hotspot-gas-station-inside-talkToRay {
+  top: 25%;
+  left: 41%;
+  width: 29%;
+  height: 74%;
+}
+
+.scene-hotspot-scrapyard-inside-lookAtScrapyardDesk {
+  top: 50%;
+  left: 0;
+  width: 25%;
+  height: 15%;
+}
+
+.scene-hotspot-scrapyard-inside-talkToBigRoy {
+  left: 25%;
+  bottom: 17%;
+  z-index: 2;
+  width: 27%;
+  height: 75%;
+}
+
+.scene-hotspot-scrapyard-inside-leaveScrapyard {
+  top: 20%;
+  left: 53%;
+  width: 29%;
+  height: 42%;
+}
+
+.scene-hotspot-scrapyard-desk-takeScrapyardKnife {
+  top: 35%;
+  left: 40%;
+  width: 25%;
+  height: 32%;
+}
+
+.scene-hotspot-cementary-enterCemetery {
+  top: 51%;
+  left: 57.9%;
+  width: 5.8%;
+  height: 11%;
+}
+
+.scene-hotspot-cementary-goCemeteryBackside {
+  top: 50%;
+  left: 78%;
+  width: 10%;
+  height: 10%;
+}
+
+.scene-hotspot-cementary-inside-goCemeteryBackside {
+  top: 35.3%;
+  left: 27.8%;
+  width: 7%;
+  height: 23.5%;
+}
+
+.scene-hotspot-cementary-backside-leaveCemeteryBackside {
+  top: 54.3%;
+  left: 52.1%;
+  width: 3.3%;
+  height: 10.8%;
+}
+
+.scene-hotspot-motel-enterMotel {
+  top: 56%;
+  left: 35.8%;
+  width: 5.5%;
+  height: 17%;
+}
+
+.scene-hotspot-motel-inside-leaveMotel {
+  top: 3%;
+  left: 4.5%;
+  width: 12.5%;
+  height: 65%;
+}
+
+.scene-hotspot-motel-inside-talkToEarl {
+  top: 21%;
+  left: 48%;
+  width: 15.5%;
+  height: 24%;
+}
+
+.waitControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  max-width: 760px;
+  margin: 14px auto 0;
+}
+
+.waitControls > span {
+  margin-right: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.waitControls button {
+  min-height: 32px;
+  padding: 7px 11px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.waitControls button::after {
+  display: none;
+}
+
+@keyframes sceneImageEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+}
+
+@keyframes menuArtworkEnter {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes menuContentEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cloudLoopOne {
+  to { transform: translateX(-50%); }
+}
+
+@keyframes cloudLoopTwo {
+  to { transform: translateX(-50%); }
+}
+
+@keyframes cloudLoopThree {
+  to { transform: translateX(-50%); }
+}
+
+@media (max-width: 640px) {
+  .mainMenuStudioLogo {
+    width: 82px;
+  }
+
+  .mainMenuSocialLink {
+    width: 42px;
+  }
+
+  .mainMenuContent {
+    width: 100%;
+    padding: 40px 32px;
+  }
+
+  .mainMenuShade {
+    background:
+      linear-gradient(90deg, rgba(8, 4, 5, 0.64), rgba(8, 4, 5, 0.26)),
+      linear-gradient(0deg, rgba(8, 4, 5, 0.76), transparent 62%);
+  }
+
+  .mainMenu h1 {
+    font-size: clamp(44px, 12vw, 68px);
+    letter-spacing: 0.035em;
+  }
+
+  .mainMenuActions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .game {
+    padding: 0;
+  }
+
+  .game-panel {
+    min-height: 100vh;
+    border-radius: 0;
+  }
+
+  .game-panel > h1 {
+    font-size: 32px;
+  }
+
+  .scene-image {
+    margin-top: 20px;
+    border-radius: 10px;
+  }
+
+  .waitControls > span {
+    width: 100%;
+    margin-right: 0;
+    text-align: center;
+  }
+
+}
+
+.quest-notification {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 30;
+  width: min(390px, calc(100vw - 48px));
+  padding: 15px 18px;
+  color: var(--text);
+  background: rgba(39, 19, 20, 0.97);
+  border: 1px solid #e69b66;
+  border-radius: 9px;
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.42);
+  animation: questNoticeEnter 240ms ease-out;
+}
+
+.quest-notification span {
+  color: #e69b66;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.quest-notification p {
+  margin: 5px 0 0;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+@keyframes questNoticeEnter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .scene-image,
+  .gameCloud {
+    animation: none;
+  }
+
+  .mainMenuArtwork,
+  .mainMenuContent {
+    animation: none;
+  }
+
+}
