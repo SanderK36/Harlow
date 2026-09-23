@@ -31,6 +31,9 @@ function getPortrait(character: string) {
     case "big roy":
       return "/images/characters/BigRoy/BigRoy.png";
 
+    case "tommy":
+      return "/images/characters/TommyVance/TommyVance.png";
+
     default:
       return "/images/characters/EthanParker/EthanParker.jpg";
   }

@@ -62,10 +62,12 @@ export type Location =
 "Cementary"|
 "Gas Station" |
 "Gas Station Inside" |
+"Gas Station Garage" |
 "Hospital" |
 "Bus Stop" |
 "Diner" |
 "Motel" |
+"Sanatorium" |
 "Scrapyard";
 
 export type Weather =

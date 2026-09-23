@@ -59,6 +59,7 @@ const exteriorDestinations = [
   { id: "cementary", label: "the cemetery", walkMinutes: 35 },
   { id: "diner", label: "the diner", walkMinutes: 25 },
   { id: "scrapyard", label: "the scrapyard", walkMinutes: 40 },
+  { id: "sanatorium", label: "the sanatorium", walkMinutes: 40 },
 ];
 
 export function isExteriorScene(sceneId: string): boolean {
@@ -1205,6 +1206,12 @@ export const gasStation: Scene = {
       nextScene: "gas-station-inside",
       timeCost: 2,
     },
+    {
+      label: "Go to the garage",
+      action: "enterGasStationGarage",
+      nextScene: "gas-station-garage",
+      timeCost: 1,
+    },
   ],
 };
 
@@ -1243,6 +1250,12 @@ export const gasStationInside: Scene = {
       timeCost: 0,
     },
     {
+      label: "Go to the garage",
+      action: "enterGasStationGarage",
+      nextScene: "gas-station-garage",
+      timeCost: 1,
+    },
+    {
       label: "Shop",
       action: "openShop",
       nextScene: "gas-station-inside",
@@ -1254,6 +1267,76 @@ export const gasStationInside: Scene = {
       nextScene: "gas-station",
       timeCost: 0,
     },
+  ],
+};
+
+// ----------------------------------------
+// GAS STATION GARAGE
+// ----------------------------------------
+
+export const tommyConversation: Conversation = {
+  opening: [
+    npc("Tommy", "Ethan! Give me a second to turn this down. This solo deserves better than these speakers."),
+  ],
+  choices: [
+    {
+      label: "Still playing guitar?",
+      response: [
+        ethan("Still playing guitar, or just deafening everyone at work?"),
+        npc("Tommy", "Both. Got a new metal riff that'll wake the whole street. Come over sometime and I'll play it for you."),
+      ],
+    },
+    {
+      label: "When do you get off work?",
+      response: [
+        ethan("When do you get off work?"),
+        npc("Tommy", "I'm here from 08:00 to 17:00. Nine hours of engines, grease, and complaints about my music."),
+      ],
+    },
+    {
+      label: "Things have been rough lately.",
+      response: [
+        ethan("Things have been rough lately. I might need your help."),
+        npc("Tommy", "Hey, I'm listening. Whatever it is, you don't have to face it alone. Call me and I'll be there."),
+        ethan("Thanks, man. That means a lot."),
+      ],
+    },
+    {
+      label: "I'll let you get back to work.",
+      response: [
+        ethan("I'll let you get back to work."),
+        npc("Tommy", "Yeah, this engine won't fix itself. Catch you later, brother."),
+      ],
+      endsConversation: true,
+    },
+  ],
+};
+
+export const gasStationGarage: Scene = {
+  id: "gas-station-garage",
+  story: [
+    narration("You step into the gas station garage. The air smells of oil and rubber."),
+    thought("Tommy's working, His leather jacket hangs beside the radio blasting metal.", { from: 480, until: 1020 }),
+    thought("Tommy's off work. It's strange hearing this place without his music."),
+  ],
+  location: "Gas Station Garage",
+  image: {
+    day: "./images/locations/gas_station/gasStationGarageDay.png",
+    night: "./images/locations/gas_station/gasStationGarageNight.png",
+  },
+  characters: [
+    {
+      name: "Tommy Vance",
+      from: 480,
+      until: 1020,
+      image: "./images/locations/gas_station/TommyVanceWorking.png",
+    },
+  ],
+  conversation: tommyConversation,
+  choices: [
+    { label: "Talk to Tommy", action: "talkToTommy", nextScene: "gas-station-garage", timeCost: 0 },
+    { label: "Go to the shop", action: "enterGasStation", nextScene: "gas-station-inside", timeCost: 1 },
+    { label: "Go outside", action: "leaveGasStationGarage", nextScene: "gas-station", timeCost: 1 },
   ],
 };
 
@@ -1956,6 +2039,111 @@ export const dinerInside: Scene = {
   conversation: margaretConversation,
 };
 
+// ----------------------------------------
+// SANATORIUM
+// ----------------------------------------
+
+export const sanatorium: Scene = {
+  id: "sanatorium",
+  story: [
+    narration("You arrive at the sanatorium. The building looms ahead, its windows silent."),
+    thought("Something about this place makes me hesitate."),
+  ],
+  location: "Sanatorium",
+  image: {
+    day: "./images/locations/sanatorium/sanatoriumDay.png",
+    night: "./images/locations/sanatorium/sanatoriumNight.png",
+  },
+  choices: [
+    { label: "Approach the entrance", action: "approachSanatorium", nextScene: "sanatorium-entrance", timeCost: 2 },
+  ],
+};
+
+export const sanatoriumEntrance: Scene = {
+  id: "sanatorium-entrance",
+  story: [
+    narration("You stop in front of the sanatorium entrance."),
+    thought("I could still turn back."),
+  ],
+  location: "Sanatorium",
+  image: {
+    day: "./images/locations/sanatorium/sanatoriumUpCloseDay.png",
+    night: "./images/locations/sanatorium/sanatoriumUpCloseNight.png",
+  },
+  choices: [
+    { label: "Go inside", action: "enterSanatorium", nextScene: "sanatorium-main-floor", timeCost: 1 },
+    { label: "Return to the road", action: "leaveSanatoriumEntrance", nextScene: "sanatorium", timeCost: 2 },
+  ],
+};
+
+export const sanatoriumMainFloor: Scene = {
+  id: "sanatorium-main-floor",
+  story: [
+    narration("You step onto the main floor. Your footsteps echo through the sanatorium."),
+    thought("Every sound seems louder in here."),
+  ],
+  location: "Sanatorium",
+  image: {
+    day: "./images/locations/sanatorium/sanatoriumMainFloorDay.png",
+    night: "./images/locations/sanatorium/sanatoriumMainFloorNight.png",
+  },
+  choices: [
+    { label: "Explore the hallway", action: "enterSanatoriumHallway", nextScene: "sanatorium-hallway", timeCost: 1 },
+    { label: "Go outside", action: "leaveSanatorium", nextScene: "sanatorium-entrance", timeCost: 1 },
+  ],
+};
+
+export const sanatoriumHallway: Scene = {
+  id: "sanatorium-hallway",
+  story: [
+    narration("You walk along the hallway, pausing beside the room doors."),
+    thought("Do I really want to see what's behind them?"),
+  ],
+  location: "Sanatorium",
+  image: {
+    day: "./images/locations/sanatorium/sanatoriumHallwayDay.png",
+    night: "./images/locations/sanatorium/sanatoriumHallwayNight.png",
+  },
+  choices: [
+    { label: "Enter the first room", action: "enterSanatoriumRoom1", nextScene: "sanatorium-room-1", timeCost: 1 },
+    { label: "Enter the second room", action: "enterSanatoriumRoom2", nextScene: "sanatorium-room-2", timeCost: 1 },
+    { label: "Go outside", action: "leaveSanatoriumHallway", nextScene: "sanatorium-entrance", timeCost: 1 },
+    { label: "Back to main floor", action: "returnToSanatoriumMainFloor", nextScene: "sanatorium-main-floor", timeCost: 1 },
+  ],
+};
+
+export const sanatoriumRoom1: Scene = {
+  id: "sanatorium-room-1",
+  story: [
+    narration("You ease open the first door and step into the room."),
+    thought("I wonder who stayed here."),
+  ],
+  location: "Sanatorium",
+  image: {
+    day: "./images/locations/sanatorium/sanatoriumRoom1Day.png",
+    night: "./images/locations/sanatorium/sanatoriumRoom1Night.png",
+  },
+  choices: [
+    { label: "Return to the hallway", action: "leaveSanatoriumRoom1", nextScene: "sanatorium-hallway", timeCost: 1 },
+  ],
+};
+
+export const sanatoriumRoom2: Scene = {
+  id: "sanatorium-room-2",
+  story: [
+    narration("You enter the second room, listening for any movement beyond the doorway."),
+    thought("Just my own footsteps. I think."),
+  ],
+  location: "Sanatorium",
+  image: {
+    day: "./images/locations/sanatorium/sanatoriumRoom2Day.png",
+    night: "./images/locations/sanatorium/sanatoriumRoom2Night.png",
+  },
+  choices: [
+    { label: "Return to the hallway", action: "leaveSanatoriumRoom2", nextScene: "sanatorium-hallway", timeCost: 1 },
+  ],
+};
+
 export function getSceneThought(
   sceneId: string,
   time: number
@@ -2031,6 +2219,7 @@ export const scenes = {
   "needle-and-groove-backroom": needleAndGrooveBackroom,
   "gas-station": gasStation,
   "gas-station-inside": gasStationInside,
+  "gas-station-garage": gasStationGarage,
   scrapyard,
   "scrapyard-inside": scrapyardInside,
   "scrapyard-desk": scrapyardDesk,
@@ -2051,4 +2240,10 @@ export const scenes = {
   "motel-room-203": motelRoom203,
   diner,
   "diner-inside": dinerInside,
+  sanatorium,
+  "sanatorium-entrance": sanatoriumEntrance,
+  "sanatorium-main-floor": sanatoriumMainFloor,
+  "sanatorium-hallway": sanatoriumHallway,
+  "sanatorium-room-1": sanatoriumRoom1,
+  "sanatorium-room-2": sanatoriumRoom2,
 };

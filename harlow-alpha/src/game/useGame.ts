@@ -34,6 +34,7 @@ const CONVERSATION_ACTIONS = new Set([
   "talkToEarl",
   "talkToBigRoy",
   "talkToRay",
+  "talkToTommy",
 ]);
 
 const CONVERSATION_CLOSE_DELAY = 3000;
@@ -363,6 +364,7 @@ export function useGame() {
     if (action === "talkToEarl") return time >= 480 && time < 1020;
     if (action === "talkToBigRoy") return time >= 420 && time < 900;
     if (action === "talkToRay") return time >= 540 && time < 1380;
+    if (action === "talkToTommy") return time >= 480 && time < 1020;
     if (action === "openShop") return time >= 540 && time < 1380;
     if (action === "goToMarleneCounter") return !marleneActive;
     if (action === "talkToMarlene" || action === "leaveMarleneCounter") return marleneActive;

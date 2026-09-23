@@ -14,6 +14,12 @@ type Character = {
 // Keep this directory in sync when a new NPC is introduced in scene data.
 const characters: Character[] = [
   {
+    name: "Tommy Vance",
+    role: "Ethan's close friend / Garage mechanic",
+    image: "/images/characters/TommyVance/TommyVance.png",
+    bio: "Tommy, 20, is one of Ethan's closest friends. A guitarist and devoted metalhead, he's known for his long black hair, leather jacket, and loud music. He may seem wild and unserious, but he's loyal, brave, and always shows up when Ethan needs him. He works at the gas station garage from 08:00 to 17:00.",
+  },
+  {
     name: "Linda Parker",
     role: "Ethan's mother",
     image: "/images/characters/LindaParker/LindaParker.png",

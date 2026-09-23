@@ -72,6 +72,24 @@ const hotspotLabels: Record<string, string> = {
   chooseNeedleGrooveJob: "Needle & Groove flyer",
   chooseGasStationJob: "Gas station flyer",
   chooseScrapyardJob: "Scrapyard flyer",
+  approachSanatorium: "Approach entrance",
+  enterSanatorium: "Enter sanatorium",
+  enterSanatoriumHallway: "Hallway",
+  leaveSanatorium: "Go outside",
+  enterSanatoriumRoom1: "First room",
+  enterSanatoriumRoom2: "Second room",
+  leaveSanatoriumHallway: "Go outside",
+  leaveSanatoriumRoom1: "Return to hallway",
+  leaveSanatoriumRoom2: "Return to hallway",
+};
+
+const sanatoriumHotspotActions: Record<string, string[]> = {
+  sanatorium: ["approachSanatorium"],
+  "sanatorium-entrance": ["enterSanatorium"],
+  "sanatorium-main-floor": ["enterSanatoriumHallway", "leaveSanatorium"],
+  "sanatorium-hallway": ["enterSanatoriumRoom1", "enterSanatoriumRoom2", "leaveSanatoriumHallway"],
+  "sanatorium-room-1": ["leaveSanatoriumRoom1"],
+  "sanatorium-room-2": ["leaveSanatoriumRoom2"],
 };
 
 export default function Home() {
@@ -160,6 +178,7 @@ export default function Home() {
       ? currentScene.image.night
       : currentScene.image.day);
   const hotspotActions =
+    sanatoriumHotspotActions[currentScene.id] ?? (
     currentScene.id === "living-room"
       ? activeCharacter?.name === "Linda"
         ? ["talkToMom"]
@@ -216,7 +235,7 @@ export default function Home() {
                                             ? ["goBackYard", "goHome", "enterGarage"]
                                             : currentScene.id === "light-pole"
                                               ? ["chooseNeedleGrooveJob", "chooseGasStationJob", "chooseScrapyardJob"]
-                                            : [];
+                                            : []);
   const sceneHotspots = activeChoices.filter(
     (choice): choice is Choice =>
       "action" in choice &&
