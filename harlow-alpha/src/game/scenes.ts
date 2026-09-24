@@ -786,6 +786,14 @@ export const fridge: Scene = {
       nextScene: "fridge",
       timeCost: 0,
       itemToAdd: "Beer",
+      hotspots: [
+        { left: 15.3, top: 34.5, width: 2.2, height: 17.5 },
+        { left: 17.5, top: 34, width: 4.8, height: 18.5 },
+        { left: 22.3, top: 34.4, width: 3.5, height: 17.8 },
+        { left: 25.8, top: 34, width: 5.8, height: 18.5 },
+        { left: 79.7, top: 75.8, width: 6.8, height: 17.4 },
+        { left: 86.5, top: 77, width: 3.3, height: 17.4 },
+      ],
     },
     {
       label: "Close the fridge",

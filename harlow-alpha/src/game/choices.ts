@@ -26,6 +26,8 @@ export type Choice = {
   effects?: ChoiceEffects;
   /** Adds this exact item name to inventory after the choice is selected. */
   itemToAdd?: string;
+  /** Clickable regions on the scene image, in percentages. */
+  hotspots?: { left: number; top: number; width: number; height: number }[];
   /** Uses the travel overlay instead of moving to the scene immediately. */
   travel?: boolean;
   /** Disable the choice until these conditions are met. Extend this for new rules. */
