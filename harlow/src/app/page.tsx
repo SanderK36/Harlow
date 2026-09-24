@@ -239,12 +239,12 @@ export default function Home() {
   const sceneHotspots = activeChoices.filter(
     (choice): choice is Choice =>
       "action" in choice &&
-      hotspotActions.includes(choice.action)
+      (hotspotActions.includes(choice.action) || !!choice.hotspots?.length)
   );
   const choicesWithoutHotspotActions = activeChoices.filter(
     (choice) =>
       "response" in choice ||
-      !hotspotActions.includes(choice.action)
+      (!hotspotActions.includes(choice.action) && !choice.hotspots?.length)
   );
 
   if (!(hasStarted ?? resumedSession)) {
@@ -333,17 +333,25 @@ export default function Home() {
             alt=""
             className="scene-image"
           />
-          {sceneHotspots.map((sceneHotspot) => (
+          {sceneHotspots.flatMap((sceneHotspot) =>
+            (sceneHotspot.hotspots ?? [undefined]).map((region, index) => (
             <button
-              key={sceneHotspot.action}
+              key={`${sceneHotspot.action}-${index}`}
               type="button"
               className={`scene-hotspot scene-hotspot-${sceneHotspot.action} scene-hotspot-${currentScene.id}-${sceneHotspot.action}`}
-              aria-label={hotspotLabels[sceneHotspot.action]}
+              style={region ? {
+                left: `${region.left}%`,
+                top: `${region.top}%`,
+                width: `${region.width}%`,
+                height: `${region.height}%`,
+              } : undefined}
+              aria-label={hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label}
               onClick={() => handleChoice(sceneHotspot)}
             >
-              <span>{hotspotLabels[sceneHotspot.action]}</span>
+              <span>{hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label}</span>
             </button>
-          ))}
+            ))
+          )}
         </div>
 
         <StoryLog
