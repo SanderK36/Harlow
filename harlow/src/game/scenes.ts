@@ -420,6 +420,30 @@ export const momConversation: Conversation = {
     },
 
     {
+      label: "How's it going at work?",
+      storyFlag: "momJobConcern",
+      response: [
+        ethan("How's it going at work?"),
+        npc(
+          "Linda",
+          "Honestly, not great. There haven't been enough shifts lately, and everything's gotten so expensive."
+        ),
+      ],
+    },
+
+    {
+      label: "I'll find a way to help.",
+      requiresStoryFlag: "momJobConcern",
+      response: [
+        ethan("I'll find a way to help."),
+        npc(
+          "Linda",
+          "You're a good kid. Just be careful, and don't take the first thing that comes along."
+        ),
+      ],
+    },
+
+    {
       label: "I'm heading out.",
 
       response: [
@@ -869,7 +893,7 @@ export const ethanRoom: Scene = {
   id: "ethan-room",
   story: [
     narration("You step into your room."),
-    thought("I should keep this place organized."),
+    thought("I wonder what happend last night"),
   ],
   location: "Ethan's room",
   image: {

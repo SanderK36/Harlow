@@ -12,7 +12,7 @@ type ActionListProps = {
   isBusStop: boolean;
   canTravel: boolean;
   playerMoney: number;
-  layout?: "default" | "home";
+  layout?: "default" | "home" | "overlay";
 };
 
 export default function ActionList({
@@ -44,12 +44,20 @@ export default function ActionList({
   }
 
   return (
-    <div className={styles.actionList}>
+    <div
+      className={`${styles.actionList} ${
+        layout === "overlay" ? styles.overlayActionList : ""
+      }`}
+    >
       <h2>{title}</h2>
 
       <div
         className={`${styles.actionButtons} ${
-          layout === "home" ? styles.homeActionButtons : ""
+          layout === "home"
+            ? styles.homeActionButtons
+            : layout === "overlay"
+              ? styles.overlayActionButtons
+              : ""
         }`}
       >
         {localChoices.map((choice) => (

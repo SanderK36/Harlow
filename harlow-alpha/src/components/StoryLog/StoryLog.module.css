@@ -68,6 +68,26 @@
   border-color: rgba(237,85,98,.28);
 }
 
+.combinedScene {
+  max-height: none;
+  margin: 0;
+  padding: 0 0 14px 20px;
+  overflow: visible;
+  background: transparent;
+  border: 0;
+  border-left: 1px solid var(--line-strong);
+  border-radius: 0;
+}
+
+.combinedScene::after {
+  display: none;
+}
+
+.combinedScene .title {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+}
+
 .conversationLog .storyEntry {
   font-family: inherit;
   font-size: inherit;
@@ -133,6 +153,12 @@
   .narrationLog::after {
     right: 14px;
     font-size: 21px;
+  }
+
+  .combinedScene {
+    padding: 14px 0 0;
+    border-top: 1px solid var(--line-strong);
+    border-left: 0;
   }
 
 }

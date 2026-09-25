@@ -7,6 +7,7 @@ import player from "@/game/player";
 import {
   createBusChoices,
   createWalkingChoices,
+  ethanRoom,
   getSceneThought,
   hallway,
   scenes,
@@ -52,9 +53,9 @@ export function useGame() {
   const [playerState, setPlayerState] = useState(sessionSave?.playerState ?? player);
 
   // The currently displayed scene and its short, time-aware thought.
-  const [currentScene, setCurrentScene] = useState(sessionScene ?? hallway);
+  const [currentScene, setCurrentScene] = useState(sessionScene ?? ethanRoom);
   const [currentThought, setCurrentThought] = useState<string | null>(
-    getSceneThought(sessionScene?.id ?? hallway.id, sessionSave?.gameState.time ?? initialGameState.time)
+    getSceneThought(sessionScene?.id ?? ethanRoom.id, sessionSave?.gameState.time ?? initialGameState.time)
   );
   const [currentEffects, setCurrentEffects] = useState<StoryEntry[]>([]);
 
@@ -83,6 +84,7 @@ export function useGame() {
   const [deskCigarettesPickedUp, setDeskCigarettesPickedUp] = useState(sessionSave?.deskCigarettesPickedUp ?? false);
   const [scrapyardKnifePickedUp, setScrapyardKnifePickedUp] = useState(sessionSave?.scrapyardKnifePickedUp ?? false);
   const [garageFlashlightPickedUp, setGarageFlashlightPickedUp] = useState(sessionSave?.garageFlashlightPickedUp ?? false);
+  const [momJobConcernHeard, setMomJobConcernHeard] = useState(sessionSave?.momJobConcernHeard ?? false);
   // Completing Find a Job sets one permanent workplace benefit.
   const [job, setJob] = useState<JobId | null>(sessionSave?.job ?? null);
   const [jobQuestTarget, setJobQuestTarget] = useState<JobId | null>(sessionSave?.jobQuestTarget ?? null);
@@ -99,10 +101,11 @@ export function useGame() {
       deskCigarettesPickedUp,
       scrapyardKnifePickedUp,
       garageFlashlightPickedUp,
+      momJobConcernHeard,
       job: job ?? undefined,
       jobQuestTarget: jobQuestTarget ?? undefined,
     };
-  }, [gameState, playerState, currentScene, busStopReturnSceneId, marleneActive, deskCigarettesPickedUp, scrapyardKnifePickedUp, garageFlashlightPickedUp, job, jobQuestTarget]);
+  }, [gameState, playerState, currentScene, busStopReturnSceneId, marleneActive, deskCigarettesPickedUp, scrapyardKnifePickedUp, garageFlashlightPickedUp, momJobConcernHeard, job, jobQuestTarget]);
 
   // This is a temporary, per-tab resume point. It survives refreshes but is
   // automatically cleared when the browser tab is closed.
@@ -175,6 +178,13 @@ export function useGame() {
 
   function handleConversationChoice(choice: Extract<GameChoice, { response: StoryEntry[] }>) {
     setConversation((previous) => [...previous, ...choice.response]);
+
+    if (choice.storyFlag === "momJobConcern") {
+      setMomJobConcernHeard(true);
+      setCurrentThought("I got to get a job to help out, maybe i could check the flyers on the lightpole outside");
+      setQuestNotification("New quest: Find a Job — check the hiring flyers outside.");
+      window.setTimeout(() => setQuestNotification(null), 6500);
+    }
 
     if (choice.jobOffer && !job) {
       setJob(choice.jobOffer);
@@ -332,6 +342,10 @@ export function useGame() {
 
     moveToScene(nextSceneId, nextGameState.time);
 
+    if (selectedJob === "needle-groove") {
+      setCurrentThought("Needle & Groove sounds like the best choice for me.");
+    }
+
     if (choice.itemToAdd) {
       setPlayerState((previous) => ({
         ...previous,
@@ -376,7 +390,9 @@ export function useGame() {
       return !scrapyardKnifePickedUp && (time < 420 || time >= 900);
     }
     if (action === "pickUpGarageFlashlight") return !garageFlashlightPickedUp;
-    if (action.startsWith("choose") && action.endsWith("Job")) return !job && !jobQuestTarget;
+    if (action.startsWith("choose") && action.endsWith("Job")) {
+      return momJobConcernHeard && !job && !jobQuestTarget;
+    }
 
     return true;
   }
@@ -404,6 +420,7 @@ export function useGame() {
     setDeskCigarettesPickedUp(save.deskCigarettesPickedUp);
     setScrapyardKnifePickedUp(save.scrapyardKnifePickedUp);
     setGarageFlashlightPickedUp(save.garageFlashlightPickedUp);
+    setMomJobConcernHeard(save.momJobConcernHeard ?? false);
     setJob(save.job ?? null);
     setJobQuestTarget(save.jobQuestTarget ?? null);
     setQuestNotification(null);
@@ -440,14 +457,15 @@ export function useGame() {
 
     setGameState(freshGameState);
     setPlayerState(freshPlayer);
-    setCurrentScene(hallway);
-    setCurrentThought(getSceneThought(hallway.id, freshGameState.time));
+    setCurrentScene(ethanRoom);
+    setCurrentThought(getSceneThought(ethanRoom.id, freshGameState.time));
     setCurrentEffects([]);
     setBusStopReturnSceneId("front-yard");
     setMarleneActive(false);
     setDeskCigarettesPickedUp(false);
     setScrapyardKnifePickedUp(false);
     setGarageFlashlightPickedUp(false);
+    setMomJobConcernHeard(false);
     setJob(null);
     setJobQuestTarget(null);
     setQuestNotification(null);
@@ -464,7 +482,7 @@ export function useGame() {
       version: 1,
       gameState: freshGameState,
       playerState: freshPlayer,
-      currentSceneId: hallway.id,
+      currentSceneId: ethanRoom.id,
       busStopReturnSceneId: "front-yard",
       marleneActive: false,
       deskCigarettesPickedUp: false,
@@ -492,6 +510,7 @@ export function useGame() {
           (!choice.requiresNoJob || !job) &&
           (!choice.requiresJob || choice.requiresJob === job) &&
           (!choice.requiresJobQuestTarget || choice.requiresJobQuestTarget === jobQuestTarget) &&
+          (!choice.requiresStoryFlag || (choice.requiresStoryFlag === "momJobConcern" && momJobConcernHeard)) &&
           (choice.endsConversation || !usedConversationChoices.includes(choice.label))
       )
     : currentScene.choices.filter(isChoiceAvailable);
@@ -519,6 +538,7 @@ export function useGame() {
     setActiveShop,
     job,
     jobQuestTarget,
+    momJobConcernHeard,
     questNotification,
     saveGame,
     loadGame,

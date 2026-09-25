@@ -2,6 +2,7 @@ import styles from "./CharacterLine.module.css";
 
 type CharacterLineProps = {
   text: string;
+  variant?: "default" | "scene" | "inline";
   effect?: {
     stat: string;
     amount: number;
@@ -10,13 +11,22 @@ type CharacterLineProps = {
 
 export default function CharacterLine({
   text,
+  variant = "default",
   effect,
 }: CharacterLineProps) {
   const sign =
     effect && effect.amount >= 0 ? "+" : "";
 
   return (
-    <div className={styles.characterLine}>
+    <div
+      className={`${styles.characterLine} ${
+        variant === "scene"
+          ? styles.sceneThought
+          : variant === "inline"
+            ? styles.inlineThought
+            : ""
+      }`}
+    >
       <img
         src="/images/characters/EthanParker/EthanParker.jpg"
         alt="Ethan Parker"

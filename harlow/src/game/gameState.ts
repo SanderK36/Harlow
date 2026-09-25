@@ -4,7 +4,7 @@ const gameState: GameState = {
   dayNumber: 3,
   dayOfWeek: "Monday",
   time: 600,
-  location: "Home",
+  location: "Ethan's room",
   weather: "Rainy",
   currentMonth: "October",
 };

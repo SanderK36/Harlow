@@ -99,6 +99,7 @@ export default function Home() {
   const resumedSession = useSyncExternalStore(subscribeToSession, hasActiveSession, () => false);
   const [showCharacterDirectory, setShowCharacterDirectory] = useState(false);
   const [showQuestLog, setShowQuestLog] = useState(false);
+  const [showProductionSplash, setShowProductionSplash] = useState(false);
   const {
     gameState,
     playerState,
@@ -125,6 +126,7 @@ export default function Home() {
     setActiveShop,
     job,
     jobQuestTarget,
+    momJobConcernHeard,
     questNotification,
     buyItem,
     saveGame,
@@ -141,6 +143,8 @@ export default function Home() {
   function startNewGame() {
     startNewGameSession();
     setHasStarted(true);
+    setShowProductionSplash(true);
+    window.setTimeout(() => setShowProductionSplash(false), 3400);
   }
 
   function returnToMainMenu() {
@@ -148,26 +152,6 @@ export default function Home() {
     setHasStarted(false);
   }
 
-  // Indoor home scenes use the compact two-column action layout.
-  const homeSceneIds = [
-    "hallway",
-    "living-room",
-    "living-room-relaxing",
-    "kitchen",
-    "bathroom",
-    "ethan-room",
-    "ethan-room-desk",
-    "ethan-room-desk-empty",
-    "mom-room",
-    "emily-room",
-    "attic",
-    "basement",
-    "garage",
-    "garage-bench",
-    "garage-bench-empty",
-  ];
-
-  const isInsideHome = homeSceneIds.includes(currentScene.id);
   // Character art has priority, then weather-specific art, then day/night art.
   const sceneImage =
     (isNightTime(gameState.time) && activeCharacter?.nightImage
@@ -300,6 +284,18 @@ export default function Home() {
 
   return (
     <main className="game">
+      {showProductionSplash && (
+        <div className="production-splash" role="status" aria-label="A Lost Frequency Games production">
+          <Image
+            src="/LostFrequencyGames-transparent.png"
+            alt="Lost Frequency Games"
+            width={1254}
+            height={1254}
+            className="production-splash-logo"
+          />
+          <p>A Lost Frequency Games Production</p>
+        </div>
+      )}
       {isNightTime(gameState.time) && (
         <div className="gameClouds gameCloudsNight" aria-hidden="true">
           <div className="gameCloud gameCloudOne" />
@@ -326,13 +322,39 @@ export default function Home() {
           onInventoryClick={() => setShowInventory(true)}
         />
 
-        <div className="scene-image-frame">
+        <div className={`scene-image-frame scene-image-frame-${currentScene.id}`}>
           <img
             key={sceneImage}
             src={sceneImage}
             alt=""
             className="scene-image"
           />
+          <div className="scene-info-panel">
+            {currentThought && (
+              <CharacterLine
+                key={currentThought}
+                text={currentThought}
+                variant="inline"
+                effect={
+                  currentEffects[0]?.type === "effect"
+                    ? {
+                        stat: currentEffects[0].stat,
+                        amount: currentEffects[0].amount,
+                      }
+                    : undefined
+                }
+              />
+            )}
+
+            <StoryLog
+              entries={currentScene.story.filter(
+                (entry) => entry.type !== "thought"
+              )}
+              title="Scene"
+              variant="narration"
+              layout="combined"
+            />
+          </div>
           {sceneHotspots.flatMap((sceneHotspot) =>
             (sceneHotspot.hotspots ?? [undefined]).map((region, index) => (
             <button
@@ -352,39 +374,36 @@ export default function Home() {
             </button>
             ))
           )}
-        </div>
 
-        <StoryLog
-          entries={currentScene.story.filter(
-            (entry) =>
-              entry.type !== "thought"
-          )}
-          title="Scene"
-          variant="narration"
-        />
+          <ActionList
+            title={
+              conversationActive
+                ? "What do you say?"
+                : "What do you want to do?"
+            }
+            choices={choicesWithoutHotspotActions}
+            onChoice={handleChoice}
+            onWalk={() => {
+              setTravelMode("walk");
+              setShowTravel(true);
+            }}
+            onBus={() => {
+              setTravelMode("bus");
+              setShowTravel(true);
+            }}
+            onGoToBusStop={goToBusStop}
+            isBusStop={currentScene.id === "bus-stop"}
+            canTravel={isExteriorScene(currentScene.id)}
+            playerMoney={playerState.money}
+            layout="overlay"
+          />
+        </div>
 
         {conversationActive && conversation.length > 0 && (
           <StoryLog
             entries={conversation}
             title="Conversation"
             variant="conversation"
-          />
-        )}
-
-        {currentThought && (
-          <CharacterLine
-            key={currentThought}
-            text={currentThought}
-            effect={
-              currentEffects[0]?.type === "effect"
-                ? {
-                    stat:
-                      currentEffects[0].stat,
-                    amount:
-                      currentEffects[0].amount,
-                  }
-                : undefined
-            }
           />
         )}
 
@@ -418,7 +437,12 @@ export default function Home() {
           <CharacterWindow onClose={() => setShowCharacterDirectory(false)} />
         )}
         {showQuestLog && (
-          <QuestWindow job={job} jobQuestTarget={jobQuestTarget} onClose={() => setShowQuestLog(false)} />
+          <QuestWindow
+            job={job}
+            jobQuestTarget={jobQuestTarget}
+            momJobConcernHeard={momJobConcernHeard}
+            onClose={() => setShowQuestLog(false)}
+          />
         )}
         {questNotification && (
           <div className="quest-notification" role="status">
@@ -426,29 +450,6 @@ export default function Home() {
             <p>{questNotification}</p>
           </div>
         )}
-
-        <ActionList
-          title={
-            conversationActive
-              ? "What do you say?"
-              : "What do you want to do?"
-          }
-          choices={choicesWithoutHotspotActions}
-          onChoice={handleChoice}
-          onWalk={() => {
-            setTravelMode("walk");
-            setShowTravel(true);
-          }}
-          onBus={() => {
-            setTravelMode("bus");
-            setShowTravel(true);
-          }}
-          onGoToBusStop={goToBusStop}
-          isBusStop={currentScene.id === "bus-stop"}
-          canTravel={isExteriorScene(currentScene.id)}
-          playerMoney={playerState.money}
-          layout={isInsideHome ? "home" : "default"}
-        />
 
         {showTravel && (
           <TravelWindow

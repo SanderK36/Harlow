@@ -28,6 +28,10 @@ export type ConversationChoice = {
   label: string;
   response: StoryEntry[];
   endsConversation?: boolean;
+  /** Marks a story milestone when this response is selected. */
+  storyFlag?: "momJobConcern";
+  /** Shows this response only after the matching story milestone. */
+  requiresStoryFlag?: "momJobConcern";
   /** Applies a permanent job reward when this response is selected. */
   jobOffer?: import("./quests").JobId;
   /** Hide this choice after Ethan has accepted a job. */

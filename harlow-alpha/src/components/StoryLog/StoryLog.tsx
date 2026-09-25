@@ -43,12 +43,14 @@ type StoryLogProps = {
   entries: StoryEntry[];
   title?: string;
   variant?: "narration" | "conversation";
+  layout?: "default" | "combined";
 };
 
 export default function StoryLog({
   entries,
   title,
   variant = "narration",
+  layout = "default",
 }: StoryLogProps) {
   const logRef = useRef<HTMLElement>(null);
 
@@ -70,7 +72,7 @@ export default function StoryLog({
         variant === "conversation"
           ? styles.conversationLog
           : styles.narrationLog
-      }`}
+      } ${layout === "combined" ? styles.combinedScene : ""}`}
       aria-live={variant === "conversation" ? "polite" : undefined}
     >
       {title && <h2 className={styles.title}>{title}</h2>}

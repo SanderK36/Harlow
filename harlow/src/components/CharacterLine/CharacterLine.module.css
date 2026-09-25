@@ -11,6 +11,40 @@
   animation: thoughtAppear .35s ease-out;
 }
 
+.sceneThought {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 3;
+  margin: 0;
+  border-color: rgba(237, 85, 98, .34);
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
+  background: linear-gradient(180deg, rgba(8, 4, 5, .9), rgba(21, 16, 16, .72));
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .2), inset 3px 0 0 var(--accent);
+  backdrop-filter: blur(4px);
+}
+
+.sceneThought .portrait {
+  width: 42px;
+  height: 52px;
+}
+
+.sceneThought .text p {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.inlineThought {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
 .portrait {
   display: block;
   width: 52px;
@@ -129,6 +163,20 @@
 
   .label {
     display: none;
+  }
+
+  .sceneThought {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .sceneThought .portrait {
+    width: 32px;
+    height: 42px;
+  }
+
+  .sceneThought .text p {
+    font-size: 13px;
   }
 
 }
