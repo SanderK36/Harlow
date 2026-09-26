@@ -62,10 +62,20 @@
 }
 
 .conversationLog {
-  max-height: 420px;
-  margin-top: 18px;
-  background: rgba(12, 4, 5, .74);
-  border-color: rgba(237,85,98,.28);
+  width: min(100%, 1100px);
+  max-height: clamp(220px, 38vh, 360px);
+  margin: 14px auto 0;
+  padding: 17px 22px 19px;
+  background: linear-gradient(115deg, rgba(31, 17, 18, .98), rgba(12, 8, 9, .98));
+  border-color: rgba(237, 85, 98, .34);
+  border-top: 2px solid var(--accent-bright);
+  border-radius: 10px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, .24);
+}
+
+.conversationLog .title {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
 }
 
 .combinedScene {
@@ -144,6 +154,11 @@
 @media (max-width: 480px) {
   .storyLog {
     padding: 19px;
+  }
+
+  .conversationLog {
+    max-height: 34vh;
+    padding: 13px 14px 15px;
   }
 
   .storyEntry {
