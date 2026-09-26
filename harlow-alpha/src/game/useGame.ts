@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { resolveAction } from "@/game/actions";
 import { applyEffects, effectsToStory } from "@/game/effects";
@@ -39,6 +39,7 @@ const CONVERSATION_ACTIONS = new Set([
 ]);
 
 const CONVERSATION_CLOSE_DELAY = 3000;
+const NPC_REPLY_DELAY = 450;
 const TRAVEL_DURATION = 3000;
 
 type ShopId = "gas-station" | "needle-groove";
@@ -70,6 +71,18 @@ export function useGame() {
   const [conversation, setConversation] = useState<StoryEntry[]>([]);
   const [conversationActive, setConversationActive] = useState(false);
   const [usedConversationChoices, setUsedConversationChoices] = useState<string[]>([]);
+  const [replyPending, setReplyPending] = useState(false);
+  const replyTimer = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (replyTimer.current !== null) window.clearTimeout(replyTimer.current);
+  }, []);
+
+  function cancelPendingReply() {
+    if (replyTimer.current !== null) window.clearTimeout(replyTimer.current);
+    replyTimer.current = null;
+    setReplyPending(false);
+  }
 
   // A non-null destination displays the full-screen travel transition.
   const [travelingTo, setTravelingTo] = useState<{
@@ -146,6 +159,7 @@ export function useGame() {
   }
 
   function openConversation() {
+    cancelPendingReply();
     // The action determines *which* NPC to talk to; the scene owns the dialogue.
     const opening = currentScene.conversation?.opening;
 
@@ -179,6 +193,26 @@ export function useGame() {
   }
 
   function handleConversationChoice(choice: Extract<GameChoice, { response: StoryEntry[] }>) {
+    if (replyTimer.current !== null) return;
+
+    const npcIndex = choice.response.findIndex(
+      (entry) => entry.type === "conversation" && entry.character !== "Ethan"
+    );
+    if (npcIndex === -1) {
+      finishConversationChoice(choice);
+      return;
+    }
+
+    setConversation((previous) => [...previous, ...choice.response.slice(0, npcIndex)]);
+    setReplyPending(true);
+    replyTimer.current = window.setTimeout(() => {
+      replyTimer.current = null;
+      setReplyPending(false);
+      finishConversationChoice({ ...choice, response: choice.response.slice(npcIndex) });
+    }, NPC_REPLY_DELAY);
+  }
+
+  function finishConversationChoice(choice: Extract<GameChoice, { response: StoryEntry[] }>) {
     setConversation((previous) => [...previous, ...choice.response]);
 
     if (choice.storyFlag === "momJobConcern") {
@@ -432,6 +466,7 @@ export function useGame() {
     setShowInventory(false);
     setShowTravel(false);
     setActiveShop(null);
+    cancelPendingReply();
     setConversation([]);
     setConversationActive(false);
     setUsedConversationChoices([]);
@@ -475,6 +510,7 @@ export function useGame() {
     setShowInventory(false);
     setShowTravel(false);
     setActiveShop(null);
+    cancelPendingReply();
     setConversation([]);
     setConversationActive(false);
     setUsedConversationChoices([]);
@@ -506,7 +542,7 @@ export function useGame() {
     );
   });
 
-  const activeChoices = conversationActive
+  const activeChoices = replyPending ? [] : conversationActive
     ? (currentScene.conversation?.choices ?? []).filter(
         (choice) =>
           (!choice.requiresNoJob || !job) &&
@@ -550,6 +586,19 @@ export function useGame() {
     handleChoice,
     goToBusStop,
     wait: advanceTime,
+    useInventoryItem: (item: string) => {
+      const fearReduction = item === "Beer" ? 10 : item === "Cigarettes" ? 5 : 0;
+      if (!fearReduction) return;
+      setPlayerState((previous) => {
+        const index = previous.inventory.indexOf(item);
+        if (index === -1) return previous;
+        return {
+          ...previous,
+          fear: Math.max(0, previous.fear - fearReduction),
+          inventory: previous.inventory.filter((_, itemIndex) => itemIndex !== index),
+        };
+      });
+    },
     buyItem: (item: string, price: number) => {
       setPlayerState((previous) => {
         if (previous.money < price) {

@@ -92,6 +92,18 @@
   }
 }
 
+@media (min-width: 1000px) {
+  .menu {
+    top: 12px;
+    right: 12px;
+  }
+
+  .toggle {
+    width: 36px;
+    height: 36px;
+  }
+}
+
 @media (max-width: 640px) {
   .menu {
     top: 15px;

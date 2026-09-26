@@ -341,6 +341,14 @@ button {
   border: 1px solid rgba(237, 85, 98, .34);
   border-radius: 10px;
   box-shadow: 0 8px 22px rgba(0, 0, 0, .2), inset 3px 0 0 var(--accent);
+  transition: opacity 240ms ease, transform 280ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .scene-image-frame:not(.scene-image-frame-has-conversation):has(> .scene-hotspot:hover) > .scene-info-panel {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
 }
 
 .scene-image-frame-has-conversation .scene-info-panel,
@@ -357,7 +365,7 @@ button {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: safe center;
+  justify-content: flex-start;
   gap: 12px;
   padding: clamp(12px, 2.4vw, 28px);
   overflow-y: auto;
@@ -376,30 +384,17 @@ button {
 }
 
 .conversation-overlay [aria-live="polite"] {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
   z-index: 0;
   width: 100%;
-  height: 100%;
+  height: auto;
   max-height: none;
   margin: 0;
   padding: clamp(16px, 2.4vw, 28px);
   border-radius: 14px;
   background: linear-gradient(135deg, rgba(31, 17, 18, .76), rgba(12, 8, 9, .76));
-}
-
-.conversation-overlay .overlayActionList {
-  position: relative;
-  inset: auto;
-  z-index: 1;
-  width: min(100%, 760px);
-  max-width: 760px;
-  max-height: none;
-  margin: 0 auto;
-  padding: 0;
-  overflow: visible;
-  pointer-events: auto;
-  background: transparent;
 }
 
 @keyframes conversationOverlayEnter {
@@ -428,24 +423,33 @@ button {
 }
 
 .scene-hotspot span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
   box-sizing: border-box;
-  max-width: calc(100% - 4px);
-  padding: 2px 3px;
-  font-size: clamp(7px, 1.2vw, 11px);
+  width: max-content;
+  padding: 6px 9px;
+  border: 1px solid rgba(255, 220, 222, 0.35);
+  border-radius: 6px;
+  background: rgba(28, 14, 17, 0.94);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  font-size: clamp(11px, 1vw, 13px);
   font-weight: 700;
-  letter-spacing: 0.04em;
-  line-height: 1.15;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
   opacity: 0;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
   text-align: center;
   text-transform: uppercase;
   text-shadow: 0 2px 5px #000;
-  transform: translateY(3px);
+  transform: translate(calc(-50% + var(--caption-offset, 0px)), calc(-50% + 3px));
   transition: opacity 160ms ease, transform 160ms ease;
 }
 
 .scene-hotspot:hover,
 .scene-hotspot:focus-visible {
+  z-index: 2;
   background: rgba(217, 52, 67, 0.2);
   border-color: rgba(255, 220, 222, 0.8);
   box-shadow: inset 0 0 28px rgba(255, 89, 102, 0.4), 0 0 16px rgba(217, 52, 67, 0.48);
@@ -455,14 +459,14 @@ button {
 .scene-hotspot:hover span,
 .scene-hotspot:focus-visible span {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate(calc(-50% + var(--caption-offset, 0px)), -50%);
 }
 
 .scene-hotspot-living-room-talkToMom {
   top: 3%;
   left: 33%;
   width: 33%;
-  height: 96%;
+  height: 90%;
 }
 
 .scene-hotspot-living-room-relaxOnCouch {
@@ -529,17 +533,17 @@ button {
 }
 
 .scene-hotspot-goLivingRoom {
-  top: 13%;
+  top: 9%;
   left: 0;
-  width: 28%;
-  height: 54%;
+  width: 23.5%;
+  height: 84%;
 }
 
 .scene-hotspot-goKitchen {
-  top: 12%;
+  top: 3%;
   right: 0;
-  width: 23%;
-  height: 59%;
+  width: 21.5%;
+  height: 95%;
 }
 
 .scene-hotspot-back-yard-goKitchen {
@@ -915,6 +919,66 @@ button {
   to { transform: translateX(-50%); }
 }
 
+/* Keep the scene in view on wide, short laptop displays. The image retains
+   its natural ratio so percentage-based hotspots stay aligned with the art. */
+@media (min-width: 1000px) {
+  .game {
+    width: min(1800px, 100%);
+    padding: 6px;
+  }
+
+  .game-panel {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    gap: 10px 14px;
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .game-panel > h1 {
+    grid-column: 1 / -1;
+    min-height: 36px;
+    padding-right: 56px;
+    font-size: 32px;
+    line-height: 36px;
+  }
+
+  .scene-image-frame {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+    width: fit-content;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0 auto;
+  }
+
+  .scene-image {
+    width: auto;
+    max-width: 100%;
+    max-height: max(460px, calc(100dvh - 128px));
+  }
+
+  .scene-info-panel {
+    gap: 14px;
+    padding: 12px;
+  }
+
+  .waitControls {
+    grid-column: 2;
+    margin: 0 auto;
+  }
+
+  .conversation-overlay {
+    padding: 16px;
+  }
+
+  .conversation-overlay [aria-live="polite"] {
+    padding: 14px;
+  }
+}
+
 @media (max-width: 640px) {
   .mainMenuStudioLogo {
     width: 82px;
@@ -1021,6 +1085,10 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .scene-image-frame:has(> .scene-hotspot:hover) > .scene-info-panel {
+    transform: none;
+  }
+
   *, *::before, *::after {
     scroll-behavior: auto !important;
   }

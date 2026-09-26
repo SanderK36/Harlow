@@ -59,10 +59,39 @@ export default function StoryLog({
       return;
     }
 
-    logRef.current.scrollTo({
-      top: logRef.current.scrollHeight,
-      behavior: "smooth",
-    });
+    const log = logRef.current;
+    const start = log.scrollTop;
+    const target = Math.max(0, log.scrollHeight - log.clientHeight);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      log.scrollTop = target;
+      return;
+    }
+    if (Math.abs(target - start) < 1) return;
+
+    const duration = 650;
+    let startedAt: number | undefined;
+    let frame: number;
+    const animate = (now: number) => {
+      startedAt ??= now;
+      const progress = Math.min((now - startedAt) / duration, 1);
+      // A gentle start and finish keep the scroll in step with dialogue fades.
+      const eased = progress * progress * (3 - 2 * progress);
+      log.scrollTop = start + (target - start) * eased;
+      if (progress < 1) frame = window.requestAnimationFrame(animate);
+    };
+    const cancel = () => window.cancelAnimationFrame(frame);
+    frame = window.requestAnimationFrame(animate);
+    log.addEventListener("wheel", cancel, { passive: true });
+    log.addEventListener("touchstart", cancel, { passive: true });
+    log.addEventListener("pointerdown", cancel);
+    log.addEventListener("keydown", cancel);
+    return () => {
+      cancel();
+      log.removeEventListener("wheel", cancel);
+      log.removeEventListener("touchstart", cancel);
+      log.removeEventListener("pointerdown", cancel);
+      log.removeEventListener("keydown", cancel);
+    };
   }, [entries, variant]);
 
   return (

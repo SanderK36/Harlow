@@ -2,6 +2,7 @@
 
 import { useState, useSyncExternalStore } from "react";
 import Image from "next/image";
+import SceneHotspot from "@/components/SceneHotspot";
 
 import GameStatus from "@/components/GameStatus/GameStatus";
 import ActionList from "@/components/ActionList/ActionList";
@@ -129,6 +130,7 @@ export default function Home() {
     momJobConcernHeard,
     questNotification,
     buyItem,
+    useInventoryItem,
     saveGame,
     loadGame,
     loadMostRecentGame,
@@ -382,7 +384,7 @@ export default function Home() {
           </div>
           {sceneHotspots.flatMap((sceneHotspot) =>
             (sceneHotspot.hotspots ?? [undefined]).map((region, index) => (
-            <button
+            <SceneHotspot
               key={`${sceneHotspot.action}-${index}`}
               type="button"
               className={`scene-hotspot scene-hotspot-${sceneHotspot.action} scene-hotspot-${currentScene.id}-${sceneHotspot.action}`}
@@ -393,10 +395,9 @@ export default function Home() {
                 height: `${region.height}%`,
               } : undefined}
               aria-label={hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label}
+              label={hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label}
               onClick={() => handleChoice(sceneHotspot)}
-            >
-              <span>{hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label}</span>
-            </button>
+            />
             ))
           )}
 
@@ -427,6 +428,7 @@ export default function Home() {
         {showInventory && (
           <InventoryWindow
           inventory={playerState.inventory}
+          onUseItem={useInventoryItem}
           onClose={() =>
             setShowInventory(false)
           }
