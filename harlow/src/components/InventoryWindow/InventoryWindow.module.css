@@ -36,6 +36,8 @@
 }
 
 .slot {
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -49,6 +51,76 @@
 .itemVisual {
   position: relative;
   width: 100%;
+}
+
+.itemCard {
+  min-width: 0;
+}
+
+.itemBio {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.itemBio summary {
+  cursor: pointer;
+  color: var(--accent-bright);
+}
+
+.itemBio p {
+  margin: 8px 0 0;
+  overflow-wrap: break-word;
+}
+
+button.slot {
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+button.slot:hover,
+button.slot:focus-visible {
+  background: rgba(169, 22, 36, .2);
+  border-color: var(--accent-bright);
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 2px;
+}
+
+.feedback {
+  width: min(380px, calc(100% - 40px));
+  box-sizing: border-box;
+  padding: 26px;
+  color: var(--text);
+  background: linear-gradient(145deg, #251515, #100a0b);
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, .5);
+}
+
+.feedback[open] {
+  animation: modalEnter .22s ease-out;
+}
+
+.feedback::backdrop {
+  background: rgba(8, 3, 4, .78);
+}
+
+.feedback p {
+  line-height: 1.6;
+}
+
+.dismiss {
+  width: 100%;
+  padding: 12px;
+  color: var(--text);
+  font: inherit;
+  background: rgba(169, 22, 36, .2);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  cursor: pointer;
 }
 
 .itemImage {

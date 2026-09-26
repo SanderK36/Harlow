@@ -130,6 +130,7 @@ export default function Home() {
     momJobConcernHeard,
     questNotification,
     buyItem,
+    useInventoryItem,
     saveGame,
     loadGame,
     loadMostRecentGame,
@@ -427,6 +428,7 @@ export default function Home() {
         {showInventory && (
           <InventoryWindow
           inventory={playerState.inventory}
+          onUseItem={useInventoryItem}
           onClose={() =>
             setShowInventory(false)
           }

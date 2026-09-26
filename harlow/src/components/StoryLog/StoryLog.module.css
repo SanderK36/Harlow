@@ -62,6 +62,8 @@
 }
 
 .conversationLog {
+  scroll-behavior: auto;
+  overflow-anchor: none;
   width: min(100%, 1100px);
   max-height: clamp(220px, 38vh, 360px);
   margin: 14px auto 0;
