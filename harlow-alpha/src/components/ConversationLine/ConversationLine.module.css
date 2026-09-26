@@ -9,8 +9,8 @@
 
 .portrait {
   display: block;
-  width: 58px;
-  height: 72px;
+  width: 68px;
+  height: 84px;
   object-fit: cover;
   border: 1px solid var(--line-strong);
   border-radius: 8px;
@@ -18,7 +18,7 @@
 }
 
 .bubble {
-  max-width: min(600px, calc(100% - 72px));
+  max-width: min(600px, calc(100% - 82px));
   padding: 13px 16px;
   background: rgba(255,255,255,.045);
   border: 1px solid var(--line);
@@ -85,12 +85,12 @@
 
 @media (max-width: 480px) {
   .portrait {
-    width: 46px;
-    height: 58px;
+    width: 54px;
+    height: 68px;
   }
 
   .bubble {
-    max-width: calc(100% - 58px);
+    max-width: calc(100% - 68px);
     padding: 11px 12px;
   }
 

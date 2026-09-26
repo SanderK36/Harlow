@@ -230,6 +230,31 @@ export default function Home() {
       "response" in choice ||
       (!hotspotActions.includes(choice.action) && !choice.hotspots?.length)
   );
+  const hasConversationOverlay = conversation.length > 0;
+  const actionList = (
+    <ActionList
+      title={
+        conversationActive
+          ? "What do you say?"
+          : "What do you want to do?"
+      }
+      choices={choicesWithoutHotspotActions}
+      onChoice={handleChoice}
+      onWalk={() => {
+        setTravelMode("walk");
+        setShowTravel(true);
+      }}
+      onBus={() => {
+        setTravelMode("bus");
+        setShowTravel(true);
+      }}
+      onGoToBusStop={goToBusStop}
+      isBusStop={currentScene.id === "bus-stop"}
+      canTravel={isExteriorScene(currentScene.id)}
+      playerMoney={playerState.money}
+      layout="overlay"
+    />
+  );
 
   if (!(hasStarted ?? resumedSession)) {
     return (
@@ -322,7 +347,7 @@ export default function Home() {
           onInventoryClick={() => setShowInventory(true)}
         />
 
-        <div className={`scene-image-frame scene-image-frame-${currentScene.id}`}>
+        <div className={`scene-image-frame scene-image-frame-${currentScene.id}${hasConversationOverlay ? " scene-image-frame-has-conversation" : ""}${conversationActive ? " scene-image-frame-conversation-active" : ""}`}>
           <img
             key={sceneImage}
             src={sceneImage}
@@ -375,37 +400,21 @@ export default function Home() {
             ))
           )}
 
-          <ActionList
-            title={
-              conversationActive
-                ? "What do you say?"
-                : "What do you want to do?"
-            }
-            choices={choicesWithoutHotspotActions}
-            onChoice={handleChoice}
-            onWalk={() => {
-              setTravelMode("walk");
-              setShowTravel(true);
-            }}
-            onBus={() => {
-              setTravelMode("bus");
-              setShowTravel(true);
-            }}
-            onGoToBusStop={goToBusStop}
-            isBusStop={currentScene.id === "bus-stop"}
-            canTravel={isExteriorScene(currentScene.id)}
-            playerMoney={playerState.money}
-            layout="overlay"
-          />
+          {hasConversationOverlay && (
+            <div
+              className={`conversation-overlay${conversationActive ? " conversation-overlay-active" : ""}`}
+              aria-hidden={!conversationActive}
+            >
+              <StoryLog
+                entries={conversation}
+                title="Conversation"
+                variant="conversation"
+              />
+              {conversationActive && actionList}
+            </div>
+          )}
+          {!hasConversationOverlay && actionList}
         </div>
-
-        {conversationActive && conversation.length > 0 && (
-          <StoryLog
-            entries={conversation}
-            title="Conversation"
-            variant="conversation"
-          />
-        )}
 
         {showStats && (
           <StatsWindow

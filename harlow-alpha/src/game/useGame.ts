@@ -160,9 +160,11 @@ export function useGame() {
 
   function closeConversation() {
     window.setTimeout(() => {
-      setConversation([]);
       setConversationActive(false);
-      setUsedConversationChoices([]);
+        window.setTimeout(() => {
+          setConversation([]);
+          setUsedConversationChoices([]);
+        }, 300);
     }, CONVERSATION_CLOSE_DELAY);
   }
 
