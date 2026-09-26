@@ -361,7 +361,7 @@ button {
   gap: 12px;
   padding: clamp(12px, 2.4vw, 28px);
   overflow-y: auto;
-  background: linear-gradient(0deg, rgba(8, 4, 5, .96), rgba(8, 4, 5, .78) 42%, rgba(8, 4, 5, .28) 72%, transparent);
+  background: linear-gradient(0deg, rgba(8, 4, 5, .84), rgba(8, 4, 5, .68) 42%, rgba(8, 4, 5, .2)75%, transparent);
   opacity: 0;
   pointer-events: none;
   transform: translateY(10px);
@@ -385,7 +385,7 @@ button {
   margin: 0;
   padding: clamp(16px, 2.4vw, 28px);
   border-radius: 14px;
-  background: linear-gradient(135deg, rgba(31, 17, 18, .88), rgba(12, 8, 9, .88));
+  background: linear-gradient(135deg, rgba(31, 17, 18, .76), rgba(12, 8, 9, .76));
 }
 
 .conversation-overlay .overlayActionList {
