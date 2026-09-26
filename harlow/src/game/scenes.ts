@@ -643,12 +643,6 @@ export const livingRoom: Scene = {
       nextScene: "bathroom",
       timeCost: 0,
     },
-    {
-      label: "Go outside",
-      action: "leaveHouse",
-      nextScene: "front-yard",
-      timeCost: 5,
-    },
   ],
 
   conversation: momConversation,
@@ -869,12 +863,6 @@ export const bathroom: Scene = {
       action: "goKitchen",
       nextScene: "kitchen",
       timeCost: 0,
-    },
-    {
-      label: "Go outside",
-      action: "leaveHouse",
-      nextScene: "front-yard",
-      timeCost: 5,
     },
   ],
 };
