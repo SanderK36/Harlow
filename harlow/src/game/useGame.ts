@@ -75,11 +75,13 @@ export function useGame() {
   const [replyPending, setReplyPending] = useState(false);
   const replyTimer = useRef<number | null>(null);
   const questNotificationTimer = useRef<number | null>(null);
+  const locationDiscoveryTimer = useRef<number | null>(null);
   const pendingQuestNotification = useRef<{ message: string; label: string } | null>(null);
 
   useEffect(() => () => {
     if (replyTimer.current !== null) window.clearTimeout(replyTimer.current);
     if (questNotificationTimer.current !== null) window.clearTimeout(questNotificationTimer.current);
+    if (locationDiscoveryTimer.current !== null) window.clearTimeout(locationDiscoveryTimer.current);
   }, []);
 
   function cancelPendingReply() {
@@ -112,7 +114,9 @@ export function useGame() {
 
   function clearQuestNotification() {
     if (questNotificationTimer.current !== null) window.clearTimeout(questNotificationTimer.current);
+    if (locationDiscoveryTimer.current !== null) window.clearTimeout(locationDiscoveryTimer.current);
     questNotificationTimer.current = null;
+    locationDiscoveryTimer.current = null;
     pendingQuestNotification.current = null;
     setQuestNotification(null);
     setQuestNotificationLabel("Quest started");
@@ -360,6 +364,12 @@ export function useGame() {
     if (selectedJob && !job && !jobQuestTarget) {
       setJobQuestTarget(selectedJob);
       showQuestNotification("New quest: Find a Job — follow up on a promising lead.");
+      if (selectedJob === "needle-groove") {
+        locationDiscoveryTimer.current = window.setTimeout(() => {
+          showQuestNotification("Needle & Groove discovered.", "Location discovered");
+          locationDiscoveryTimer.current = null;
+        }, 6800);
+      }
     }
 
     if (CONVERSATION_ACTIONS.has(choice.action)) {
@@ -457,6 +467,9 @@ export function useGame() {
       return false;
     }
     if (!momTalked && action === "relaxOnCouch") return false;
+    if (action === "watchTv") {
+      return currentScene.id === "living-room" && !momTalked;
+    }
 
     if (action === "talkToMom") {
       return currentScene.id === "kitchen"
@@ -615,6 +628,13 @@ export function useGame() {
           (choice.endsConversation || !usedConversationChoices.includes(choice.label))
       )
     : currentScene.choices.filter(isChoiceAvailable);
+  const availableTravelDestinations = [
+    "front-yard",
+    "hospital",
+    ...(jobQuestTarget === "needle-groove" || job === "needle-groove"
+      ? ["needle-and-groove"]
+      : []),
+  ];
 
   return {
     gameState,
@@ -631,8 +651,8 @@ export function useGame() {
     activeCharacter,
     activeChoices,
     travelingTo,
-    walkingChoices: createWalkingChoices(currentScene.id),
-    busChoices: createBusChoices(),
+    walkingChoices: createWalkingChoices(currentScene.id, availableTravelDestinations),
+    busChoices: createBusChoices(availableTravelDestinations),
     showStats,
     setShowStats,
     showInventory,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import SceneHotspot from "@/components/SceneHotspot";
 
@@ -37,6 +37,7 @@ const hotspotLabels: Record<string, string> = {
   pickUpCigarettes: "Cigarettes",
   goLivingRoom: "Living room",
   talkToMom: "Talk to mom",
+  watchTv: "Watch TV",
   relaxOnCouch: "Relax on the couch",
   goKitchen: "Kitchen",
   checkFridge: "Check the fridge",
@@ -101,6 +102,9 @@ export default function Home() {
   const [showCharacterDirectory, setShowCharacterDirectory] = useState(false);
   const [showQuestLog, setShowQuestLog] = useState(false);
   const [showProductionSplash, setShowProductionSplash] = useState(false);
+  const [showOpeningThought, setShowOpeningThought] = useState(false);
+  const [tvNewsLine, setTvNewsLine] = useState<string | null>(null);
+  const openingThoughtTimer = useRef<number | null>(null);
   const {
     gameState,
     playerState,
@@ -141,26 +145,74 @@ export default function Home() {
     notifyMomQuest,
   } = useGame();
   const [travelMode, setTravelMode] = useState<"walk" | "bus">("walk");
+  const [sceneImageEntering, setSceneImageEntering] = useState(false);
+  const sceneImageAnimationFrame = useRef<number | null>(null);
 
   function continueGame() {
     if (loadMostRecentGame()) setHasStarted(true);
   }
 
   function startNewGame() {
+    if (openingThoughtTimer.current !== null) {
+      window.clearTimeout(openingThoughtTimer.current);
+      openingThoughtTimer.current = null;
+    }
     startNewGameSession();
     setHasStarted(true);
     setShowQuestLog(false);
+    setShowOpeningThought(false);
     setShowProductionSplash(true);
   }
 
   function finishProductionSplash() {
     setShowProductionSplash(false);
-    notifyMomQuest();
+    setShowOpeningThought(true);
+    openingThoughtTimer.current = window.setTimeout(() => {
+      setShowOpeningThought(false);
+      openingThoughtTimer.current = null;
+      notifyMomQuest();
+    }, 4200);
   }
+
+  function showTvNews() {
+    if (openingThoughtTimer.current !== null) {
+      window.clearTimeout(openingThoughtTimer.current);
+    }
+    setTvNewsLine("News anchor: Authorities are investigating an incident reported late last night.");
+    openingThoughtTimer.current = window.setTimeout(() => {
+      setTvNewsLine(null);
+      openingThoughtTimer.current = null;
+    }, 3600);
+  }
+
+  useEffect(() => () => {
+    if (openingThoughtTimer.current !== null) {
+      window.clearTimeout(openingThoughtTimer.current);
+    }
+    if (sceneImageAnimationFrame.current !== null) {
+      window.cancelAnimationFrame(sceneImageAnimationFrame.current);
+    }
+  }, []);
+
+  useEffect(() => {
+    document.body.classList.toggle("production-splash-active", showProductionSplash);
+    return () => document.body.classList.remove("production-splash-active");
+  }, [showProductionSplash]);
 
   function returnToMainMenu() {
     clearSessionSave();
     setHasStarted(false);
+  }
+
+  function replaySceneImageEnter() {
+    if (sceneImageAnimationFrame.current !== null) {
+      window.cancelAnimationFrame(sceneImageAnimationFrame.current);
+    }
+    setSceneImageEntering(false);
+    sceneImageAnimationFrame.current = window.requestAnimationFrame(() => {
+      setSceneImageEntering(true);
+      sceneImageAnimationFrame.current = null;
+    });
   }
 
   // Character art has priority, then weather-specific art, then day/night art.
@@ -178,8 +230,8 @@ export default function Home() {
     sanatoriumHotspotActions[currentScene.id] ?? (
     currentScene.id === "living-room"
       ? activeCharacter?.name === "Linda"
-        ? ["talkToMom"]
-        : ["relaxOnCouch"]
+        ? ["talkToMom", ...(momTalked ? [] : ["watchTv"])]
+        : ["relaxOnCouch", ...(momTalked ? [] : ["watchTv"])]
       : currentScene.id === "ethan-room"
       ? ["lookAtDesk"]
       : currentScene.id === "ethan-room-desk"
@@ -189,9 +241,9 @@ export default function Home() {
           : currentScene.id === "kitchen"
               ? [
                   ...(activeCharacter?.name === "Linda" ? ["talkToMom"] : []),
-                  ...(momTalked ? ["checkFridge"] : []),
-                  "makeCoffee",
-                  "goBackYard",
+                  ...(momInKitchen ? [] : momTalked ? ["checkFridge"] : []),
+                  ...(momInKitchen ? [] : ["makeCoffee"]),
+                  ...(momInKitchen ? [] : ["goBackYard"]),
                 ]
           : currentScene.id === "back-yard"
             ? ["goKitchen"]
@@ -252,6 +304,7 @@ export default function Home() {
       (!hotspotActions.includes(choice.action) && !choice.hotspots?.length)
   );
   const hasConversationOverlay = conversation.length > 0;
+  const isBottomPanelVisible = showOpeningThought || tvNewsLine !== null;
   const actionList = (
     <ActionList
       title={
@@ -378,10 +431,10 @@ export default function Home() {
 
         <div className={`scene-image-frame scene-image-frame-${currentScene.id}${hasConversationOverlay ? " scene-image-frame-has-conversation" : ""}${conversationActive ? " scene-image-frame-conversation-active" : ""}`}>
           <img
-            key={sceneImage}
             src={sceneImage}
             alt=""
-            className="scene-image"
+            className={`scene-image${sceneImageEntering ? " scene-image-enter" : ""}`}
+            onLoad={replaySceneImageEnter}
           />
           <div className="scene-info-stack">
             <div className="scene-info-panel">
@@ -417,7 +470,15 @@ export default function Home() {
               </div>
             )}
           </div>
-          {sceneHotspots.flatMap((sceneHotspot) =>
+          {isBottomPanelVisible && (
+            <div className="opening-thought" role="status">
+              <span>{showOpeningThought ? "ETHAN — INNER THOUGHT" : "TV NEWS"}</span>
+              <p>{showOpeningThought
+                ? "What the fuck happened last night? I gotta talk to mom, maybe she knows something."
+                : tvNewsLine}</p>
+            </div>
+          )}
+          {!isBottomPanelVisible && sceneHotspots.flatMap((sceneHotspot) =>
             (sceneHotspot.hotspots ?? [undefined]).map((region, index) => (
             <SceneHotspot
               key={`${sceneHotspot.action}-${index}`}
@@ -431,7 +492,9 @@ export default function Home() {
               } : undefined}
               aria-label={hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label}
               label={hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label}
-              onClick={() => handleChoice(sceneHotspot)}
+              onClick={() => sceneHotspot.action === "watchTv"
+                ? showTvNews()
+                : handleChoice(sceneHotspot)}
             />
             ))
           )}
@@ -449,7 +512,7 @@ export default function Home() {
               {conversationActive && actionList}
             </div>
           )}
-          {!hasConversationOverlay && actionList}
+          {!hasConversationOverlay && !isBottomPanelVisible && actionList}
         </div>
 
         {showStats && (

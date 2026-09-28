@@ -66,16 +66,21 @@ export function isExteriorScene(sceneId: string): boolean {
   // Used by the page to decide whether to show travel controls.
   return (
     sceneId === "bus-stop" ||
-    exteriorDestinations.some(
-      (destination) => destination.id === sceneId
-    )
+    exteriorDestinations.some((destination) => destination.id === sceneId)
   );
 }
 
-export function createWalkingChoices(originId: string): Choice[] {
+export function createWalkingChoices(
+  originId: string,
+  availableDestinationIds: readonly string[]
+): Choice[] {
   // Generates choices instead of repeating travel links in every exterior scene.
   return exteriorDestinations
-    .filter((destination) => destination.id !== originId)
+    .filter(
+      (destination) =>
+        destination.id !== originId &&
+        availableDestinationIds.includes(destination.id)
+    )
     .map((destination) => ({
       label: `Walk to ${destination.label} (${destination.walkMinutes}min)`,
       action: `walkTo${destination.id}`,
@@ -85,9 +90,11 @@ export function createWalkingChoices(originId: string): Choice[] {
     }));
 }
 
-export function createBusChoices(): Choice[] {
+export function createBusChoices(availableDestinationIds: readonly string[]): Choice[] {
   // Bus pricing and travel time are defined here for every destination.
-  return exteriorDestinations.map((destination) => ({
+  return exteriorDestinations
+    .filter((destination) => availableDestinationIds.includes(destination.id))
+    .map((destination) => ({
     label: `Take the bus to ${destination.label} ($7 & 10min)`,
     action: `takeBusTo${destination.id}`,
     nextScene: destination.id,
@@ -95,7 +102,7 @@ export function createBusChoices(): Choice[] {
     travel: true,
     effects: { money: -7 },
     requirements: { money: 7 },
-  }));
+    }));
 }
 
 // ----------------------------------------
@@ -108,12 +115,8 @@ export const hallway: Scene = {
   id: "hallway",
 
   story: [
-    narration(
-      "The rain taps softly against the windows."
-    ),
-    thought(
-      "I should probably get going."
-    ),
+    narration("The rain taps softly against the windows."),
+    thought("I should probably get going."),
   ],
 
   location: "Home",
@@ -196,11 +199,9 @@ export const lookingAroundHouse: Scene = {
 
   story: [
     narration(
-      "You spend some time looking around the house. Everything seems normal."
+      "You spend some time looking around the house. Everything seems normal.",
     ),
-    thought(
-      "A lot of memories in here..."
-    ),
+    thought("A lot of memories in here..."),
   ],
 
   location: "Home",
@@ -238,12 +239,8 @@ export const madeCoffee: Scene = {
   id: "made-coffee",
 
   story: [
-    narration(
-      "You felt a bit drowsy, so you made yourself some coffee."
-    ),
-    thought(
-      "Just what I needed."
-    ),
+    narration("You felt a bit drowsy, so you made yourself some coffee."),
+    thought("Just what I needed."),
   ],
 
   choices: [
@@ -281,12 +278,12 @@ export const frontYard: Scene = {
     day: "./images/locations/home/homeDayTime.jpg",
     night: "./images/locations/home/HomeNightTime.jpg",
     weather: {
-      "Rainy": "./images/locations/home/homeOutsideRainy.png",
+      Rainy: "./images/locations/home/homeOutsideRainy.png",
       "Heavy rain": "./images/locations/home/homeOutsideRainy.png",
-      "Thunderstorm": "./images/locations/home/homeThunderstorm.png",
+      Thunderstorm: "./images/locations/home/homeThunderstorm.png",
     },
   },
-  
+
   choices: [
     {
       label: "Enter the garage",
@@ -319,7 +316,9 @@ export const lightPole: Scene = {
   id: "light-pole",
   story: [
     narration("Three weathered hiring flyers are stapled to the light pole."),
-    thought("I feel bad that mom is paying for everything, i need to get a job to help her"),
+    thought(
+      "I feel bad that mom is paying for everything, i need to get a job to help her",
+    ),
   ],
   location: "Home front yard",
   image: {
@@ -327,10 +326,30 @@ export const lightPole: Scene = {
     night: "./images/locations/home/lightPoleNight.png",
   },
   choices: [
-    { label: "Read the Needle & Groove flyer", action: "chooseNeedleGrooveJob", nextScene: "light-pole", timeCost: 0 },
-    { label: "Read the gas station flyer", action: "chooseGasStationJob", nextScene: "light-pole", timeCost: 0 },
-    { label: "Read the scrapyard flyer", action: "chooseScrapyardJob", nextScene: "light-pole", timeCost: 0 },
-    { label: "Step away from the light pole", action: "leaveLightPole", nextScene: "front-yard", timeCost: 0 },
+    {
+      label: "Read the Needle & Groove flyer",
+      action: "chooseNeedleGrooveJob",
+      nextScene: "light-pole",
+      timeCost: 0,
+    },
+    {
+      label: "Read the gas station flyer",
+      action: "chooseGasStationJob",
+      nextScene: "light-pole",
+      timeCost: 0,
+    },
+    {
+      label: "Read the scrapyard flyer",
+      action: "chooseScrapyardJob",
+      nextScene: "light-pole",
+      timeCost: 0,
+    },
+    {
+      label: "Step away from the light pole",
+      action: "leaveLightPole",
+      nextScene: "front-yard",
+      timeCost: 0,
+    },
   ],
 };
 
@@ -341,15 +360,14 @@ export const lightPole: Scene = {
 export const backYard: Scene = {
   id: "back-yard",
 
-  story: [
-    narration(
-      "You walk around to the backyard."
-    ),
-  ],
-  
+  story: [narration("You walk around to the backyard.")],
+
   thoughts: [
-    { until: 1080, text: "",},
-    { from: 1080, text: "I always feel like i'm being watched being out here this late...", },
+    { until: 1080, text: "" },
+    {
+      from: 1080,
+      text: "I always feel like i'm being watched being out here this late...",
+    },
   ],
   location: "Home back yard",
 
@@ -357,9 +375,9 @@ export const backYard: Scene = {
     day: "./images/locations/home/homeBackyardDaytime.jpg",
     night: "./images/locations/home/homeBackyardNightTime.jpg",
     weather: {
-      "Rainy": "./images/locations/home/homeBackyardRainy.png",
+      Rainy: "./images/locations/home/homeBackyardRainy.png",
       "Heavy rain": "./images/locations/home/homeBackyardRainy.png",
-      "Thunderstorm": "./images/locations/home/homeBackyardThunderstorm.png",
+      Thunderstorm: "./images/locations/home/homeBackyardThunderstorm.png",
     },
   },
 
@@ -379,18 +397,12 @@ export const backYard: Scene = {
   ],
 };
 
-
 // ----------------------------------------
 // CONVERSATIONS
 // ----------------------------------------
 
 export const momConversation: Conversation = {
-  opening: [
-    npc(
-      "Linda",
-      "Morning, honey."
-    ),
-  ],
+  opening: [npc("Linda", "Morning, honey.")],
 
   choices: [
     {
@@ -398,10 +410,7 @@ export const momConversation: Conversation = {
 
       response: [
         ethan("Morning, Mom."),
-        npc(
-          "Linda",
-          "You look tired. Did you sleep alright?"
-        ),
+        npc("Linda", "You look tired. Did you sleep alright?"),
       ],
     },
 
@@ -409,13 +418,8 @@ export const momConversation: Conversation = {
       label: "Did you sleep well?",
 
       response: [
-        ethan(
-          "Did you sleep well?"
-        ),
-        npc(
-          "Linda",
-          "I slept alright. Just a little restless."
-        ),
+        ethan("Did you sleep well?"),
+        npc("Linda", "I slept alright. Just a little restless."),
       ],
     },
 
@@ -426,7 +430,7 @@ export const momConversation: Conversation = {
         ethan("How's it going at work?"),
         npc(
           "Linda",
-          "Honestly, not great. There haven't been enough shifts lately, and everything's gotten so expensive."
+          "Honestly, not great. There haven't been enough shifts lately, and everything's gotten so expensive.",
         ),
       ],
     },
@@ -438,7 +442,7 @@ export const momConversation: Conversation = {
         ethan("I'll find a way to help."),
         npc(
           "Linda",
-          "You're a good kid. Just be careful, and don't take the first thing that comes along."
+          "You're a good kid. Just be careful, and don't take the first thing that comes along.",
         ),
       ],
     },
@@ -447,13 +451,8 @@ export const momConversation: Conversation = {
       label: "I'm heading out.",
 
       response: [
-        ethan(
-          "I'm heading out."
-        ),
-        npc(
-          "Linda",
-          "Alright, honey. Be careful out there."
-        ),
+        ethan("I'm heading out."),
+        npc("Linda", "Alright, honey. Be careful out there."),
       ],
       endsConversation: true,
     },
@@ -461,15 +460,7 @@ export const momConversation: Conversation = {
     {
       label: "Nevermind.",
 
-      response: [
-        ethan(
-          "Nevermind. It was nothing."
-        ),
-        npc(
-          "Linda",
-          "Alright."
-        ),
-      ],
+      response: [ethan("Nevermind. It was nothing."), npc("Linda", "Alright.")],
       endsConversation: true,
     },
   ],
@@ -479,7 +470,7 @@ export const momDeathConversation: Conversation = {
   opening: [
     npc(
       "Linda",
-      "Did you hear about Mrs. Elrod? The sheriff found her at home this morning. She lived a few houses down. They don't know what happened yet."
+      "Did you hear about Mrs. Elrod? The sheriff found her at home this morning. She lived a few houses down. They don't know what happened yet.",
     ),
   ],
   choices: [
@@ -487,28 +478,40 @@ export const momDeathConversation: Conversation = {
       label: "They found her dead?",
       response: [
         ethan("They found her dead?"),
-        npc("Linda", "That's what the sheriff said. He asked when I'd last seen her. It had been a few days."),
+        npc(
+          "Linda",
+          "That's what the sheriff said. He asked when I'd last seen her. It had been a few days.",
+        ),
       ],
     },
     {
       label: "Did you know her well?",
       response: [
         ethan("Did you know her well?"),
-        npc("Linda", "Not really. We'd talk now and then, usually when she was out getting the mail."),
+        npc(
+          "Linda",
+          "Not really. We'd talk now and then, usually when she was out getting the mail.",
+        ),
       ],
     },
     {
       label: "Do they know what happened?",
       response: [
         ethan("Do they know what happened?"),
-        npc("Linda", "No. They're still trying to piece things together. I don't want to guess."),
+        npc(
+          "Linda",
+          "No. They're still trying to piece things together. I don't want to guess.",
+        ),
       ],
     },
     {
       label: "I'm sorry, Mom. That's awful.",
       response: [
         ethan("I'm sorry, Mom. That's awful."),
-        npc("Linda", "It is. She was alone in that house so much. Just... be careful, alright? And let the sheriff handle it."),
+        npc(
+          "Linda",
+          "It is. She was alone in that house so much. Just... be careful, alright? And let the sheriff handle it.",
+        ),
       ],
       completesMomQuest: true,
     },
@@ -521,31 +524,20 @@ export const momDeathConversation: Conversation = {
 };
 
 export const johnnyConversation: Conversation = {
-  opening: [
-    npc(
-      "Johnny",
-      "Hey. Looking for something?"
-    ),
-  ],
+  opening: [npc("Johnny", "Hey. Looking for something?")],
   choices: [
     {
       label: "Just browsing.",
       response: [
         ethan("Yeah. Just looking around."),
-        npc(
-          "Johnny",
-          "Take your time."
-        ),
+        npc("Johnny", "Take your time."),
       ],
     },
     {
       label: "Do you own this place?",
       response: [
         ethan("You own the shop?"),
-        npc(
-          "Johnny",
-          "Sure do. Been running it for a few years now."
-        ),
+        npc("Johnny", "Sure do. Been running it for a few years now."),
       ],
     },
     {
@@ -555,7 +547,10 @@ export const johnnyConversation: Conversation = {
       jobOffer: "needle-groove",
       response: [
         ethan("I'm looking for work."),
-        npc("Johnny", "I can use a hand with stock and the counter. Welcome aboard—stick close and you'll hear plenty about this town."),
+        npc(
+          "Johnny",
+          "I can use a hand with stock and the counter. Welcome aboard—stick close and you'll hear plenty about this town.",
+        ),
       ],
     },
     {
@@ -563,64 +558,40 @@ export const johnnyConversation: Conversation = {
       requiresJob: "needle-groove",
       response: [
         ethan("Heard anything interesting?"),
-        npc("Johnny", "Always. Start with the diner after lunch—people there talk louder than they think."),
+        npc(
+          "Johnny",
+          "Always. Start with the diner after lunch—people there talk louder than they think.",
+        ),
       ],
     },
     {
       label: "Nevermind.",
-      response: [
-        ethan("Nevermind."),
-        npc(
-          "Johnny",
-          "Alright."
-        ),
-      ],
+      response: [ethan("Nevermind."), npc("Johnny", "Alright.")],
       endsConversation: true,
     },
   ],
 };
 
 export const walterConversation: Conversation = {
-  opening: [
-    npc(
-      "Walter",
-      "Can I help you?"
-    ),
-  ],
+  opening: [npc("Walter", "Can I help you?")],
   choices: [
     {
       label: "I'm looking for some information.",
       response: [
-        ethan(
-          "I'm looking for some information."
-        ),
-        npc(
-          "Walter",
-          "What kind of information?"
-        ),
+        ethan("I'm looking for some information."),
+        npc("Walter", "What kind of information?"),
       ],
     },
     {
       label: "Has anything happened around town?",
       response: [
-        ethan(
-          "Has anything happened around town lately?"
-        ),
-        npc(
-          "Walter",
-          "Nothing you need to concern yourself with."
-        ),
+        ethan("Has anything happened around town lately?"),
+        npc("Walter", "Nothing you need to concern yourself with."),
       ],
     },
     {
       label: "Nevermind.",
-      response: [
-        ethan("Nevermind."),
-        npc(
-          "Walter",
-          "Alright."
-        ),
-      ],
+      response: [ethan("Nevermind."), npc("Walter", "Alright.")],
       endsConversation: true,
     },
   ],
@@ -637,7 +608,7 @@ export const livingRoom: Scene = {
     thought("It's quiet in here.", { until: 420 }),
     thought("It's quiet in here.", { from: 420, until: 540 }),
     thought("Mom is here.", { from: 540, until: 1080 }),
-    thought("It's quiet in here when Mom's at work.", { from: 1080 })
+    thought("It's quiet in here when Mom's at work.", { from: 1080 }),
   ],
 
   location: "Living room",
@@ -655,6 +626,13 @@ export const livingRoom: Scene = {
   ],
 
   choices: [
+    {
+      label: "Watch the TV",
+      action: "watchTv",
+      nextScene: "living-room",
+      timeCost: 0,
+      hotspots: [{ left: 64, top: 34, width: 12, height: 16 }],
+    },
     {
       label: "Relax on the couch",
       action: "relaxOnCouch",
@@ -694,7 +672,9 @@ export const livingRoom: Scene = {
 export const livingRoomRelaxing: Scene = {
   id: "living-room-relaxing",
   story: [
-    narration("You sink into the couch and let the noise of the day fade away."),
+    narration(
+      "You sink into the couch and let the noise of the day fade away.",
+    ),
     thought("I needed that."),
   ],
   location: "Living room",
@@ -720,12 +700,8 @@ export const kitchen: Scene = {
   id: "kitchen",
 
   story: [
-    narration(
-      "You step into the kitchen."
-    ),
-    thought(
-      "The house is quiet."
-    ),
+    narration("You step into the kitchen."),
+    thought("The house is quiet."),
   ],
 
   location: "Home",
@@ -793,22 +769,26 @@ export const kitchen: Scene = {
 kitchen.conversation = momConversation;
 
 export const margaretConversation: Conversation = {
-  opening: [
-    npc("Margaret", "Take a seat anywhere you like, hon."),
-  ],
+  opening: [npc("Margaret", "Take a seat anywhere you like, hon.")],
   choices: [
     {
       label: "How's business today?",
       response: [
         ethan("How's business today?"),
-        npc("Margaret", "Quiet so far. That usually means the coffee gets cold before it gets poured."),
+        npc(
+          "Margaret",
+          "Quiet so far. That usually means the coffee gets cold before it gets poured.",
+        ),
       ],
     },
     {
       label: "Anything happening around town?",
       response: [
         ethan("Anything happening around town?"),
-        npc("Margaret", "Folks have been talking, but nobody's saying much worth repeating."),
+        npc(
+          "Margaret",
+          "Folks have been talking, but nobody's saying much worth repeating.",
+        ),
       ],
     },
     {
@@ -893,12 +873,8 @@ export const bathroom: Scene = {
   id: "bathroom",
 
   story: [
-    narration(
-      "You step into the bathroom."
-    ),
-    thought(
-      "Nothing unusual."
-    ),
+    narration("You step into the bathroom."),
+    thought("Nothing unusual."),
   ],
 
   location: "Home",
@@ -1120,7 +1096,6 @@ export const garageBenchEmpty: Scene = {
 // SCENE THOUGHT
 // ----------------------------------------
 
-
 // ----------------------------------------
 // NEEDLE & GROOVE
 // ----------------------------------------
@@ -1136,9 +1111,9 @@ export const needleAndGroove: Scene = {
     day: "./images/locations/NeedleGroove/vinylShopDay.jpg",
     night: "./images/locations/NeedleGroove/vinylShopNight.jpg",
     weather: {
-      "Rainy": "./images/locations/NeedleGroove/vinylShopRainy.png",
+      Rainy: "./images/locations/NeedleGroove/vinylShopRainy.png",
       "Heavy rain": "./images/locations/NeedleGroove/vinylShopRainy.png",
-      "Thunderstorm": "./images/locations/NeedleGroove/vinylShopRainy.png",
+      Thunderstorm: "./images/locations/NeedleGroove/vinylShopRainy.png",
     },
   },
   choices: [
@@ -1247,12 +1222,18 @@ export const rayConversation: Conversation = {
       jobOffer: "gas-station",
       response: [
         ethan("I'm looking for work."),
-        npc("Ray", "I could use reliable help. You're hired—and anything from the shop is half price while you're with us."),
+        npc(
+          "Ray",
+          "I could use reliable help. You're hired—and anything from the shop is half price while you're with us.",
+        ),
       ],
     },
     {
       label: "Just looking around.",
-      response: [ethan("Just looking around."), npc("Ray", "No rush. Let me know if you need anything.")],
+      response: [
+        ethan("Just looking around."),
+        npc("Ray", "No rush. Let me know if you need anything."),
+      ],
     },
     {
       label: "Never mind.",
@@ -1266,12 +1247,8 @@ export const gasStation: Scene = {
   id: "gas-station",
 
   story: [
-    narration(
-      "You make your way to the gas station."
-    ),
-    thought(
-      "The place looks quiet."
-    ),
+    narration("You make your way to the gas station."),
+    thought("The place looks quiet."),
   ],
 
   location: "Gas Station",
@@ -1303,7 +1280,7 @@ export const gasStationInside: Scene = {
   story: [
     narration("You step inside the gas station."),
     thought("Ray is here", { from: 540, until: 1380 }),
-    thought("It's quiet in here.", { from: 540 })
+    thought("It's quiet in here.", { from: 540 }),
   ],
 
   location: "Gas Station Inside",
@@ -1312,7 +1289,7 @@ export const gasStationInside: Scene = {
     day: "./images/locations/gas_station/GasStationInsideDay.png",
     night: "./images/locations/gas_station/GasStationInsideNight.png",
   },
-  
+
   characters: [
     {
       name: "Ray Mercer",
@@ -1358,28 +1335,40 @@ export const gasStationInside: Scene = {
 
 export const tommyConversation: Conversation = {
   opening: [
-    npc("Tommy", "Ethan! Give me a second to turn this down. This solo deserves better than these speakers."),
+    npc(
+      "Tommy",
+      "Ethan! Give me a second to turn this down. This solo deserves better than these speakers.",
+    ),
   ],
   choices: [
     {
       label: "Still playing guitar?",
       response: [
         ethan("Still playing guitar, or just deafening everyone at work?"),
-        npc("Tommy", "Both. Got a new metal riff that'll wake the whole street. Come over sometime and I'll play it for you."),
+        npc(
+          "Tommy",
+          "Both. Got a new metal riff that'll wake the whole street. Come over sometime and I'll play it for you.",
+        ),
       ],
     },
     {
       label: "When do you get off work?",
       response: [
         ethan("When do you get off work?"),
-        npc("Tommy", "I'm here from 08:00 to 17:00. Nine hours of engines, grease, and complaints about my music."),
+        npc(
+          "Tommy",
+          "I'm here from 08:00 to 17:00. Nine hours of engines, grease, and complaints about my music.",
+        ),
       ],
     },
     {
       label: "Things have been rough lately.",
       response: [
         ethan("Things have been rough lately. I might need your help."),
-        npc("Tommy", "Hey, I'm listening. Whatever it is, you don't have to face it alone. Call me and I'll be there."),
+        npc(
+          "Tommy",
+          "Hey, I'm listening. Whatever it is, you don't have to face it alone. Call me and I'll be there.",
+        ),
         ethan("Thanks, man. That means a lot."),
       ],
     },
@@ -1387,7 +1376,10 @@ export const tommyConversation: Conversation = {
       label: "I'll let you get back to work.",
       response: [
         ethan("I'll let you get back to work."),
-        npc("Tommy", "Yeah, this engine won't fix itself. Catch you later, brother."),
+        npc(
+          "Tommy",
+          "Yeah, this engine won't fix itself. Catch you later, brother.",
+        ),
       ],
     },
     {
@@ -1401,9 +1393,16 @@ export const tommyConversation: Conversation = {
 export const gasStationGarage: Scene = {
   id: "gas-station-garage",
   story: [
-    narration("You step into the gas station garage. The air smells of oil and rubber."),
-    thought("Tommy's working, His leather jacket hangs beside the radio blasting metal.", { from: 480, until: 1020 }),
-    thought("Tommy's off work. It's strange hearing this place without his music."),
+    narration(
+      "You step into the gas station garage. The air smells of oil and rubber.",
+    ),
+    thought(
+      "Tommy's working, His leather jacket hangs beside the radio blasting metal.",
+      { from: 480, until: 1020 },
+    ),
+    thought(
+      "Tommy's off work. It's strange hearing this place without his music.",
+    ),
   ],
   location: "Gas Station Garage",
   image: {
@@ -1420,9 +1419,24 @@ export const gasStationGarage: Scene = {
   ],
   conversation: tommyConversation,
   choices: [
-    { label: "Talk to Tommy", action: "talkToTommy", nextScene: "gas-station-garage", timeCost: 0 },
-    { label: "Go to the shop", action: "enterGasStation", nextScene: "gas-station-inside", timeCost: 1 },
-    { label: "Go outside", action: "leaveGasStationGarage", nextScene: "gas-station", timeCost: 1 },
+    {
+      label: "Talk to Tommy",
+      action: "talkToTommy",
+      nextScene: "gas-station-garage",
+      timeCost: 0,
+    },
+    {
+      label: "Go to the shop",
+      action: "enterGasStation",
+      nextScene: "gas-station-inside",
+      timeCost: 1,
+    },
+    {
+      label: "Go outside",
+      action: "leaveGasStationGarage",
+      nextScene: "gas-station",
+      timeCost: 1,
+    },
   ],
 };
 
@@ -1432,21 +1446,30 @@ export const gasStationGarage: Scene = {
 
 export const bigRoyConversation: Conversation = {
   opening: [
-    npc("Big Roy", "Morning! Watch your step—this place bites, but only if you look tasty."),
+    npc(
+      "Big Roy",
+      "Morning! Watch your step—this place bites, but only if you look tasty.",
+    ),
   ],
   choices: [
     {
       label: "Busy day?",
       response: [
         ethan("Busy day?"),
-        npc("Big Roy", "Always. Metal never takes a day off, and neither does my coffee cup."),
+        npc(
+          "Big Roy",
+          "Always. Metal never takes a day off, and neither does my coffee cup.",
+        ),
       ],
     },
     {
       label: "What do you do here?",
       response: [
         ethan("What do you do here?"),
-        npc("Big Roy", "I sort the good junk from the bad junk. The trick is knowing they're both somebody's treasure."),
+        npc(
+          "Big Roy",
+          "I sort the good junk from the bad junk. The trick is knowing they're both somebody's treasure.",
+        ),
       ],
     },
     {
@@ -1456,7 +1479,10 @@ export const bigRoyConversation: Conversation = {
       jobOffer: "scrapyard",
       response: [
         ethan("I'm looking for work."),
-        npc("Big Roy", "Then grab this crowbar and welcome aboard! It'll open stubborn locks, and it's a fine argument in a pinch."),
+        npc(
+          "Big Roy",
+          "Then grab this crowbar and welcome aboard! It'll open stubborn locks, and it's a fine argument in a pinch.",
+        ),
       ],
     },
     {
@@ -1499,7 +1525,10 @@ export const scrapyardInside: Scene = {
   id: "scrapyard-inside",
   story: [
     narration("You step between the wrecked cars and twisted sheets of metal."),
-    thought("Big Roy is sorting through a stack of old parts.", { from: 420, until: 900 }),
+    thought("Big Roy is sorting through a stack of old parts.", {
+      from: 420,
+      until: 900,
+    }),
     thought("Every sound carries farther than it should."),
   ],
   location: "Scrapyard",
@@ -1568,9 +1597,7 @@ export const scrapyardDesk: Scene = {
 
 export const scrapyardDeskEmpty: Scene = {
   id: "scrapyard-desk-empty",
-  story: [
-    narration("The desk is bare now."),
-  ],
+  story: [narration("The desk is bare now.")],
   location: "Scrapyard",
   image: {
     day: "./images/locations/scrapyard/scrapyardDesk.png",
@@ -1601,9 +1628,11 @@ export const policeStation: Scene = {
     day: "./images/locations/police_station/police_station_day.jpg",
     night: "./images/locations/police_station/police_station_night.jpg",
     weather: {
-      "Rainy": "./images/locations/police_station/policeStationOutsideRainy.png",
-      "Heavy rain": "./images/locations/police_station/policeStationOutsideRainy.png",
-      "Thunderstorm": "./images/locations/police_station/policeStationOutsideRainy.png",
+      Rainy: "./images/locations/police_station/policeStationOutsideRainy.png",
+      "Heavy rain":
+        "./images/locations/police_station/policeStationOutsideRainy.png",
+      Thunderstorm:
+        "./images/locations/police_station/policeStationOutsideRainy.png",
     },
   },
   choices: [
@@ -1650,7 +1679,7 @@ export const sheriffOffice: Scene = {
     narration("You step into the sheriff's office."),
     thought("The Sheriff is here.", { from: 460, until: 960 }),
     thought("No one is here at the moment.", { from: 960, until: 1080 }),
-    thought("I shouldn't be here this late.", { from: 1080}),
+    thought("I shouldn't be here this late.", { from: 1080 }),
   ],
 
   location: "Sheriff's office",
@@ -1659,13 +1688,13 @@ export const sheriffOffice: Scene = {
     day: "./images/locations/police_station/walterOfficeDay.png",
     night: "./images/locations/police_station/walterOfficeNight.png",
   },
-  
+
   characters: [
     {
       name: "Walter Harrington",
       from: 480,
       until: 960,
-      image: "./images/locations/police_station/WalterHarringtonOffice.jpg"
+      image: "./images/locations/police_station/WalterHarringtonOffice.jpg",
     },
     {
       name: "Walter Harrington",
@@ -1711,9 +1740,9 @@ export const cementary: Scene = {
     day: "./images/locations/cementary/cementaryDay.png",
     night: "./images/locations/cementary/cementaryNight.png",
     weather: {
-      "Rainy": "./images/locations/Cementary/cementaryRain.png",
+      Rainy: "./images/locations/Cementary/cementaryRain.png",
       "Heavy rain": "./images/locations/Cementary/cementaryRain.png",
-      "Thunderstorm": "./images/locations/Cementary/cementaryLightning.png",
+      Thunderstorm: "./images/locations/Cementary/cementaryLightning.png",
     },
   },
   choices: [
@@ -1770,9 +1799,10 @@ export const cementaryBackside: Scene = {
     day: "./images/locations/cementary/cementaryBacksideDay.png",
     night: "./images/locations/cementary/cementaryBacksideNight.png",
     weather: {
-      "Rainy": "./images/locations/Cementary/cementaryBacksideRain.png",
+      Rainy: "./images/locations/Cementary/cementaryBacksideRain.png",
       "Heavy rain": "./images/locations/Cementary/cementaryBacksideRain.png",
-      "Thunderstorm": "./images/locations/Cementary/cementaryBacksideLightning.png",
+      Thunderstorm:
+        "./images/locations/Cementary/cementaryBacksideLightning.png",
     },
   },
   choices: [
@@ -1876,10 +1906,7 @@ export const earlConversation: Conversation = {
     },
     {
       label: "Nevermind.",
-      response: [
-        ethan("Nevermind."),
-        npc("Earl", "That's what I thought."),
-      ],
+      response: [ethan("Nevermind."), npc("Earl", "That's what I thought.")],
       endsConversation: true,
     },
   ],
@@ -1956,9 +1983,7 @@ export const busStop: Scene = {
 
 export const ethanRoomDeskEmpty: Scene = {
   id: "ethan-room-desk-empty",
-  story: [
-    narration("You pick up the pack of cigarettes from your desk."),
-  ],
+  story: [narration("You pick up the pack of cigarettes from your desk.")],
   location: "Ethan's room",
   image: {
     day: "./images/locations/home/ethanDeskEmptyDay.png",
@@ -1989,7 +2014,7 @@ export const motel: Scene = {
     day: "./images/locations/motel/motelOutsideDay.png",
     night: "./images/locations/motel/motelOutsideNight.png",
     weather: {
-      "Thunderstorm": "./images/locations/motel/motelOutsideThunder.png",
+      Thunderstorm: "./images/locations/motel/motelOutsideThunder.png",
     },
   },
   choices: [
@@ -2094,7 +2119,9 @@ export const diner: Scene = {
 export const dinerInside: Scene = {
   id: "diner-inside",
   story: [
-    narration("You step into the diner. The air smells of coffee and fried food."),
+    narration(
+      "You step into the diner. The air smells of coffee and fried food.",
+    ),
     thought("Margaret is working the floor.", { from: 660, until: 900 }),
     thought("The diner is quiet at this hour."),
   ],
@@ -2135,7 +2162,9 @@ export const dinerInside: Scene = {
 export const sanatorium: Scene = {
   id: "sanatorium",
   story: [
-    narration("You arrive at the sanatorium. The building looms ahead, its windows silent."),
+    narration(
+      "You arrive at the sanatorium. The building looms ahead, its windows silent.",
+    ),
     thought("Something about this place makes me hesitate."),
   ],
   location: "Sanatorium",
@@ -2144,7 +2173,12 @@ export const sanatorium: Scene = {
     night: "./images/locations/sanatorium/sanatoriumNight.png",
   },
   choices: [
-    { label: "Approach the entrance", action: "approachSanatorium", nextScene: "sanatorium-entrance", timeCost: 2 },
+    {
+      label: "Approach the entrance",
+      action: "approachSanatorium",
+      nextScene: "sanatorium-entrance",
+      timeCost: 2,
+    },
   ],
 };
 
@@ -2160,15 +2194,27 @@ export const sanatoriumEntrance: Scene = {
     night: "./images/locations/sanatorium/sanatoriumUpCloseNight.png",
   },
   choices: [
-    { label: "Go inside", action: "enterSanatorium", nextScene: "sanatorium-main-floor", timeCost: 1 },
-    { label: "Return to the road", action: "leaveSanatoriumEntrance", nextScene: "sanatorium", timeCost: 2 },
+    {
+      label: "Go inside",
+      action: "enterSanatorium",
+      nextScene: "sanatorium-main-floor",
+      timeCost: 1,
+    },
+    {
+      label: "Return to the road",
+      action: "leaveSanatoriumEntrance",
+      nextScene: "sanatorium",
+      timeCost: 2,
+    },
   ],
 };
 
 export const sanatoriumMainFloor: Scene = {
   id: "sanatorium-main-floor",
   story: [
-    narration("You step onto the main floor. Your footsteps echo through the sanatorium."),
+    narration(
+      "You step onto the main floor. Your footsteps echo through the sanatorium.",
+    ),
     thought("Every sound seems louder in here."),
   ],
   location: "Sanatorium",
@@ -2177,8 +2223,18 @@ export const sanatoriumMainFloor: Scene = {
     night: "./images/locations/sanatorium/sanatoriumMainFloorNight.png",
   },
   choices: [
-    { label: "Explore the hallway", action: "enterSanatoriumHallway", nextScene: "sanatorium-hallway", timeCost: 1 },
-    { label: "Go outside", action: "leaveSanatorium", nextScene: "sanatorium-entrance", timeCost: 1 },
+    {
+      label: "Explore the hallway",
+      action: "enterSanatoriumHallway",
+      nextScene: "sanatorium-hallway",
+      timeCost: 1,
+    },
+    {
+      label: "Go outside",
+      action: "leaveSanatorium",
+      nextScene: "sanatorium-entrance",
+      timeCost: 1,
+    },
   ],
 };
 
@@ -2194,10 +2250,30 @@ export const sanatoriumHallway: Scene = {
     night: "./images/locations/sanatorium/sanatoriumHallwayNight.png",
   },
   choices: [
-    { label: "Enter the first room", action: "enterSanatoriumRoom1", nextScene: "sanatorium-room-1", timeCost: 1 },
-    { label: "Enter the second room", action: "enterSanatoriumRoom2", nextScene: "sanatorium-room-2", timeCost: 1 },
-    { label: "Go outside", action: "leaveSanatoriumHallway", nextScene: "sanatorium-entrance", timeCost: 1 },
-    { label: "Back to main floor", action: "returnToSanatoriumMainFloor", nextScene: "sanatorium-main-floor", timeCost: 1 },
+    {
+      label: "Enter the first room",
+      action: "enterSanatoriumRoom1",
+      nextScene: "sanatorium-room-1",
+      timeCost: 1,
+    },
+    {
+      label: "Enter the second room",
+      action: "enterSanatoriumRoom2",
+      nextScene: "sanatorium-room-2",
+      timeCost: 1,
+    },
+    {
+      label: "Go outside",
+      action: "leaveSanatoriumHallway",
+      nextScene: "sanatorium-entrance",
+      timeCost: 1,
+    },
+    {
+      label: "Back to main floor",
+      action: "returnToSanatoriumMainFloor",
+      nextScene: "sanatorium-main-floor",
+      timeCost: 1,
+    },
   ],
 };
 
@@ -2213,14 +2289,21 @@ export const sanatoriumRoom1: Scene = {
     night: "./images/locations/sanatorium/sanatoriumRoom1Night.png",
   },
   choices: [
-    { label: "Return to the hallway", action: "leaveSanatoriumRoom1", nextScene: "sanatorium-hallway", timeCost: 1 },
+    {
+      label: "Return to the hallway",
+      action: "leaveSanatoriumRoom1",
+      nextScene: "sanatorium-hallway",
+      timeCost: 1,
+    },
   ],
 };
 
 export const sanatoriumRoom2: Scene = {
   id: "sanatorium-room-2",
   story: [
-    narration("You enter the second room, listening for any movement beyond the doorway."),
+    narration(
+      "You enter the second room, listening for any movement beyond the doorway.",
+    ),
     thought("Just my own footsteps. I think."),
   ],
   location: "Sanatorium",
@@ -2229,52 +2312,41 @@ export const sanatoriumRoom2: Scene = {
     night: "./images/locations/sanatorium/sanatoriumRoom2Night.png",
   },
   choices: [
-    { label: "Return to the hallway", action: "leaveSanatoriumRoom2", nextScene: "sanatorium-hallway", timeCost: 1 },
+    {
+      label: "Return to the hallway",
+      action: "leaveSanatoriumRoom2",
+      nextScene: "sanatorium-hallway",
+      timeCost: 1,
+    },
   ],
 };
 
-export function getSceneThought(
-  sceneId: string,
-  time: number
-) {
-  const scene =
-    scenes[
-      sceneId as keyof typeof scenes
-    ];
+export function getSceneThought(sceneId: string, time: number) {
+  const scene = scenes[sceneId as keyof typeof scenes];
 
   if (!scene) {
     return null;
   }
 
-  const thoughtEntry =
-    scene.story.find(
-      (entry) => {
-        if (entry.type !== "thought") {
-          return false;
-        }
+  const thoughtEntry = scene.story.find((entry) => {
+    if (entry.type !== "thought") {
+      return false;
+    }
 
-        const condition =
-          entry.condition;
+    const condition = entry.condition;
 
-        if (!condition) {
-          return true;
-        }
+    if (!condition) {
+      return true;
+    }
 
-        const afterStart =
-          condition.from === undefined ||
-          time >= condition.from;
+    const afterStart = condition.from === undefined || time >= condition.from;
 
-        const beforeEnd =
-          condition.until === undefined ||
-          time < condition.until;
+    const beforeEnd = condition.until === undefined || time < condition.until;
 
-        return afterStart && beforeEnd;
-      }
-    );
+    return afterStart && beforeEnd;
+  });
 
-  return thoughtEntry?.type === "thought"
-    ? thoughtEntry.text
-    : null;
+  return thoughtEntry?.type === "thought" ? thoughtEntry.text : null;
 }
 
 // ----------------------------------------

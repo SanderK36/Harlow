@@ -24,6 +24,10 @@ body {
   background: var(--bg);
 }
 
+body.production-splash-active {
+  overflow: hidden;
+}
+
 button {
   font-family: inherit;
 }
@@ -53,7 +57,12 @@ button {
 
 .mainMenuShade {
   background:
-    linear-gradient(90deg, rgba(8, 4, 5, 0.82), rgba(8, 4, 5, 0.16) 62%, rgba(8, 4, 5, 0.56)),
+    linear-gradient(
+      90deg,
+      rgba(8, 4, 5, 0.82),
+      rgba(8, 4, 5, 0.16) 62%,
+      rgba(8, 4, 5, 0.56)
+    ),
     linear-gradient(0deg, rgba(8, 4, 5, 0.72), transparent 55%);
 }
 
@@ -73,7 +82,9 @@ button {
   mix-blend-mode: screen;
   opacity: 0.84;
   filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.72));
-  transition: opacity 180ms ease, transform 180ms ease;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
 }
 
 .mainMenuStudioLogo {
@@ -180,7 +191,10 @@ button {
   border-radius: 6px;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
   cursor: pointer;
-  transition: background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+  transition:
+    background 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .mainMenuStart:hover,
@@ -237,7 +251,9 @@ button {
   pointer-events: none;
   opacity: 0.62;
   filter: brightness(1.18) saturate(1.05);
-  transition: opacity 600ms ease, filter 600ms ease;
+  transition:
+    opacity 600ms ease,
+    filter 600ms ease;
 }
 
 .gameCloudsNight {
@@ -277,7 +293,11 @@ button {
   z-index: 1;
   overflow: hidden;
   padding: clamp(20px, 3vw, 36px);
-  background: linear-gradient(145deg, rgba(31, 17, 18, 0.97), rgba(12, 10, 10, 0.98));
+  background: linear-gradient(
+    145deg,
+    rgba(31, 17, 18, 0.97),
+    rgba(12, 10, 10, 0.98)
+  );
   border: 1px solid var(--line);
   border-radius: 20px;
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.35);
@@ -307,8 +327,13 @@ button {
   border: 1px solid var(--line-strong);
   border-radius: 14px;
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.32);
+  transition:
+    opacity 360ms ease,
+    filter 360ms ease;
+}
+
+.scene-image-enter {
   animation: sceneImageEnter 420ms ease-out;
-  transition: opacity 360ms ease, filter 360ms ease;
 }
 
 .scene-image-frame-conversation-active .scene-image {
@@ -336,15 +361,27 @@ button {
   width: 100%;
   margin: 0;
   padding: 14px;
-  background: linear-gradient(180deg, rgba(8, 4, 5, .86), rgba(21, 16, 16, .72));
-  border: 1px solid rgba(237, 85, 98, .34);
+  background: linear-gradient(
+    180deg,
+    rgba(8, 4, 5, 0.86),
+    rgba(21, 16, 16, 0.72)
+  );
+  border: 1px solid rgba(237, 85, 98, 0.34);
   border-radius: 10px;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, .2), inset 3px 0 0 var(--accent);
-  transition: opacity 240ms ease, transform 280ms ease;
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.2),
+    inset 3px 0 0 var(--accent);
+  transition:
+    opacity 240ms ease,
+    transform 280ms ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .scene-image-frame:not(.scene-image-frame-has-conversation):has(> .scene-hotspot:hover) > .scene-info-stack > .scene-info-panel {
+  .scene-image-frame:not(.scene-image-frame-has-conversation):has(
+      > .scene-hotspot:hover
+    )
+    > .scene-info-stack
+    > .scene-info-panel {
     opacity: 0;
     transform: translateY(-24px);
   }
@@ -355,6 +392,57 @@ button {
   opacity: 0;
   pointer-events: none;
   transition: opacity 280ms ease;
+}
+
+.opening-thought {
+  position: absolute;
+  right: clamp(12px, 2.4vw, 28px);
+  bottom: clamp(12px, 2.4vw, 28px);
+  left: clamp(12px, 2.4vw, 28px);
+  z-index: 5;
+  padding: clamp(14px, 2vw, 22px) clamp(16px, 2.4vw, 28px);
+  color: #fff;
+  background: linear-gradient(
+    180deg,
+    rgba(8, 4, 5, 0.86),
+    rgba(21, 16, 16, 0.72)
+  );
+  border: 1px solid rgba(237, 85, 98, 0.34);
+  border-radius: 10px;
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.2),
+    inset 3px 0 0 var(--accent);
+  animation: openingThoughtEnter 320ms ease-out;
+}
+
+.opening-thought span {
+  display: block;
+  margin-bottom: 7px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.opening-thought p {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(16px, 2vw, 22px);
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+@keyframes openingThoughtEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .conversation-overlay {
@@ -368,11 +456,19 @@ button {
   gap: 12px;
   padding: clamp(12px, 2.4vw, 28px);
   overflow-y: auto;
-  background: linear-gradient(0deg, rgba(8, 4, 5, .84), rgba(8, 4, 5, .68) 42%, rgba(8, 4, 5, .2)75%, transparent);
+  background: linear-gradient(
+    0deg,
+    rgba(8, 4, 5, 0.84),
+    rgba(8, 4, 5, 0.68) 42%,
+    rgba(8, 4, 5, 0.2) 75%,
+    transparent
+  );
   opacity: 0;
   pointer-events: none;
   transform: translateY(10px);
-  transition: opacity 300ms ease, transform 300ms ease;
+  transition:
+    opacity 300ms ease,
+    transform 300ms ease;
 }
 
 .conversation-overlay-active {
@@ -393,7 +489,11 @@ button {
   margin: 0;
   padding: clamp(16px, 2.4vw, 28px);
   border-radius: 14px;
-  background: linear-gradient(135deg, rgba(31, 17, 18, .76), rgba(12, 8, 9, .76));
+  background: linear-gradient(
+    135deg,
+    rgba(31, 17, 18, 0.76),
+    rgba(12, 8, 9, 0.76)
+  );
 }
 
 @keyframes conversationOverlayEnter {
@@ -418,7 +518,10 @@ button {
   border: 1px solid transparent;
   border-radius: 8px;
   cursor: pointer;
-  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .scene-hotspot span {
@@ -442,8 +545,13 @@ button {
   text-align: center;
   text-transform: uppercase;
   text-shadow: 0 2px 5px #000;
-  transform: translate(calc(-50% + var(--caption-offset, 0px)), calc(-50% + 3px));
-  transition: opacity 160ms ease, transform 160ms ease;
+  transform: translate(
+    calc(-50% + var(--caption-offset, 0px)),
+    calc(-50% + 3px)
+  );
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
 }
 
 .scene-hotspot:hover,
@@ -451,7 +559,9 @@ button {
   z-index: 2;
   background: rgba(217, 52, 67, 0.2);
   border-color: rgba(255, 220, 222, 0.8);
-  box-shadow: inset 0 0 28px rgba(255, 89, 102, 0.4), 0 0 16px rgba(217, 52, 67, 0.48);
+  box-shadow:
+    inset 0 0 28px rgba(255, 89, 102, 0.4),
+    0 0 16px rgba(217, 52, 67, 0.48);
   outline: none;
 }
 
@@ -505,23 +615,23 @@ button {
 
 .scene-hotspot-light-pole-chooseNeedleGrooveJob {
   top: 3%;
-  left: 12%;
-  width: 25%;
+  left: 14%;
+  width: 20%;
   height: 35%;
 }
 
 .scene-hotspot-light-pole-chooseGasStationJob {
   top: 25%;
-  left: 36%;
-  width: 24%;
+  left: 30%;
+  width: 16%;
   height: 31%;
 }
 
 .scene-hotspot-light-pole-chooseScrapyardJob {
   top: 57%;
-  left: 13%;
-  width: 34%;
-  height: 35%;
+  left: 16%;
+  width: 20%;
+  height: 37%;
 }
 
 .scene-hotspot-front-yard-goHome {
@@ -850,7 +960,7 @@ button {
   color: var(--muted);
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: .1em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -875,7 +985,6 @@ button {
     opacity: 1;
     transform: scale(1);
   }
-
 }
 
 @keyframes menuArtworkEnter {
@@ -903,15 +1012,21 @@ button {
 }
 
 @keyframes cloudLoopOne {
-  to { transform: translateX(-50%); }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 @keyframes cloudLoopTwo {
-  to { transform: translateX(-50%); }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 @keyframes cloudLoopThree {
-  to { transform: translateX(-50%); }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 /* Keep the scene in view on wide, short laptop displays. The image retains
@@ -945,7 +1060,7 @@ button {
     align-self: start;
     width: fit-content;
     max-width: 100%;
-    min-width: 0;
+    min-width: min(100%, 1024px);
     margin: 0 auto;
   }
 
@@ -1042,7 +1157,6 @@ button {
     margin-right: 0;
     text-align: center;
   }
-
 }
 
 .quest-notification {
@@ -1077,13 +1191,25 @@ button {
 }
 
 @keyframes questNoticeEnter {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes questNoticeExit {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(12px); }
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(12px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1092,11 +1218,15 @@ button {
     animation: none;
   }
 
-  .scene-image-frame:has(> .scene-hotspot:hover) > .scene-info-stack > .scene-info-panel {
+  .scene-image-frame:has(> .scene-hotspot:hover)
+    > .scene-info-stack
+    > .scene-info-panel {
     transform: none;
   }
 
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     scroll-behavior: auto !important;
   }
 
@@ -1117,5 +1247,4 @@ button {
   .mainMenuContent {
     animation: none;
   }
-
 }
