@@ -7,6 +7,7 @@ type GameStatusProps = {
   gameState: GameState;
   onStatsClick: () => void;
   onInventoryClick: () => void;
+  onQuestsClick: () => void;
 };
 
 export default function GameStatus({
@@ -14,6 +15,7 @@ export default function GameStatus({
   gameState,
   onStatsClick,
   onInventoryClick,
+  onQuestsClick,
 }: GameStatusProps) {
   const percentage = (value: number, maximum: number) =>
     Math.min(100, Math.max(0, (value / maximum) * 100));
@@ -43,6 +45,13 @@ export default function GameStatus({
             onClick={onInventoryClick}
           >
             INVENTORY
+          </button>
+
+          <button
+            className={`${styles.statsButton} ${styles.questsButton}`}
+            onClick={onQuestsClick}
+          >
+            QUESTS
           </button>
 
         </div>

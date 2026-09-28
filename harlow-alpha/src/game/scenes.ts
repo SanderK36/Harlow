@@ -455,7 +455,6 @@ export const momConversation: Conversation = {
           "Alright, honey. Be careful out there."
         ),
       ],
-
       endsConversation: true,
     },
 
@@ -471,7 +470,51 @@ export const momConversation: Conversation = {
           "Alright."
         ),
       ],
+      endsConversation: true,
+    },
+  ],
+};
 
+export const momDeathConversation: Conversation = {
+  opening: [
+    npc(
+      "Linda",
+      "Did you hear about Mrs. Elrod? The sheriff found her at home this morning. She lived a few houses down. They don't know what happened yet."
+    ),
+  ],
+  choices: [
+    {
+      label: "They found her dead?",
+      response: [
+        ethan("They found her dead?"),
+        npc("Linda", "That's what the sheriff said. He asked when I'd last seen her. It had been a few days."),
+      ],
+    },
+    {
+      label: "Did you know her well?",
+      response: [
+        ethan("Did you know her well?"),
+        npc("Linda", "Not really. We'd talk now and then, usually when she was out getting the mail."),
+      ],
+    },
+    {
+      label: "Do they know what happened?",
+      response: [
+        ethan("Do they know what happened?"),
+        npc("Linda", "No. They're still trying to piece things together. I don't want to guess."),
+      ],
+    },
+    {
+      label: "I'm sorry, Mom. That's awful.",
+      response: [
+        ethan("I'm sorry, Mom. That's awful."),
+        npc("Linda", "It is. She was alone in that house so much. Just... be careful, alright? And let the sheriff handle it."),
+      ],
+      completesMomQuest: true,
+    },
+    {
+      label: "Exit Conversation",
+      response: [],
       endsConversation: true,
     },
   ],
@@ -514,7 +557,6 @@ export const johnnyConversation: Conversation = {
         ethan("I'm looking for work."),
         npc("Johnny", "I can use a hand with stock and the counter. Welcome aboard—stick close and you'll hear plenty about this town."),
       ],
-      endsConversation: true,
     },
     {
       label: "Heard anything interesting?",
@@ -593,7 +635,8 @@ export const livingRoom: Scene = {
   story: [
     narration("You walk into the living room."),
     thought("It's quiet in here.", { until: 420 }),
-    thought("Mom is here.", { from: 420, until: 1080 }),
+    thought("It's quiet in here.", { from: 420, until: 540 }),
+    thought("Mom is here.", { from: 540, until: 1080 }),
     thought("It's quiet in here when Mom's at work.", { from: 1080 })
   ],
 
@@ -605,7 +648,7 @@ export const livingRoom: Scene = {
   characters: [
     {
       name: "Linda",
-      from: 420,
+      from: 540,
       until: 1080,
       image: "./images/locations/home/LindaParkerHome.jpg",
     },
@@ -692,7 +735,21 @@ export const kitchen: Scene = {
     night: "./images/locations/home/kitchenNight.png",
   },
 
+  characters: [
+    {
+      name: "Linda",
+      from: 450,
+      until: 540,
+    },
+  ],
+
   choices: [
+    {
+      label: "Talk to Mom",
+      action: "talkToMom",
+      nextScene: "kitchen",
+      timeCost: 10,
+    },
     {
       label: "Check the fridge",
       action: "checkFridge",
@@ -733,6 +790,8 @@ export const kitchen: Scene = {
   ],
 };
 
+kitchen.conversation = momConversation;
+
 export const margaretConversation: Conversation = {
   opening: [
     npc("Margaret", "Take a seat anywhere you like, hon."),
@@ -758,6 +817,10 @@ export const margaretConversation: Conversation = {
         ethan("See you later."),
         npc("Margaret", "You take care now."),
       ],
+    },
+    {
+      label: "Exit Conversation",
+      response: [],
       endsConversation: true,
     },
   ],
@@ -1186,7 +1249,6 @@ export const rayConversation: Conversation = {
         ethan("I'm looking for work."),
         npc("Ray", "I could use reliable help. You're hired—and anything from the shop is half price while you're with us."),
       ],
-      endsConversation: true,
     },
     {
       label: "Just looking around.",
@@ -1327,6 +1389,10 @@ export const tommyConversation: Conversation = {
         ethan("I'll let you get back to work."),
         npc("Tommy", "Yeah, this engine won't fix itself. Catch you later, brother."),
       ],
+    },
+    {
+      label: "Exit Conversation",
+      response: [],
       endsConversation: true,
     },
   ],
@@ -1392,7 +1458,6 @@ export const bigRoyConversation: Conversation = {
         ethan("I'm looking for work."),
         npc("Big Roy", "Then grab this crowbar and welcome aboard! It'll open stubborn locks, and it's a fine argument in a pinch."),
       ],
-      endsConversation: true,
     },
     {
       label: "I'll let you get back to it.",
@@ -1400,6 +1465,10 @@ export const bigRoyConversation: Conversation = {
         ethan("I'll let you get back to it."),
         npc("Big Roy", "Much appreciated, kid. Stay shiny out there!"),
       ],
+    },
+    {
+      label: "Exit Conversation",
+      response: [],
       endsConversation: true,
     },
   ],

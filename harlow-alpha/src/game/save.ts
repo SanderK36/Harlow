@@ -17,6 +17,7 @@ export type SavedGame = {
   deskCigarettesPickedUp: boolean;
   scrapyardKnifePickedUp: boolean;
   garageFlashlightPickedUp: boolean;
+  momTalked?: boolean;
   momJobConcernHeard?: boolean;
   job?: JobId;
   jobQuestTarget?: JobId;

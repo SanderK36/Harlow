@@ -81,6 +81,11 @@ button {
   mix-blend-mode: normal;
 }
 
+.mainMenuStudioLogoLink {
+  display: block;
+  line-height: 0;
+}
+
 .mainMenuStudioLogo:hover,
 .mainMenuSocialLink:hover,
 .mainMenuSocialLink:focus-visible {
@@ -196,26 +201,13 @@ button {
   z-index: 100;
   display: grid;
   place-items: center;
-  align-content: center;
-  gap: 24px;
-  color: #f5eeee;
   background: #000;
-  animation: productionSplashFade 3.4s ease-in-out both;
 }
 
-.production-splash-logo {
-  width: clamp(120px, 18vw, 220px);
-  height: auto;
+.production-splash-video {
+  width: 90vw;
+  height: 90vh;
   object-fit: contain;
-}
-
-.production-splash p {
-  margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(12px, 1.5vw, 17px);
-  letter-spacing: .16em;
-  text-align: center;
-  text-transform: uppercase;
 }
 
 .mainMenuContinue {
@@ -324,13 +316,20 @@ button {
   filter: brightness(0.42) saturate(0.72);
 }
 
-.scene-info-panel {
+.scene-info-stack {
   position: absolute;
   top: 0;
   right: 0;
   left: 0;
   z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   pointer-events: none;
+}
+
+.scene-info-panel {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 20px;
@@ -345,7 +344,7 @@ button {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .scene-image-frame:not(.scene-image-frame-has-conversation):has(> .scene-hotspot:hover) > .scene-info-panel {
+  .scene-image-frame:not(.scene-image-frame-has-conversation):has(> .scene-hotspot:hover) > .scene-info-stack > .scene-info-panel {
     opacity: 0;
     transform: translateY(-24px);
   }
@@ -467,6 +466,13 @@ button {
   left: 33%;
   width: 33%;
   height: 90%;
+}
+
+.scene-hotspot-kitchen-talkToMom {
+  top: 16%;
+  left: 36%;
+  width: 35%;
+  height: 58%;
 }
 
 .scene-hotspot-living-room-relaxOnCouch {
@@ -896,17 +902,6 @@ button {
   }
 }
 
-@keyframes productionSplashFade {
-  0%, 82% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
-    visibility: hidden;
-  }
-}
-
 @keyframes cloudLoopOne {
   to { transform: translateX(-50%); }
 }
@@ -1051,11 +1046,9 @@ button {
 }
 
 .quest-notification {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  z-index: 30;
-  width: min(390px, calc(100vw - 48px));
+  position: relative;
+  width: min(390px, calc(100% - 28px));
+  margin: 10px 14px 0;
   padding: 15px 18px;
   color: var(--text);
   background: rgba(39, 19, 20, 0.97);
@@ -1063,6 +1056,10 @@ button {
   border-radius: 9px;
   box-shadow: 0 16px 42px rgba(0, 0, 0, 0.42);
   animation: questNoticeEnter 240ms ease-out;
+}
+
+.quest-notification-exiting {
+  animation: questNoticeExit 240ms ease-in forwards;
 }
 
 .quest-notification span {
@@ -1084,8 +1081,18 @@ button {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes questNoticeExit {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(12px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .scene-image-frame:has(> .scene-hotspot:hover) > .scene-info-panel {
+  .quest-notification,
+  .quest-notification-exiting {
+    animation: none;
+  }
+
+  .scene-image-frame:has(> .scene-hotspot:hover) > .scene-info-stack > .scene-info-panel {
     transform: none;
   }
 

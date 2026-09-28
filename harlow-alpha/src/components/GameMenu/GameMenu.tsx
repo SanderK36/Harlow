@@ -8,13 +8,12 @@ import styles from "./GameMenu.module.css";
 
 type GameMenuProps = {
   onOpenCharacters: () => void;
-  onOpenQuests: () => void;
   onMainMenu: () => void;
   onSave: (slotNumber: number) => boolean;
   onLoad: (slotNumber: number) => boolean;
 };
 
-export default function GameMenu({ onOpenCharacters, onOpenQuests, onMainMenu, onSave, onLoad }: GameMenuProps) {
+export default function GameMenu({ onOpenCharacters, onMainMenu, onSave, onLoad }: GameMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [saveMode, setSaveMode] = useState<"save" | "load" | null>(null);
   const [slots, setSlots] = useState(() => readSaveSlots());
@@ -23,11 +22,6 @@ export default function GameMenu({ onOpenCharacters, onOpenQuests, onMainMenu, o
   function openCharacters() {
     setIsOpen(false);
     onOpenCharacters();
-  }
-
-  function openQuests() {
-    setIsOpen(false);
-    onOpenQuests();
   }
 
   function goToMainMenu() {
@@ -74,7 +68,6 @@ export default function GameMenu({ onOpenCharacters, onOpenQuests, onMainMenu, o
           <button type="button" onClick={openCharacters}>
             Characters
           </button>
-          <button type="button" onClick={openQuests}>Quests</button>
           <button type="button" onClick={goToMainMenu}>Main Menu</button>
           <button type="button" onClick={() => openSaveWindow("save")}>Save</button>
           <button type="button" onClick={() => openSaveWindow("load")}>Load</button>

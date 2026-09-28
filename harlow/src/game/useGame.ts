@@ -10,6 +10,7 @@ import {
   ethanRoom,
   getSceneThought,
   hallway,
+  momDeathConversation,
   scenes,
 } from "@/game/scenes";
 import { advanceGameTime } from "@/game/time";
@@ -22,7 +23,7 @@ import {
   writeSessionSave,
 } from "@/game/save";
 import type { Choice, GameChoice } from "@/game/choices";
-import type { StoryEntry } from "@/game/story";
+import type { Conversation, StoryEntry } from "@/game/story";
 import type { JobId } from "@/game/quests";
 
 const CONVERSATION_ACTIONS = new Set([
@@ -38,7 +39,6 @@ const CONVERSATION_ACTIONS = new Set([
   "talkToTommy",
 ]);
 
-const CONVERSATION_CLOSE_DELAY = 3000;
 const NPC_REPLY_DELAY = 450;
 const TRAVEL_DURATION = 3000;
 
@@ -70,12 +70,16 @@ export function useGame() {
   // grow as the player selects responses without changing the base scene.
   const [conversation, setConversation] = useState<StoryEntry[]>([]);
   const [conversationActive, setConversationActive] = useState(false);
+  const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   const [usedConversationChoices, setUsedConversationChoices] = useState<string[]>([]);
   const [replyPending, setReplyPending] = useState(false);
   const replyTimer = useRef<number | null>(null);
+  const questNotificationTimer = useRef<number | null>(null);
+  const pendingQuestNotification = useRef<{ message: string; label: string } | null>(null);
 
   useEffect(() => () => {
     if (replyTimer.current !== null) window.clearTimeout(replyTimer.current);
+    if (questNotificationTimer.current !== null) window.clearTimeout(questNotificationTimer.current);
   }, []);
 
   function cancelPendingReply() {
@@ -97,11 +101,39 @@ export function useGame() {
   const [deskCigarettesPickedUp, setDeskCigarettesPickedUp] = useState(sessionSave?.deskCigarettesPickedUp ?? false);
   const [scrapyardKnifePickedUp, setScrapyardKnifePickedUp] = useState(sessionSave?.scrapyardKnifePickedUp ?? false);
   const [garageFlashlightPickedUp, setGarageFlashlightPickedUp] = useState(sessionSave?.garageFlashlightPickedUp ?? false);
+  const [momTalked, setMomTalked] = useState(sessionSave?.momTalked ?? true);
   const [momJobConcernHeard, setMomJobConcernHeard] = useState(sessionSave?.momJobConcernHeard ?? false);
   // Completing Find a Job sets one permanent workplace benefit.
   const [job, setJob] = useState<JobId | null>(sessionSave?.job ?? null);
   const [jobQuestTarget, setJobQuestTarget] = useState<JobId | null>(sessionSave?.jobQuestTarget ?? null);
   const [questNotification, setQuestNotification] = useState<string | null>(null);
+  const [questNotificationLabel, setQuestNotificationLabel] = useState("Quest started");
+  const [questNotificationExiting, setQuestNotificationExiting] = useState(false);
+
+  function clearQuestNotification() {
+    if (questNotificationTimer.current !== null) window.clearTimeout(questNotificationTimer.current);
+    questNotificationTimer.current = null;
+    pendingQuestNotification.current = null;
+    setQuestNotification(null);
+    setQuestNotificationLabel("Quest started");
+    setQuestNotificationExiting(false);
+  }
+
+  function showQuestNotification(message: string, label = "Quest started") {
+    if (questNotificationTimer.current !== null) window.clearTimeout(questNotificationTimer.current);
+    setQuestNotification(message);
+    setQuestNotificationLabel(label);
+    setQuestNotificationExiting(false);
+    questNotificationTimer.current = window.setTimeout(() => {
+      setQuestNotificationExiting(true);
+      questNotificationTimer.current = window.setTimeout(() => {
+        setQuestNotification(null);
+        setQuestNotificationLabel("Quest started");
+        setQuestNotificationExiting(false);
+        questNotificationTimer.current = null;
+      }, 240);
+    }, 6500);
+  }
 
   const currentSave = useCallback(() => {
     return {
@@ -114,11 +146,12 @@ export function useGame() {
       deskCigarettesPickedUp,
       scrapyardKnifePickedUp,
       garageFlashlightPickedUp,
+      momTalked,
       momJobConcernHeard,
       job: job ?? undefined,
       jobQuestTarget: jobQuestTarget ?? undefined,
     };
-  }, [gameState, playerState, currentScene, busStopReturnSceneId, marleneActive, deskCigarettesPickedUp, scrapyardKnifePickedUp, garageFlashlightPickedUp, momJobConcernHeard, job, jobQuestTarget]);
+  }, [gameState, playerState, currentScene, busStopReturnSceneId, marleneActive, deskCigarettesPickedUp, scrapyardKnifePickedUp, garageFlashlightPickedUp, momTalked, momJobConcernHeard, job, jobQuestTarget]);
 
   // This is a temporary, per-tab resume point. It survives refreshes but is
   // automatically cleared when the browser tab is closed.
@@ -126,9 +159,12 @@ export function useGame() {
     if (readSessionSave()) writeSessionSave(currentSave());
   }, [currentSave]);
 
-  function advanceTime(minutes: number) {
+  function advanceTime(minutes: number, completingMomQuest = false) {
     // Keep time changes in one place so thoughts and day/night images stay synced.
-    const nextGameState = advanceGameTime(gameState, minutes);
+    const allowedMinutes = momTalked || completingMomQuest
+      ? minutes
+      : Math.min(minutes, Math.max(0, 539 - gameState.time));
+    const nextGameState = advanceGameTime(gameState, allowedMinutes);
 
     setGameState(nextGameState);
     setCurrentThought(getSceneThought(currentScene.id, nextGameState.time));
@@ -161,25 +197,37 @@ export function useGame() {
   function openConversation() {
     cancelPendingReply();
     // The action determines *which* NPC to talk to; the scene owns the dialogue.
-    const opening = currentScene.conversation?.opening;
+    const selectedConversation = currentScene.id === "kitchen" && !momTalked
+      ? momDeathConversation
+      : currentScene.conversation;
+    const opening = selectedConversation?.opening;
 
     if (!opening) {
       return;
     }
 
+    setActiveConversation(selectedConversation ?? null);
     setUsedConversationChoices([]);
     setConversation(opening);
     setConversationActive(true);
   }
 
   function closeConversation() {
+    setConversationActive(false);
     window.setTimeout(() => {
-      setConversationActive(false);
-        window.setTimeout(() => {
-          setConversation([]);
-          setUsedConversationChoices([]);
-        }, 300);
-    }, CONVERSATION_CLOSE_DELAY);
+      setConversation([]);
+      setActiveConversation(null);
+      setUsedConversationChoices([]);
+      const pendingNotification = pendingQuestNotification.current;
+      pendingQuestNotification.current = null;
+      if (pendingNotification) {
+        showQuestNotification(pendingNotification.message, pendingNotification.label);
+      }
+    }, 300);
+  }
+
+  function notifyMomQuest() {
+    showQuestNotification("New quest: Talk to Mom — something's on her mind.");
   }
 
   function applyChoiceEffects(choice: Choice) {
@@ -215,11 +263,18 @@ export function useGame() {
   function finishConversationChoice(choice: Extract<GameChoice, { response: StoryEntry[] }>) {
     setConversation((previous) => [...previous, ...choice.response]);
 
+    if (choice.completesMomQuest && !momTalked) {
+      setMomTalked(true);
+      showQuestNotification("Talk to Mom", "Quest complete");
+    }
+
     if (choice.storyFlag === "momJobConcern") {
       setMomJobConcernHeard(true);
       setCurrentThought("I got to get a job to help out, maybe i could check the flyers on the lightpole outside");
-      setQuestNotification("New quest: Find a Job — check the hiring flyers outside.");
-      window.setTimeout(() => setQuestNotification(null), 6500);
+      pendingQuestNotification.current = {
+        message: "New quest: Find a Job — maybe there's a way to help.",
+        label: "Quest started",
+      };
     }
 
     if (choice.jobOffer && !job) {
@@ -303,14 +358,8 @@ export function useGame() {
     const selectedJob = flyerJobs[choice.action];
 
     if (selectedJob && !job && !jobQuestTarget) {
-      const employer = selectedJob === "needle-groove"
-        ? "Johnny at Needle & Groove"
-        : selectedJob === "gas-station"
-          ? "Ray Mercer at the gas station"
-          : "Big Roy at the scrapyard";
       setJobQuestTarget(selectedJob);
-      setQuestNotification(`New quest: Find a Job — talk to ${employer}.`);
-      window.setTimeout(() => setQuestNotification(null), 6500);
+      showQuestNotification("New quest: Find a Job — follow up on a promising lead.");
     }
 
     if (CONVERSATION_ACTIONS.has(choice.action)) {
@@ -353,7 +402,7 @@ export function useGame() {
       return;
     }
 
-    const nextGameState = advanceTime(choice.timeCost);
+    const nextGameState = advanceTime(choice.timeCost, choice.action === "talkToMom");
 
     if (choice.action === "pickUpCigarettes") {
       setDeskCigarettesPickedUp(true);
@@ -404,7 +453,16 @@ export function useGame() {
     const { action } = choice;
     const { time } = gameState;
 
-    if (action === "talkToMom") return time >= 420 && time < 1080;
+    if (!momTalked && (choice.travel || ["front-yard", "back-yard", "light-pole"].includes(choice.nextScene))) {
+      return false;
+    }
+    if (!momTalked && action === "relaxOnCouch") return false;
+
+    if (action === "talkToMom") {
+      return currentScene.id === "kitchen"
+        ? time >= 450 && time < 540
+        : currentScene.id === "living-room" && time >= 540 && time < 1080;
+    }
     if (action === "talkToJohnny") return time >= 480 && time < 840;
     if (action === "workNeedleGrooveShift") {
       return job === "needle-groove" && time >= 600 && time < 1140;
@@ -456,10 +514,11 @@ export function useGame() {
     setDeskCigarettesPickedUp(save.deskCigarettesPickedUp);
     setScrapyardKnifePickedUp(save.scrapyardKnifePickedUp);
     setGarageFlashlightPickedUp(save.garageFlashlightPickedUp);
+    setMomTalked(save.momTalked ?? true);
     setMomJobConcernHeard(save.momJobConcernHeard ?? false);
     setJob(save.job ?? null);
     setJobQuestTarget(save.jobQuestTarget ?? null);
-    setQuestNotification(null);
+    clearQuestNotification();
 
     // Modal and transition state is not saved, so always resume at the scene.
     setShowStats(false);
@@ -468,6 +527,7 @@ export function useGame() {
     setActiveShop(null);
     cancelPendingReply();
     setConversation([]);
+    setActiveConversation(null);
     setConversationActive(false);
     setUsedConversationChoices([]);
     setTravelingTo(null);
@@ -502,16 +562,18 @@ export function useGame() {
     setDeskCigarettesPickedUp(false);
     setScrapyardKnifePickedUp(false);
     setGarageFlashlightPickedUp(false);
+    setMomTalked(false);
     setMomJobConcernHeard(false);
     setJob(null);
     setJobQuestTarget(null);
-    setQuestNotification(null);
+    clearQuestNotification();
     setShowStats(false);
     setShowInventory(false);
     setShowTravel(false);
     setActiveShop(null);
     cancelPendingReply();
     setConversation([]);
+    setActiveConversation(null);
     setConversationActive(false);
     setUsedConversationChoices([]);
     setTravelingTo(null);
@@ -526,6 +588,7 @@ export function useGame() {
       deskCigarettesPickedUp: false,
       scrapyardKnifePickedUp: false,
       garageFlashlightPickedUp: false,
+      momTalked: false,
     });
   }
 
@@ -543,7 +606,7 @@ export function useGame() {
   });
 
   const activeChoices = replyPending ? [] : conversationActive
-    ? (currentScene.conversation?.choices ?? []).filter(
+    ? (activeConversation?.choices ?? []).filter(
         (choice) =>
           (!choice.requiresNoJob || !job) &&
           (!choice.requiresJob || choice.requiresJob === job) &&
@@ -557,7 +620,11 @@ export function useGame() {
     gameState,
     playerState,
     currentScene,
-    currentThought,
+    currentThought: momTalked
+      ? currentThought
+      : currentScene.id === "living-room-relaxing"
+        ? "I need to talk to mom first"
+        : "I should talk to mom",
     currentEffects,
     conversation,
     conversationActive,
@@ -576,13 +643,17 @@ export function useGame() {
     setActiveShop,
     job,
     jobQuestTarget,
+    momTalked,
     momJobConcernHeard,
     questNotification,
+    questNotificationLabel,
+    questNotificationExiting,
     saveGame,
     loadGame,
     loadMostRecentGame,
     startGameSession,
     startNewGameSession,
+    notifyMomQuest,
     handleChoice,
     goToBusStop,
     wait: advanceTime,

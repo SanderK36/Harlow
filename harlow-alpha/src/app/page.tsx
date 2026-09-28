@@ -127,14 +127,18 @@ export default function Home() {
     setActiveShop,
     job,
     jobQuestTarget,
+    momTalked,
     momJobConcernHeard,
     questNotification,
+    questNotificationLabel,
+    questNotificationExiting,
     buyItem,
     useInventoryItem,
     saveGame,
     loadGame,
     loadMostRecentGame,
     startNewGameSession,
+    notifyMomQuest,
   } = useGame();
   const [travelMode, setTravelMode] = useState<"walk" | "bus">("walk");
 
@@ -145,8 +149,13 @@ export default function Home() {
   function startNewGame() {
     startNewGameSession();
     setHasStarted(true);
+    setShowQuestLog(false);
     setShowProductionSplash(true);
-    window.setTimeout(() => setShowProductionSplash(false), 3400);
+  }
+
+  function finishProductionSplash() {
+    setShowProductionSplash(false);
+    notifyMomQuest();
   }
 
   function returnToMainMenu() {
@@ -155,8 +164,10 @@ export default function Home() {
   }
 
   // Character art has priority, then weather-specific art, then day/night art.
-  const sceneImage =
-    (isNightTime(gameState.time) && activeCharacter?.nightImage
+  const momInKitchen = currentScene.id === "kitchen" && gameState.time >= 450 && gameState.time < 540;
+  const sceneImage = momInKitchen
+    ? "./images/locations/home/momMorningKitchen.png"
+    : (isNightTime(gameState.time) && activeCharacter?.nightImage
       ? activeCharacter.nightImage
       : activeCharacter?.image) ??
     currentScene.image.weather?.[gameState.weather] ??
@@ -176,7 +187,12 @@ export default function Home() {
         : currentScene.id === "hallway"
           ? ["goLivingRoom", "goKitchen"]
           : currentScene.id === "kitchen"
-            ? ["checkFridge", "makeCoffee", "goBackYard"]
+              ? [
+                  ...(activeCharacter?.name === "Linda" ? ["talkToMom"] : []),
+                  ...(momTalked ? ["checkFridge"] : []),
+                  "makeCoffee",
+                  "goBackYard",
+                ]
           : currentScene.id === "back-yard"
             ? ["goKitchen"]
           : currentScene.id === "basement"
@@ -222,12 +238,15 @@ export default function Home() {
                                             : currentScene.id === "light-pole"
                                               ? ["chooseNeedleGrooveJob", "chooseGasStationJob", "chooseScrapyardJob"]
                                             : []);
-  const sceneHotspots = activeChoices.filter(
+  const visibleChoices = !momTalked && currentScene.id === "kitchen"
+    ? activeChoices.filter((choice) => !("action" in choice && choice.action === "checkFridge"))
+    : activeChoices;
+  const sceneHotspots = visibleChoices.filter(
     (choice): choice is Choice =>
       "action" in choice &&
       (hotspotActions.includes(choice.action) || !!choice.hotspots?.length)
   );
-  const choicesWithoutHotspotActions = activeChoices.filter(
+  const choicesWithoutHotspotActions = visibleChoices.filter(
     (choice) =>
       "response" in choice ||
       (!hotspotActions.includes(choice.action) && !choice.hotspots?.length)
@@ -264,13 +283,20 @@ export default function Home() {
         <div className="mainMenuArtwork" aria-hidden="true" />
         <div className="mainMenuShade" aria-hidden="true" />
         <div className="mainMenuBranding">
-          <Image
-            className="mainMenuStudioLogo"
-            src="/LostFrequencyGames-transparent.png"
-            alt="Lost Frequency Games"
-            width={1254}
-            height={1254}
-          />
+          <a
+            className="mainMenuStudioLogoLink"
+            href="https://www.lostfrequencygames.com/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <Image
+              className="mainMenuStudioLogo"
+              src="/LostFrequencyGames-transparent.png"
+              alt="Lost Frequency Games"
+              width={1254}
+              height={1254}
+            />
+          </a>
           <a
             className="mainMenuSocialLink"
             href="https://x.com/HarlowTheGame"
@@ -313,14 +339,15 @@ export default function Home() {
     <main className="game">
       {showProductionSplash && (
         <div className="production-splash" role="status" aria-label="A Lost Frequency Games production">
-          <Image
-            src="/LostFrequencyGames-transparent.png"
-            alt="Lost Frequency Games"
-            width={1254}
-            height={1254}
-            className="production-splash-logo"
+          <video
+            className="production-splash-video"
+            src="/lostfrequencygamesintro.mp4"
+            autoPlay
+            muted
+            playsInline
+            onEnded={finishProductionSplash}
+            onError={finishProductionSplash}
           />
-          <p>A Lost Frequency Games Production</p>
         </div>
       )}
       {isNightTime(gameState.time) && (
@@ -336,7 +363,6 @@ export default function Home() {
 
         <GameMenu
           onOpenCharacters={() => setShowCharacterDirectory(true)}
-          onOpenQuests={() => setShowQuestLog(true)}
           onMainMenu={returnToMainMenu}
           onSave={saveGame}
           onLoad={loadGame}
@@ -347,6 +373,7 @@ export default function Home() {
           gameState={gameState}
           onStatsClick={() => setShowStats(true)}
           onInventoryClick={() => setShowInventory(true)}
+          onQuestsClick={() => setShowQuestLog(true)}
         />
 
         <div className={`scene-image-frame scene-image-frame-${currentScene.id}${hasConversationOverlay ? " scene-image-frame-has-conversation" : ""}${conversationActive ? " scene-image-frame-conversation-active" : ""}`}>
@@ -356,31 +383,39 @@ export default function Home() {
             alt=""
             className="scene-image"
           />
-          <div className="scene-info-panel">
-            {currentThought && (
-              <CharacterLine
-                key={currentThought}
-                text={currentThought}
-                variant="inline"
-                effect={
-                  currentEffects[0]?.type === "effect"
-                    ? {
-                        stat: currentEffects[0].stat,
-                        amount: currentEffects[0].amount,
-                      }
-                    : undefined
-                }
-              />
-            )}
-
-            <StoryLog
-              entries={currentScene.story.filter(
-                (entry) => entry.type !== "thought"
+          <div className="scene-info-stack">
+            <div className="scene-info-panel">
+              {currentThought && (
+                <CharacterLine
+                  key={currentThought}
+                  text={currentThought}
+                  variant="inline"
+                  effect={
+                    currentEffects[0]?.type === "effect"
+                      ? {
+                          stat: currentEffects[0].stat,
+                          amount: currentEffects[0].amount,
+                        }
+                      : undefined
+                  }
+                />
               )}
-              title="Scene"
-              variant="narration"
-              layout="combined"
-            />
+
+              <StoryLog
+                entries={currentScene.story.filter(
+                  (entry) => entry.type !== "thought"
+                )}
+                title="Scene"
+                variant="narration"
+                layout="combined"
+              />
+            </div>
+            {questNotification && (
+              <div className={`quest-notification${questNotificationExiting ? " quest-notification-exiting" : ""}`} role="status">
+                <span>{questNotificationLabel}</span>
+                <p>{questNotification}</p>
+              </div>
+            )}
           </div>
           {sceneHotspots.flatMap((sceneHotspot) =>
             (sceneHotspot.hotspots ?? [undefined]).map((region, index) => (
@@ -451,17 +486,11 @@ export default function Home() {
           <QuestWindow
             job={job}
             jobQuestTarget={jobQuestTarget}
+            momTalked={momTalked}
             momJobConcernHeard={momJobConcernHeard}
             onClose={() => setShowQuestLog(false)}
           />
         )}
-        {questNotification && (
-          <div className="quest-notification" role="status">
-            <span>Quest started</span>
-            <p>{questNotification}</p>
-          </div>
-        )}
-
         {showTravel && (
           <TravelWindow
             walkingChoices={walkingChoices}

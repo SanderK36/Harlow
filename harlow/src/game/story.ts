@@ -30,6 +30,8 @@ export type ConversationChoice = {
   endsConversation?: boolean;
   /** Marks a story milestone when this response is selected. */
   storyFlag?: "momJobConcern";
+  /** Completes the opening objective after this conversation response. */
+  completesMomQuest?: boolean;
   /** Shows this response only after the matching story milestone. */
   requiresStoryFlag?: "momJobConcern";
   /** Applies a permanent job reward when this response is selected. */

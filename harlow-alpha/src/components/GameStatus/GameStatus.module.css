@@ -45,6 +45,10 @@
   transition: color 150ms ease, background 150ms ease, border-color 150ms ease;
 }
 
+.questsButton {
+  grid-column: 1 / -1;
+}
+
 .statsButton:hover, .statsButton:focus-visible {
   color: var(--text);
   background: rgba(169,22,36,.18);

@@ -20,5 +20,5 @@ export const jobDetails: Record<JobId, { name: string; employer: string; benefit
 
 export const findAJobQuest = {
   title: "Find a Job",
-  objective: "Look at the hiring flyers on the light pole outside home.",
+  objective: "Maybe there's a way to lend a hand.",
 };
