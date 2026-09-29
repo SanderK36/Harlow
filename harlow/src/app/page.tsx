@@ -47,6 +47,9 @@ const hotspotLabels: Record<string, string> = {
   lookAtGarageBench: "Workbench",
   pickUpGarageFlashlight: "Flashlight",
   goHallway: "Hallway",
+  goBathroom: "Bathroom",
+  openAtticHatch: "Attic hatch",
+  goAttic: "Attic stairs",
   enterGasStation: "Enter gas station",
   talkToRay: "Ray",
   enterNeedleAndGroove: "Enter shop",
@@ -106,15 +109,19 @@ export default function Home() {
   const [showProductionSplash, setShowProductionSplash] = useState(false);
   const [showOpeningThought, setShowOpeningThought] = useState(false);
   const [showVinylThought, setShowVinylThought] = useState(false);
+  const [showLateNightThought, setShowLateNightThought] = useState(false);
   const [tvNewsLine, setTvNewsLine] = useState<string | null>(null);
   const openingThoughtTimer = useRef<number | null>(null);
   const vinylThoughtTimer = useRef<number | null>(null);
+  const lateNightThoughtTimer = useRef<number | null>(null);
   const {
     gameState,
     playerState,
     currentScene,
     currentThought,
     lateNightActionThought,
+    newDayAnnouncement,
+    dismissNewDayAnnouncement,
     currentEffects,
     conversation,
     conversationActive,
@@ -167,6 +174,7 @@ export default function Home() {
     setShowQuestLog(false);
     setShowOpeningThought(false);
     setShowVinylThought(false);
+    setShowLateNightThought(false);
     setShowProductionSplash(true);
   }
 
@@ -195,6 +203,9 @@ export default function Home() {
     if (vinylThoughtTimer.current !== null) {
       window.clearTimeout(vinylThoughtTimer.current);
     }
+    if (lateNightThoughtTimer.current !== null) {
+      window.clearTimeout(lateNightThoughtTimer.current);
+    }
     setShowVinylThought(true);
     vinylThoughtTimer.current = window.setTimeout(() => {
       setShowVinylThought(false);
@@ -218,6 +229,39 @@ export default function Home() {
     document.body.classList.toggle("production-splash-active", showProductionSplash);
     return () => document.body.classList.remove("production-splash-active");
   }, [showProductionSplash]);
+
+  useEffect(() => {
+    if (!newDayAnnouncement) {
+      return;
+    }
+
+    const dismissTimer = window.setTimeout(dismissNewDayAnnouncement, 3400);
+    return () => window.clearTimeout(dismissTimer);
+  }, [newDayAnnouncement, dismissNewDayAnnouncement]);
+
+  const isLateNight = gameState.time >= 180 && gameState.time < 420;
+
+  useEffect(() => {
+    if (!isLateNight) {
+      return;
+    }
+
+    const showThoughtTimer = window.setTimeout(() => {
+      setShowLateNightThought(true);
+      lateNightThoughtTimer.current = window.setTimeout(() => {
+        setShowLateNightThought(false);
+        lateNightThoughtTimer.current = null;
+      }, 4000);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(showThoughtTimer);
+      if (lateNightThoughtTimer.current !== null) {
+        window.clearTimeout(lateNightThoughtTimer.current);
+        lateNightThoughtTimer.current = null;
+      }
+    };
+  }, [isLateNight]);
 
   function returnToMainMenu() {
     clearSessionSave();
@@ -257,7 +301,9 @@ export default function Home() {
       : currentScene.id === "ethan-room-desk"
         ? ["pickUpCigarettes"]
         : currentScene.id === "hallway"
-          ? ["goLivingRoom", "goKitchen"]
+          ? ["goLivingRoom", "goKitchen", "goBathroom"]
+          : currentScene.id === "hallway-upstairs"
+            ? ["openAtticHatch"]
           : currentScene.id === "kitchen"
               ? [
                   ...(activeCharacter?.name === "Linda" ? ["talkToMom"] : []),
@@ -324,13 +370,11 @@ export default function Home() {
       (!hotspotActions.includes(choice.action) && !choice.hotspots?.length)
   );
   const hasConversationOverlay = conversation.length > 0;
-  const lateNightThought = gameState.time >= 180 && gameState.time < 210
-    ? "It's 3 AM. I'm very tired and should head home."
-    : gameState.time >= 210 && gameState.time < 420
-      ? "It's late. I should head home."
-      : null;
-  const bottomThought = lateNightActionThought ?? lateNightThought;
-  const isBottomPanelVisible = showOpeningThought || showVinylThought || bottomThought !== null || tvNewsLine !== null;
+  const bottomThought = lateNightActionThought ?? (
+    showLateNightThought && isLateNight
+      ? "It's 3 AM. I'm very tired and should head home."
+      : null
+  );
   const actionList = (
     <ActionList
       title={
@@ -497,7 +541,7 @@ export default function Home() {
             )}
           </div>
           {bottomThought && (
-            <div className="opening-thought" role="status">
+            <div className="opening-thought late-night-thought" role="status">
               <span>ETHAN — INNER THOUGHT</span>
               <p>{bottomThought}</p>
             </div>
@@ -516,7 +560,7 @@ export default function Home() {
                 : tvNewsLine}</p>
             </div>
           )}
-          {!isBottomPanelVisible && sceneHotspots.flatMap((sceneHotspot) =>
+          {!(showOpeningThought || showVinylThought || tvNewsLine !== null) && sceneHotspots.flatMap((sceneHotspot) =>
             (sceneHotspot.hotspots ?? [undefined]).map((region, index) => (
             <SceneHotspot
               key={`${sceneHotspot.action}-${index}`}
@@ -558,7 +602,7 @@ export default function Home() {
               {conversationActive && actionList}
             </div>
           )}
-          {!hasConversationOverlay && !isBottomPanelVisible && actionList}
+          {!hasConversationOverlay && !(showOpeningThought || showVinylThought || tvNewsLine !== null) && actionList}
         </div>
 
         {showStats && (
@@ -650,6 +694,16 @@ export default function Home() {
             method={travelingTo.method}
             isNight={travelingTo.isNight}
           />
+        )}
+
+        {newDayAnnouncement && (
+          <div className="new-day-screen" role="status" aria-live="polite" aria-labelledby="new-day-title">
+            <div className="new-day-screen-content">
+              <p>Morning has come</p>
+              <h2 id="new-day-title">{newDayAnnouncement.dayOfWeek}</h2>
+              <span>{newDayAnnouncement.currentMonth} {newDayAnnouncement.dayNumber}</span>
+            </div>
+          </div>
         )}
 
       </div>

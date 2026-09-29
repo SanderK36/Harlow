@@ -72,14 +72,14 @@ export function isExteriorScene(sceneId: string): boolean {
 
 export function createWalkingChoices(
   originId: string,
-  availableDestinationIds: readonly string[]
+  availableDestinationIds: readonly string[],
 ): Choice[] {
   // Generates choices instead of repeating travel links in every exterior scene.
   return exteriorDestinations
     .filter(
       (destination) =>
         destination.id !== originId &&
-        availableDestinationIds.includes(destination.id)
+        availableDestinationIds.includes(destination.id),
     )
     .map((destination) => ({
       label: `Walk to ${destination.label} (${destination.walkMinutes}min)`,
@@ -90,18 +90,20 @@ export function createWalkingChoices(
     }));
 }
 
-export function createBusChoices(availableDestinationIds: readonly string[]): Choice[] {
+export function createBusChoices(
+  availableDestinationIds: readonly string[],
+): Choice[] {
   // Bus pricing and travel time are defined here for every destination.
   return exteriorDestinations
     .filter((destination) => availableDestinationIds.includes(destination.id))
     .map((destination) => ({
-    label: `Take the bus to ${destination.label} ($7 & 10min)`,
-    action: `takeBusTo${destination.id}`,
-    nextScene: destination.id,
-    timeCost: 10,
-    travel: true,
-    effects: { money: -7 },
-    requirements: { money: 7 },
+      label: `Take the bus to ${destination.label} ($7 & 10min)`,
+      action: `takeBusTo${destination.id}`,
+      nextScene: destination.id,
+      timeCost: 10,
+      travel: true,
+      effects: { money: -7 },
+      requirements: { money: 7 },
     }));
 }
 
@@ -123,7 +125,7 @@ export const hallway: Scene = {
 
   image: {
     day: "./images/locations/home/homeHallway.jpg",
-    night: "./images/locations/home/homeHallway.jpg",
+    night: "./images/locations/home/homeHallwayNight.jpg",
   },
 
   choices: [
@@ -144,6 +146,53 @@ export const hallway: Scene = {
       action: "goBathroom",
       nextScene: "bathroom",
       timeCost: 0,
+      hotspots: [{ left: 46, top: 21, width: 12, height: 41 }],
+    },
+    {
+      label: "Go upstairs",
+      action: "goUpstairs",
+      nextScene: "hallway-upstairs",
+      timeCost: 0,
+    },
+    {
+      label: "Go to the basement",
+      action: "goBasement",
+      nextScene: "basement",
+      timeCost: 0,
+    },
+    {
+      label: "Go to the garage",
+      action: "goGarage",
+      nextScene: "garage",
+      timeCost: 0,
+    },
+    {
+      label: "Go outside",
+      action: "leaveHouse",
+      nextScene: "front-yard",
+      timeCost: 5,
+    },
+  ],
+};
+
+export const upstairsHallway: Scene = {
+  id: "hallway-upstairs",
+  story: [
+    narration("You head upstairs."),
+    thought("The upstairs hallway is quiet."),
+  ],
+  location: "Home",
+  image: {
+    day: "./images/locations/home/homeHallwayUpstairsDay.jpg",
+    night: "./images/locations/home/homeHallwayUpstairsNight.png",
+  },
+  choices: [
+    {
+      label: "Open the attic hatch",
+      action: "openAtticHatch",
+      nextScene: "hallway-upstairs-attic-open",
+      timeCost: 0,
+      hotspots: [{ left: 59, top: 6, width: 3, height: 15 }],
     },
     {
       label: "Go to your room",
@@ -170,22 +219,38 @@ export const hallway: Scene = {
       timeCost: 0,
     },
     {
-      label: "Go to the basement",
-      action: "goBasement",
-      nextScene: "basement",
+      label: "Go downstairs",
+      action: "goDownstairs",
+      nextScene: "hallway",
       timeCost: 0,
     },
+  ],
+};
+
+export const upstairsHallwayAtticOpen: Scene = {
+  id: "hallway-upstairs-attic-open",
+  story: [
+    narration("The attic hatch swings open overhead."),
+    thought("The attic is open now."),
+  ],
+  location: "Home",
+  image: {
+    day: "./images/locations/home/homeHallwayUpstairsDayAtticStairs.png",
+    night: "./images/locations/home/homeHallwayUpstairsNightAtticStairs.png",
+  },
+  choices: [
+    ...upstairsHallway.choices
+      .filter((choice) => choice.action !== "openAtticHatch")
+      .map((choice) =>
+        choice.action === "goAttic"
+          ? { ...choice, hotspots: [{ left: 55, top: 1, width: 15, height: 79 }] }
+          : choice
+      ),
     {
-      label: "Go to the garage",
-      action: "goGarage",
-      nextScene: "garage",
+      label: "Close the attic hatch",
+      action: "closeAtticHatch",
+      nextScene: "hallway-upstairs",
       timeCost: 0,
-    },
-    {
-      label: "Go outside",
-      action: "leaveHouse",
-      nextScene: "front-yard",
-      timeCost: 5,
     },
   ],
 };
@@ -658,12 +723,6 @@ export const livingRoom: Scene = {
       nextScene: "kitchen",
       timeCost: 0,
     },
-    {
-      label: "Go to the bathroom",
-      action: "goBathroom",
-      nextScene: "bathroom",
-      timeCost: 0,
-    },
   ],
 
   conversation: momConversation,
@@ -755,12 +814,6 @@ export const kitchen: Scene = {
       label: "Go to the living room",
       action: "goLivingRoom",
       nextScene: "living-room",
-      timeCost: 0,
-    },
-    {
-      label: "Go to the bathroom",
-      action: "goBathroom",
-      nextScene: "bathroom",
       timeCost: 0,
     },
   ],
@@ -891,18 +944,6 @@ export const bathroom: Scene = {
       nextScene: "hallway",
       timeCost: 0,
     },
-    {
-      label: "Go to the living room",
-      action: "goLivingRoom",
-      nextScene: "living-room",
-      timeCost: 0,
-    },
-    {
-      label: "Go to the kitchen",
-      action: "goKitchen",
-      nextScene: "kitchen",
-      timeCost: 0,
-    },
   ],
 };
 // ----------------------------------------
@@ -913,6 +954,13 @@ const returnToHallway = {
   label: "Go back to the hallway",
   action: "goHallway",
   nextScene: "hallway",
+  timeCost: 0,
+};
+
+const returnToUpstairsHallway = {
+  label: "Go back to the upstairs hallway",
+  action: "goUpstairsHallway",
+  nextScene: "hallway-upstairs",
   timeCost: 0,
 };
 
@@ -929,12 +977,26 @@ export const ethanRoom: Scene = {
   },
   choices: [
     {
+      label: "Go to sleep",
+      action: "goToSleep",
+      nextScene: "ethan-room",
+      timeCost: 0,
+      hotspots: [{ left: 3, top: 36, width: 27, height: 38 }],
+    },
+    {
+      label: "Play a record",
+      action: "playVinyl",
+      nextScene: "ethan-room",
+      timeCost: 0,
+      hotspots: [{ left: 69, top: 35, width: 14, height: 13 }],
+    },
+    {
       label: "Look at your desk",
       action: "lookAtDesk",
       nextScene: "ethan-room-desk",
       timeCost: 0,
     },
-    returnToHallway,
+    returnToUpstairsHallway,
   ],
 };
 
@@ -977,7 +1039,7 @@ export const momRoom: Scene = {
     day: "./images/locations/home/motherRoomDay.png",
     night: "./images/locations/home/MotherRoomNight.png",
   },
-  choices: [returnToHallway],
+  choices: [returnToUpstairsHallway],
 };
 
 export const emilyRoom: Scene = {
@@ -991,7 +1053,7 @@ export const emilyRoom: Scene = {
     day: "./images/locations/home/sisterRoomDay.png",
     night: "./images/locations/home/sisterRoomNight.png",
   },
-  choices: [returnToHallway],
+  choices: [returnToUpstairsHallway],
 };
 
 export const attic: Scene = {
@@ -1005,7 +1067,7 @@ export const attic: Scene = {
     day: "./images/locations/home/atticDay.png",
     night: "./images/locations/home/AtticNight.png",
   },
-  choices: [returnToHallway],
+  choices: [returnToUpstairsHallway],
 };
 
 export const basement: Scene = {
@@ -2355,6 +2417,8 @@ export function getSceneThought(sceneId: string, time: number) {
 
 export const scenes = {
   hallway,
+  "hallway-upstairs": upstairsHallway,
+  "hallway-upstairs-attic-open": upstairsHallwayAtticOpen,
   "looking-around-house": lookingAroundHouse,
   "made-coffee": madeCoffee,
   "front-yard": frontYard,

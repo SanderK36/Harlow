@@ -25,6 +25,7 @@ import {
 import type { Choice, GameChoice } from "@/game/choices";
 import type { Conversation, StoryEntry } from "@/game/story";
 import type { JobId } from "@/game/quests";
+import type { GameState } from "@/game/types";
 
 const CONVERSATION_ACTIONS = new Set([
   // Add an action name here when a scene choice should open its conversation data.
@@ -49,6 +50,8 @@ const HOME_SCENE_IDS = new Set([
   "ethan-room-desk",
   "ethan-room-desk-empty",
   "hallway",
+  "hallway-upstairs",
+  "hallway-upstairs-attic-open",
   "living-room",
   "living-room-relaxing",
   "kitchen",
@@ -83,6 +86,7 @@ export function useGame() {
   );
   const [currentEffects, setCurrentEffects] = useState<StoryEntry[]>([]);
   const [lateNightActionThought, setLateNightActionThought] = useState<string | null>(null);
+  const [newDayAnnouncement, setNewDayAnnouncement] = useState<GameState | null>(null);
   const lateNightThoughtTimer = useRef<number | null>(null);
 
   // UI-only state: none of these values are part of the game save/progression.
@@ -301,12 +305,16 @@ export function useGame() {
       return false;
     }
 
+    if (choice.action === "goToSleep" && currentScene.id === "ethan-room") {
+      return true;
+    }
+
     // At night, Ethan can only travel home, then follow the route through the
     // house to his bedroom. Everything else waits until morning.
     if (!HOME_SCENE_IDS.has(currentScene.id)) {
       return choice.nextScene === "front-yard" || choice.action === "goHome";
     }
-    return choice.nextScene === "hallway" || choice.action === "goEthanRoom";
+    return choice.nextScene === "hallway" || choice.nextScene === "hallway-upstairs" || choice.action === "goEthanRoom";
   }
 
   function handleConversationChoice(choice: Extract<GameChoice, { response: StoryEntry[] }>) {
@@ -475,6 +483,7 @@ export function useGame() {
         : 1440 - gameState.time + 420;
       const nextGameState = advanceTime(minutesUntilSevenAm, false, true);
       moveToScene("ethan-room", nextGameState.time);
+      setNewDayAnnouncement(nextGameState);
       return;
     }
 
@@ -551,7 +560,7 @@ export function useGame() {
     }
     if (!momTalked && action === "relaxOnCouch") return false;
     if (action === "goToSleep") {
-      return currentScene.id === "ethan-room" && (time >= BEDTIME_START || time < BEDTIME_END);
+      return currentScene.id === "ethan-room" && (time >= BEDTIME_START || time < 420);
     }
     if (action === "watchTv") {
       return currentScene.id === "living-room" && !momTalked;
@@ -630,6 +639,7 @@ export function useGame() {
     setConversationActive(false);
     setUsedConversationChoices([]);
     setTravelingTo(null);
+    setNewDayAnnouncement(null);
     return true;
   }
 
@@ -676,6 +686,7 @@ export function useGame() {
     setConversationActive(false);
     setUsedConversationChoices([]);
     setTravelingTo(null);
+    setNewDayAnnouncement(null);
 
     return writeSessionSave({
       version: 1,
@@ -726,13 +737,19 @@ export function useGame() {
     gameState,
     playerState,
     currentScene,
-    currentThought: momTalked
-      ? currentThought
-      : currentScene.id === "living-room-relaxing"
-        ? "I need to talk to mom first"
-        : "I should talk to mom",
+    currentThought: isLateNight()
+      ? "It's pretty late. I should head to bed."
+      : momTalked && currentScene.id === "ethan-room" && gameState.dayNumber > initialGameState.dayNumber
+        ? "Another day. I should get on with it."
+      : momTalked
+        ? currentThought
+        : currentScene.id === "living-room-relaxing"
+          ? "I need to talk to mom first"
+          : "I should talk to mom",
     currentEffects,
     lateNightActionThought,
+    newDayAnnouncement,
+    dismissNewDayAnnouncement: () => setNewDayAnnouncement(null),
     conversation,
     conversationActive,
     activeCharacter,

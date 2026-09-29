@@ -433,6 +433,13 @@ button {
   line-height: 1.4;
 }
 
+/* Keep the late-night route-home actions above the persistent thought panel. */
+.scene-image-frame:has(.late-night-thought) .overlayActionList {
+  z-index: 6;
+  padding-bottom: clamp(128px, 15vw, 170px);
+  background: transparent;
+}
+
 @keyframes openingThoughtEnter {
   from {
     opacity: 0;
@@ -442,6 +449,71 @@ button {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.new-day-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(150, 96, 60, 0.2), transparent 42%),
+    rgba(8, 4, 5, 0.94);
+  animation: newDayScreenFade 3.4s ease-in-out forwards;
+}
+
+.new-day-screen-content {
+  width: min(680px, 100%);
+  padding: clamp(48px, 8vw, 82px);
+  text-align: center;
+  color: #fff4f4;
+  border: 1px solid rgba(237, 85, 98, 0.38);
+  border-radius: 12px;
+  background: rgba(29, 18, 18, 0.92);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.48), inset 3px 0 0 var(--accent);
+  animation: newDayContentFade 3.4s ease-in-out forwards;
+}
+
+.new-day-screen-content p,
+.new-day-screen-content span {
+  display: block;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.new-day-screen-content h2 {
+  margin: 12px 0 4px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(48px, 9vw, 82px);
+  font-weight: 500;
+}
+
+@keyframes newDayScreenFade {
+  0%, 100% {
+    opacity: 0;
+  }
+
+  14%, 82% {
+    opacity: 1;
+  }
+}
+
+@keyframes newDayContentFade {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+
+  14%, 82% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
