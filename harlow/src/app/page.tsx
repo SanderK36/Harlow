@@ -33,6 +33,8 @@ function hasActiveSession() {
 }
 
 const hotspotLabels: Record<string, string> = {
+  goToSleep: "Go to sleep",
+  playVinyl: "Vinyl player",
   lookAtDesk: "Desk",
   pickUpCigarettes: "Cigarettes",
   goLivingRoom: "Living room",
@@ -103,13 +105,16 @@ export default function Home() {
   const [showQuestLog, setShowQuestLog] = useState(false);
   const [showProductionSplash, setShowProductionSplash] = useState(false);
   const [showOpeningThought, setShowOpeningThought] = useState(false);
+  const [showVinylThought, setShowVinylThought] = useState(false);
   const [tvNewsLine, setTvNewsLine] = useState<string | null>(null);
   const openingThoughtTimer = useRef<number | null>(null);
+  const vinylThoughtTimer = useRef<number | null>(null);
   const {
     gameState,
     playerState,
     currentScene,
     currentThought,
+    lateNightActionThought,
     currentEffects,
     conversation,
     conversationActive,
@@ -120,7 +125,7 @@ export default function Home() {
     showInventory,
     setShowInventory,
     handleChoice,
-    wait,
+    adminWait,
     travelingTo,
     showTravel,
     setShowTravel,
@@ -161,6 +166,7 @@ export default function Home() {
     setHasStarted(true);
     setShowQuestLog(false);
     setShowOpeningThought(false);
+    setShowVinylThought(false);
     setShowProductionSplash(true);
   }
 
@@ -185,9 +191,23 @@ export default function Home() {
     }, 3600);
   }
 
+  function showVinylPlayerThought() {
+    if (vinylThoughtTimer.current !== null) {
+      window.clearTimeout(vinylThoughtTimer.current);
+    }
+    setShowVinylThought(true);
+    vinylThoughtTimer.current = window.setTimeout(() => {
+      setShowVinylThought(false);
+      vinylThoughtTimer.current = null;
+    }, 5200);
+  }
+
   useEffect(() => () => {
     if (openingThoughtTimer.current !== null) {
       window.clearTimeout(openingThoughtTimer.current);
+    }
+    if (vinylThoughtTimer.current !== null) {
+      window.clearTimeout(vinylThoughtTimer.current);
     }
     if (sceneImageAnimationFrame.current !== null) {
       window.cancelAnimationFrame(sceneImageAnimationFrame.current);
@@ -233,7 +253,7 @@ export default function Home() {
         ? ["talkToMom", ...(momTalked ? [] : ["watchTv"])]
         : ["relaxOnCouch", ...(momTalked ? [] : ["watchTv"])]
       : currentScene.id === "ethan-room"
-      ? ["lookAtDesk"]
+      ? ["goToSleep", "playVinyl", "lookAtDesk"]
       : currentScene.id === "ethan-room-desk"
         ? ["pickUpCigarettes"]
         : currentScene.id === "hallway"
@@ -304,7 +324,13 @@ export default function Home() {
       (!hotspotActions.includes(choice.action) && !choice.hotspots?.length)
   );
   const hasConversationOverlay = conversation.length > 0;
-  const isBottomPanelVisible = showOpeningThought || tvNewsLine !== null;
+  const lateNightThought = gameState.time >= 180 && gameState.time < 210
+    ? "It's 3 AM. I'm very tired and should head home."
+    : gameState.time >= 210 && gameState.time < 420
+      ? "It's late. I should head home."
+      : null;
+  const bottomThought = lateNightActionThought ?? lateNightThought;
+  const isBottomPanelVisible = showOpeningThought || showVinylThought || bottomThought !== null || tvNewsLine !== null;
   const actionList = (
     <ActionList
       title={
@@ -470,7 +496,19 @@ export default function Home() {
               </div>
             )}
           </div>
-          {isBottomPanelVisible && (
+          {bottomThought && (
+            <div className="opening-thought" role="status">
+              <span>ETHAN — INNER THOUGHT</span>
+              <p>{bottomThought}</p>
+            </div>
+          )}
+          {showVinylThought && !bottomThought && (
+            <div className="opening-thought" role="status">
+              <span>ETHAN — INNER THOUGHT</span>
+              <p>I love playing rock music on this thing. Mom got it for me for Christmas last year.</p>
+            </div>
+          )}
+          {(showOpeningThought || tvNewsLine !== null) && (
             <div className="opening-thought" role="status">
               <span>{showOpeningThought ? "ETHAN — INNER THOUGHT" : "TV NEWS"}</span>
               <p>{showOpeningThought
@@ -492,9 +530,17 @@ export default function Home() {
               } : undefined}
               aria-label={hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label}
               label={hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label}
-              onClick={() => sceneHotspot.action === "watchTv"
-                ? showTvNews()
-                : handleChoice(sceneHotspot)}
+              onClick={() => {
+                if (sceneHotspot.action === "watchTv") {
+                  showTvNews();
+                  return;
+                }
+
+                if (sceneHotspot.action === "playVinyl") {
+                  showVinylPlayerThought();
+                }
+                handleChoice(sceneHotspot);
+              }}
             />
             ))
           )}
@@ -574,27 +620,27 @@ export default function Home() {
           <span>Pass time</span>
           <ActionButton
             label="Wait 1 min"
-            onClick={() => wait(1)}
+            onClick={() => adminWait(1)}
           />
 
           <ActionButton
             label="Wait 5 min"
-            onClick={() => wait(5)}
+            onClick={() => adminWait(5)}
           />
 
           <ActionButton
             label="Wait 10 min"
-            onClick={() => wait(10)}
+            onClick={() => adminWait(10)}
           />
 
           <ActionButton
             label="Wait 30 min"
-            onClick={() => wait(30)}
+            onClick={() => adminWait(30)}
           />
 
           <ActionButton
             label="Wait 1 hour"
-            onClick={() => wait(60)}
+            onClick={() => adminWait(60)}
           />
         </div>
 

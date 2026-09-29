@@ -41,6 +41,29 @@ const CONVERSATION_ACTIONS = new Set([
 
 const NPC_REPLY_DELAY = 450;
 const TRAVEL_DURATION = 3000;
+const BEDTIME_START = 1320;
+const BEDTIME_END = 180;
+const EXHAUSTION_LOCK_TIME = 210;
+const HOME_SCENE_IDS = new Set([
+  "ethan-room",
+  "ethan-room-desk",
+  "ethan-room-desk-empty",
+  "hallway",
+  "living-room",
+  "living-room-relaxing",
+  "kitchen",
+  "fridge",
+  "back-yard",
+  "garage",
+  "garage-bench",
+  "garage-bench-empty",
+  "basement",
+  "attic",
+  "mom-room",
+  "sister-room",
+  "bathroom",
+  "front-yard",
+]);
 
 type ShopId = "gas-station" | "needle-groove";
 
@@ -59,6 +82,8 @@ export function useGame() {
     getSceneThought(sessionScene?.id ?? ethanRoom.id, sessionSave?.gameState.time ?? initialGameState.time)
   );
   const [currentEffects, setCurrentEffects] = useState<StoryEntry[]>([]);
+  const [lateNightActionThought, setLateNightActionThought] = useState<string | null>(null);
+  const lateNightThoughtTimer = useRef<number | null>(null);
 
   // UI-only state: none of these values are part of the game save/progression.
   const [showStats, setShowStats] = useState(false);
@@ -82,6 +107,7 @@ export function useGame() {
     if (replyTimer.current !== null) window.clearTimeout(replyTimer.current);
     if (questNotificationTimer.current !== null) window.clearTimeout(questNotificationTimer.current);
     if (locationDiscoveryTimer.current !== null) window.clearTimeout(locationDiscoveryTimer.current);
+    if (lateNightThoughtTimer.current !== null) window.clearTimeout(lateNightThoughtTimer.current);
   }, []);
 
   function cancelPendingReply() {
@@ -163,12 +189,20 @@ export function useGame() {
     if (readSessionSave()) writeSessionSave(currentSave());
   }, [currentSave]);
 
-  function advanceTime(minutes: number, completingMomQuest = false) {
+  function advanceTime(minutes: number, completingMomQuest = false, bypassExhaustionLock = false) {
     // Keep time changes in one place so thoughts and day/night images stay synced.
     const allowedMinutes = momTalked || completingMomQuest
       ? minutes
       : Math.min(minutes, Math.max(0, 539 - gameState.time));
-    const nextGameState = advanceGameTime(gameState, allowedMinutes);
+    const minutesUntilExhaustionLock = gameState.time >= EXHAUSTION_LOCK_TIME && gameState.time < 420
+      ? 0
+      : gameState.time < EXHAUSTION_LOCK_TIME
+        ? EXHAUSTION_LOCK_TIME - gameState.time
+        : 1440 - gameState.time + EXHAUSTION_LOCK_TIME;
+    const timeToAdvance = bypassExhaustionLock
+      ? allowedMinutes
+      : Math.min(allowedMinutes, minutesUntilExhaustionLock);
+    const nextGameState = advanceGameTime(gameState, timeToAdvance);
 
     setGameState(nextGameState);
     setCurrentThought(getSceneThought(currentScene.id, nextGameState.time));
@@ -242,6 +276,37 @@ export function useGame() {
 
     setPlayerState((previous) => applyEffects(previous, choice.effects!));
     setCurrentEffects(effectsToStory(choice.effects));
+  }
+
+  function showLateNightActionThought() {
+    if (lateNightThoughtTimer.current !== null) {
+      window.clearTimeout(lateNightThoughtTimer.current);
+    }
+    setLateNightActionThought("That can wait until tomorrow. I'm too tired.");
+    lateNightThoughtTimer.current = window.setTimeout(() => {
+      setLateNightActionThought(null);
+      lateNightThoughtTimer.current = null;
+    }, 2600);
+  }
+
+  function isLateNight() {
+    return gameState.time >= BEDTIME_END && gameState.time < 420;
+  }
+
+  function canTakeLateNightAction(choice: GameChoice) {
+    if (!isLateNight()) {
+      return true;
+    }
+    if (!("action" in choice)) {
+      return false;
+    }
+
+    // At night, Ethan can only travel home, then follow the route through the
+    // house to his bedroom. Everything else waits until morning.
+    if (!HOME_SCENE_IDS.has(currentScene.id)) {
+      return choice.nextScene === "front-yard" || choice.action === "goHome";
+    }
+    return choice.nextScene === "hallway" || choice.action === "goEthanRoom";
   }
 
   function handleConversationChoice(choice: Extract<GameChoice, { response: StoryEntry[] }>) {
@@ -343,6 +408,11 @@ export function useGame() {
   function handleChoice(choice: GameChoice) {
     // This is the central choice router. Prefer declarative scene fields
     // (`nextScene`, `itemToAdd`, `effects`) over adding action-specific cases.
+    if (!canTakeLateNightAction(choice)) {
+      showLateNightActionThought();
+      return;
+    }
+
     if ("response" in choice) {
       handleConversationChoice(choice);
       return;
@@ -399,6 +469,15 @@ export function useGame() {
       return;
     }
 
+    if (choice.action === "goToSleep") {
+      const minutesUntilSevenAm = gameState.time < BEDTIME_END
+        ? 420 - gameState.time
+        : 1440 - gameState.time + 420;
+      const nextGameState = advanceTime(minutesUntilSevenAm, false, true);
+      moveToScene("ethan-room", nextGameState.time);
+      return;
+    }
+
     if (choice.action === "leaveBusStop") {
       const nextGameState = advanceTime(choice.timeCost);
       moveToScene(busStopReturnSceneId, nextGameState.time);
@@ -452,6 +531,10 @@ export function useGame() {
   }
 
   function goToBusStop() {
+    if (isLateNight()) {
+      showLateNightActionThought();
+      return;
+    }
     setBusStopReturnSceneId(currentScene.id);
     const nextGameState = advanceTime(0);
     moveToScene("bus-stop", nextGameState.time);
@@ -467,6 +550,9 @@ export function useGame() {
       return false;
     }
     if (!momTalked && action === "relaxOnCouch") return false;
+    if (action === "goToSleep") {
+      return currentScene.id === "ethan-room" && (time >= BEDTIME_START || time < BEDTIME_END);
+    }
     if (action === "watchTv") {
       return currentScene.id === "living-room" && !momTalked;
     }
@@ -646,6 +732,7 @@ export function useGame() {
         ? "I need to talk to mom first"
         : "I should talk to mom",
     currentEffects,
+    lateNightActionThought,
     conversation,
     conversationActive,
     activeCharacter,
@@ -676,7 +763,16 @@ export function useGame() {
     notifyMomQuest,
     handleChoice,
     goToBusStop,
-    wait: advanceTime,
+    // The pass-time controls are developer tools, so they intentionally ignore
+    // the gameplay-only 03:30 exhaustion cap.
+    adminWait: (minutes: number) => advanceTime(minutes, false, true),
+    wait: (minutes: number) => {
+      if (gameState.time >= EXHAUSTION_LOCK_TIME) {
+        showLateNightActionThought();
+        return;
+      }
+      advanceTime(minutes);
+    },
     useInventoryItem: (item: string) => {
       const fearReduction = item === "Beer" ? 10 : item === "Cigarettes" ? 5 : 0;
       if (!fearReduction) return;

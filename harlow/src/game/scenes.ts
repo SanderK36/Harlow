@@ -72,14 +72,14 @@ export function isExteriorScene(sceneId: string): boolean {
 
 export function createWalkingChoices(
   originId: string,
-  availableDestinationIds: readonly string[]
+  availableDestinationIds: readonly string[],
 ): Choice[] {
   // Generates choices instead of repeating travel links in every exterior scene.
   return exteriorDestinations
     .filter(
       (destination) =>
         destination.id !== originId &&
-        availableDestinationIds.includes(destination.id)
+        availableDestinationIds.includes(destination.id),
     )
     .map((destination) => ({
       label: `Walk to ${destination.label} (${destination.walkMinutes}min)`,
@@ -90,18 +90,20 @@ export function createWalkingChoices(
     }));
 }
 
-export function createBusChoices(availableDestinationIds: readonly string[]): Choice[] {
+export function createBusChoices(
+  availableDestinationIds: readonly string[],
+): Choice[] {
   // Bus pricing and travel time are defined here for every destination.
   return exteriorDestinations
     .filter((destination) => availableDestinationIds.includes(destination.id))
     .map((destination) => ({
-    label: `Take the bus to ${destination.label} ($7 & 10min)`,
-    action: `takeBusTo${destination.id}`,
-    nextScene: destination.id,
-    timeCost: 10,
-    travel: true,
-    effects: { money: -7 },
-    requirements: { money: 7 },
+      label: `Take the bus to ${destination.label} ($7 & 10min)`,
+      action: `takeBusTo${destination.id}`,
+      nextScene: destination.id,
+      timeCost: 10,
+      travel: true,
+      effects: { money: -7 },
+      requirements: { money: 7 },
     }));
 }
 
@@ -928,6 +930,20 @@ export const ethanRoom: Scene = {
     night: "./images/locations/home/ethanRoomNight.png",
   },
   choices: [
+    {
+      label: "Go to sleep",
+      action: "goToSleep",
+      nextScene: "ethan-room",
+      timeCost: 0,
+      hotspots: [{ left: 3, top: 36, width: 27, height: 38 }],
+    },
+    {
+      label: "Play a record",
+      action: "playVinyl",
+      nextScene: "ethan-room",
+      timeCost: 0,
+      hotspots: [{ left: 69, top: 35, width: 14, height: 13 }],
+    },
     {
       label: "Look at your desk",
       action: "lookAtDesk",
