@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { resolveAction } from "@/game/actions";
 import { applyEffects, effectsToStory } from "@/game/effects";
 import initialGameState from "@/game/gameState";
 import player from "@/game/player";
@@ -9,7 +8,6 @@ import {
   createWalkingChoices,
   ethanRoom,
   getSceneThought,
-  hallway,
   momDeathConversation,
   scenes,
 } from "@/game/scenes";
@@ -493,8 +491,6 @@ export function useGame() {
       return;
     }
 
-    resolveAction(choice);
-
     if (choice.travel) {
       handleTravel(choice);
       return;
@@ -666,10 +662,6 @@ export function useGame() {
     return restoreSave(readMostRecentSave());
   }
 
-  function startGameSession() {
-    return writeSessionSave(currentSave());
-  }
-
   function startNewGameSession() {
     // A new game must not inherit the active session currently held in React
     // state. Build and save a fresh starting snapshot before showing the game.
@@ -790,7 +782,6 @@ export function useGame() {
     saveGame,
     loadGame,
     loadMostRecentGame,
-    startGameSession,
     startNewGameSession,
     notifyMomQuest,
     handleChoice,
