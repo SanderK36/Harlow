@@ -549,6 +549,21 @@ export function useGame() {
     moveToScene("bus-stop", nextGameState.time);
   }
 
+  function adminTravel(sceneId: string) {
+    if (!scenes[sceneId as keyof typeof scenes]) {
+      return;
+    }
+
+    cancelPendingReply();
+    setConversation([]);
+    setActiveConversation(null);
+    setConversationActive(false);
+    setUsedConversationChoices([]);
+    setShowTravel(false);
+    setTravelingTo(null);
+    moveToScene(sceneId, gameState.time);
+  }
+
   function isChoiceAvailable(choice: Choice) {
     // Temporary availability rules for story moments. Keep rules keyed by action
     // names, or move them into a richer `requirements` type as the game grows.
@@ -780,6 +795,7 @@ export function useGame() {
     notifyMomQuest,
     handleChoice,
     goToBusStop,
+    adminTravel,
     // The pass-time controls are developer tools, so they intentionally ignore
     // the gameplay-only 03:30 exhaustion cap.
     adminWait: (minutes: number) => advanceTime(minutes, false, true),

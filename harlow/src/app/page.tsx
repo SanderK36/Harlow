@@ -20,7 +20,7 @@ import QuestWindow from "@/components/QuestWindow/QuestWindow";
 
 import { isNightTime } from "@/game/utils";
 import { useGame } from "@/game/useGame";
-import { isExteriorScene } from "@/game/scenes";
+import { isExteriorScene, scenes } from "@/game/scenes";
 import { clearSessionSave, readSessionSave } from "@/game/save";
 import type { Choice } from "@/game/choices";
 
@@ -99,6 +99,13 @@ const sanatoriumHotspotActions: Record<string, string[]> = {
   "sanatorium-room-2": ["leaveSanatoriumRoom2"],
 };
 
+const adminDestinations = Object.values(scenes)
+  .map((scene) => ({
+    id: scene.id,
+    label: `${scene.location} — ${scene.id.replaceAll("-", " ")}`,
+  }))
+  .sort((a, b) => a.label.localeCompare(b.label));
+
 export default function Home() {
   // Restore the session until the player explicitly chooses a screen.
   // Returning to the menu must override the session detected on refresh.
@@ -106,6 +113,7 @@ export default function Home() {
   const resumedSession = useSyncExternalStore(subscribeToSession, hasActiveSession, () => false);
   const [showCharacterDirectory, setShowCharacterDirectory] = useState(false);
   const [showQuestLog, setShowQuestLog] = useState(false);
+  const [showAdminTravel, setShowAdminTravel] = useState(false);
   const [showProductionSplash, setShowProductionSplash] = useState(false);
   const [showOpeningThought, setShowOpeningThought] = useState(false);
   const [showVinylThought, setShowVinylThought] = useState(false);
@@ -133,6 +141,7 @@ export default function Home() {
     setShowInventory,
     handleChoice,
     adminWait,
+    adminTravel,
     travelingTo,
     showTravel,
     setShowTravel,
@@ -686,6 +695,32 @@ export default function Home() {
             label="Wait 1 hour"
             onClick={() => adminWait(60)}
           />
+        </div>
+
+        <div className="adminTravelControls">
+          <ActionButton
+            label={showAdminTravel ? "Hide admin travel" : "Admin travel"}
+            onClick={() => setShowAdminTravel((visible) => !visible)}
+          />
+          {showAdminTravel && (
+            <div className="adminTravelPanel" aria-label="Admin travel destinations">
+              <span>Free travel</span>
+              <div>
+                {adminDestinations.map((destination) => (
+                  <button
+                    key={destination.id}
+                    type="button"
+                    onClick={() => {
+                      adminTravel(destination.id);
+                      setShowAdminTravel(false);
+                    }}
+                  >
+                    {destination.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {travelingTo && (
