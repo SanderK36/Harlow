@@ -24,8 +24,9 @@
 
 .portrait {
   position: absolute;
-  bottom: clamp(70px, 15%, 130px);
-  height: min(78%, 520px);
+  /* Rests just behind the top edge of the box once replies are showing. */
+  bottom: clamp(110px, 28%, 210px);
+  height: min(52%, 350px);
   aspect-ratio: 4 / 5;
   overflow: hidden;
   /* Feather every edge so the painted card melts into the scene. */
@@ -47,9 +48,11 @@
   animation: portraitEnterLeft 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
+/* Ethan only speaks while replies are hidden (shorter box), so he sits lower. */
 .ethanPortrait {
   right: clamp(0px, 2%, 24px);
-  height: min(70%, 460px);
+  bottom: clamp(90px, 18%, 150px);
+  height: min(47%, 310px);
 }
 
 .portraitIdle {
@@ -376,19 +379,25 @@
     content: "";
   }
 
-  .portrait {
-    top: 0;
-    bottom: auto;
-    height: 300px;
+  /* Rest on the box's top edge (10px stage padding, ~22px tucked behind). */
+  .portrait,
+  .ethanPortrait {
+    bottom: calc(var(--dialogue-box-height, 260px) - 12px);
+    height: 200px;
+    transition:
+      opacity 320ms ease,
+      filter 320ms ease,
+      transform 380ms cubic-bezier(0.2, 0.7, 0.2, 1),
+      bottom 380ms cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 
   .partnerPortrait {
-    left: -12px;
+    left: 0;
   }
 
   .ethanPortrait {
-    right: -12px;
-    height: 270px;
+    right: 0;
+    height: 180px;
   }
 
   .box {
@@ -414,6 +423,7 @@
   }
 
   .portrait,
+  .ethanPortrait,
   .choices {
     transition: none;
   }

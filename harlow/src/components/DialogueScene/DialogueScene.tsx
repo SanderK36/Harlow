@@ -98,9 +98,11 @@ export default function DialogueScene({
   const [showHistory, setShowHistory] = useState(false);
   const choicesRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
 
   const lineIndex = Math.min(cursor, Math.max(0, lines.length - 1));
   const line = lines[lineIndex];
+  const hasLine = line !== undefined;
   const fullLength = line?.text.length ?? 0;
   const shown = reducedMotion ? fullLength : Math.min(revealed, fullLength);
   const lineComplete = shown >= fullLength;
@@ -193,6 +195,19 @@ export default function DialogueScene({
     });
   }, [active]);
 
+  // Expose the box height so phone portraits can rest on its top edge
+  // whatever the line length or number of replies.
+  useEffect(() => {
+    const box = boxRef.current;
+    const stage = stageRef.current;
+    if (!box || !stage) return;
+    const observer = new ResizeObserver(() => {
+      stage.style.setProperty("--dialogue-box-height", `${box.offsetHeight}px`);
+    });
+    observer.observe(box);
+    return () => observer.disconnect();
+  }, [hasLine]);
+
   useEffect(() => {
     const listener = (event: KeyboardEvent) => onKeyDown(event);
     window.addEventListener("keydown", listener);
@@ -237,6 +252,7 @@ export default function DialogueScene({
       </div>
 
       <div
+        ref={boxRef}
         className={`${styles.box} ${speakerIsEthan ? styles.boxEthan : ""} ${
           line.speaker ? "" : styles.boxNarration
         }`}
