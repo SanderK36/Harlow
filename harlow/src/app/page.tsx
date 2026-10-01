@@ -33,6 +33,7 @@ import { isExteriorScene, scenes } from "@/game/scenes";
 import { clearSessionSave, readSessionSave } from "@/game/save";
 import { harlowAudio } from "@/game/audio";
 import Atmosphere from "@/components/Atmosphere/Atmosphere";
+import StormLightning from "@/components/StormLightning/StormLightning";
 import type { Choice } from "@/game/choices";
 
 function subscribeToSession() {
@@ -706,6 +707,11 @@ export default function Home() {
                 className={`scene-image scene-image-backdrop${conversationActive ? " scene-image-backdrop-active" : ""}`}
               />
             )}
+            <StormLightning
+              weather={gameState.weather}
+              indoor={sceneIsIndoor}
+              active={!showProductionSplash}
+            />
             {/* Dims everything but the hotspot under the pointer or focus. */}
             <div className="scene-spotlight" aria-hidden="true">
               <div className="scene-spotlight-hole" />
