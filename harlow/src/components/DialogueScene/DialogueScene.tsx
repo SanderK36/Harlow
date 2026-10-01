@@ -5,7 +5,6 @@ import {
   useEffectEvent,
   useRef,
   useState,
-  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import Image from "next/image";
@@ -14,6 +13,7 @@ import styles from "./DialogueScene.module.css";
 import type { StoryEntry } from "@/game/story";
 import { getPortrait } from "@/game/portraits";
 import StoryLog from "@/components/StoryLog/StoryLog";
+import { prefersReducedMotion, revealDelay, useReducedMotion } from "./typewriter";
 
 type DialogueLine = {
   speaker: string | null;
@@ -27,24 +27,8 @@ type DialogueSceneProps = {
   choices?: ReactNode;
 };
 
-// Base reveal speed, plus short beats after punctuation so lines read like speech.
-const CHARACTER_DELAY = 22;
-const SENTENCE_PAUSE = 240;
-const CLAUSE_PAUSE = 110;
 // Ethan's own (already chosen) line steps aside on its own for the NPC reply.
 const ETHAN_AUTO_ADVANCE = 520;
-
-const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
-
-function subscribeToReducedMotion(onChange: () => void) {
-  const query = window.matchMedia(REDUCED_MOTION);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-}
-
-function prefersReducedMotion() {
-  return window.matchMedia(REDUCED_MOTION).matches;
-}
 
 function toDialogueLines(entries: StoryEntry[]): DialogueLine[] {
   return entries.flatMap((entry): DialogueLine[] => {
@@ -56,13 +40,6 @@ function toDialogueLines(entries: StoryEntry[]): DialogueLine[] {
     }
     return [];
   });
-}
-
-function revealDelay(previousCharacter: string | undefined) {
-  if (previousCharacter === undefined) return 140;
-  if (".!?…".includes(previousCharacter)) return SENTENCE_PAUSE;
-  if (",;:—".includes(previousCharacter)) return CLAUSE_PAUSE;
-  return CHARACTER_DELAY;
 }
 
 function isEthan(speaker: string | null) {
@@ -87,11 +64,7 @@ export default function DialogueScene({
   choices,
 }: DialogueSceneProps) {
   const lines = toDialogueLines(entries);
-  const reducedMotion = useSyncExternalStore(
-    subscribeToReducedMotion,
-    prefersReducedMotion,
-    () => false
-  );
+  const reducedMotion = useReducedMotion();
   const [cursor, setCursor] = useState(0);
   const [revealed, setRevealed] = useState(0);
   const [knownLineCount, setKnownLineCount] = useState(lines.length);
