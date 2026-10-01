@@ -134,6 +134,15 @@ const OUTDOOR_SCENE_IDS = new Set([
   "sanatorium-entrance",
 ]);
 
+/** Which cursor a hotspot gets: look, go, talk or take (see globals.css). */
+function hotspotKind(action: string) {
+  if (action.startsWith("talkTo")) return "talk";
+  if (action.startsWith("pickUp") || action.startsWith("take")) return "take";
+  if (action === "goToSleep") return "inspect";
+  if (/^(go|enter|leave|approach)/.test(action)) return "go";
+  return "inspect";
+}
+
 const OPENING_THOUGHTS = [
   "I hardly slept last night.",
   "What the fuck happened?",
@@ -707,6 +716,7 @@ export default function Home() {
                   <SceneHotspot
                     key={`${sceneHotspot.action}-${index}`}
                     type="button"
+                    data-kind={hotspotKind(sceneHotspot.action)}
                     className={`scene-hotspot scene-hotspot-${sceneHotspot.action} scene-hotspot-${currentScene.id}-${sceneHotspot.action}`}
                     style={
                       region
