@@ -31,6 +31,9 @@ import { isNightTime } from "@/game/utils";
 import { useGame } from "@/game/useGame";
 import { isExteriorScene, scenes } from "@/game/scenes";
 import { clearSessionSave, readSessionSave } from "@/game/save";
+import { harlowAudio } from "@/game/audio";
+import Atmosphere from "@/components/Atmosphere/Atmosphere";
+import StormLightning from "@/components/StormLightning/StormLightning";
 import type { Choice } from "@/game/choices";
 
 function subscribeToSession() {
@@ -45,6 +48,9 @@ const hotspotLabels: Record<string, string> = {
   goToSleep: "Go to sleep",
   playVinyl: "Vinyl player",
   lookAtDesk: "Desk",
+  goEthanRoom: "Your room",
+  goMomRoom: "Mom's room",
+  goEmilyRoom: "Emily's room",
   pickUpCigarettes: "Cigarettes",
   goLivingRoom: "Living room",
   talkToMom: "Talk to Mom",
@@ -118,6 +124,23 @@ const adminDestinations = Object.values(scenes)
     label: `${scene.location} — ${scene.id.replaceAll("-", " ")}`,
   }))
   .sort((a, b) => a.label.localeCompare(b.label));
+
+// Open-air scenes beyond the travel destinations, for rain and lightning.
+const OUTDOOR_SCENE_IDS = new Set([
+  "back-yard",
+  "light-pole",
+  "cementary-backside",
+  "sanatorium-entrance",
+]);
+
+/** Which cursor a hotspot gets: look, go, talk or take (see globals.css). */
+function hotspotKind(action: string) {
+  if (action.startsWith("talkTo")) return "talk";
+  if (action.startsWith("pickUp") || action.startsWith("take")) return "take";
+  if (action === "goToSleep") return "inspect";
+  if (/^(go|enter|leave|approach)/.test(action)) return "go";
+  return "inspect";
+}
 
 // Ethan's first thoughts on a new game, one beat at a time in the thought
 // panel; the "Talk to Mom" quest starts after the last one.
@@ -306,6 +329,45 @@ export default function Home() {
     );
     return () => document.body.classList.remove("production-splash-active");
   }, [showProductionSplash]);
+
+  // Sound: browsers only start audio after a gesture, so the first click or
+  // key press anywhere in the game wakes the engine.
+  useEffect(() => {
+    const unlock = () => harlowAudio().unlock();
+    window.addEventListener("pointerdown", unlock);
+    window.addEventListener("keydown", unlock);
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, []);
+
+  const inGame = Boolean(hasStarted ?? resumedSession);
+  const sceneIsIndoor = !(
+    isExteriorScene(currentScene.id) || OUTDOOR_SCENE_IDS.has(currentScene.id)
+  );
+  const sceneIsNight = isNightTime(gameState.time);
+
+  // Rain and drone follow the weather, the hour and whether Ethan is inside.
+  // The intro film carries its own soundtrack, so the beds wait for it.
+  useEffect(() => {
+    harlowAudio().setAmbience(
+      inGame && !showProductionSplash
+        ? { indoor: sceneIsIndoor, night: sceneIsNight, weather: gameState.weather }
+        : null,
+    );
+  }, [inGame, showProductionSplash, sceneIsIndoor, sceneIsNight, gameState.weather]);
+
+  useEffect(() => () => harlowAudio().setAmbience(null), []);
+
+  // Footsteps when Ethan moves to another scene (not on the first render).
+  const previousSceneId = useRef<string | null>(null);
+  useEffect(() => {
+    if (previousSceneId.current !== null && previousSceneId.current !== currentScene.id) {
+      harlowAudio().footsteps();
+    }
+    previousSceneId.current = currentScene.id;
+  }, [currentScene.id]);
 
   useEffect(() => {
     if (!newDayAnnouncement) {
@@ -591,6 +653,7 @@ export default function Home() {
           onFinished={finishProductionSplash}
         />
       )}
+      <Atmosphere night={sceneIsNight} />
       {isNightTime(gameState.time) && (
         <div className="gameClouds gameCloudsNight" aria-hidden="true">
           <div className="gameCloud gameCloudOne" />
@@ -644,6 +707,11 @@ export default function Home() {
                 className={`scene-image scene-image-backdrop${conversationActive ? " scene-image-backdrop-active" : ""}`}
               />
             )}
+            <StormLightning
+              weather={gameState.weather}
+              indoor={sceneIsIndoor}
+              active={!showProductionSplash}
+            />
             {/* Dims everything but the hotspot under the pointer or focus. */}
             <div className="scene-spotlight" aria-hidden="true">
               <div className="scene-spotlight-hole" />
@@ -654,6 +722,7 @@ export default function Home() {
                   <SceneHotspot
                     key={`${sceneHotspot.action}-${index}`}
                     type="button"
+                    data-kind={hotspotKind(sceneHotspot.action)}
                     className={`scene-hotspot scene-hotspot-${sceneHotspot.action} scene-hotspot-${currentScene.id}-${sceneHotspot.action}`}
                     style={
                       region

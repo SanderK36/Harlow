@@ -1744,3 +1744,25 @@ button {
     animation: none;
   }
 }
+
+/* Contextual cursors on hotspots (desktop pointers): a magnifier to look,
+   an arrow to go, a speech bubble to talk and a hand to take. Bone-white
+   with blood-red accents, like the rest of the HUD. Pointer is the fallback. */
+@media (hover: hover) and (pointer: fine) {
+  .scene-hotspot[data-kind="inspect"] {
+    cursor: url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2732%27%20height=%2732%27%20viewBox=%270%200%2032%2032%27%3E%3Ccircle%20cx=%2713%27%20cy=%2713%27%20r=%278.5%27%20fill=%27rgba%28242%2C228%2C201%2C0.18%29%27%20stroke=%27%231a0a0c%27%20stroke-width=%275%27/%3E%3Ccircle%20cx=%2713%27%20cy=%2713%27%20r=%278.5%27%20fill=%27none%27%20stroke=%27%23f2e4c9%27%20stroke-width=%272.4%27/%3E%3Cpath%20d=%27M19.5%2019.5l8%208%27%20stroke=%27%231a0a0c%27%20stroke-width=%277%27%20stroke-linecap=%27round%27/%3E%3Cpath%20d=%27M19.5%2019.5l8%208%27%20stroke=%27%23c9293a%27%20stroke-width=%273.6%27%20stroke-linecap=%27round%27/%3E%3C/svg%3E") 13 13, pointer;
+  }
+
+  .scene-hotspot[data-kind="go"] {
+    cursor: url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2732%27%20height=%2732%27%20viewBox=%270%200%2032%2032%27%3E%3Cpath%20d=%27M4%2012h13V5l12%2011-12%2011v-7H4z%27%20fill=%27%23f2e4c9%27%20stroke=%27%231a0a0c%27%20stroke-width=%272.4%27%20stroke-linejoin=%27round%27/%3E%3Cpath%20d=%27M4%2012h4v8H4z%27%20fill=%27%23c9293a%27/%3E%3C/svg%3E") 16 16, pointer;
+  }
+
+  .scene-hotspot[data-kind="talk"] {
+    cursor: url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2732%27%20height=%2732%27%20viewBox=%270%200%2032%2032%27%3E%3Cpath%20d=%27M4%205h24v16H14l-7%206v-6H4z%27%20fill=%27%23f2e4c9%27%20stroke=%27%231a0a0c%27%20stroke-width=%272.4%27%20stroke-linejoin=%27round%27/%3E%3Ccircle%20cx=%2710.5%27%20cy=%2713%27%20r=%271.8%27%20fill=%27%23c9293a%27/%3E%3Ccircle%20cx=%2716%27%20cy=%2713%27%20r=%271.8%27%20fill=%27%23c9293a%27/%3E%3Ccircle%20cx=%2721.5%27%20cy=%2713%27%20r=%271.8%27%20fill=%27%23c9293a%27/%3E%3C/svg%3E") 16 13, pointer;
+  }
+
+  .scene-hotspot[data-kind="take"] {
+    cursor: url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2732%27%20height=%2732%27%20viewBox=%270%200%2032%2032%27%3E%3Cpath%20d=%27M9%2015V7.5a2%202%200%200%201%204%200V14V5.5a2%202%200%200%201%204%200V14V6.5a2%202%200%200%201%204%200V15v-5a2%202%200%200%201%204%200v9c0%205-3.5%209-8.5%209h-1.5c-3.5%200-5.5-2-7.5-5l-3-5a2%202%200%200%201%203.4-2.1L9%2018z%27%20fill=%27%23f2e4c9%27%20stroke=%27%231a0a0c%27%20stroke-width=%272.2%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E") 15 10, pointer;
+  }
+
+}

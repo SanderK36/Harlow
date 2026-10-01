@@ -199,18 +199,21 @@ export const upstairsHallway: Scene = {
       action: "goEthanRoom",
       nextScene: "ethan-room",
       timeCost: 0,
+      hotspots: [{ left: 74, top: 18, width: 10, height: 59 }],
     },
     {
       label: "Go to Mom's room",
       action: "goMomRoom",
       nextScene: "mom-room",
       timeCost: 0,
+      hotspots: [{ left: 45, top: 21, width: 12, height: 39 }],
     },
     {
       label: "Go to Emily's room",
       action: "goEmilyRoom",
       nextScene: "emily-room",
       timeCost: 0,
+      hotspots: [{ left: 64.5, top: 15, width: 4.5, height: 26 }],
     },
     {
       label: "Go to the attic",
@@ -244,7 +247,13 @@ export const upstairsHallwayAtticOpen: Scene = {
       .map((choice) =>
         choice.action === "goAttic"
           ? { ...choice, hotspots: [{ left: 55, top: 1, width: 15, height: 79 }] }
-          : choice
+          : choice.action === "goMomRoom"
+            ? // The lowered ladder sits just right of Mom's door here.
+              { ...choice, hotspots: [{ left: 44, top: 21, width: 10.5, height: 39 }] }
+            : choice.action === "goEmilyRoom"
+              ? // Emily's door is behind the ladder; it stays a button below.
+                { ...choice, hotspots: undefined }
+              : choice
       ),
     {
       label: "Close the attic hatch",
@@ -1789,8 +1798,8 @@ export const cementary: Scene = {
   ],
   location: "Cementary",
   image: {
-    day: "./images/locations/cementary/cementaryDay.png",
-    night: "./images/locations/cementary/cementaryNight.png",
+    day: "./images/locations/Cementary/cementaryDay.png",
+    night: "./images/locations/Cementary/cementaryNight.png",
     weather: {
       Rainy: "./images/locations/Cementary/cementaryRain.png",
       "Heavy rain": "./images/locations/Cementary/cementaryRain.png",
@@ -1821,8 +1830,8 @@ export const cementaryInside: Scene = {
   ],
   location: "Cementary",
   image: {
-    day: "./images/locations/cementary/cementaryInsideDay.png",
-    night: "./images/locations/cementary/cementaryInsideNight.png",
+    day: "./images/locations/Cementary/cementaryInsideDay.png",
+    night: "./images/locations/Cementary/cementaryInsideNight.png",
   },
   choices: [
     {
@@ -1848,8 +1857,8 @@ export const cementaryBackside: Scene = {
   ],
   location: "Cementary",
   image: {
-    day: "./images/locations/cementary/cementaryBacksideDay.png",
-    night: "./images/locations/cementary/cementaryBacksideNight.png",
+    day: "./images/locations/Cementary/cementaryBacksideDay.png",
+    night: "./images/locations/Cementary/cementaryBacksideNight.png",
     weather: {
       Rainy: "./images/locations/Cementary/cementaryBacksideRain.png",
       "Heavy rain": "./images/locations/Cementary/cementaryBacksideRain.png",
@@ -1879,8 +1888,8 @@ export const hospital: Scene = {
   ],
   location: "Hospital",
   image: {
-    day: "./images/locations/hospital/hospitalDay.jpg",
-    night: "./images/locations/hospital/hospitalNight.jpg",
+    day: "./images/locations/hospital/HospitalDay.jpg",
+    night: "./images/locations/hospital/HospitalNight.jpg",
   },
   choices: [
     {

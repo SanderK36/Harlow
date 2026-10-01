@@ -61,7 +61,7 @@ const HOME_SCENE_IDS = new Set([
   "basement",
   "attic",
   "mom-room",
-  "sister-room",
+  "emily-room",
   "bathroom",
   "front-yard",
 ]);
@@ -440,12 +440,15 @@ export function useGame() {
     if (selectedJob && !job && !jobQuestTarget) {
       setJobQuestTarget(selectedJob);
       showQuestNotification("New quest: Find a Job — follow up on that lead.");
-      if (selectedJob === "needle-groove") {
-        locationDiscoveryTimer.current = window.setTimeout(() => {
-          showQuestNotification("Needle & Groove discovered.", "Location discovered");
-          locationDiscoveryTimer.current = null;
-        }, 6800);
-      }
+      const discoveredLocation: Record<JobId, string> = {
+        "needle-groove": "Needle & Groove",
+        "gas-station": "The gas station",
+        scrapyard: "The scrapyard",
+      };
+      locationDiscoveryTimer.current = window.setTimeout(() => {
+        showQuestNotification(`${discoveredLocation[selectedJob]} discovered.`, "Location discovered");
+        locationDiscoveryTimer.current = null;
+      }, 6800);
     }
 
     if (CONVERSATION_ACTIONS.has(choice.action)) {
@@ -737,6 +740,14 @@ export function useGame() {
     "hospital",
     ...(jobQuestTarget === "needle-groove" || job === "needle-groove"
       ? ["needle-and-groove"]
+      : []),
+    // The other two flyers lead somewhere too; without these the Find a Job
+    // quest could never be finished after picking them.
+    ...(jobQuestTarget === "gas-station" || job === "gas-station"
+      ? ["gas-station"]
+      : []),
+    ...(jobQuestTarget === "scrapyard" || job === "scrapyard"
+      ? ["scrapyard"]
       : []),
   ];
 
