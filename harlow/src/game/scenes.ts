@@ -968,7 +968,7 @@ export const ethanRoom: Scene = {
   id: "ethan-room",
   story: [
     narration("You step into your room."),
-    thought("I wonder what happend last night"),
+    thought("I wonder what happened last night."),
   ],
   location: "Ethan's room",
   image: {

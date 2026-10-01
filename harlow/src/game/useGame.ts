@@ -267,7 +267,7 @@ export function useGame() {
   }
 
   function notifyMomQuest() {
-    showQuestNotification("New quest: Talk to Mom — something's on her mind.");
+    showQuestNotification("Talk to Mom. Maybe she knows what happened last night.", "New quest");
   }
 
   function applyChoiceEffects(choice: Choice) {
@@ -751,8 +751,8 @@ export function useGame() {
       : momTalked
         ? currentThought
         : currentScene.id === "living-room-relaxing"
-          ? "I need to talk to mom first"
-          : "I should talk to mom",
+          ? "I need to talk to Mom first."
+          : "I should talk to Mom.",
     currentEffects,
     lateNightActionThought,
     newDayAnnouncement,
