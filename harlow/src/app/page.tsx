@@ -12,6 +12,7 @@ import StoryLog from "@/components/StoryLog/StoryLog";
 import CharacterLine from "@/components/CharacterLine/CharacterLine";
 import DialogueScene from "@/components/DialogueScene/DialogueScene";
 import ThoughtPanel from "@/components/ThoughtPanel/ThoughtPanel";
+import OpeningSequence from "@/components/OpeningSequence/OpeningSequence";
 import TravelOverlay from "@/components/TravelOverlay/TravelOverlay";
 import TravelWindow from "@/components/TravelWindow/TravelWindow";
 import InventoryWindow from "@/components/InventoryWindow/InventoryWindow";
@@ -531,20 +532,14 @@ export default function Home() {
   return (
     <main className="game">
       {showProductionSplash && (
-        <div
-          className="production-splash"
-          role="status"
-          aria-label="A Lost Frequency Games production"
-        >
-          <video
-            className="production-splash-video"
-            src="/LostFrequencyGamesIntro.mov"
-            autoPlay
-            playsInline
-            onEnded={finishProductionSplash}
-            onError={finishProductionSplash}
-          />
-        </div>
+        <OpeningSequence
+          dayOfWeek={gameState.dayOfWeek}
+          month={gameState.currentMonth}
+          dayNumber={gameState.dayNumber}
+          time={gameState.time}
+          location={gameState.location}
+          onFinished={finishProductionSplash}
+        />
       )}
       {isNightTime(gameState.time) && (
         <div className="gameClouds gameCloudsNight" aria-hidden="true">
@@ -642,19 +637,24 @@ export default function Home() {
               )}
           </div>
           <div className="scene-info-stack">
-            <div className="scene-info-panel">
-              {/* Narration first: a caption at the top-left of the art. */}
+            {/* The scene caption: a small glass card in the dialogue box's
+                language, keyed to the scene so it settles in on arrival. */}
+            <div className="scene-info-panel" key={currentScene.id}>
+              <div className="scene-caption-plate-row">
+                <h2 className="scene-caption-plate">Scene</h2>
+                {currentScene.location && (
+                  <span className="scene-caption-place">{currentScene.location}</span>
+                )}
+              </div>
               <div className="scene-caption-narration">
                 <StoryLog
                   entries={currentScene.story.filter(
                     (entry) => entry.type !== "thought",
                   )}
-                  title="Scene"
                   variant="narration"
                   layout="combined"
                 />
               </div>
-              {/* Ethan's thought: a quieter aside at the top-right. */}
               {currentThought && (
                 <div className="scene-caption-thought">
                   <CharacterLine

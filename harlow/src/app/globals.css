@@ -225,21 +225,6 @@ button {
   transform: translateY(0);
 }
 
-.production-splash {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: grid;
-  place-items: center;
-  background: #000;
-}
-
-.production-splash-video {
-  width: 90vw;
-  height: 90vh;
-  object-fit: contain;
-}
-
 .mainMenuContinue {
   color: #f6e7e8;
   background: rgba(20, 12, 13, 0.6);
@@ -458,33 +443,91 @@ button {
   pointer-events: none;
 }
 
-/* Over the art the scene text is a caption on a soft dark gradient rather
-   than a box: narration top-left, Ethan's thought as a quieter aside
-   top-right. Both keep to the edges so the middle of the picture stays clear. */
+/* Scene caption: a small glass card at the top-left of the art, in the
+   dialogue box's language (dark glass, a red hairline, a Cinzel plate tab on
+   the top edge). Narration reads first; Ethan's thought sits beneath a fine
+   rule as a quieter, italic aside. It keeps to the corner so the middle and
+   right of the picture (signs, faces) stay clear. */
 .scene-info-panel {
   position: relative;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 28px;
-  width: 100%;
-  margin: 0;
-  padding: clamp(14px, 1.6vw, 20px) clamp(16px, 2vw, 24px) clamp(40px, 5vw, 64px);
-  background: linear-gradient(
-    180deg,
-    rgba(8, 4, 5, 0.84) 0%,
-    rgba(8, 4, 5, 0.5) 48%,
-    rgba(8, 4, 5, 0) 100%
-  );
-  border-radius: 14px 14px 0 0;
+  align-self: flex-start;
+  width: fit-content;
+  min-width: min(260px, 40%);
+  max-width: min(380px, 42%);
+  margin: clamp(22px, 2.4vw, 28px) 0 0 clamp(14px, 1.8vw, 22px);
+  padding: 22px 20px 14px;
+  color: #f4e9e2;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(169, 22, 36, 0.16), transparent 60%),
+    linear-gradient(180deg, rgba(22, 12, 13, 0.82), rgba(9, 5, 6, 0.88));
+  border: 1px solid rgba(237, 85, 98, 0.26);
+  border-radius: 10px;
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 220, 205, 0.07);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  backdrop-filter: blur(10px) saturate(1.1);
+  pointer-events: auto;
+  animation: sceneCaptionEnter 520ms cubic-bezier(0.2, 0.7, 0.2, 1) 120ms backwards;
   transition:
     opacity 240ms ease,
     transform 280ms ease;
 }
 
-.scene-caption-narration {
-  flex: 0 1 auto;
-  max-width: min(46%, 440px);
+.scene-info-panel::before {
+  position: absolute;
+  top: -1px;
+  right: 16%;
+  left: 16%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 120, 120, 0.8), transparent);
+  content: "";
+}
+
+.scene-caption-plate-row {
+  position: absolute;
+  top: 0;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 32px);
+  transform: translateY(-58%);
+}
+
+.scene-caption-plate {
+  flex: none;
+  margin: 0;
+  padding: 6px 14px 5px;
+  color: #fbe6d6;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  line-height: 1;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+  background: linear-gradient(180deg, #8e1a26, #4d0d15);
+  border: 1px solid rgba(255, 196, 178, 0.38);
+  border-radius: 3px;
+  box-shadow:
+    0 6px 14px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 220, 205, 0.25);
+}
+
+.scene-caption-place {
+  overflow: hidden;
+  padding: 3px 8px 2px;
+  color: rgba(245, 225, 215, 0.74);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: rgba(9, 5, 6, 0.8);
+  border-radius: 3px;
 }
 
 .scene-info-panel .scene-caption-narration section {
@@ -492,68 +535,61 @@ button {
   border: 0;
 }
 
-.scene-info-panel .scene-caption-narration h2 {
-  margin: 0 0 5px;
-  padding: 0;
-  color: var(--accent-bright);
-  font-family: var(--font-display);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.3em;
-  border: 0;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
-}
-
 .scene-info-panel .scene-caption-narration p {
   margin: 0;
   color: #f4e9e2;
   font-family: var(--font-body);
-  font-size: clamp(18px, 1.7vw, 21px);
-  line-height: 1.35;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+  font-size: clamp(18px, 1.6vw, 20px);
+  line-height: 1.4;
+  text-wrap: pretty;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.scene-info-panel .scene-caption-narration p + p {
+  margin-top: 6px;
 }
 
 .scene-caption-thought {
-  flex: 0 1 auto;
-  max-width: min(36%, 340px);
-  padding-left: 14px;
-  border-left: 1px solid rgba(237, 85, 98, 0.45);
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px solid rgba(237, 85, 98, 0.18);
 }
 
 .scene-caption-thought img {
-  width: 34px;
-  height: 42px;
-  border-radius: 5px;
+  width: 30px;
+  height: 36px;
+  border-radius: 4px;
+  opacity: 0.9;
 }
 
 .scene-caption-thought strong {
-  margin-bottom: 3px;
+  margin-bottom: 2px;
   font-size: 10px;
 }
 
 .scene-caption-thought p {
-  color: #e6d6d4;
+  color: #e2d0cd;
   font-size: 16px;
   line-height: 1.4;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
 }
 
-/* The Needle & Groove sign runs across the top of the shop; keep both lines
-   in the left corner, over the shelves, so the sign stays readable. */
+/* The Needle & Groove sign starts about a third of the way in. */
 @media (min-width: 641px) {
   .scene-image-frame-needle-and-groove-inside .scene-info-panel {
-    flex-direction: column;
-    gap: 14px;
-    width: max-content;
-    max-width: 36%;
-    align-self: flex-start;
-    padding-right: 48px;
-    background: radial-gradient(130% 120% at 0% 0%, rgba(8, 4, 5, 0.86), rgba(8, 4, 5, 0.5) 55%, transparent 80%);
+    min-width: 0;
+    max-width: 31%;
+  }
+}
+
+@keyframes sceneCaptionEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
   }
 
-  .scene-image-frame-needle-and-groove-inside .scene-caption-narration,
-  .scene-image-frame-needle-and-groove-inside .scene-caption-thought {
-    max-width: 100%;
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
@@ -1500,34 +1536,18 @@ button {
     display: none;
   }
 
+  /* Above the art the card spans the column; the plate still overhangs. */
   .scene-info-panel {
-    flex-direction: column;
-    gap: 10px;
-    padding: 12px 14px;
-    background: linear-gradient(180deg, rgba(24, 13, 14, 0.92), rgba(12, 7, 8, 0.95));
-    border: 1px solid rgba(237, 85, 98, 0.24);
-    border-radius: 12px;
-  }
-
-  .scene-caption-narration,
-  .scene-caption-thought {
+    align-self: stretch;
+    width: auto;
+    min-width: 0;
     max-width: none;
+    margin: 12px 0 0;
+    padding: 22px 16px 13px;
   }
 
   .scene-info-panel .scene-caption-narration p {
     font-size: 18px;
-    text-shadow: none;
-  }
-
-  .scene-caption-thought {
-    align-self: stretch;
-    padding: 10px 0 0;
-    border-top: 1px solid rgba(239, 221, 221, 0.1);
-    border-left: 0;
-  }
-
-  .scene-caption-thought p {
-    text-shadow: none;
   }
 
   /* The plate tab overhangs the panel's top edge. */
@@ -1668,6 +1688,7 @@ button {
 
   .scene-image,
   .gameCloud,
+  .scene-info-panel,
   .conversation-overlay-active {
     animation: none;
   }
