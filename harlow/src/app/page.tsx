@@ -96,7 +96,11 @@ const sanatoriumHotspotActions: Record<string, string[]> = {
   sanatorium: ["approachSanatorium"],
   "sanatorium-entrance": ["enterSanatorium"],
   "sanatorium-main-floor": ["enterSanatoriumHallway", "leaveSanatorium"],
-  "sanatorium-hallway": ["enterSanatoriumRoom1", "enterSanatoriumRoom2", "leaveSanatoriumHallway"],
+  "sanatorium-hallway": [
+    "enterSanatoriumRoom1",
+    "enterSanatoriumRoom2",
+    "leaveSanatoriumHallway",
+  ],
   "sanatorium-room-1": ["leaveSanatoriumRoom1"],
   "sanatorium-room-2": ["leaveSanatoriumRoom2"],
 };
@@ -112,7 +116,11 @@ export default function Home() {
   // Restore the session until the player explicitly chooses a screen.
   // Returning to the menu must override the session detected on refresh.
   const [hasStarted, setHasStarted] = useState<boolean | null>(null);
-  const resumedSession = useSyncExternalStore(subscribeToSession, hasActiveSession, () => false);
+  const resumedSession = useSyncExternalStore(
+    subscribeToSession,
+    hasActiveSession,
+    () => false,
+  );
   const [showCharacterDirectory, setShowCharacterDirectory] = useState(false);
   const [showQuestLog, setShowQuestLog] = useState(false);
   const [showAdminTravel, setShowAdminTravel] = useState(false);
@@ -203,11 +211,13 @@ export default function Home() {
     if (openingThoughtTimer.current !== null) {
       window.clearTimeout(openingThoughtTimer.current);
     }
-    setTvNewsLine("News anchor: Authorities are investigating an incident reported late last night.");
+    setTvNewsLine(
+      "News anchor: The small town of Harlow is in shock after police found an elderly woman murdered in her own home. The investigation is ongoing, and no suspect has been identified so far.",
+    );
     openingThoughtTimer.current = window.setTimeout(() => {
       setTvNewsLine(null);
       openingThoughtTimer.current = null;
-    }, 3600);
+    }, 8000);
   }
 
   function showVinylPlayerThought() {
@@ -224,20 +234,26 @@ export default function Home() {
     }, 5200);
   }
 
-  useEffect(() => () => {
-    if (openingThoughtTimer.current !== null) {
-      window.clearTimeout(openingThoughtTimer.current);
-    }
-    if (vinylThoughtTimer.current !== null) {
-      window.clearTimeout(vinylThoughtTimer.current);
-    }
-    if (sceneImageAnimationFrame.current !== null) {
-      window.cancelAnimationFrame(sceneImageAnimationFrame.current);
-    }
-  }, []);
+  useEffect(
+    () => () => {
+      if (openingThoughtTimer.current !== null) {
+        window.clearTimeout(openingThoughtTimer.current);
+      }
+      if (vinylThoughtTimer.current !== null) {
+        window.clearTimeout(vinylThoughtTimer.current);
+      }
+      if (sceneImageAnimationFrame.current !== null) {
+        window.cancelAnimationFrame(sceneImageAnimationFrame.current);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
-    document.body.classList.toggle("production-splash-active", showProductionSplash);
+    document.body.classList.toggle(
+      "production-splash-active",
+      showProductionSplash,
+    );
     return () => document.body.classList.remove("production-splash-active");
   }, [showProductionSplash]);
 
@@ -293,7 +309,10 @@ export default function Home() {
   const hasConversationOverlay = conversation.length > 0;
 
   // Character art has priority, then weather-specific art, then day/night art.
-  const momInKitchen = currentScene.id === "kitchen" && gameState.time >= 450 && gameState.time < 540;
+  const momInKitchen =
+    currentScene.id === "kitchen" &&
+    gameState.time >= 450 &&
+    gameState.time < 540;
   // The scene as it looks without anyone painted into it.
   const emptySceneImage =
     currentScene.image.weather?.[gameState.weather] ??
@@ -302,10 +321,9 @@ export default function Home() {
       : currentScene.image.day);
   const sceneImage = momInKitchen
     ? "./images/locations/home/momMorningKitchen.png"
-    : (isNightTime(gameState.time) && activeCharacter?.nightImage
-      ? activeCharacter.nightImage
-      : activeCharacter?.image) ??
-    emptySceneImage;
+    : ((isNightTime(gameState.time) && activeCharacter?.nightImage
+        ? activeCharacter.nightImage
+        : activeCharacter?.image) ?? emptySceneImage);
   // In a conversation the speaker stands in front as a portrait, so the scene
   // behind swaps to its empty variant rather than showing them twice. It is
   // layered over the character art (which keeps sizing the frame) and simply
@@ -315,95 +333,129 @@ export default function Home() {
       ? emptySceneImage
       : null;
   const hotspotActions =
-    sanatoriumHotspotActions[currentScene.id] ?? (
-    currentScene.id === "living-room"
+    sanatoriumHotspotActions[currentScene.id] ??
+    (currentScene.id === "living-room"
       ? activeCharacter?.name === "Linda"
         ? ["talkToMom", ...(momTalked ? [] : ["watchTv"])]
         : ["relaxOnCouch", ...(momTalked ? [] : ["watchTv"])]
       : currentScene.id === "ethan-room"
-      ? ["goToSleep", "playVinyl", "lookAtDesk"]
-      : currentScene.id === "ethan-room-desk"
-        ? ["pickUpCigarettes"]
-        : currentScene.id === "hallway"
-          ? ["goLivingRoom", "goKitchen", "goBathroom"]
-          : currentScene.id === "hallway-upstairs"
-            ? ["openAtticHatch"]
-          : currentScene.id === "kitchen"
-              ? [
-                  ...(activeCharacter?.name === "Linda" ? ["talkToMom"] : []),
-                  ...(momInKitchen ? [] : momTalked ? ["checkFridge"] : []),
-                  ...(momInKitchen ? [] : ["makeCoffee"]),
-                  ...(momInKitchen ? [] : ["goBackYard"]),
-                ]
-          : currentScene.id === "back-yard"
-            ? ["goKitchen"]
-          : currentScene.id === "basement"
-            ? ["goHallway"]
-          : currentScene.id === "garage"
-            ? ["lookAtGarageBench", "goHallway"]
-            : currentScene.id === "garage-bench"
-              ? ["pickUpGarageFlashlight"]
-              : currentScene.id === "gas-station"
-                ? ["enterGasStation"]
-                : currentScene.id === "gas-station-inside"
-                  ? ["talkToRay"]
-              : currentScene.id === "needle-and-groove"
-                ? ["enterNeedleAndGroove"]
-                : currentScene.id === "needle-and-groove-inside"
-                  ? ["talkToJohnny", "enterNeedleAndGrooveBackroom"]
-                  : currentScene.id === "police-station"
-                    ? ["enterPoliceStation"]
-                    : currentScene.id === "police-station-inside"
-                      ? ["leavePoliceStation"]
-                      : currentScene.id === "hospital"
-                        ? ["enterHospital"]
-                        : currentScene.id === "hospital-reception"
-                          ? ["goToMarleneCounter", "talkToMarlene", "goToHospitalRoom"]
-                          : currentScene.id === "scrapyard"
-                            ? ["enterScrapyard"]
-                            : currentScene.id === "scrapyard-inside"
-                              ? ["talkToBigRoy", "lookAtScrapyardDesk", "leaveScrapyard"]
-                              : currentScene.id === "scrapyard-desk"
-                                ? ["takeScrapyardKnife"]
-                                : currentScene.id === "cementary"
-                                  ? ["enterCemetery", "goCemeteryBackside"]
-                                  : currentScene.id === "cementary-inside"
-                                    ? ["goCemeteryBackside"]
-                                    : currentScene.id === "cementary-backside"
-                                      ? ["leaveCemeteryBackside"]
-                                      : currentScene.id === "motel"
-                                        ? ["enterMotel"]
-                                        : currentScene.id === "motel-inside"
-                                          ? ["leaveMotel", "talkToEarl"]
-                                          : currentScene.id === "front-yard"
-                                            ? ["goBackYard", "goHome", "enterGarage"]
-                                            : currentScene.id === "light-pole"
-                                              ? ["chooseNeedleGrooveJob", "chooseGasStationJob", "chooseScrapyardJob"]
-                                            : []);
-  const visibleChoices = !momTalked && currentScene.id === "kitchen"
-    ? activeChoices.filter((choice) => !("action" in choice && choice.action === "checkFridge"))
-    : activeChoices;
+        ? ["goToSleep", "playVinyl", "lookAtDesk"]
+        : currentScene.id === "ethan-room-desk"
+          ? ["pickUpCigarettes"]
+          : currentScene.id === "hallway"
+            ? ["goLivingRoom", "goKitchen", "goBathroom"]
+            : currentScene.id === "hallway-upstairs"
+              ? ["openAtticHatch"]
+              : currentScene.id === "kitchen"
+                ? [
+                    ...(activeCharacter?.name === "Linda" ? ["talkToMom"] : []),
+                    ...(momInKitchen ? [] : momTalked ? ["checkFridge"] : []),
+                    ...(momInKitchen ? [] : ["makeCoffee"]),
+                    ...(momInKitchen ? [] : ["goBackYard"]),
+                  ]
+                : currentScene.id === "back-yard"
+                  ? ["goKitchen"]
+                  : currentScene.id === "basement"
+                    ? ["goHallway"]
+                    : currentScene.id === "garage"
+                      ? ["lookAtGarageBench", "goHallway"]
+                      : currentScene.id === "garage-bench"
+                        ? ["pickUpGarageFlashlight"]
+                        : currentScene.id === "gas-station"
+                          ? ["enterGasStation"]
+                          : currentScene.id === "gas-station-inside"
+                            ? ["talkToRay"]
+                            : currentScene.id === "needle-and-groove"
+                              ? ["enterNeedleAndGroove"]
+                              : currentScene.id === "needle-and-groove-inside"
+                                ? [
+                                    "talkToJohnny",
+                                    "enterNeedleAndGrooveBackroom",
+                                  ]
+                                : currentScene.id === "police-station"
+                                  ? ["enterPoliceStation"]
+                                  : currentScene.id === "police-station-inside"
+                                    ? ["leavePoliceStation"]
+                                    : currentScene.id === "hospital"
+                                      ? ["enterHospital"]
+                                      : currentScene.id === "hospital-reception"
+                                        ? [
+                                            "goToMarleneCounter",
+                                            "talkToMarlene",
+                                            "goToHospitalRoom",
+                                          ]
+                                        : currentScene.id === "scrapyard"
+                                          ? ["enterScrapyard"]
+                                          : currentScene.id ===
+                                              "scrapyard-inside"
+                                            ? [
+                                                "talkToBigRoy",
+                                                "lookAtScrapyardDesk",
+                                                "leaveScrapyard",
+                                              ]
+                                            : currentScene.id ===
+                                                "scrapyard-desk"
+                                              ? ["takeScrapyardKnife"]
+                                              : currentScene.id === "cementary"
+                                                ? [
+                                                    "enterCemetery",
+                                                    "goCemeteryBackside",
+                                                  ]
+                                                : currentScene.id ===
+                                                    "cementary-inside"
+                                                  ? ["goCemeteryBackside"]
+                                                  : currentScene.id ===
+                                                      "cementary-backside"
+                                                    ? ["leaveCemeteryBackside"]
+                                                    : currentScene.id ===
+                                                        "motel"
+                                                      ? ["enterMotel"]
+                                                      : currentScene.id ===
+                                                          "motel-inside"
+                                                        ? [
+                                                            "leaveMotel",
+                                                            "talkToEarl",
+                                                          ]
+                                                        : currentScene.id ===
+                                                            "front-yard"
+                                                          ? [
+                                                              "goBackYard",
+                                                              "goHome",
+                                                              "enterGarage",
+                                                            ]
+                                                          : currentScene.id ===
+                                                              "light-pole"
+                                                            ? [
+                                                                "chooseNeedleGrooveJob",
+                                                                "chooseGasStationJob",
+                                                                "chooseScrapyardJob",
+                                                              ]
+                                                            : []);
+  const visibleChoices =
+    !momTalked && currentScene.id === "kitchen"
+      ? activeChoices.filter(
+          (choice) => !("action" in choice && choice.action === "checkFridge"),
+        )
+      : activeChoices;
   const sceneHotspots = visibleChoices.filter(
     (choice): choice is Choice =>
       "action" in choice &&
-      (hotspotActions.includes(choice.action) || !!choice.hotspots?.length)
+      (hotspotActions.includes(choice.action) || !!choice.hotspots?.length),
   );
   const choicesWithoutHotspotActions = visibleChoices.filter(
     (choice) =>
       "response" in choice ||
-      (!hotspotActions.includes(choice.action) && !choice.hotspots?.length)
+      (!hotspotActions.includes(choice.action) && !choice.hotspots?.length),
   );
-  const bottomThought = lateNightActionThought ?? (
-    showLateNightThought && isLateNight
+  const bottomThought =
+    lateNightActionThought ??
+    (showLateNightThought && isLateNight
       ? "It's 3 AM. I'm very tired and should head home."
-      : null
-  );
+      : null);
   const actionList = (
     <ActionList
       title={
-        conversationActive
-          ? "What do you say?"
-          : "What do you want to do?"
+        conversationActive ? "What do you say?" : "What do you want to do?"
       }
       choices={choicesWithoutHotspotActions}
       onChoice={handleChoice}
@@ -450,12 +502,7 @@ export default function Home() {
             rel="noreferrer"
             aria-label="Follow Harlow: 1982 on X"
           >
-            <Image
-              src="/X.png"
-              alt=""
-              width={1500}
-              height={1500}
-            />
+            <Image src="/X.png" alt="" width={1500} height={1500} />
           </a>
         </div>
 
@@ -484,12 +531,15 @@ export default function Home() {
   return (
     <main className="game">
       {showProductionSplash && (
-        <div className="production-splash" role="status" aria-label="A Lost Frequency Games production">
+        <div
+          className="production-splash"
+          role="status"
+          aria-label="A Lost Frequency Games production"
+        >
           <video
             className="production-splash-video"
-            src="/lostfrequencygamesintro.mp4"
+            src="/LostFrequencyGamesIntro.mov"
             autoPlay
-            muted
             playsInline
             onEnded={finishProductionSplash}
             onError={finishProductionSplash}
@@ -504,7 +554,6 @@ export default function Home() {
         </div>
       )}
       <div className="game-panel">
-
         <h1>HARLOW</h1>
 
         <GameMenu
@@ -513,7 +562,7 @@ export default function Home() {
           onSave={saveGame}
           onLoad={loadGame}
         />
-        
+
         <GameStatus
           player={playerState}
           gameState={gameState}
@@ -522,7 +571,9 @@ export default function Home() {
           onQuestsClick={() => setShowQuestLog(true)}
         />
 
-        <div className={`scene-image-frame scene-image-frame-${currentScene.id}${hasConversationOverlay ? " scene-image-frame-has-conversation" : ""}${conversationActive ? " scene-image-frame-conversation-active" : ""}`}>
+        <div
+          className={`scene-image-frame scene-image-frame-${currentScene.id}${hasConversationOverlay ? " scene-image-frame-has-conversation" : ""}${conversationActive ? " scene-image-frame-conversation-active" : ""}`}
+        >
           {/* The picture and its hotspots share one box, so percentage hotspot
               positions always map onto the art, wherever the panels sit. */}
           <div className="scene-art">
@@ -530,7 +581,9 @@ export default function Home() {
             <div
               className="scene-ambient"
               aria-hidden="true"
-              style={{ backgroundImage: `url("${conversationActive && conversationBackdrop ? conversationBackdrop : sceneImage}")` }}
+              style={{
+                backgroundImage: `url("${conversationActive && conversationBackdrop ? conversationBackdrop : sceneImage}")`,
+              }}
             />
             <img
               src={sceneImage}
@@ -550,34 +603,43 @@ export default function Home() {
             <div className="scene-spotlight" aria-hidden="true">
               <div className="scene-spotlight-hole" />
             </div>
-            {!(showOpeningThought || showVinylThought || tvNewsLine !== null) && sceneHotspots.flatMap((sceneHotspot) =>
-              (sceneHotspot.hotspots ?? [undefined]).map((region, index) => (
-              <SceneHotspot
-                key={`${sceneHotspot.action}-${index}`}
-                type="button"
-                className={`scene-hotspot scene-hotspot-${sceneHotspot.action} scene-hotspot-${currentScene.id}-${sceneHotspot.action}`}
-                style={region ? {
-                  left: `${region.left}%`,
-                  top: `${region.top}%`,
-                  width: `${region.width}%`,
-                  height: `${region.height}%`,
-                } : undefined}
-                aria-label={hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label}
-                label={hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label}
-                onClick={() => {
-                  if (sceneHotspot.action === "watchTv") {
-                    showTvNews();
-                    return;
-                  }
+            {!(showOpeningThought || showVinylThought || tvNewsLine !== null) &&
+              sceneHotspots.flatMap((sceneHotspot) =>
+                (sceneHotspot.hotspots ?? [undefined]).map((region, index) => (
+                  <SceneHotspot
+                    key={`${sceneHotspot.action}-${index}`}
+                    type="button"
+                    className={`scene-hotspot scene-hotspot-${sceneHotspot.action} scene-hotspot-${currentScene.id}-${sceneHotspot.action}`}
+                    style={
+                      region
+                        ? {
+                            left: `${region.left}%`,
+                            top: `${region.top}%`,
+                            width: `${region.width}%`,
+                            height: `${region.height}%`,
+                          }
+                        : undefined
+                    }
+                    aria-label={
+                      hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label
+                    }
+                    label={
+                      hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label
+                    }
+                    onClick={() => {
+                      if (sceneHotspot.action === "watchTv") {
+                        showTvNews();
+                        return;
+                      }
 
-                  if (sceneHotspot.action === "playVinyl") {
-                    showVinylPlayerThought();
-                  }
-                  handleChoice(sceneHotspot);
-                }}
-              />
-              ))
-            )}
+                      if (sceneHotspot.action === "playVinyl") {
+                        showVinylPlayerThought();
+                      }
+                      handleChoice(sceneHotspot);
+                    }}
+                  />
+                )),
+              )}
           </div>
           <div className="scene-info-stack">
             <div className="scene-info-panel">
@@ -585,7 +647,7 @@ export default function Home() {
               <div className="scene-caption-narration">
                 <StoryLog
                   entries={currentScene.story.filter(
-                    (entry) => entry.type !== "thought"
+                    (entry) => entry.type !== "thought",
                   )}
                   title="Scene"
                   variant="narration"
@@ -612,7 +674,10 @@ export default function Home() {
               )}
             </div>
             {questNotification && (
-              <div className={`quest-notification${questNotificationExiting ? " quest-notification-exiting" : ""}`} role="status">
+              <div
+                className={`quest-notification${questNotificationExiting ? " quest-notification-exiting" : ""}`}
+                role="status"
+              >
                 <span>{questNotificationLabel}</span>
                 <p>{questNotification}</p>
               </div>
@@ -640,9 +705,11 @@ export default function Home() {
               speaker={showOpeningThought ? "Ethan" : "TV news"}
               caption={showOpeningThought ? "Inner thought" : "Local broadcast"}
               kind={showOpeningThought ? "thought" : "news"}
-              text={showOpeningThought
-                ? "What the fuck happened last night? I gotta talk to mom, maybe she knows something."
-                : tvNewsLine ?? ""}
+              text={
+                showOpeningThought
+                  ? "What the fuck happened last night? I gotta talk to mom, maybe she knows something."
+                  : (tvNewsLine ?? "")
+              }
             />
           )}
           {hasConversationOverlay && (
@@ -661,26 +728,24 @@ export default function Home() {
               />
             </div>
           )}
-          {!hasConversationOverlay && !(showOpeningThought || showVinylThought || tvNewsLine !== null) && actionList}
+          {!hasConversationOverlay &&
+            !(showOpeningThought || showVinylThought || tvNewsLine !== null) &&
+            actionList}
         </div>
 
         {showStats && (
           <StatsWindow
             player={playerState}
-            onClose={() =>
-              setShowStats(false)
-            }
+            onClose={() => setShowStats(false)}
           />
         )}
         {showInventory && (
           <InventoryWindow
-          inventory={playerState.inventory}
-          onUseItem={useInventoryItem}
-          onClose={() =>
-            setShowInventory(false)
-          }
+            inventory={playerState.inventory}
+            onUseItem={useInventoryItem}
+            onClose={() => setShowInventory(false)}
           />
-          )}
+        )}
 
         {activeShop && (
           <ShopWindow
@@ -708,12 +773,8 @@ export default function Home() {
             walkingChoices={walkingChoices}
             busChoices={busChoices}
             onChoice={handleChoice}
-            onClose={() =>
-              setShowTravel(false)
-            }
-            onTravelStart={() =>
-              setShowTravel(false)
-            }
+            onClose={() => setShowTravel(false)}
+            onTravelStart={() => setShowTravel(false)}
             playerMoney={playerState.money}
             initialMenu={travelMode}
           />
@@ -721,30 +782,15 @@ export default function Home() {
 
         <div className="waitControls">
           <span>Pass time</span>
-          <ActionButton
-            label="Wait 1 min"
-            onClick={() => adminWait(1)}
-          />
+          <ActionButton label="Wait 1 min" onClick={() => adminWait(1)} />
 
-          <ActionButton
-            label="Wait 5 min"
-            onClick={() => adminWait(5)}
-          />
+          <ActionButton label="Wait 5 min" onClick={() => adminWait(5)} />
 
-          <ActionButton
-            label="Wait 10 min"
-            onClick={() => adminWait(10)}
-          />
+          <ActionButton label="Wait 10 min" onClick={() => adminWait(10)} />
 
-          <ActionButton
-            label="Wait 30 min"
-            onClick={() => adminWait(30)}
-          />
+          <ActionButton label="Wait 30 min" onClick={() => adminWait(30)} />
 
-          <ActionButton
-            label="Wait 1 hour"
-            onClick={() => adminWait(60)}
-          />
+          <ActionButton label="Wait 1 hour" onClick={() => adminWait(60)} />
         </div>
 
         <div className="adminTravelControls">
@@ -753,7 +799,10 @@ export default function Home() {
             onClick={() => setShowAdminTravel((visible) => !visible)}
           />
           {showAdminTravel && (
-            <div className="adminTravelPanel" aria-label="Admin travel destinations">
+            <div
+              className="adminTravelPanel"
+              aria-label="Admin travel destinations"
+            >
               <span>Free travel</span>
               <div>
                 {adminDestinations.map((destination) => (
@@ -782,15 +831,21 @@ export default function Home() {
         )}
 
         {newDayAnnouncement && (
-          <div className="new-day-screen" role="status" aria-live="polite" aria-labelledby="new-day-title">
+          <div
+            className="new-day-screen"
+            role="status"
+            aria-live="polite"
+            aria-labelledby="new-day-title"
+          >
             <div className="new-day-screen-content">
               <p>Morning has come</p>
               <h2 id="new-day-title">{newDayAnnouncement.dayOfWeek}</h2>
-              <span>{newDayAnnouncement.currentMonth} {newDayAnnouncement.dayNumber}</span>
+              <span>
+                {newDayAnnouncement.currentMonth} {newDayAnnouncement.dayNumber}
+              </span>
             </div>
           </div>
         )}
-
       </div>
     </main>
   );
