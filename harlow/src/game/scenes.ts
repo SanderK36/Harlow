@@ -41,11 +41,21 @@ export type Scene = {
     day: string;
     night: string;
     weather?: Partial<Record<Weather, string>>;
+    /** The weather art is daylit: at night the night art wins. */
+    weatherDayOnly?: boolean;
   };
   choices: Choice[];
   conversation?: Conversation;
   characters?: SceneCharacter[];
 };
+
+/** The weather states that count as rain (for rain-on-the-window art). */
+export const RAIN_WEATHER: Weather[] = ["Rainy", "Heavy rain", "Thunderstorm"];
+
+/** Rain art for every rainy weather state (thunder art for storms if given). */
+export function rainArt(rain: string, thunder = rain): Partial<Record<Weather, string>> {
+  return { Rainy: rain, "Heavy rain": rain, Thunderstorm: thunder };
+}
 
 // Destinations listed here automatically appear in the walk and bus menus.
 // Add an exterior scene here after it has been added to `scenes` below.
@@ -185,6 +195,8 @@ export const upstairsHallway: Scene = {
   image: {
     day: "./images/locations/home/homeHallwayUpstairsDay.jpg",
     night: "./images/locations/home/homeHallwayUpstairsNight.png",
+    weather: rainArt("./images/locations/home/homeHallwayUpstairsDay-rain.jpg"),
+    weatherDayOnly: true,
   },
   choices: [
     {
@@ -240,6 +252,8 @@ export const upstairsHallwayAtticOpen: Scene = {
   image: {
     day: "./images/locations/home/homeHallwayUpstairsDayAtticStairs.png",
     night: "./images/locations/home/homeHallwayUpstairsNightAtticStairs.png",
+    weather: rainArt("./images/locations/home/homeHallwayUpstairsDayAtticStairs-rain.jpg"),
+    weatherDayOnly: true,
   },
   choices: [
     ...upstairsHallway.choices
@@ -329,6 +343,8 @@ export const madeCoffee: Scene = {
   image: {
     day: "./images/locations/home/kitchenDay.png",
     night: "./images/locations/home/kitchenNight.png",
+    weather: rainArt("./images/locations/home/kitchenDay-rain.jpg"),
+    weatherDayOnly: true,
   },
 };
 
@@ -703,6 +719,8 @@ export const livingRoom: Scene = {
   image: {
     day: "./images/locations/home/livingRoomDay.png",
     night: "./images/locations/home/livingRoomNight.png",
+    weather: rainArt("./images/locations/home/livingRoomDay-rain.jpg"),
+    weatherDayOnly: true,
   },
   characters: [
     {
@@ -789,6 +807,8 @@ export const kitchen: Scene = {
   image: {
     day: "./images/locations/home/kitchenDay.png",
     night: "./images/locations/home/kitchenNight.png",
+    weather: rainArt("./images/locations/home/kitchenDay-rain.jpg"),
+    weatherDayOnly: true,
   },
 
   characters: [
@@ -957,6 +977,8 @@ export const bathroom: Scene = {
   image: {
     day: "./images/locations/home/bathroomDay.png",
     night: "./images/locations/home/bathroomNight.png",
+    weather: rainArt("./images/locations/home/bathroomDay-rain.jpg"),
+    weatherDayOnly: true,
   },
 
   choices: [
@@ -1032,6 +1054,8 @@ export const ethanRoomDesk: Scene = {
   image: {
     day: "./images/locations/home/ethanDeskDay.png",
     night: "./images/locations/home/ethanDeskNight.png",
+    weather: rainArt("./images/locations/home/ethanDeskDay-rain.jpg"),
+    weatherDayOnly: true,
   },
   choices: [
     {
@@ -1060,6 +1084,8 @@ export const momRoom: Scene = {
   image: {
     day: "./images/locations/home/motherRoomDay.png",
     night: "./images/locations/home/MotherRoomNight.png",
+    weather: rainArt("./images/locations/home/motherRoomDay-rain.jpg"),
+    weatherDayOnly: true,
   },
   choices: [returnToUpstairsHallway],
 };
@@ -1074,6 +1100,8 @@ export const emilyRoom: Scene = {
   image: {
     day: "./images/locations/home/sisterRoomDay.png",
     night: "./images/locations/home/sisterRoomNight.png",
+    weather: rainArt("./images/locations/home/sisterRoomDay-rain.jpg"),
+    weatherDayOnly: true,
   },
   choices: [returnToUpstairsHallway],
 };
@@ -1088,6 +1116,8 @@ export const attic: Scene = {
   image: {
     day: "./images/locations/home/atticDay.png",
     night: "./images/locations/home/AtticNight.png",
+    weather: rainArt("./images/locations/home/atticDay-rain.jpg"),
+    weatherDayOnly: true,
   },
   choices: [returnToUpstairsHallway],
 };
@@ -1102,6 +1132,8 @@ export const basement: Scene = {
   image: {
     day: "./images/locations/home/basementDay.png",
     night: "./images/locations/home/basementNight.png",
+    weather: rainArt("./images/locations/home/basementDay-rain.jpg"),
+    weatherDayOnly: true,
   },
   choices: [returnToHallway],
 };
@@ -1340,6 +1372,11 @@ export const gasStation: Scene = {
   image: {
     day: "./images/locations/gas_station/GasStationDay.jpg",
     night: "./images/locations/gas_station/GasStationNight.jpg",
+    weather: rainArt(
+      "./images/locations/gas_station/GasStationDay-rain.jpg",
+      "./images/locations/gas_station/GasStationDay-thunder.jpg",
+    ),
+    weatherDayOnly: true,
   },
 
   choices: [
@@ -2080,6 +2117,8 @@ export const ethanRoomDeskEmpty: Scene = {
   image: {
     day: "./images/locations/home/ethanDeskEmptyDay.png",
     night: "./images/locations/home/ethanDeskEmptyNight.png",
+    weather: rainArt("./images/locations/home/ethanDeskEmptyDay-rain.jpg"),
+    weatherDayOnly: true,
   },
   choices: [
     {
@@ -2197,6 +2236,11 @@ export const diner: Scene = {
   image: {
     day: "./images/locations/diner/dinerDay.png",
     night: "./images/locations/diner/dinerNight.png",
+    weather: rainArt(
+      "./images/locations/diner/dinerDay-rain.jpg",
+      "./images/locations/diner/dinerDay-thunder.jpg",
+    ),
+    weatherDayOnly: true,
   },
   choices: [
     {

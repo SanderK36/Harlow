@@ -29,7 +29,7 @@ import QuestWindow from "@/components/QuestWindow/QuestWindow";
 
 import { isNightTime } from "@/game/utils";
 import { useGame } from "@/game/useGame";
-import { isExteriorScene, scenes } from "@/game/scenes";
+import { isExteriorScene, RAIN_WEATHER, scenes } from "@/game/scenes";
 import { clearSessionSave, readSessionSave } from "@/game/save";
 import { harlowAudio } from "@/game/audio";
 import Atmosphere from "@/components/Atmosphere/Atmosphere";
@@ -349,26 +349,17 @@ export default function Home() {
   );
   const sceneIsNight = isNightTime(gameState.time);
 
-  // Rain and drone follow the weather, the hour and whether Ethan is inside.
+  // Rain follows the weather and whether Ethan is inside.
   // The intro film carries its own soundtrack, so the beds wait for it.
   useEffect(() => {
     harlowAudio().setAmbience(
       inGame && !showProductionSplash
-        ? { indoor: sceneIsIndoor, night: sceneIsNight, weather: gameState.weather }
+        ? { indoor: sceneIsIndoor, weather: gameState.weather }
         : null,
     );
-  }, [inGame, showProductionSplash, sceneIsIndoor, sceneIsNight, gameState.weather]);
+  }, [inGame, showProductionSplash, sceneIsIndoor, gameState.weather]);
 
   useEffect(() => () => harlowAudio().setAmbience(null), []);
-
-  // Footsteps when Ethan moves to another scene (not on the first render).
-  const previousSceneId = useRef<string | null>(null);
-  useEffect(() => {
-    if (previousSceneId.current !== null && previousSceneId.current !== currentScene.id) {
-      harlowAudio().footsteps();
-    }
-    previousSceneId.current = currentScene.id;
-  }, [currentScene.id]);
 
   useEffect(() => {
     if (!newDayAnnouncement) {
@@ -427,13 +418,20 @@ export default function Home() {
     gameState.time >= 450 &&
     gameState.time < 540;
   // The scene as it looks without anyone painted into it.
+  // Daylit weather art (weatherDayOnly) gives way to the night art after dark.
+  const weatherImage =
+    isNightTime(gameState.time) && currentScene.image.weatherDayOnly
+      ? undefined
+      : currentScene.image.weather?.[gameState.weather];
   const emptySceneImage =
-    currentScene.image.weather?.[gameState.weather] ??
+    weatherImage ??
     (isNightTime(gameState.time)
       ? currentScene.image.night
       : currentScene.image.day);
   const sceneImage = momInKitchen
-    ? "./images/locations/home/momMorningKitchen.png"
+    ? RAIN_WEATHER.includes(gameState.weather)
+      ? "./images/locations/home/momMorningKitchen-rain.jpg"
+      : "./images/locations/home/momMorningKitchen.png"
     : ((isNightTime(gameState.time) && activeCharacter?.nightImage
         ? activeCharacter.nightImage
         : activeCharacter?.image) ?? emptySceneImage);
@@ -681,7 +679,7 @@ export default function Home() {
         />
 
         <div
-          className={`scene-image-frame scene-image-frame-${currentScene.id}${hasConversationOverlay ? " scene-image-frame-has-conversation" : ""}${conversationActive ? " scene-image-frame-conversation-active" : ""}`}
+          className={`scene-image-frame scene-image-frame-${currentScene.id}${weatherImage && sceneImage === weatherImage ? " scene-image-frame-weather-art" : ""}${hasConversationOverlay ? " scene-image-frame-has-conversation" : ""}${conversationActive ? " scene-image-frame-conversation-active" : ""}`}
         >
           {/* The picture and its hotspots share one box, so percentage hotspot
               positions always map onto the art, wherever the panels sit. */}
