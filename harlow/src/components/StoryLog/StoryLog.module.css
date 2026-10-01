@@ -20,7 +20,7 @@
   bottom: 12px;
   color: rgba(237, 85, 98, .2);
   content: "HARLOW";
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-display);
   font-size: 27px;
   font-style: italic;
   letter-spacing: .12em;
@@ -39,8 +39,8 @@
 }
 
 .storyEntry {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 17px;
+  font-family: var(--font-body);
+  font-size: 19px;
   animation: storyAppear .35s ease-out;
 }
 
@@ -95,6 +95,10 @@
   display: none;
 }
 
+.combinedScene p {
+  line-height: 1.5;
+}
+
 .combinedScene .title {
   margin-bottom: 10px;
   padding-bottom: 8px;
@@ -111,16 +115,18 @@
   margin: 0 0 16px;
   padding-bottom: 11px;
   color: var(--accent-bright);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .2em;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .26em;
   text-transform: uppercase;
   border-bottom: 1px solid var(--line);
 }
 
 .effect {
   margin-left: 10px;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
+  font-size: 0.72em;
+  letter-spacing: 0.08em;
   font-weight: 700;
 }
 
@@ -164,7 +170,7 @@
   }
 
   .storyEntry {
-    font-size: 16px;
+    font-size: 18px;
   }
 
   .narrationLog::after {

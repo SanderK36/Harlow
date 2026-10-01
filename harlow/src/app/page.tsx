@@ -10,6 +10,7 @@ import ActionButton from "@/components/ActionButton/ActionButton";
 import StatsWindow from "@/components/StatsWindow/StatsWindow";
 import StoryLog from "@/components/StoryLog/StoryLog";
 import CharacterLine from "@/components/CharacterLine/CharacterLine";
+import DialogueScene from "@/components/DialogueScene/DialogueScene";
 import TravelOverlay from "@/components/TravelOverlay/TravelOverlay";
 import TravelWindow from "@/components/TravelWindow/TravelWindow";
 import InventoryWindow from "@/components/InventoryWindow/InventoryWindow";
@@ -509,6 +510,12 @@ export default function Home() {
         />
 
         <div className={`scene-image-frame scene-image-frame-${currentScene.id}${hasConversationOverlay ? " scene-image-frame-has-conversation" : ""}${conversationActive ? " scene-image-frame-conversation-active" : ""}`}>
+          {/* A soft, blurred spill of the art fills any space around the frame. */}
+          <div
+            className="scene-ambient"
+            aria-hidden="true"
+            style={{ backgroundImage: `url("${sceneImage}")` }}
+          />
           <img
             src={sceneImage}
             alt=""
@@ -603,12 +610,15 @@ export default function Home() {
               className={`conversation-overlay${conversationActive ? " conversation-overlay-active" : ""}`}
               aria-hidden={!conversationActive}
             >
-              <StoryLog
+              <DialogueScene
                 entries={conversation}
-                title="Conversation"
-                variant="conversation"
+                active={conversationActive}
+                choices={
+                  conversationActive && choicesWithoutHotspotActions.length > 0
+                    ? actionList
+                    : null
+                }
               />
-              {conversationActive && actionList}
             </div>
           )}
           {!hasConversationOverlay && !(showOpeningThought || showVinylThought || tvNewsLine !== null) && actionList}

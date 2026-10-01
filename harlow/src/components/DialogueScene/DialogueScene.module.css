@@ -1,0 +1,425 @@
+/* Visual-novel conversation layer. Sits inside .conversation-overlay, which
+   covers the scene frame; the scene art stays visible (dimmed) behind it. */
+
+.stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: clamp(10px, 1.8vw, 20px);
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+/* ---------- Portraits ---------- */
+
+/* Portraits are anchored to the stage, not to the box, so they hold still
+   while the box grows to show replies; the box simply overlaps them. */
+.cast {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.portrait {
+  position: absolute;
+  bottom: clamp(70px, 15%, 130px);
+  height: min(78%, 520px);
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  /* Feather every edge so the painted card melts into the scene. */
+  -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 46%, #000 58%, transparent 100%);
+  mask-image: radial-gradient(ellipse 50% 50% at 50% 46%, #000 58%, transparent 100%);
+  transition:
+    opacity 320ms ease,
+    filter 320ms ease,
+    transform 380ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.portrait img {
+  object-fit: cover;
+  object-position: 50% 18%;
+}
+
+.partnerPortrait {
+  left: clamp(0px, 2%, 24px);
+  animation: portraitEnterLeft 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.ethanPortrait {
+  right: clamp(0px, 2%, 24px);
+  height: min(70%, 460px);
+}
+
+.portraitIdle {
+  filter: brightness(0.5) saturate(0.65);
+  transform: translateY(6px) scale(0.985);
+}
+
+.portraitSpeaking {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.portraitHidden {
+  opacity: 0;
+  transform: translateX(28px);
+}
+
+/* ---------- Dialogue box ---------- */
+
+.box {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  padding: clamp(24px, 2.6vw, 30px) clamp(18px, 2.4vw, 30px) clamp(14px, 1.8vw, 20px);
+  color: #f4e9e2;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(169, 22, 36, 0.16), transparent 55%),
+    linear-gradient(180deg, rgba(24, 13, 14, 0.9), rgba(9, 5, 6, 0.95));
+  border: 1px solid rgba(237, 85, 98, 0.3);
+  border-radius: 12px;
+  box-shadow:
+    0 -12px 44px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 220, 205, 0.08);
+  -webkit-backdrop-filter: blur(8px) saturate(1.1);
+  backdrop-filter: blur(8px) saturate(1.1);
+  pointer-events: auto;
+  animation: boxEnter 360ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* Hairline of red light along the top edge. */
+.box::before {
+  position: absolute;
+  top: -1px;
+  right: 14%;
+  left: 14%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 120, 120, 0.85), transparent);
+  content: "";
+}
+
+.namePlate {
+  position: absolute;
+  top: 0;
+  left: clamp(16px, 2.4vw, 28px);
+  padding: 7px 18px 6px;
+  color: #fbe6d6;
+  font-family: var(--font-display);
+  font-size: clamp(13px, 1.25vw, 16px);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+  background: linear-gradient(180deg, #8e1a26, #4d0d15);
+  border: 1px solid rgba(255, 196, 178, 0.38);
+  border-radius: 3px;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 220, 205, 0.25);
+  transform: translateY(-58%);
+  animation: plateEnter 260ms ease-out both;
+}
+
+.namePlateEthan {
+  right: clamp(16px, 2.4vw, 28px);
+  left: auto;
+  background: linear-gradient(180deg, #3a2a26, #1d1513);
+  border-color: rgba(230, 200, 170, 0.32);
+}
+
+.history {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  padding: 3px 8px;
+  color: rgba(245, 230, 225, 0.5);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+
+.boxEthan .history {
+  right: auto;
+  left: 10px;
+}
+
+.history:hover,
+.history:focus-visible,
+.history[aria-pressed="true"] {
+  color: #fbe6d6;
+  border-color: rgba(255, 196, 178, 0.35);
+  outline: none;
+}
+
+.lineButton {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.lineButton:focus-visible {
+  border-radius: 6px;
+  outline: 1px dashed rgba(255, 196, 178, 0.4);
+  outline-offset: 6px;
+}
+
+.line {
+  display: block;
+  min-height: 3em;
+  padding-right: 24px;
+  font-family: var(--font-body);
+  font-size: clamp(19px, 1.85vw, 23px);
+  font-weight: 400;
+  line-height: 1.5;
+  text-wrap: pretty;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.lineNarration {
+  color: #dccbc3;
+  font-style: italic;
+}
+
+.unrevealed {
+  color: transparent;
+  text-shadow: none;
+}
+
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 0.95em;
+  margin: 0 1px -0.12em;
+  background: rgba(255, 140, 140, 0.75);
+  animation: caretBlink 900ms steps(1) infinite;
+}
+
+.prompt {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+  color: rgba(245, 225, 215, 0.55);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.promptGlyph {
+  width: 0;
+  height: 0;
+  border-top: 6px solid var(--accent-bright);
+  border-right: 5px solid transparent;
+  border-left: 5px solid transparent;
+  animation: promptBob 1100ms ease-in-out infinite;
+}
+
+/* ---------- Replies ---------- */
+
+.choices {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 280ms ease,
+    opacity 220ms ease,
+    margin 280ms ease;
+}
+
+.choices > * {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.choicesVisible {
+  grid-template-rows: 1fr;
+  margin-top: 14px;
+  opacity: 1;
+}
+
+/* ---------- Conversation log ---------- */
+
+.historyPanel {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: clamp(10px, 1.8vw, 20px);
+  background: rgba(8, 4, 5, 0.82);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+  animation: boxEnter 240ms ease-out both;
+}
+
+.historyPanel > section {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+}
+
+.historyClose {
+  align-self: center;
+  padding: 9px 18px;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: rgba(21, 12, 13, 0.92);
+  border: 1px solid rgba(237, 85, 98, 0.45);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.historyClose:hover,
+.historyClose:focus-visible {
+  background: rgba(169, 22, 36, 0.4);
+  outline: none;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes portraitEnterLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-26px);
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes boxEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes plateEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-30%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(-58%);
+  }
+}
+
+@keyframes caretBlink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes promptBob {
+  50% {
+    transform: translateY(3px);
+  }
+}
+
+/* Narrow screens: shorter portraits, roomier type, replies stacked. */
+@media (max-width: 640px) {
+  .stage {
+    position: relative;
+    inset: auto;
+    flex: 1 1 auto;
+    padding: 10px;
+  }
+
+  .stage::before {
+    /* Reserve headroom above the box for the portraits. */
+    flex: 1 0 230px;
+    content: "";
+  }
+
+  .portrait {
+    top: 0;
+    bottom: auto;
+    height: 300px;
+  }
+
+  .partnerPortrait {
+    left: -12px;
+  }
+
+  .ethanPortrait {
+    right: -12px;
+    height: 270px;
+  }
+
+  .box {
+    padding: 24px 16px 14px;
+  }
+
+  .line {
+    min-height: 0;
+    font-size: 19px;
+    line-height: 1.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portrait,
+  .partnerPortrait,
+  .box,
+  .namePlate,
+  .historyPanel,
+  .caret,
+  .promptGlyph {
+    animation: none;
+  }
+
+  .portrait,
+  .choices {
+    transition: none;
+  }
+
+  .portraitIdle,
+  .portraitHidden {
+    transform: none;
+  }
+}

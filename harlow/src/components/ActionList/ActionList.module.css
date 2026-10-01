@@ -7,8 +7,8 @@
   margin: 0 0 12px;
   color: var(--muted);
   font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.13em;
+  font-weight: 500;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
 }
 
@@ -64,21 +64,79 @@
   }
 }
 
-/* Keep choices in the conversation's flex layout. Scope this here so the
-   selector uses the generated CSS Module class instead of a literal name. */
+/* Replies inside the visual-novel dialogue box. Scoped here so the selector
+   uses the generated CSS Module class instead of a literal name. */
 :global(.conversation-overlay) .overlayActionList {
   position: relative;
   inset: auto;
-  flex: 0 1 auto;
-  min-height: 0;
-  width: min(100%, 760px);
-  max-width: 760px;
-  max-height: 45%;
-  margin: 0 auto;
-  padding: 0;
-  overflow-y: auto;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 14px 0 0;
+  overflow: visible;
   pointer-events: auto;
   background: transparent;
+  border-top: 1px solid rgba(239, 221, 221, 0.1);
+}
+
+:global(.conversation-overlay) .overlayActionList h2 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+:global(.conversation-overlay) .overlayActionButtons {
+  gap: 8px;
+  counter-reset: reply;
+}
+
+:global(.conversation-overlay) .overlayActionButtons button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 46px;
+  padding: 9px 38px 9px 12px;
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.25;
+  background: rgba(255, 240, 235, 0.04);
+  border-color: rgba(239, 221, 221, 0.16);
+  border-radius: 8px;
+  backdrop-filter: none;
+  counter-increment: reply;
+}
+
+/* Key hint (1–9) for each reply. */
+:global(.conversation-overlay) .overlayActionButtons button::before {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  color: rgba(255, 210, 200, 0.7);
+  content: counter(reply);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid rgba(255, 196, 178, 0.28);
+  border-radius: 4px;
+}
+
+:global(.conversation-overlay) .overlayActionButtons button:hover:not(:disabled),
+:global(.conversation-overlay) .overlayActionButtons button:focus-visible {
+  background: linear-gradient(90deg, rgba(169, 22, 36, 0.32), rgba(169, 22, 36, 0.1));
+  border-color: rgba(237, 85, 98, 0.62);
+}
+
+:global(.conversation-overlay) .overlayActionButtons button:hover:not(:disabled)::before,
+:global(.conversation-overlay) .overlayActionButtons button:focus-visible::before {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent-bright);
 }
 
 :global(.scene-image-frame-hallway) .overlayActionList h2 {
@@ -93,9 +151,9 @@
 
 :global(.scene-image-frame-hallway) .overlayActionButtons button {
   min-height: 34px;
-  padding-top: 7px;
-  padding-bottom: 7px;
-  font-size: 12px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  font-size: 15px;
   background: rgba(255, 255, 255, 0.035);
   backdrop-filter: none;
 }
@@ -114,9 +172,10 @@
 
 .overlayActionButtons button {
   min-height: 42px;
-  padding-top: 10px;
-  padding-bottom: 10px;
-  font-size: 13px;
+  padding-top: 9px;
+  padding-bottom: 9px;
+  font-family: var(--font-body);
+  font-size: 17px;
   background: rgba(21, 16, 16, 0.82);
   border-color: rgba(239, 221, 221, 0.28);
   backdrop-filter: blur(4px);
@@ -125,6 +184,11 @@
 @media (max-width: 600px) {
   .actionButtons, .homeActionButtons {
     grid-template-columns: 1fr;
+  }
+
+  :global(.conversation-overlay) .overlayActionButtons button {
+    min-height: 44px;
+    font-size: 17px;
   }
 
   .overlayActionList {

@@ -42,8 +42,9 @@
 .header h2,
 .bio h3 {
   margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 400;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: .04em;
 }
 
 .header h2 {
@@ -118,6 +119,12 @@
 
 .activePortrait {
   background: rgba(169, 22, 36, 0.2);
+}
+
+.bio p:not(.role) {
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.55;
 }
 
 .bio {

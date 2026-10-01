@@ -140,10 +140,11 @@
 
 .timeInfo {
   color: var(--gold);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(27px, 3vw, 38px);
+  font-family: var(--font-ui);
+  font-size: clamp(30px, 3.3vw, 42px);
+  font-weight: 300;
   line-height: 1;
-  letter-spacing: -.04em;
+  letter-spacing: .02em;
   white-space: nowrap;
 }
 

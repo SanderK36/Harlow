@@ -9,6 +9,14 @@
   --accent: #a91624;
   --accent-bright: #ed5562;
   --gold: #d93443;
+
+  /* Type system (fonts are loaded with next/font in app/layout.tsx).
+     Display: inscriptional capitals for the wordmark and window titles.
+     Body: a bookish serif for narration, thoughts, and dialogue.
+     UI: a condensed grotesque for labels, stats, and controls. */
+  --font-display: var(--font-cinzel), "Trajan Pro", Georgia, serif;
+  --font-body: var(--font-crimson), Georgia, "Times New Roman", serif;
+  --font-ui: var(--font-oswald), "Arial Narrow", Arial, sans-serif;
 }
 
 * {
@@ -20,8 +28,12 @@ body {
   min-width: 320px;
   margin: 0;
   color: var(--text);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
+  font-weight: 400;
   background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body.production-splash-active {
@@ -153,21 +165,25 @@ button {
   padding-left: 15px;
   color: #f7e5e6;
   font-size: clamp(13px, 1.5vw, 17px);
-  font-weight: 700;
-  letter-spacing: 0.16em;
+  font-weight: 400;
+  letter-spacing: 0.3em;
   line-height: 1.4;
   text-transform: uppercase;
 }
 
 .mainMenu h1 {
   margin: 0;
-  color: var(--text);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(52px, 7.4vw, 100px);
-  font-weight: 400;
-  letter-spacing: 0.055em;
+  color: #f7ece6;
+  font-family: var(--font-display);
+  font-size: clamp(50px, 7vw, 96px);
+  font-weight: 600;
+  letter-spacing: 0.08em;
   line-height: 1;
   white-space: nowrap;
+  text-shadow:
+    0 0 1px rgba(255, 235, 225, 0.5),
+    0 6px 28px rgba(0, 0, 0, 0.9),
+    0 0 60px rgba(169, 22, 36, 0.35);
 }
 
 .mainMenuActions {
@@ -182,9 +198,9 @@ button {
   padding: 13px 24px;
   color: var(--text);
   font: inherit;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   background: rgba(169, 22, 36, 0.72);
   border: 1px solid rgba(255, 220, 222, 0.55);
@@ -305,11 +321,11 @@ button {
 
 .game-panel > h1 {
   margin: 0 0 2px;
-  color: var(--text);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(32px, 6vw, 54px);
-  font-weight: 400;
-  letter-spacing: 0.16em;
+  color: #f4e7e1;
+  font-family: var(--font-display);
+  font-size: clamp(30px, 5.6vw, 50px);
+  font-weight: 600;
+  letter-spacing: 0.2em;
   line-height: 1;
   text-shadow: 0 8px 24px rgba(0, 0, 0, 0.42);
 }
@@ -318,6 +334,23 @@ button {
   position: relative;
   width: min(100%, 1100px);
   margin: 28px auto 0;
+}
+
+/* Blurred spill of the current art behind the frame, so the space around a
+   narrower image glows with its colours instead of reading as an empty band. */
+.scene-ambient {
+  position: absolute;
+  inset: -18px -96px;
+  z-index: -1;
+  background-position: center;
+  background-size: cover;
+  border-radius: 40px;
+  filter: blur(42px) brightness(0.6) saturate(1.2);
+  opacity: 0.9;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(closest-side, #000 62%, transparent);
+  mask-image: radial-gradient(closest-side, #000 62%, transparent);
+  transition: background-image 420ms ease;
 }
 
 .scene-image {
@@ -336,9 +369,9 @@ button {
   animation: sceneImageEnter 420ms ease-out;
 }
 
+/* Conversations keep the scene in view, pushed back so the speakers lead. */
 .scene-image-frame-conversation-active .scene-image {
-  opacity: 0.18;
-  filter: brightness(0.42) saturate(0.72);
+  filter: brightness(0.55) saturate(0.78) blur(2.5px);
 }
 
 .scene-info-stack {
@@ -363,17 +396,24 @@ button {
   padding: 14px;
   background: linear-gradient(
     180deg,
-    rgba(8, 4, 5, 0.86),
-    rgba(21, 16, 16, 0.72)
+    rgba(10, 5, 6, 0.82),
+    rgba(21, 12, 13, 0.62)
   );
-  border: 1px solid rgba(237, 85, 98, 0.34);
-  border-radius: 10px;
+  border: 1px solid rgba(237, 85, 98, 0.3);
+  border-radius: 14px 14px 10px 10px;
   box-shadow:
-    0 8px 22px rgba(0, 0, 0, 0.2),
+    0 10px 30px rgba(0, 0, 0, 0.32),
     inset 3px 0 0 var(--accent);
   transition:
     opacity 240ms ease,
     transform 280ms ease;
+}
+
+@media (min-width: 641px) {
+  .scene-info-panel {
+    -webkit-backdrop-filter: blur(6px) saturate(1.1);
+    backdrop-filter: blur(6px) saturate(1.1);
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -418,18 +458,18 @@ button {
 .opening-thought span {
   display: block;
   margin-bottom: 7px;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  color: rgba(255, 220, 215, 0.78);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
 }
 
 .opening-thought p {
   margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(16px, 2vw, 22px);
+  font-family: var(--font-body);
+  font-size: clamp(18px, 2.1vw, 24px);
   font-style: italic;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.4;
 }
 
@@ -482,17 +522,18 @@ button {
   display: block;
   margin: 0;
   color: rgba(255, 255, 255, 0.7);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.26em;
   text-transform: uppercase;
 }
 
 .new-day-screen-content h2 {
   margin: 12px 0 4px;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(48px, 9vw, 82px);
-  font-weight: 500;
+  font-family: var(--font-display);
+  font-size: clamp(44px, 8.4vw, 76px);
+  font-weight: 600;
+  letter-spacing: 0.06em;
 }
 
 @keyframes newDayScreenFade {
@@ -521,62 +562,31 @@ button {
   position: absolute;
   inset: 0;
   z-index: 6;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 12px;
-  padding: clamp(12px, 2.4vw, 28px);
-  overflow-y: auto;
-  background: linear-gradient(
-    0deg,
-    rgba(8, 4, 5, 0.84),
-    rgba(8, 4, 5, 0.68) 42%,
-    rgba(8, 4, 5, 0.2) 75%,
-    transparent
-  );
+  overflow: hidden;
+  border-radius: 14px;
+  /* Vignette + floor shadow so portraits and the dialogue box read cleanly
+     over any art while the scene stays visible. */
+  background:
+    radial-gradient(130% 90% at 50% 30%, transparent 40%, rgba(8, 4, 5, 0.55)),
+    linear-gradient(0deg, rgba(8, 4, 5, 0.78), rgba(8, 4, 5, 0.12) 55%, transparent);
   opacity: 0;
   pointer-events: none;
-  transform: translateY(10px);
-  transition:
-    opacity 300ms ease,
-    transform 300ms ease;
+  transition: opacity 300ms ease;
 }
 
 .conversation-overlay-active {
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(0);
   animation: conversationOverlayEnter 300ms ease-out both;
-}
-
-.conversation-overlay [aria-live="polite"] {
-  position: relative;
-  flex: 1 1 0;
-  min-height: 0;
-  z-index: 0;
-  width: 100%;
-  height: auto;
-  max-height: none;
-  margin: 0;
-  padding: clamp(16px, 2.4vw, 28px);
-  border-radius: 14px;
-  background: linear-gradient(
-    135deg,
-    rgba(31, 17, 18, 0.76),
-    rgba(12, 8, 9, 0.76)
-  );
 }
 
 @keyframes conversationOverlayEnter {
   from {
     opacity: 0;
-    transform: translateY(10px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -609,8 +619,8 @@ button {
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
   pointer-events: none;
   font-size: clamp(11px, 1vw, 13px);
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-weight: 500;
+  letter-spacing: 0.12em;
   line-height: 1.3;
   opacity: 0;
   white-space: nowrap;
@@ -1031,8 +1041,8 @@ button {
   margin-right: 4px;
   color: var(--muted);
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-weight: 500;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
 }
 
@@ -1194,13 +1204,14 @@ button {
     line-height: 36px;
   }
 
+  /* The frame hugs the image exactly (no min-width), so the art fills it
+     edge to edge and percentage hotspots map onto the picture itself. */
   .scene-image-frame {
     grid-column: 2;
     grid-row: 2;
     align-self: start;
     width: fit-content;
     max-width: 100%;
-    min-width: min(100%, 1024px);
     margin: 0 auto;
   }
 
@@ -1220,13 +1231,6 @@ button {
     margin: 0 auto;
   }
 
-  .conversation-overlay {
-    padding: 16px;
-  }
-
-  .conversation-overlay [aria-live="polite"] {
-    padding: 14px;
-  }
 }
 
 @media (max-width: 640px) {
@@ -1250,8 +1254,8 @@ button {
   }
 
   .mainMenu h1 {
-    font-size: clamp(44px, 12vw, 68px);
-    letter-spacing: 0.035em;
+    font-size: clamp(38px, 10.6vw, 64px);
+    letter-spacing: 0.04em;
   }
 
   .mainMenuActions {
@@ -1268,14 +1272,31 @@ button {
     gap: 14px;
   }
 
-  .conversation-overlay {
-    gap: 8px;
-    padding: 12px;
+  /* Phones: the art is short, so a conversation grows the frame into a
+     taller stage and lets the dimmed scene cover it. */
+  .scene-image-frame-conversation-active {
+    min-height: min(640px, calc(100svh - 24px));
   }
 
-  .conversation-overlay [aria-live="polite"] {
-    max-height: none;
-    padding: 12px;
+  .scene-image-frame-conversation-active .scene-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin-top: 0;
+    object-fit: cover;
+  }
+
+  .scene-image-frame-conversation-active .scene-ambient {
+    display: none;
+  }
+
+  .scene-image-frame-conversation-active .conversation-overlay {
+    position: relative;
+    inset: auto;
+    display: flex;
+    min-height: inherit;
+    border-radius: 10px;
   }
 
   .game-panel {
@@ -1318,15 +1339,16 @@ button {
 
 .quest-notification span {
   color: #e69b66;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
 }
 
 .quest-notification p {
   margin: 5px 0 0;
-  font-size: 14px;
+  font-family: var(--font-body);
+  font-size: 17px;
   line-height: 1.35;
 }
 
@@ -1374,6 +1396,10 @@ button {
   .gameCloud,
   .conversation-overlay-active {
     animation: none;
+  }
+
+  .scene-ambient {
+    transition: none;
   }
 
   .scene-image,

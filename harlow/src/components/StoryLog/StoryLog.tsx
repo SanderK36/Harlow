@@ -3,41 +3,7 @@ import { useEffect, useRef } from "react";
 import styles from "./StoryLog.module.css";
 import type { StoryEntry } from "@/game/story";
 import ConversationLine from "@/components/ConversationLine/ConversationLine";
-
-function getPortrait(character: string) {
-  // Add each new NPC name and portrait here so their dialogue has an image.
-  switch (character.toLowerCase()) {
-    case "ethan":
-      return "/images/characters/EthanParker/EthanParker.jpg";
-
-    case "linda":
-      return "/images/characters/LindaParker/LindaParker.png";
-
-    case "marlene":
-      return "/images/characters/MarleneWhitaker/marleneWhitaker.png";
-
-    case "johnny":
-      return "/images/characters/johnnyDalton/johnnyDalton.png";
-
-    case "walter":
-      return "/images/characters/WalterHarrington/WalterHarrington.jpg";
-
-    case "margaret":
-      return "/images/characters/MargaretSullivan/maragetSullivan.png";
-
-    case "earl":
-      return "/images/characters/EarlGivens/EarlGivens.png";
-
-    case "big roy":
-      return "/images/characters/BigRoy/BigRoy.png";
-
-    case "tommy":
-      return "/images/characters/TommyVance/TommyVance.png";
-
-    default:
-      return "/images/characters/EthanParker/EthanParker.jpg";
-  }
-}
+import { getPortrait } from "@/game/portraits";
 
 type StoryLogProps = {
   entries: StoryEntry[];
