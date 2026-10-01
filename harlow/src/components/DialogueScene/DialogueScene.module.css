@@ -2,57 +2,71 @@
    covers the scene frame; the scene art stays visible (dimmed) behind it. */
 
 .stage {
+  --stage-pad: clamp(10px, 1.8vw, 20px);
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: clamp(10px, 1.8vw, 20px);
+  padding: var(--stage-pad);
   overflow: hidden;
   border-radius: 14px;
 }
 
 /* ---------- Portraits ---------- */
 
-/* Portraits are anchored to the stage, not to the box, so they hold still
-   while the box grows to show replies; the box simply overlaps them. */
 .cast {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
+/* Each speaker is a bust standing behind the dialogue box: the source art
+   (shoulders and chest at its bottom edge) is shown nearly whole, only the
+   top and sides are feathered, and the bottom is tucked behind the box top.
+   The box holds its tallest height for the conversation (see the TSX), so
+   the portraits stay put once the replies have appeared. */
 .portrait {
+  --portrait-height: min(50%, 330px);
+  --tuck: 0.12;
   position: absolute;
-  /* Rests just behind the top edge of the box once replies are showing. */
-  bottom: clamp(110px, 28%, 210px);
-  height: min(52%, 350px);
-  aspect-ratio: 4 / 5;
+  bottom: calc(
+    var(--dialogue-box-height, 200px) + var(--stage-pad) -
+      var(--portrait-height) * var(--tuck)
+  );
+  height: var(--portrait-height);
+  /* Square, like the portraits; taller ones lose a little of their lower
+     body behind the box rather than their head. */
+  aspect-ratio: 1;
   overflow: hidden;
-  /* Feather every edge so the painted card melts into the scene. */
-  -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 46%, #000 58%, transparent 100%);
-  mask-image: radial-gradient(ellipse 50% 50% at 50% 46%, #000 58%, transparent 100%);
+  -webkit-mask-image:
+    linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%),
+    linear-gradient(180deg, transparent 0%, #000 12%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%),
+    linear-gradient(180deg, transparent 0%, #000 12%);
+  mask-composite: intersect;
   transition:
     opacity 320ms ease,
     filter 320ms ease,
-    transform 380ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    transform 380ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    bottom 380ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 .portrait img {
   object-fit: cover;
-  object-position: 50% 18%;
+  object-position: 50% 0%;
 }
 
 .partnerPortrait {
-  left: clamp(0px, 2%, 24px);
+  left: clamp(-16px, 0%, 8px);
   animation: portraitEnterLeft 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
-/* Ethan only speaks while replies are hidden (shorter box), so he sits lower. */
 .ethanPortrait {
-  right: clamp(0px, 2%, 24px);
-  bottom: clamp(90px, 18%, 150px);
-  height: min(47%, 310px);
+  --portrait-height: min(46%, 305px);
+  right: clamp(-16px, 0%, 8px);
 }
 
 .portraitIdle {
@@ -239,25 +253,23 @@
 
 /* ---------- Replies ---------- */
 
+/* Replies are laid out from the first line on (just invisible and inert
+   until the line has been read), so the box doesn't jump when they appear. */
 .choices {
-  display: grid;
-  grid-template-rows: 0fr;
+  margin-top: 14px;
   opacity: 0;
+  visibility: hidden;
   transition:
-    grid-template-rows 280ms ease,
     opacity 220ms ease,
-    margin 280ms ease;
-}
-
-.choices > * {
-  min-height: 0;
-  overflow: hidden;
+    visibility 0s 220ms;
 }
 
 .choicesVisible {
-  grid-template-rows: 1fr;
-  margin-top: 14px;
   opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 220ms ease,
+    visibility 0s;
 }
 
 /* ---------- Conversation log ---------- */
@@ -367,10 +379,11 @@
 /* Narrow screens: shorter portraits, roomier type, replies stacked. */
 @media (max-width: 640px) {
   .stage {
+    --stage-pad: 10px;
     position: relative;
     inset: auto;
     flex: 1 1 auto;
-    padding: 10px;
+    padding: var(--stage-pad);
   }
 
   .stage::before {
@@ -379,25 +392,23 @@
     content: "";
   }
 
-  /* Rest on the box's top edge (10px stage padding, ~22px tucked behind). */
-  .portrait,
-  .ethanPortrait {
-    bottom: calc(var(--dialogue-box-height, 260px) - 12px);
-    height: 200px;
-    transition:
-      opacity 320ms ease,
-      filter 320ms ease,
-      transform 380ms cubic-bezier(0.2, 0.7, 0.2, 1),
-      bottom 380ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  .portrait {
+    --portrait-height: 200px;
   }
 
   .partnerPortrait {
-    left: 0;
+    left: -14px;
   }
 
   .ethanPortrait {
-    right: 0;
-    height: 180px;
+    --portrait-height: 180px;
+    right: -14px;
+  }
+
+  /* Stacked replies are tall; reserving them would leave a mostly empty box
+     on a phone, so they take no space until the line has been read. */
+  .choices:not(.choicesVisible) {
+    display: none;
   }
 
   .box {

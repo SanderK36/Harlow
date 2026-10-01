@@ -201,10 +201,25 @@ export default function DialogueScene({
     const box = boxRef.current;
     const stage = stageRef.current;
     if (!box || !stage) return;
+    // On wide screens the box keeps its tallest height for the conversation
+    // (replies vanish while an answer is pending), so the busts behind it never
+    // bob. Phones stack replies, so holding that height would leave a mostly
+    // empty box; there the busts ride the box edge instead.
+    const wide = window.matchMedia("(min-width: 641px)");
+    let tallest = 0;
+    let width = stage.clientWidth;
     const observer = new ResizeObserver(() => {
-      stage.style.setProperty("--dialogue-box-height", `${box.offsetHeight}px`);
+      if (stage.clientWidth !== width || !wide.matches) {
+        width = stage.clientWidth;
+        tallest = 0;
+        box.style.minHeight = "";
+      }
+      tallest = wide.matches ? Math.max(tallest, box.offsetHeight) : box.offsetHeight;
+      if (wide.matches) box.style.minHeight = `${tallest}px`;
+      stage.style.setProperty("--dialogue-box-height", `${tallest}px`);
     });
     observer.observe(box);
+    observer.observe(stage);
     return () => observer.disconnect();
   }, [hasLine]);
 
@@ -311,13 +326,15 @@ export default function DialogueScene({
           {`${line.speaker ?? "Narration"}: ${line.text}`}
         </p>
 
-        <div
-          ref={choicesRef}
-          className={`${styles.choices} ${readyForChoices && choices ? styles.choicesVisible : ""}`}
-          aria-hidden={!(readyForChoices && choices)}
-        >
-          {readyForChoices ? choices : null}
-        </div>
+        {choices && (
+          <div
+            ref={choicesRef}
+            className={`${styles.choices} ${readyForChoices ? styles.choicesVisible : ""}`}
+            inert={!readyForChoices}
+          >
+            {choices}
+          </div>
+        )}
       </div>
 
       {showHistory && (
