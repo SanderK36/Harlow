@@ -580,19 +580,24 @@ export default function Home() {
             )}
           </div>
           <div className="scene-info-stack">
-            <div className="scene-info-panel">
-              {/* Narration first: a caption at the top-left of the art. */}
+            {/* The scene caption: a small glass card in the dialogue box's
+                language, keyed to the scene so it settles in on arrival. */}
+            <div className="scene-info-panel" key={currentScene.id}>
+              <div className="scene-caption-plate-row">
+                <h2 className="scene-caption-plate">Scene</h2>
+                {currentScene.location && (
+                  <span className="scene-caption-place">{currentScene.location}</span>
+                )}
+              </div>
               <div className="scene-caption-narration">
                 <StoryLog
                   entries={currentScene.story.filter(
                     (entry) => entry.type !== "thought"
                   )}
-                  title="Scene"
                   variant="narration"
                   layout="combined"
                 />
               </div>
-              {/* Ethan's thought: a quieter aside at the top-right. */}
               {currentThought && (
                 <div className="scene-caption-thought">
                   <CharacterLine
