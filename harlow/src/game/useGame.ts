@@ -267,7 +267,7 @@ export function useGame() {
   }
 
   function notifyMomQuest() {
-    showQuestNotification("New quest: Talk to Mom — she's got something on her mind.");
+    showQuestNotification("Talk to Mom. Maybe she knows what happened last night.", "New quest");
   }
 
   function applyChoiceEffects(choice: Choice) {

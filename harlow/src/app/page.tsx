@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import Image from "next/image";
 import SceneHotspot from "@/components/SceneHotspot";
 
@@ -113,6 +119,20 @@ const adminDestinations = Object.values(scenes)
   }))
   .sort((a, b) => a.label.localeCompare(b.label));
 
+// Ethan's first thoughts on a new game, one beat at a time in the thought
+// panel; the "Talk to Mom" quest starts after the last one.
+const OPENING_THOUGHTS = [
+  "I hardly slept last night.",
+  "What the fuck happened?",
+  "Who was in that body bag?",
+  "And who the fuck was that hooded guy near the forest?",
+  "I gotta talk to Mom. Maybe she knows.",
+];
+const OPENING_THOUGHT_BASE_MS = 1500;
+const OPENING_THOUGHT_PER_CHARACTER_MS = 45;
+// The first line starts while the title card is still lifting.
+const OPENING_THOUGHT_FIRST_EXTRA_MS = 900;
+
 export default function Home() {
   // Restore the session until the player explicitly chooses a screen.
   // Returning to the menu must override the session detected on refresh.
@@ -126,7 +146,9 @@ export default function Home() {
   const [showQuestLog, setShowQuestLog] = useState(false);
   const [showAdminTravel, setShowAdminTravel] = useState(false);
   const [showProductionSplash, setShowProductionSplash] = useState(false);
-  const [showOpeningThought, setShowOpeningThought] = useState(false);
+  // Index into OPENING_THOUGHTS while Ethan's first thoughts play, else null.
+  const [openingThoughtIndex, setOpeningThoughtIndex] = useState<number | null>(null);
+  const showOpeningThought = openingThoughtIndex !== null;
   const [showVinylThought, setShowVinylThought] = useState(false);
   const [showLateNightThought, setShowLateNightThought] = useState(false);
   const [tvNewsLine, setTvNewsLine] = useState<string | null>(null);
@@ -192,21 +214,48 @@ export default function Home() {
     startNewGameSession();
     setHasStarted(true);
     setShowQuestLog(false);
-    setShowOpeningThought(false);
+    setOpeningThoughtIndex(null);
     setShowVinylThought(false);
     setShowLateNightThought(false);
     setShowProductionSplash(true);
   }
 
+  // The title card has started lifting: Ethan's first thoughts begin under it,
+  // so the room appears with the first line already on screen.
+  function startOpeningThoughts() {
+    setOpeningThoughtIndex((index) => index ?? 0);
+  }
+
   function finishProductionSplash() {
     setShowProductionSplash(false);
-    setShowOpeningThought(true);
-    openingThoughtTimer.current = window.setTimeout(() => {
-      setShowOpeningThought(false);
-      openingThoughtTimer.current = null;
-      notifyMomQuest();
-    }, 4200);
+    startOpeningThoughts();
   }
+
+  // Step to the next opening thought; after the last one, the Mom quest starts.
+  function advanceOpeningThought() {
+    if (openingThoughtIndex === null) return;
+    if (openingThoughtIndex < OPENING_THOUGHTS.length - 1) {
+      setOpeningThoughtIndex(openingThoughtIndex + 1);
+    } else {
+      setOpeningThoughtIndex(null);
+      notifyMomQuest();
+    }
+  }
+
+  const advanceOpeningThoughtLater = useEffectEvent(advanceOpeningThought);
+
+  // Each thought stays long enough to type out and be read; clicking a
+  // finished thought moves on sooner.
+  useEffect(() => {
+    if (openingThoughtIndex === null) return;
+    const line = OPENING_THOUGHTS[openingThoughtIndex];
+    const delay =
+      OPENING_THOUGHT_BASE_MS +
+      line.length * OPENING_THOUGHT_PER_CHARACTER_MS +
+      (openingThoughtIndex === 0 ? OPENING_THOUGHT_FIRST_EXTRA_MS : 0);
+    const timer = window.setTimeout(advanceOpeningThoughtLater, delay);
+    return () => window.clearTimeout(timer);
+  }, [openingThoughtIndex]);
 
   function showTvNews() {
     if (openingThoughtTimer.current !== null) {
@@ -538,6 +587,7 @@ export default function Home() {
           dayNumber={gameState.dayNumber}
           time={gameState.time}
           location={gameState.location}
+          onReveal={startOpeningThoughts}
           onFinished={finishProductionSplash}
         />
       )}
@@ -699,18 +749,24 @@ export default function Home() {
               text="I love this thing. Mom got it for me last Christmas."
             />
           )}
-          {(showOpeningThought || tvNewsLine !== null) && (
+          {openingThoughtIndex !== null ? (
             <ThoughtPanel
               className="opening-thought"
-              speaker={showOpeningThought ? "Ethan" : "TV news"}
-              caption={showOpeningThought ? "Inner thought" : "Local broadcast"}
-              kind={showOpeningThought ? "thought" : "news"}
-              text={
-                showOpeningThought
-                  ? "What the fuck happened last night? I gotta talk to Mom. Maybe she knows."
-                  : (tvNewsLine ?? "")
-              }
+              speaker="Ethan"
+              caption="Inner thought"
+              text={OPENING_THOUGHTS[openingThoughtIndex]}
+              onAdvance={advanceOpeningThought}
             />
+          ) : (
+            tvNewsLine !== null && (
+              <ThoughtPanel
+                className="opening-thought"
+                speaker="TV news"
+                caption="Local broadcast"
+                kind="news"
+                text={tvNewsLine}
+              />
+            )
           )}
           {hasConversationOverlay && (
             <div
