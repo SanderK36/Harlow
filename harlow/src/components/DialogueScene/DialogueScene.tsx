@@ -212,7 +212,7 @@ export default function DialogueScene({
         {partner && (
           <div
             className={`${styles.portrait} ${styles.partnerPortrait} ${
-              speakerIsEthan || !line.speaker ? styles.portraitIdle : ""
+              speakerIsEthan || !line.speaker ? styles.portraitIdle : styles.portraitSpeaking
             }`}
           >
             <Image
@@ -226,7 +226,7 @@ export default function DialogueScene({
         )}
         <div
           className={`${styles.portrait} ${styles.ethanPortrait} ${
-            speakerIsEthan ? styles.portraitSpeaking : styles.portraitHidden
+            speakerIsEthan ? styles.portraitSpeaking : styles.portraitIdle
           }`}
         >
           <Image

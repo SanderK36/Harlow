@@ -67,21 +67,34 @@
 .ethanPortrait {
   --portrait-height: min(46%, 305px);
   right: clamp(-16px, 0%, 8px);
+  animation: portraitEnterRight 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* Both busts stay on stage for the whole conversation; whoever is talking
+   is lit, the listener steps back into a dark tint. */
+.portrait::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(14, 6, 8, 0.38), rgba(10, 4, 6, 0.5));
+  opacity: 0;
+  transition: opacity 320ms ease;
+  content: "";
 }
 
 .portraitIdle {
-  filter: brightness(0.5) saturate(0.65);
-  transform: translateY(6px) scale(0.985);
+  z-index: 0;
+  filter: brightness(0.62) saturate(0.6);
+  transform: translateY(6px) scale(0.975);
+}
+
+.portraitIdle::after {
+  opacity: 1;
 }
 
 .portraitSpeaking {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.portraitHidden {
-  opacity: 0;
-  transform: translateX(28px);
+  z-index: 1;
+  filter: none;
+  transform: none;
 }
 
 /* ---------- Dialogue box ---------- */
@@ -340,6 +353,17 @@
   }
 }
 
+@keyframes portraitEnterRight {
+  from {
+    opacity: 0;
+    transform: translateX(26px);
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes boxEnter {
   from {
     opacity: 0;
@@ -434,13 +458,13 @@
   }
 
   .portrait,
+  .portrait::after,
   .ethanPortrait,
   .choices {
     transition: none;
   }
 
-  .portraitIdle,
-  .portraitHidden {
+  .portraitIdle {
     transform: none;
   }
 }
