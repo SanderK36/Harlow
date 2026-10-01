@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import SaveWindow from "@/components/SaveWindow/SaveWindow";
+import SoundToggle from "@/components/SoundToggle/SoundToggle";
 import { readSaveSlots } from "@/game/save";
 import styles from "./GameMenu.module.css";
 
@@ -50,6 +51,7 @@ export default function GameMenu({ onOpenCharacters, onMainMenu, onSave, onLoad 
 
   return (
     <div className={styles.menu}>
+      <SoundToggle />
       <button
         className={styles.toggle}
         type="button"

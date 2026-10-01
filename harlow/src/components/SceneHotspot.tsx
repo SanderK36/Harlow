@@ -2,6 +2,8 @@
 
 import { useLayoutEffect, useRef, type ButtonHTMLAttributes } from "react";
 
+import { harlowAudio } from "@/game/audio";
+
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & { label: string };
 
 // Pending "spotlight off" timers per scene, so gliding from one hotspot to
@@ -101,6 +103,7 @@ export default function SceneHotspot({
       onPointerEnter={(event) => {
         if (event.pointerType === "mouse" || event.pointerType === "pen") {
           placeSpotlight(event.currentTarget);
+          harlowAudio().hover();
         }
         onPointerEnter?.(event);
       }}

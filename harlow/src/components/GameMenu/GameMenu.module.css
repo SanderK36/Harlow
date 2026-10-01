@@ -3,6 +3,8 @@
   top: 24px;
   right: 24px;
   z-index: 20;
+  display: flex;
+  gap: 8px;
 }
 
 .toggle {

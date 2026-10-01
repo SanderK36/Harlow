@@ -31,6 +31,7 @@ import { isNightTime } from "@/game/utils";
 import { useGame } from "@/game/useGame";
 import { isExteriorScene, scenes } from "@/game/scenes";
 import { clearSessionSave, readSessionSave } from "@/game/save";
+import { harlowAudio } from "@/game/audio";
 import type { Choice } from "@/game/choices";
 
 function subscribeToSession() {
@@ -124,6 +125,14 @@ const adminDestinations = Object.values(scenes)
 
 // Ethan's first thoughts on a new game, one beat at a time in the thought
 // panel; the "Talk to Mom" quest starts after the last one.
+// Open-air scenes beyond the travel destinations, for rain and lightning.
+const OUTDOOR_SCENE_IDS = new Set([
+  "back-yard",
+  "light-pole",
+  "cementary-backside",
+  "sanatorium-entrance",
+]);
+
 const OPENING_THOUGHTS = [
   "I hardly slept last night.",
   "What the fuck happened?",
@@ -309,6 +318,45 @@ export default function Home() {
     );
     return () => document.body.classList.remove("production-splash-active");
   }, [showProductionSplash]);
+
+  // Sound: browsers only start audio after a gesture, so the first click or
+  // key press anywhere in the game wakes the engine.
+  useEffect(() => {
+    const unlock = () => harlowAudio().unlock();
+    window.addEventListener("pointerdown", unlock);
+    window.addEventListener("keydown", unlock);
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, []);
+
+  const inGame = Boolean(hasStarted ?? resumedSession);
+  const sceneIsIndoor = !(
+    isExteriorScene(currentScene.id) || OUTDOOR_SCENE_IDS.has(currentScene.id)
+  );
+  const sceneIsNight = isNightTime(gameState.time);
+
+  // Rain and drone follow the weather, the hour and whether Ethan is inside.
+  // The intro film carries its own soundtrack, so the beds wait for it.
+  useEffect(() => {
+    harlowAudio().setAmbience(
+      inGame && !showProductionSplash
+        ? { indoor: sceneIsIndoor, night: sceneIsNight, weather: gameState.weather }
+        : null,
+    );
+  }, [inGame, showProductionSplash, sceneIsIndoor, sceneIsNight, gameState.weather]);
+
+  useEffect(() => () => harlowAudio().setAmbience(null), []);
+
+  // Footsteps when Ethan moves to another scene (not on the first render).
+  const previousSceneId = useRef<string | null>(null);
+  useEffect(() => {
+    if (previousSceneId.current !== null && previousSceneId.current !== currentScene.id) {
+      harlowAudio().footsteps();
+    }
+    previousSceneId.current = currentScene.id;
+  }, [currentScene.id]);
 
   useEffect(() => {
     if (!newDayAnnouncement) {
