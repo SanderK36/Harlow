@@ -163,10 +163,10 @@ export default function Prologue({ onDone }: PrologueProps) {
     return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, [beat, reducedMotion]);
 
-  // A low night drone under the prologue (no rain: it has stopped).
+  // No rain bed under the prologue (the rain has stopped); only the thunder.
   const outdoors = OUTDOOR_BEATS.includes(beat);
   useEffect(() => {
-    harlowAudio().setAmbience({ indoor: !outdoors, night: true, weather: "Cloudy" });
+    harlowAudio().setAmbience({ indoor: !outdoors, weather: "Cloudy" });
   }, [outdoors]);
   useEffect(() => () => harlowAudio().setAmbience(null), []);
 

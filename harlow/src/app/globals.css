@@ -938,6 +938,14 @@ button {
   height: 25%;
 }
 
+/* The rainy desk art is framed about 6% tighter, so the pack sits lower right. */
+.scene-image-frame-weather-art .scene-hotspot-pickUpCigarettes {
+  top: 61.7%;
+  left: 48.5%;
+  width: 24.4%;
+  height: 26.4%;
+}
+
 .scene-hotspot-front-yard-goBackYard {
   top: 45%;
   left: 5%;

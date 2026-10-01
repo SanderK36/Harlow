@@ -2,16 +2,19 @@
 
 /**
  * Harlow's sound, generated in the browser with the Web Audio API: no sound
- * files, so there is nothing to license. A rain bed (filtered noise), a low
- * unsettled drone, and short effects (hotspot tick, footsteps between scenes,
- * thunder). Everything goes through one master gain that the mute toggle
- * controls; the choice is remembered in localStorage.
+ * files, so there is nothing to license. A steady rain bed (filtered noise),
+ * the rare roll of thunder, and a soft hotspot tick. Everything goes through
+ * one master gain that the mute toggle controls; the choice is remembered in
+ * localStorage.
+ *
+ * There used to be a low drone too: two sines at 55 and 55.6 Hz beat against
+ * each other 0.6 times a second, which came through as a thumping behind the
+ * rain. It, the rain's slow volume wobble and the footstep thuds are gone.
  */
 
 export type Ambience = {
   /** Outdoors the rain is bright and close; indoors it is muffled. */
   indoor: boolean;
-  night: boolean;
   weather: string;
 };
 
@@ -34,8 +37,6 @@ class HarlowAudio {
   private noise: AudioBuffer | null = null;
   private rainGain: GainNode | null = null;
   private rainFilter: BiquadFilterNode | null = null;
-  private droneGain: GainNode | null = null;
-  private droneFilter: BiquadFilterNode | null = null;
   private muted = false;
   private wanted: Ambience | null = null;
   private listeners = new Set<Listener>();
@@ -95,16 +96,6 @@ class HarlowAudio {
     this.blip(420, 0.06, 0.09);
   }
 
-  /** A few muffled steps on old floorboards when moving between scenes. */
-  footsteps() {
-    const context = this.ready();
-    if (!context) return;
-    const start = context.currentTime + 0.02;
-    for (let step = 0; step < 3; step++) {
-      this.thud(start + step * 0.27 + Math.random() * 0.03, 0.12 - step * 0.02);
-    }
-  }
-
   /** A roll of thunder; `distance` 0 is overhead, 1 is far off. */
   thunder(distance = 0.5) {
     const context = this.ready();
@@ -155,18 +146,27 @@ class HarlowAudio {
     this.master.gain.value = this.muted ? 0 : MASTER_LEVEL;
     this.master.connect(context.destination);
 
-    // Two seconds of pink-ish noise, looped, for rain and thunder.
-    const length = context.sampleRate * 2;
-    this.noise = context.createBuffer(1, length, context.sampleRate);
-    const data = this.noise.getChannelData(0);
+    // Eight seconds of pink-ish noise for rain and thunder. A short loop is
+    // heard as a repeating pattern, so it is long, and its tail is crossfaded
+    // into its head so the loop point has no seam.
+    const rate = context.sampleRate;
+    const fade = Math.floor(rate * 0.5);
+    const length = rate * 8;
+    const raw = new Float32Array(length + fade);
     let last = 0;
-    for (let i = 0; i < length; i++) {
+    for (let i = 0; i < raw.length; i++) {
       const white = Math.random() * 2 - 1;
       last = 0.97 * last + 0.03 * white;
-      data[i] = white * 0.55 + last * 3;
+      raw[i] = white * 0.55 + last * 3;
     }
+    for (let i = 0; i < fade; i++) {
+      const t = i / fade;
+      raw[i] = raw[i] * Math.sqrt(t) + raw[length + i] * Math.sqrt(1 - t);
+    }
+    this.noise = context.createBuffer(1, length, rate);
+    this.noise.getChannelData(0).set(raw.subarray(0, length));
 
-    // Rain: noise through a band, with a slow wobble so it doesn't sound static.
+    // Rain: noise through a band at a steady level (no pulsing).
     const rain = context.createBufferSource();
     rain.buffer = this.noise;
     rain.loop = true;
@@ -178,57 +178,21 @@ class HarlowAudio {
     rainHigh.frequency.value = 320;
     this.rainGain = context.createGain();
     this.rainGain.gain.value = 0;
-    const wobble = context.createOscillator();
-    wobble.frequency.value = 0.13;
-    const wobbleDepth = context.createGain();
-    wobbleDepth.gain.value = 0.04;
-    wobble.connect(wobbleDepth).connect(this.rainGain.gain);
     rain.connect(rainHigh).connect(this.rainFilter).connect(this.rainGain).connect(this.master);
     rain.start();
-    wobble.start();
-
-    // Drone: two slightly detuned low tones and a fifth, breathing slowly.
-    this.droneFilter = context.createBiquadFilter();
-    this.droneFilter.type = "lowpass";
-    this.droneFilter.frequency.value = 260;
-    this.droneGain = context.createGain();
-    this.droneGain.gain.value = 0;
-    for (const [frequency, type, level] of [
-      [55, "sine", 0.5],
-      [55.6, "sine", 0.5],
-      [82.4, "triangle", 0.18],
-      [110.3, "sine", 0.08],
-    ] as const) {
-      const oscillator = context.createOscillator();
-      oscillator.type = type;
-      oscillator.frequency.value = frequency;
-      const level_ = context.createGain();
-      level_.gain.value = level;
-      oscillator.connect(level_).connect(this.droneFilter);
-      oscillator.start();
-    }
-    const breath = context.createOscillator();
-    breath.frequency.value = 0.07;
-    const breathDepth = context.createGain();
-    breathDepth.gain.value = 90;
-    breath.connect(breathDepth).connect(this.droneFilter.frequency);
-    breath.start();
-    this.droneFilter.connect(this.droneGain).connect(this.master);
 
     this.applyAmbience();
   }
 
   private applyAmbience() {
     const context = this.context;
-    if (!context || !this.rainGain || !this.rainFilter || !this.droneGain) return;
+    if (!context || !this.rainGain || !this.rainFilter) return;
     const now = context.currentTime;
     const ambience = this.wanted;
     const rain = ambience ? (RAIN_LEVEL[ambience.weather] ?? 0) : 0;
     const rainLevel = ambience ? rain * (ambience.indoor ? 0.22 : 0.34) : 0;
-    const droneLevel = ambience ? (ambience.night ? 0.16 : 0.08) : 0;
     this.rainGain.gain.setTargetAtTime(rainLevel, now, 0.8);
     this.rainFilter.frequency.setTargetAtTime(ambience?.indoor ? 900 : 3400, now, 0.5);
-    this.droneGain.gain.setTargetAtTime(droneLevel, now, 1.2);
   }
 
   private blip(frequency: number, level: number, length: number) {
@@ -245,23 +209,6 @@ class HarlowAudio {
     oscillator.connect(gain).connect(this.master);
     oscillator.start(now);
     oscillator.stop(now + length + 0.02);
-  }
-
-  private thud(at: number, level: number) {
-    const context = this.context;
-    if (!context || !this.noise || !this.master) return;
-    const source = context.createBufferSource();
-    source.buffer = this.noise;
-    const filter = context.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = 180;
-    const gain = context.createGain();
-    gain.gain.setValueAtTime(0.0001, at);
-    gain.gain.exponentialRampToValueAtTime(level, at + 0.012);
-    gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.16);
-    source.connect(filter).connect(gain).connect(this.master);
-    source.start(at, Math.random());
-    source.stop(at + 0.2);
   }
 }
 
