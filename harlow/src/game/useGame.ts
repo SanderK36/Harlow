@@ -267,7 +267,7 @@ export function useGame() {
   }
 
   function notifyMomQuest() {
-    showQuestNotification("New quest: Talk to Mom — something's on her mind.");
+    showQuestNotification("New quest: Talk to Mom — she's got something on her mind.");
   }
 
   function applyChoiceEffects(choice: Choice) {
@@ -284,7 +284,7 @@ export function useGame() {
     if (lateNightThoughtTimer.current !== null) {
       window.clearTimeout(lateNightThoughtTimer.current);
     }
-    setLateNightActionThought("That can wait until tomorrow. I'm too tired.");
+    setLateNightActionThought("That can wait till morning. I'm beat.");
     lateNightThoughtTimer.current = window.setTimeout(() => {
       setLateNightActionThought(null);
       lateNightThoughtTimer.current = null;
@@ -345,9 +345,9 @@ export function useGame() {
 
     if (choice.storyFlag === "momJobConcern") {
       setMomJobConcernHeard(true);
-      setCurrentThought("I got to get a job to help out, maybe i could check the flyers on the lightpole outside");
+      setCurrentThought("I gotta get a job. Those flyers on the light pole out front.");
       pendingQuestNotification.current = {
-        message: "New quest: Find a Job — maybe there's a way to help.",
+        message: "New quest: Find a Job — there's got to be a way to help.",
         label: "Quest started",
       };
     }
@@ -439,7 +439,7 @@ export function useGame() {
 
     if (selectedJob && !job && !jobQuestTarget) {
       setJobQuestTarget(selectedJob);
-      showQuestNotification("New quest: Find a Job — follow up on a promising lead.");
+      showQuestNotification("New quest: Find a Job — follow up on that lead.");
       if (selectedJob === "needle-groove") {
         locationDiscoveryTimer.current = window.setTimeout(() => {
           showQuestNotification("Needle & Groove discovered.", "Location discovered");
@@ -522,7 +522,7 @@ export function useGame() {
     moveToScene(nextSceneId, nextGameState.time);
 
     if (selectedJob === "needle-groove") {
-      setCurrentThought("Needle & Groove sounds like the best choice for me.");
+      setCurrentThought("Needle & Groove. That one feels right.");
     }
 
     if (choice.itemToAdd) {
@@ -745,14 +745,14 @@ export function useGame() {
     playerState,
     currentScene,
     currentThought: isLateNight()
-      ? "It's pretty late. I should head to bed."
+      ? "It's late. I should get to bed."
       : momTalked && currentScene.id === "ethan-room" && gameState.dayNumber > initialGameState.dayNumber
-        ? "Another day. I should get on with it."
+        ? "Another day. Better get moving."
       : momTalked
         ? currentThought
         : currentScene.id === "living-room-relaxing"
-          ? "I need to talk to mom first"
-          : "I should talk to mom",
+          ? "I need to talk to Mom first."
+          : "I should talk to Mom.",
     currentEffects,
     lateNightActionThought,
     newDayAnnouncement,

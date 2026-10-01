@@ -213,7 +213,7 @@ export default function Home() {
       window.clearTimeout(openingThoughtTimer.current);
     }
     setTvNewsLine(
-      "News anchor: The small town of Harlow is in shock after police found an elderly woman murdered in her own home. The investigation is ongoing, and no suspect has been identified so far.",
+      "An elderly woman was found murdered in her home here in Harlow. Police say the investigation is ongoing. No suspect has been identified.",
     );
     openingThoughtTimer.current = window.setTimeout(() => {
       setTvNewsLine(null);
@@ -451,7 +451,7 @@ export default function Home() {
   const bottomThought =
     lateNightActionThought ??
     (showLateNightThought && isLateNight
-      ? "It's 3 AM. I'm very tired and should head home."
+      ? "Middle of the night. I'm beat. I should get home."
       : null);
   const actionList = (
     <ActionList
@@ -696,7 +696,7 @@ export default function Home() {
               className="opening-thought"
               speaker="Ethan"
               caption="Inner thought"
-              text="I love playing rock music on this thing. Mom got it for me for Christmas last year."
+              text="I love this thing. Mom got it for me last Christmas."
             />
           )}
           {(showOpeningThought || tvNewsLine !== null) && (
@@ -707,7 +707,7 @@ export default function Home() {
               kind={showOpeningThought ? "thought" : "news"}
               text={
                 showOpeningThought
-                  ? "What the fuck happened last night? I gotta talk to mom, maybe she knows something."
+                  ? "What the fuck happened last night? I gotta talk to Mom. Maybe she knows."
                   : (tvNewsLine ?? "")
               }
             />

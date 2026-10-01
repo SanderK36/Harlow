@@ -23,16 +23,16 @@ export default function QuestWindow({ job, jobQuestTarget, momTalked, momJobConc
         <p className={styles.eyebrow}>{isMomQuestActive || jobQuestTarget || momJobConcernHeard ? (job ? "Completed" : "Active quest") : "Completed"}</p>
         <h2 id="quest-log-title">{questTitle}</h2>
         {isMomQuestActive ? (
-          <p>Mom seems like she has something on her mind.</p>
+          <p>Mom's got something on her mind.</p>
         ) : !hasJobQuest ? (
-          <p>You had a moment to catch up.</p>
+          <p>You caught up with Mom.</p>
         ) : details ? (
           <>
-            <p>You are working at <strong>{details.name}</strong>.</p>
+            <p>You're working at <strong>{details.name}</strong>.</p>
             <p className={styles.benefit}>{details.benefit}</p>
           </>
         ) : jobQuestTarget ? (
-          <p>One of the leads might be worth following up on.</p>
+          <p>One of those leads is worth following up.</p>
         ) : (
           <p>{findAJobQuest.objective}</p>
         )}
