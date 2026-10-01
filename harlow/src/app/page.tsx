@@ -32,6 +32,7 @@ import { useGame } from "@/game/useGame";
 import { isExteriorScene, scenes } from "@/game/scenes";
 import { clearSessionSave, readSessionSave } from "@/game/save";
 import { harlowAudio } from "@/game/audio";
+import Atmosphere from "@/components/Atmosphere/Atmosphere";
 import type { Choice } from "@/game/choices";
 
 function subscribeToSession() {
@@ -642,6 +643,7 @@ export default function Home() {
           onFinished={finishProductionSplash}
         />
       )}
+      <Atmosphere night={sceneIsNight} />
       {isNightTime(gameState.time) && (
         <div className="gameClouds gameCloudsNight" aria-hidden="true">
           <div className="gameCloud gameCloudOne" />
