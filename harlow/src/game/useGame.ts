@@ -23,7 +23,7 @@ import {
 import type { Choice, GameChoice } from "@/game/choices";
 import type { Conversation, StoryEntry } from "@/game/story";
 import type { JobId } from "@/game/quests";
-import type { GameState } from "@/game/types";
+import type { GameState, Weather } from "@/game/types";
 
 const CONVERSATION_ACTIONS = new Set([
   // Add an action name here when a scene choice should open its conversation data.
@@ -80,7 +80,11 @@ export function useGame() {
   // The currently displayed scene and its short, time-aware thought.
   const [currentScene, setCurrentScene] = useState(sessionScene ?? ethanRoom);
   const [currentThought, setCurrentThought] = useState<string | null>(
-    getSceneThought(sessionScene?.id ?? ethanRoom.id, sessionSave?.gameState.time ?? initialGameState.time)
+    getSceneThought(
+      sessionScene?.id ?? ethanRoom.id,
+      sessionSave?.gameState.time ?? initialGameState.time,
+      sessionSave?.gameState.weather ?? initialGameState.weather,
+    )
   );
   const [currentEffects, setCurrentEffects] = useState<StoryEntry[]>([]);
   const [lateNightActionThought, setLateNightActionThought] = useState<string | null>(null);
@@ -209,12 +213,12 @@ export function useGame() {
     const nextGameState = advanceGameTime(gameState, timeToAdvance);
 
     setGameState(nextGameState);
-    setCurrentThought(getSceneThought(currentScene.id, nextGameState.time));
+    setCurrentThought(getSceneThought(currentScene.id, nextGameState.time, nextGameState.weather));
 
     return nextGameState;
   }
 
-  function moveToScene(sceneId: string, time: number) {
+  function moveToScene(sceneId: string, time: number, weather: Weather = gameState.weather) {
     // Every `nextScene` in scene data must match a key in `scenes`.
     const nextScene = scenes[sceneId as keyof typeof scenes];
 
@@ -228,7 +232,7 @@ export function useGame() {
 
     setCurrentScene(nextScene);
     setCurrentEffects([]);
-    setCurrentThought(getSceneThought(nextScene.id, time));
+    setCurrentThought(getSceneThought(nextScene.id, time, weather));
     setGameState((previous) => ({
       ...previous,
       time,
@@ -393,7 +397,7 @@ export function useGame() {
 
     window.setTimeout(() => {
       const nextGameState = advanceTime(choice.timeCost);
-      moveToScene(choice.nextScene, nextGameState.time);
+      moveToScene(choice.nextScene, nextGameState.time, nextGameState.weather);
       applyChoiceEffects(choice);
       setTravelingTo(null);
     }, TRAVEL_DURATION);
@@ -490,14 +494,14 @@ export function useGame() {
         ? 420 - gameState.time
         : 1440 - gameState.time + 420;
       const nextGameState = advanceTime(minutesUntilSevenAm, false, true);
-      moveToScene("ethan-room", nextGameState.time);
+      moveToScene("ethan-room", nextGameState.time, nextGameState.weather);
       setNewDayAnnouncement(nextGameState);
       return;
     }
 
     if (choice.action === "leaveBusStop") {
       const nextGameState = advanceTime(choice.timeCost);
-      moveToScene(busStopReturnSceneId, nextGameState.time);
+      moveToScene(busStopReturnSceneId, nextGameState.time, nextGameState.weather);
       return;
     }
 
@@ -529,7 +533,7 @@ export function useGame() {
             ? "garage-bench-empty"
             : choice.nextScene;
 
-    moveToScene(nextSceneId, nextGameState.time);
+    moveToScene(nextSceneId, nextGameState.time, nextGameState.weather);
 
     if (selectedJob === "needle-groove") {
       setCurrentThought("Needle & Groove. That one feels right.");
@@ -552,7 +556,7 @@ export function useGame() {
     }
     setBusStopReturnSceneId(currentScene.id);
     const nextGameState = advanceTime(0);
-    moveToScene("bus-stop", nextGameState.time);
+    moveToScene("bus-stop", nextGameState.time, nextGameState.weather);
   }
 
   function adminTravel(sceneId: string) {
@@ -636,7 +640,7 @@ export function useGame() {
     setGameState(save.gameState);
     setPlayerState(save.playerState);
     setCurrentScene(savedScene);
-    setCurrentThought(getSceneThought(savedScene.id, save.gameState.time));
+    setCurrentThought(getSceneThought(savedScene.id, save.gameState.time, save.gameState.weather));
     setCurrentEffects([]);
     setBusStopReturnSceneId(save.busStopReturnSceneId);
     setMarleneActive(save.marleneActive);
@@ -681,7 +685,7 @@ export function useGame() {
     setGameState(freshGameState);
     setPlayerState(freshPlayer);
     setCurrentScene(ethanRoom);
-    setCurrentThought(getSceneThought(ethanRoom.id, freshGameState.time));
+    setCurrentThought(getSceneThought(ethanRoom.id, freshGameState.time, freshGameState.weather));
     setCurrentEffects([]);
     setBusStopReturnSceneId("front-yard");
     setMarleneActive(false);

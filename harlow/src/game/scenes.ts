@@ -8,14 +8,8 @@ import {
   ethan,
   narration,
   thought,
+  storyEntryApplies,
 } from "./story";
-
-export type SceneThought = {
-  /** Show this thought only while game time is within this range (in minutes). */
-  from?: number;
-  until?: number;
-  text: string;
-};
 
 export type SceneCharacter = {
   /** NPC overlay shown in this scene. Add their portrait path in `image`. */
@@ -35,7 +29,6 @@ export type Scene = {
    */
   id: string;
   story: StoryEntry[];
-  thoughts?: SceneThought[];
   location: Location;
   image: {
     day: string;
@@ -51,6 +44,14 @@ export type Scene = {
 
 /** The weather states that count as rain (for rain-on-the-window art). */
 export const RAIN_WEATHER: Weather[] = ["Rainy", "Heavy rain", "Thunderstorm"];
+
+// Weather groups for weather-gated narration and thoughts. They apply day
+// and night (it still rains after dark), unless a line also has a time range.
+const RAIN: Weather[] = ["Rainy", "Heavy rain"];
+const STORM: Weather[] = ["Thunderstorm"];
+const WET: Weather[] = RAIN_WEATHER;
+const DRY: Weather[] = ["Sunny", "Cloudy"];
+const HEAVY: Weather[] = ["Heavy rain", "Thunderstorm"];
 
 /** Rain art for every rainy weather state (thunder art for storms if given). */
 export function rainArt(rain: string, thunder = rain): Partial<Record<Weather, string>> {
@@ -127,7 +128,8 @@ export const hallway: Scene = {
   id: "hallway",
 
   story: [
-    narration("Rain ticks against the windows."),
+    narration("Rain ticks against the windows.", { weather: WET }),
+    narration("The old house creaks around you.", { weather: DRY }),
     thought("I should get moving."),
   ],
 
@@ -357,6 +359,9 @@ export const frontYard: Scene = {
 
   story: [
     narration("You step outside. Cold air hits your face."),
+    thought("Rain's coming down sideways. Street's empty again.", { weather: RAIN }),
+    thought("Every flash, I check the end of the street.", { weather: STORM }),
+    thought("Sun's out. Like nothing happened.", { weather: ["Sunny"], from: 360, until: 1080 }),
     thought("Colder than I figured."),
   ],
 
@@ -446,14 +451,11 @@ export const lightPole: Scene = {
 export const backYard: Scene = {
   id: "back-yard",
 
-  story: [narration("You come around to the backyard.")],
-
-  thoughts: [
-    { until: 1080, text: "" },
-    {
-      from: 1080,
-      text: "Out here this late, I always feel watched.",
-    },
+  story: [
+    narration("You come around to the backyard."),
+    thought("Mud. Great.", { weather: RAIN }),
+    thought("The trees by the woods won't hold still.", { weather: STORM }),
+    thought("Out here this late, I always feel watched.", { from: 1080 }),
   ],
   location: "Home back yard",
 
@@ -1094,6 +1096,8 @@ export const emilyRoom: Scene = {
   id: "emily-room",
   story: [
     narration("You step into Emily's room."),
+    thought("Rain on her window. She always liked that sound.", { weather: RAIN }),
+    thought("She used to count the seconds between the flash and the thunder.", { weather: STORM }),
     thought("Everything's right where she left it."),
   ],
   location: "Emily's room",
@@ -1110,6 +1114,7 @@ export const attic: Scene = {
   id: "attic",
   story: [
     narration("You climb into the attic."),
+    thought("Rain drums on the roof. Right over my head.", { weather: WET }),
     thought("Stale air. And dust."),
   ],
   location: "Attic",
@@ -1126,6 +1131,7 @@ export const basement: Scene = {
   id: "basement",
   story: [
     narration("You go down into the basement."),
+    thought("Water's seeping in by the wall. Again.", { weather: HEAVY }),
     thought("Darker down here than it ought to be."),
   ],
   location: "Basement",
@@ -1364,6 +1370,8 @@ export const gasStation: Scene = {
 
   story: [
     narration("You reach the gas station."),
+    thought("Pumps dripping. Nobody's filling up in this.", { weather: RAIN }),
+    thought("Gas pumps and lightning. Great combination.", { weather: STORM }),
     thought("Quiet out here. For now."),
   ],
 
@@ -1853,6 +1861,8 @@ export const cementary: Scene = {
   id: "cementary",
   story: [
     narration("You reach the cemetery."),
+    thought("Rain pooling on the graves.", { weather: RAIN }),
+    thought("Lightning over a graveyard. Real subtle, Harlow.", { weather: STORM }),
     thought("That gate's complaining in the wind."),
   ],
   location: "Cemetery",
@@ -2138,6 +2148,7 @@ export const motel: Scene = {
   id: "motel",
   story: [
     narration("You reach the motel off the road."),
+    thought("The vacancy sign buzzes through the storm. Of course it does.", { weather: STORM }),
     thought("The vacancy sign won't stay lit."),
   ],
   location: "Motel",
@@ -2230,6 +2241,8 @@ export const diner: Scene = {
   id: "diner",
   story: [
     narration("You reach the diner. Neon hums over the door."),
+    thought("Windows all fogged up. Can't see who's inside.", { weather: RAIN }),
+    thought("The lights inside flicker every time the sky cracks.", { weather: STORM }),
     thought("I could eat."),
   ],
   location: "Diner",
@@ -2449,30 +2462,18 @@ export const sanatoriumRoom2: Scene = {
   ],
 };
 
-export function getSceneThought(sceneId: string, time: number) {
+export function getSceneThought(sceneId: string, time: number, weather: Weather) {
   const scene = scenes[sceneId as keyof typeof scenes];
 
   if (!scene) {
     return null;
   }
 
-  const thoughtEntry = scene.story.find((entry) => {
-    if (entry.type !== "thought") {
-      return false;
-    }
-
-    const condition = entry.condition;
-
-    if (!condition) {
-      return true;
-    }
-
-    const afterStart = condition.from === undefined || time >= condition.from;
-
-    const beforeEnd = condition.until === undefined || time < condition.until;
-
-    return afterStart && beforeEnd;
-  });
+  // The first thought whose time and weather conditions match is shown, so
+  // weather lines are listed before a scene's everyday thought.
+  const thoughtEntry = scene.story.find(
+    (entry) => entry.type === "thought" && storyEntryApplies(entry, time, weather),
+  );
 
   return thoughtEntry?.type === "thought" ? thoughtEntry.text : null;
 }
