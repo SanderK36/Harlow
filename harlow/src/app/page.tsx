@@ -125,8 +125,6 @@ const adminDestinations = Object.values(scenes)
   }))
   .sort((a, b) => a.label.localeCompare(b.label));
 
-// Ethan's first thoughts on a new game, one beat at a time in the thought
-// panel; the "Talk to Mom" quest starts after the last one.
 // Open-air scenes beyond the travel destinations, for rain and lightning.
 const OUTDOOR_SCENE_IDS = new Set([
   "back-yard",
@@ -144,6 +142,8 @@ function hotspotKind(action: string) {
   return "inspect";
 }
 
+// Ethan's first thoughts on a new game, one beat at a time in the thought
+// panel; the "Talk to Mom" quest starts after the last one.
 const OPENING_THOUGHTS = [
   "I hardly slept last night.",
   "What the fuck happened?",
