@@ -13,6 +13,8 @@ type ThoughtPanelProps = {
   kind?: "thought" | "news";
   text: string;
   className?: string;
+  /** For a run of lines: clicking a finished line moves on to the next. */
+  onAdvance?: () => void;
 };
 
 // These panels are on screen for a few seconds only, so they type a little
@@ -29,6 +31,7 @@ export default function ThoughtPanel({
   kind = "thought",
   text,
   className = "",
+  onAdvance,
 }: ThoughtPanelProps) {
   const reducedMotion = useReducedMotion();
   const [progress, setProgress] = useState({ text, revealed: 0 });
@@ -62,14 +65,18 @@ export default function ThoughtPanel({
       <button
         type="button"
         className={styles.lineButton}
-        onClick={() => setProgress({ text, revealed: text.length })}
-        aria-label={complete ? text : "Show the full line"}
-        tabIndex={complete ? -1 : 0}
+        onClick={() => {
+          if (complete) onAdvance?.();
+          else setProgress({ text, revealed: text.length });
+        }}
+        aria-label={complete ? (onAdvance ? "Next thought" : text) : "Show the full line"}
+        tabIndex={complete && !onAdvance ? -1 : 0}
       >
         <span className={styles.line} aria-hidden="true">
           {text.slice(0, shown)}
           {!complete && <span className={styles.caret} />}
           <span className={styles.unrevealed}>{text.slice(shown)}</span>
+          {complete && onAdvance && <span className={styles.next} />}
         </span>
       </button>
       {/* Announce the finished line once rather than every typed character. */}

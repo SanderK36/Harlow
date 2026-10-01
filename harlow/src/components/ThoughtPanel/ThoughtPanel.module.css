@@ -111,6 +111,25 @@
   animation: caretBlink 900ms steps(1) infinite;
 }
 
+/* A small bobbing arrow once a line in a run has finished typing. */
+.next {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 10px;
+  vertical-align: 0.1em;
+  border-top: 6px solid rgba(255, 120, 120, 0.85);
+  border-right: 5px solid transparent;
+  border-left: 5px solid transparent;
+  animation: nextBob 1100ms ease-in-out infinite;
+}
+
+@keyframes nextBob {
+  50% {
+    transform: translateY(3px);
+  }
+}
+
 /* The television: a burgundy plate, upright type, and faint scan lines. */
 .news {
   background:
@@ -170,7 +189,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .panel,
-  .caret {
+  .caret,
+  .next {
     animation: none;
   }
 }
