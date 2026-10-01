@@ -14,6 +14,8 @@ type OpeningSequenceProps = {
   /** Minutes after midnight. */
   time: number;
   location: string;
+  /** Called as the title card starts to lift off the first scene. */
+  onReveal?: () => void;
   /** Called once the title card has faded away and the first scene shows. */
   onFinished: () => void;
 };
@@ -57,6 +59,7 @@ export default function OpeningSequence({
   dayNumber,
   time,
   location,
+  onReveal,
   onFinished,
 }: OpeningSequenceProps) {
   const reducedMotion = useReducedMotion();
@@ -65,6 +68,8 @@ export default function OpeningSequence({
   const videoRef = useRef<HTMLVideoElement>(null);
   const backdropRef = useRef<HTMLVideoElement>(null);
   const finished = useRef(false);
+
+  const reveal = useEffectEvent(() => onReveal?.());
 
   const finish = useEffectEvent(() => {
     if (finished.current) return;
@@ -96,6 +101,7 @@ export default function OpeningSequence({
       delay = reducedMotion ? TITLE_HOLD_REDUCED : TITLE_HOLD;
       next = () => setPhase("titleOut");
     } else if (phase === "titleOut") {
+      reveal();
       delay = reducedMotion ? 0 : TITLE_FADE;
       next = finish;
     }
