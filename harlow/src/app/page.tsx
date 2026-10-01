@@ -12,6 +12,7 @@ import StoryLog from "@/components/StoryLog/StoryLog";
 import CharacterLine from "@/components/CharacterLine/CharacterLine";
 import DialogueScene from "@/components/DialogueScene/DialogueScene";
 import ThoughtPanel from "@/components/ThoughtPanel/ThoughtPanel";
+import OpeningSequence from "@/components/OpeningSequence/OpeningSequence";
 import TravelOverlay from "@/components/TravelOverlay/TravelOverlay";
 import TravelWindow from "@/components/TravelWindow/TravelWindow";
 import InventoryWindow from "@/components/InventoryWindow/InventoryWindow";
@@ -484,17 +485,14 @@ export default function Home() {
   return (
     <main className="game">
       {showProductionSplash && (
-        <div className="production-splash" role="status" aria-label="A Lost Frequency Games production">
-          <video
-            className="production-splash-video"
-            src="/lostfrequencygamesintro.mp4"
-            autoPlay
-            muted
-            playsInline
-            onEnded={finishProductionSplash}
-            onError={finishProductionSplash}
-          />
-        </div>
+        <OpeningSequence
+          dayOfWeek={gameState.dayOfWeek}
+          month={gameState.currentMonth}
+          dayNumber={gameState.dayNumber}
+          time={gameState.time}
+          location={gameState.location}
+          onFinished={finishProductionSplash}
+        />
       )}
       {isNightTime(gameState.time) && (
         <div className="gameClouds gameCloudsNight" aria-hidden="true">

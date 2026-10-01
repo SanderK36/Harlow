@@ -225,21 +225,6 @@ button {
   transform: translateY(0);
 }
 
-.production-splash {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: grid;
-  place-items: center;
-  background: #000;
-}
-
-.production-splash-video {
-  width: 90vw;
-  height: 90vh;
-  object-fit: contain;
-}
-
 .mainMenuContinue {
   color: #f6e7e8;
   background: rgba(20, 12, 13, 0.6);

@@ -1,0 +1,271 @@
+.sequence {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+  background: #000;
+  cursor: pointer;
+  transition: opacity 1100ms ease, background-color 1100ms ease;
+}
+
+/* The title card lifts away to reveal the first scene underneath. */
+.sequenceOut {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- Studio splash ---------- */
+
+.splash {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  animation: fadeIn 900ms ease both;
+  transition: opacity 700ms ease;
+}
+
+.splashOut {
+  opacity: 0;
+}
+
+/* A blurred, enlarged copy of the video fills whatever the frame doesn't. */
+.splashBackdrop {
+  position: absolute;
+  inset: -8%;
+  width: 116%;
+  height: 116%;
+  object-fit: cover;
+  filter: blur(36px) brightness(0.55) saturate(1.25);
+}
+
+.splashVideo {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* Feather the video's own edges into the backdrop so no seam shows. */
+  -webkit-mask-image:
+    linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%),
+    linear-gradient(180deg, transparent 0, #000 9%, #000 91%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%),
+    linear-gradient(180deg, transparent 0, #000 9%, #000 91%, transparent 100%);
+  mask-composite: intersect;
+}
+
+/* Tall screens: the 16:9 film would be a thin strip, so it is enlarged
+   (cropping the outer rings, never the centred logo) and feathered at the
+   top and bottom instead. */
+@media (max-aspect-ratio: 1/1) {
+  .splashVideo {
+    width: 200%;
+    max-width: none;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 22%, #000 78%, transparent 100%);
+    mask-image: linear-gradient(180deg, transparent 0, #000 22%, #000 78%, transparent 100%);
+  }
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 45%, rgba(0, 0, 0, 0.78) 100%);
+  pointer-events: none;
+}
+
+/* ---------- Title card ---------- */
+
+.titleCard {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 46%, rgba(120, 18, 28, 0.22), transparent 70%),
+    #050304;
+  animation: fadeIn 1200ms ease both;
+}
+
+/* Fine, slanted rain over the dark. */
+.rain {
+  position: absolute;
+  inset: -20% -10%;
+  /* Two tiles of short slanted streaks (near and far) that loop seamlessly. */
+  background-image:
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22240%22%20height%3D%22240%22%3E%3Cg%20stroke%3D%22%23d6dcec%22%20stroke-width%3D%221.2%22%20stroke-linecap%3D%22round%22%3E%3Cline%20x1%3D%2280.5%22%20y1%3D%2229.3%22%20x2%3D%2270.4%22%20y2%3D%2275.3%22%20stroke-opacity%3D%220.26%22/%3E%3Cline%20x1%3D%2224.2%22%20y1%3D%22104.0%22%20x2%3D%2214.1%22%20y2%3D%22150.0%22%20stroke-opacity%3D%220.22%22/%3E%3Cline%20x1%3D%2221.0%22%20y1%3D%2298.4%22%20x2%3D%2210.9%22%20y2%3D%22144.4%22%20stroke-opacity%3D%220.17%22/%3E%3Cline%20x1%3D%22105.1%22%20y1%3D%2213.6%22%20x2%3D%2295.0%22%20y2%3D%2259.6%22%20stroke-opacity%3D%220.17%22/%3E%3Cline%20x1%3D%22103.1%22%20y1%3D%22160.4%22%20x2%3D%2293.0%22%20y2%3D%22206.4%22%20stroke-opacity%3D%220.18%22/%3E%3Cline%20x1%3D%2258.0%22%20y1%3D%22121.7%22%20x2%3D%2247.9%22%20y2%3D%22167.7%22%20stroke-opacity%3D%220.31%22/%3E%3Cline%20x1%3D%22137.3%22%20y1%3D%2277.0%22%20x2%3D%22127.2%22%20y2%3D%22123.0%22%20stroke-opacity%3D%220.32%22/%3E%3Cline%20x1%3D%2218.4%22%20y1%3D%22166.5%22%20x2%3D%228.3%22%20y2%3D%22212.5%22%20stroke-opacity%3D%220.21%22/%3E%3Cline%20x1%3D%2240.3%22%20y1%3D%2222.9%22%20x2%3D%2230.2%22%20y2%3D%2268.9%22%20stroke-opacity%3D%220.21%22/%3E%3C/g%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22160%22%20height%3D%22160%22%3E%3Cg%20stroke%3D%22%23d6dcec%22%20stroke-width%3D%220.8%22%20stroke-linecap%3D%22round%22%3E%3Cline%20x1%3D%22125.5%22%20y1%3D%2224.6%22%20x2%3D%22120.2%22%20y2%3D%2248.6%22%20stroke-opacity%3D%220.16%22/%3E%3Cline%20x1%3D%22100.0%22%20y1%3D%2250.6%22%20x2%3D%2294.7%22%20y2%3D%2274.6%22%20stroke-opacity%3D%220.15%22/%3E%3Cline%20x1%3D%2217.0%22%20y1%3D%228.1%22%20x2%3D%2211.8%22%20y2%3D%2232.1%22%20stroke-opacity%3D%220.12%22/%3E%3Cline%20x1%3D%22106.0%22%20y1%3D%2258.2%22%20x2%3D%22100.7%22%20y2%3D%2282.2%22%20stroke-opacity%3D%220.13%22/%3E%3Cline%20x1%3D%2292.3%22%20y1%3D%2261.6%22%20x2%3D%2287.0%22%20y2%3D%2285.6%22%20stroke-opacity%3D%220.13%22/%3E%3Cline%20x1%3D%22122.4%22%20y1%3D%2295.1%22%20x2%3D%22117.1%22%20y2%3D%22119.1%22%20stroke-opacity%3D%220.12%22/%3E%3Cline%20x1%3D%2290.7%22%20y1%3D%2271.4%22%20x2%3D%2285.4%22%20y2%3D%2295.4%22%20stroke-opacity%3D%220.19%22/%3E%3Cline%20x1%3D%22113.0%22%20y1%3D%2239.2%22%20x2%3D%22107.8%22%20y2%3D%2263.2%22%20stroke-opacity%3D%220.20%22/%3E%3Cline%20x1%3D%2225.0%22%20y1%3D%2256.9%22%20x2%3D%2219.7%22%20y2%3D%2280.9%22%20stroke-opacity%3D%220.18%22/%3E%3Cline%20x1%3D%2229.9%22%20y1%3D%2266.5%22%20x2%3D%2224.6%22%20y2%3D%2290.5%22%20stroke-opacity%3D%220.10%22/%3E%3Cline%20x1%3D%22104.2%22%20y1%3D%22104.0%22%20x2%3D%2298.9%22%20y2%3D%22128.0%22%20stroke-opacity%3D%220.16%22/%3E%3Cline%20x1%3D%22134.1%22%20y1%3D%2242.7%22%20x2%3D%22128.8%22%20y2%3D%2266.7%22%20stroke-opacity%3D%220.17%22/%3E%3Cline%20x1%3D%2293.6%22%20y1%3D%2278.9%22%20x2%3D%2288.3%22%20y2%3D%22102.9%22%20stroke-opacity%3D%220.15%22/%3E%3Cline%20x1%3D%22129.0%22%20y1%3D%22128.5%22%20x2%3D%22123.7%22%20y2%3D%22152.5%22%20stroke-opacity%3D%220.15%22/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 240px 240px, 160px 160px;
+  -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.4), #000 40%, rgba(0, 0, 0, 0.6));
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.4), #000 40%, rgba(0, 0, 0, 0.6));
+  opacity: 0.7;
+  animation: rainFall 900ms linear infinite;
+}
+
+.titleContent {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  color: #f2e4dc;
+  font-family: var(--font-display);
+  font-size: clamp(54px, 9vw, 120px);
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  line-height: 1;
+  /* Optical centring: the tracking adds space after the last letter. */
+  text-indent: 0.32em;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 40px rgba(169, 22, 36, 0.45),
+    0 4px 24px rgba(0, 0, 0, 0.9);
+  animation: titleIn 2400ms cubic-bezier(0.2, 0.6, 0.2, 1) 200ms both;
+}
+
+.rule {
+  display: block;
+  width: clamp(120px, 18vw, 220px);
+  height: 1px;
+  margin: clamp(22px, 3vw, 32px) 0 clamp(18px, 2.4vw, 24px);
+  background: linear-gradient(90deg, transparent, rgba(237, 85, 98, 0.9), transparent);
+  animation: ruleIn 1400ms ease 1100ms both;
+}
+
+.date {
+  margin: 0;
+  color: rgba(245, 225, 215, 0.86);
+  font-family: var(--font-ui);
+  font-size: clamp(12px, 1.3vw, 15px);
+  font-weight: 500;
+  letter-spacing: 0.34em;
+  text-indent: 0.34em;
+  text-transform: uppercase;
+  animation: lineIn 1100ms ease 1500ms both;
+}
+
+.place {
+  margin: 12px 0 0;
+  color: rgba(236, 214, 206, 0.78);
+  font-family: var(--font-body);
+  font-size: clamp(17px, 1.8vw, 21px);
+  font-style: italic;
+  animation: lineIn 1100ms ease 2100ms both;
+}
+
+.dot {
+  margin: 0 0.6em;
+  color: rgba(237, 85, 98, 0.85);
+  font-style: normal;
+}
+
+/* ---------- Skip hint ---------- */
+
+.skipHint {
+  position: absolute;
+  right: 0;
+  bottom: max(22px, env(safe-area-inset-bottom));
+  left: 0;
+  margin: 0;
+  color: rgba(245, 230, 225, 0.5);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-align: center;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 600ms ease;
+  pointer-events: none;
+}
+
+.skipHintVisible {
+  opacity: 1;
+}
+
+.hintTouch {
+  display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .hintPointer {
+    display: none;
+  }
+
+  .hintTouch {
+    display: inline;
+  }
+}
+
+@media (max-width: 640px) {
+  .title {
+    font-size: clamp(40px, 12vw, 64px);
+    letter-spacing: 0.2em;
+    text-indent: 0.2em;
+  }
+
+  .date {
+    font-size: 11px;
+    letter-spacing: 0.26em;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes titleIn {
+  from {
+    opacity: 0;
+    letter-spacing: 0.5em;
+    text-indent: 0.5em;
+    filter: blur(6px);
+  }
+}
+
+@keyframes ruleIn {
+  from {
+    opacity: 0;
+    transform: scaleX(0.2);
+  }
+}
+
+@keyframes lineIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes rainFall {
+  to {
+    background-position: -53px 240px, -35px 160px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sequence,
+  .splash,
+  .skipHint {
+    transition: none;
+  }
+
+  .splash,
+  .titleCard,
+  .title,
+  .rule,
+  .date,
+  .place,
+  .rain {
+    animation: none;
+  }
+}
