@@ -135,6 +135,10 @@ class HarlowAudio {
 
   private ready() {
     if (this.muted) return null;
+    // Never start sound before the player has interacted with the page.
+    if (!this.context && navigator.userActivation && !navigator.userActivation.hasBeenActive) {
+      return null;
+    }
     this.unlock();
     return this.context;
   }

@@ -1,0 +1,399 @@
+/* The prologue fills the screen above the game (inside the opening
+   sequence), with each picture shown edge to edge. */
+.prologue {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  background: #050203;
+  cursor: pointer;
+  animation: prologueIn 900ms ease-out both;
+  transition: opacity 900ms ease;
+}
+
+.leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- Pictures ---------- */
+
+.layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 900ms ease, filter 1600ms ease;
+}
+
+/* Only the picture on screen takes clicks (the photo hotspot). */
+.layerActive {
+  z-index: 1;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* The lightning cuts rather than fades. */
+.layerCut {
+  transition: filter 1800ms ease;
+}
+
+/* Back to the dark street right after the strike. */
+.layerDark {
+  filter: brightness(0.22) saturate(0.6);
+  transition: none;
+}
+
+/* A blurred copy fills the screen where the picture doesn't (phones). */
+.backdrop {
+  position: absolute;
+  inset: -40px;
+  display: none;
+  width: calc(100% + 80px);
+  height: calc(100% + 80px);
+  object-fit: cover;
+  filter: blur(28px) brightness(0.45) saturate(1.15);
+}
+
+/* The art box always has the art's proportions, so hotspot percentages map
+   onto the picture. It covers the screen in landscape. */
+.frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100vw, calc(100dvh * 1448 / 1086));
+  aspect-ratio: 1448 / 1086;
+  transform: translate(-50%, -50%);
+}
+
+/* The stairway photo hangs near the top of its picture: keep the top in view
+   (the crop falls on the lower steps instead). */
+@media (min-aspect-ratio: 1448/1086) {
+  .frameTop {
+    top: 0;
+    transform: translate(-50%, 0);
+  }
+}
+
+.art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* A slow push-in while each picture is on screen. It scales the whole art
+   box (`scale` composes with the centring transform), so hotspots stay put
+   on the picture. */
+.layerActive .frame:not(.frameStill) {
+  animation: drift 16s ease-out both;
+}
+
+/* Police lights from the street washing over Ethan's room. */
+.sirens {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(ellipse 60% 75% at 52% 30%, rgba(230, 30, 50, 0.5), transparent 70%);
+  transition: opacity 600ms ease;
+}
+
+.sirens::after {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 75% at 52% 30%, rgba(40, 70, 255, 0.55), transparent 70%);
+  content: "";
+  opacity: 0;
+}
+
+.sirensOn {
+  animation: sirenRed 1.6s ease-in-out infinite;
+}
+
+.sirensOn::after {
+  animation: sirenBlue 1.6s ease-in-out infinite;
+}
+
+.hotspotLayer {
+  position: absolute !important;
+  inset: 0;
+}
+
+/* Until it has been looked at, the photo's brackets breathe to invite a
+   click, and its nameplate shows. */
+.photoWaiting :global(.scene-hotspot)::before {
+  opacity: 1;
+  transform: none;
+  animation: photoInvite 2.4s ease-in-out infinite;
+}
+
+.photoWaiting :global(.scene-hotspot) span,
+.photoOpen :global(.scene-hotspot)::before {
+  opacity: 1;
+  transform: translate(
+    calc(-50% + var(--caption-offset, 0px)),
+    calc(-50% + var(--caption-lift, 0px))
+  );
+}
+
+.photoOpen :global(.scene-hotspot)::before {
+  transform: none;
+}
+
+/* Once looked at, the rest of the stairway dims around the photo. */
+.photoOpen > :global(.scene-spotlight) {
+  opacity: 1;
+}
+
+.photoOpen :global(.scene-hotspot) span {
+  opacity: 0;
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 85% 80% at 50% 45%, transparent 55%, rgba(3, 1, 2, 0.55) 85%, rgba(2, 1, 1, 0.85)),
+    linear-gradient(180deg, rgba(3, 1, 2, 0.55), transparent 16%, transparent 62%, rgba(3, 1, 2, 0.7));
+}
+
+/* The lightning: the whole screen goes white for a fraction of a second. */
+.flash {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  background: #f4f7ff;
+  pointer-events: none;
+  animation: strobe 260ms ease-out both;
+}
+
+/* ---------- Chrome ---------- */
+
+.topBar {
+  position: absolute;
+  top: clamp(16px, 3vh, 28px);
+  right: clamp(16px, 3vw, 32px);
+  left: clamp(16px, 3vw, 32px);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.chapter {
+  flex: none;
+}
+
+.hint {
+  flex: 1;
+  color: rgba(245, 225, 215, 0.5);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.hintTouch {
+  display: none;
+}
+
+.skip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px 7px 12px;
+  color: rgba(245, 225, 215, 0.78);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  background: rgba(13, 7, 8, 0.6);
+  border: 1px solid rgba(237, 85, 98, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.skip:hover,
+.skip:focus-visible {
+  color: #fbe6d6;
+  background: rgba(169, 22, 36, 0.36);
+  border-color: rgba(237, 85, 98, 0.64);
+  outline: none;
+}
+
+.skipKey {
+  padding: 2px 5px 1px;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  border: 1px solid rgba(245, 225, 215, 0.3);
+  border-radius: 3px;
+}
+
+/* ---------- Text ---------- */
+
+.textArea {
+  position: absolute;
+  right: 0;
+  bottom: clamp(18px, 4vh, 40px);
+  left: 0;
+  z-index: 5;
+  width: min(880px, calc(100% - 32px));
+  margin: 0 auto;
+  cursor: default;
+}
+
+.textArea > * {
+  position: relative;
+}
+
+.box {
+  cursor: pointer;
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.photoHint {
+  width: max-content;
+  margin: 0 auto;
+  padding: 8px 14px 7px;
+  color: rgba(251, 230, 214, 0.85);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  background: rgba(9, 5, 6, 0.72);
+  border: 1px solid rgba(237, 85, 98, 0.3);
+  border-radius: 6px;
+  animation: prologueIn 600ms 900ms ease-out both;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .hintPointer {
+    display: none;
+  }
+
+  .hintTouch {
+    display: inline;
+  }
+}
+
+/* Portrait phones: the whole picture across the width, a blurred copy of
+   it behind, and the text underneath. */
+@media (max-aspect-ratio: 1/1) {
+  .backdrop {
+    display: block;
+  }
+
+  .frame {
+    top: 38%;
+    width: 100vw;
+  }
+
+  /* The text sits just under the picture (half its height is 37.5vw). */
+  .textArea {
+    top: calc(38% + 37.5vw + 30px);
+    bottom: auto;
+  }
+
+  .hint {
+    display: none;
+  }
+
+  .topBar {
+    justify-content: space-between;
+  }
+
+  .choices {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Motion ---------- */
+
+@keyframes prologueIn {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes drift {
+  from {
+    scale: 1.06;
+  }
+
+  to {
+    scale: 1;
+  }
+}
+
+@keyframes sirenRed {
+  0%, 100% { opacity: 0.32; }
+  50% { opacity: 0.04; }
+}
+
+@keyframes sirenBlue {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes photoInvite {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes strobe {
+  0% { opacity: 1; }
+  35% { opacity: 1; }
+  50% { opacity: 0.35; }
+  60% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prologue,
+  .photoHint,
+  .layerActive .frame,
+  .photoWaiting :global(.scene-hotspot)::before {
+    animation: none;
+  }
+
+  /* The lightning is a soft fade, never a strobe. */
+  .flash {
+    display: none;
+  }
+
+  .layerCut {
+    transition: opacity 500ms ease, filter 1800ms ease;
+  }
+
+  .layerDark {
+    transition: filter 600ms ease;
+  }
+
+  .sirensOn,
+  .sirensOn::after {
+    animation: none;
+  }
+
+  .sirensOn {
+    opacity: 0.18;
+  }
+}
