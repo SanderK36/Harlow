@@ -76,10 +76,10 @@ const hotspotLabels: Record<string, string> = {
   goToMarleneCounter: "Reception desk",
   talkToMarlene: "Marlene",
   goToHospitalRoom: "Elevator",
-  enterScrapyard: "Garage",
+  enterScrapyard: "Enter workshop",
   lookAtScrapyardDesk: "Workbench",
   takeScrapyardKnife: "Knife",
-  leaveScrapyard: "Exit garage",
+  leaveScrapyard: "Back to the yard",
   talkToBigRoy: "Big Roy",
   enterCemetery: "Enter church",
   goCemeteryBackside: "Back of church",
@@ -189,6 +189,7 @@ export default function Home() {
     currentEffects,
     conversation,
     conversationActive,
+    finishConversation,
     activeChoices,
     activeCharacter,
     showStats,
@@ -845,6 +846,7 @@ export default function Home() {
               <DialogueScene
                 entries={conversation}
                 active={conversationActive}
+                onFinish={finishConversation}
                 choices={
                   conversationActive && choicesWithoutHotspotActions.length > 0
                     ? actionList

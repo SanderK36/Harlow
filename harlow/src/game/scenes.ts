@@ -657,6 +657,8 @@ export const walterConversation: Conversation = {
       response: [
         ethan("I'm looking for some information."),
         npc("Walter", "Information about what?"),
+        ethan("Emily."),
+        npc("Walter", "That file's been closed ten years, Ethan. Leave it closed."),
       ],
     },
     {
@@ -869,6 +871,7 @@ export const margaretConversation: Conversation = {
         ethan("Can't stay. Catch you later."),
         npc("Margaret", "You take care now."),
       ],
+      endsConversation: true,
     },
     {
       label: "Exit conversation",
@@ -1462,6 +1465,7 @@ export const tommyConversation: Conversation = {
           "Yeah. This engine won't fix itself. Later, man.",
         ),
       ],
+      endsConversation: true,
     },
     {
       label: "Exit conversation",
@@ -1568,6 +1572,7 @@ export const bigRoyConversation: Conversation = {
         ethan("Got it. I'll let you get back to it."),
         npc("Big Roy", "Appreciate it, kid. Keep your eyes open out there."),
       ],
+      endsConversation: true,
     },
     {
       label: "Exit conversation",
@@ -1754,7 +1759,8 @@ export const sheriffOffice: Scene = {
 
   story: [
     narration("You step into the sheriff's office."),
-    thought("Sheriff's in.", { from: 460, until: 960 }),
+    thought("Walter's not in yet. His shift starts at eight.", { until: 480 }),
+    thought("Sheriff's in.", { from: 480, until: 960 }),
     thought("Nobody in. Just a desk full of paper.", { from: 960, until: 1080 }),
     thought("I shouldn't be in here this late.", { from: 1080 }),
   ],
@@ -1812,7 +1818,7 @@ export const cementary: Scene = {
     narration("You reach the cemetery."),
     thought("That gate's complaining in the wind."),
   ],
-  location: "Cementary",
+  location: "Cemetery",
   image: {
     day: "./images/locations/Cementary/cementaryDay.png",
     night: "./images/locations/Cementary/cementaryNight.png",
@@ -1844,7 +1850,7 @@ export const cementaryInside: Scene = {
     narration("You walk the rows of old headstones."),
     thought("Quieter here than anywhere in town."),
   ],
-  location: "Cementary",
+  location: "Cemetery",
   image: {
     day: "./images/locations/Cementary/cementaryInsideDay.png",
     night: "./images/locations/Cementary/cementaryInsideNight.png",
@@ -1871,7 +1877,7 @@ export const cementaryBackside: Scene = {
     narration("You come around the back of the cemetery."),
     thought("I don't like it back here."),
   ],
-  location: "Cementary",
+  location: "Cemetery",
   image: {
     day: "./images/locations/Cementary/cementaryBacksideDay.png",
     night: "./images/locations/Cementary/cementaryBacksideNight.png",
@@ -1979,6 +1985,15 @@ export const earlConversation: Conversation = {
       response: [
         ethan("Just looking."),
         npc("Earl", "Then look somewhere else. I've got work."),
+      ],
+    },
+    {
+      label: "How much for a room?",
+      response: [
+        ethan("How much for a room?"),
+        npc("Earl", "Fifteen a night. Cash. You live across town, kid."),
+        ethan("Just asking."),
+        npc("Earl", "Then you're in my way again."),
       ],
     },
     {
