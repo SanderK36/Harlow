@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { preload } from "react-dom";
 
 import styles from "./OpeningSequence.module.css";
 import { useReducedMotion } from "@/components/DialogueScene/typewriter";
+import Prologue from "@/components/Prologue/Prologue";
+import { PROLOGUE_IMAGES } from "@/game/prologue";
 
 type OpeningSequenceProps = {
   /** e.g. "Monday" */
@@ -20,7 +23,7 @@ type OpeningSequenceProps = {
   onFinished: () => void;
 };
 
-type Phase = "splash" | "splashOut" | "title" | "titleOut";
+type Phase = "splash" | "splashOut" | "prologue" | "title" | "titleOut";
 
 const YEAR = 1982;
 // The studio's .mov first; browsers that won't take a QuickTime file (Chrome
@@ -49,9 +52,10 @@ function formatClock(minutes: number) {
 
 /**
  * New-game intro: the Lost Frequency Games splash (filled edge to edge with a
- * blurred copy of itself), a fade to black, then a HARLOW title card with the
- * date, time and place over falling rain, which fades into the first scene.
- * Any click, tap or key skips ahead one step.
+ * blurred copy of itself), a fade to black, the prologue (see Prologue.tsx),
+ * then a HARLOW title card with the date, time and place over falling rain,
+ * which fades into the first scene. On the splash and the title card any
+ * click, tap or key skips ahead one step; the prologue has its own controls.
  */
 export default function OpeningSequence({
   dayOfWeek,
@@ -85,6 +89,7 @@ export default function OpeningSequence({
   }
 
   const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
+    if (phase === "prologue") return;
     if (event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
     event.preventDefault();
     advance();
@@ -96,7 +101,7 @@ export default function OpeningSequence({
     let next: (() => void) | null = null;
     if (phase === "splashOut") {
       delay = reducedMotion ? 0 : SPLASH_FADE;
-      next = () => setPhase("title");
+      next = () => setPhase("prologue");
     } else if (phase === "title") {
       delay = reducedMotion ? TITLE_HOLD_REDUCED : TITLE_HOLD;
       next = () => setPhase("titleOut");
@@ -146,6 +151,11 @@ export default function OpeningSequence({
   }
 
   const inSplash = phase === "splash" || phase === "splashOut";
+  // The first pictures of the prologue load while the film plays.
+  if (inSplash) {
+    preload(PROLOGUE_IMAGES.comic, { as: "image", fetchPriority: "low" });
+    preload(PROLOGUE_IMAGES.bed, { as: "image", fetchPriority: "low" });
+  }
   const date = `${dayOfWeek}, ${month} ${dayNumber}, ${YEAR}`;
 
   return (
@@ -200,6 +210,8 @@ export default function OpeningSequence({
         </div>
       )}
 
+      {phase === "prologue" && <Prologue onDone={() => setPhase("title")} />}
+
       {(phase === "title" || phase === "titleOut") && (
         <div className={styles.titleCard} role="status" aria-label={`Harlow. ${date}, ${formatClock(time)}, ${location}.`}>
           <div className={styles.rain} aria-hidden="true" />
@@ -218,7 +230,7 @@ export default function OpeningSequence({
       )}
 
       <p
-        className={`${styles.skipHint} ${showSkipHint && phase !== "titleOut" ? styles.skipHintVisible : ""}`}
+        className={`${styles.skipHint} ${showSkipHint && phase !== "titleOut" && phase !== "prologue" ? styles.skipHintVisible : ""}`}
         aria-hidden="true"
       >
         <span className={styles.hintPointer}>Click or press any key to skip</span>
