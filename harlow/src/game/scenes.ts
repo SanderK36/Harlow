@@ -485,7 +485,17 @@ export const momConversation: Conversation = {
     },
 
     {
+      label: "Not really. Kept hearing sirens in my head.",
+      requiresChoice: "Morning, Mom.",
+      response: [
+        ethan("Not really. Kept hearing sirens in my head."),
+        npc("Linda", "You and me both, kiddo."),
+      ],
+    },
+
+    {
       label: "Did you sleep well?",
+      excludesChoice: "Not really. Kept hearing sirens in my head.",
 
       response: [
         ethan("Did you sleep well?"),
@@ -540,18 +550,15 @@ export const momDeathConversation: Conversation = {
   opening: [
     npc(
       "Linda",
-      "Did you hear? The sheriff found Mrs. Elrod at home this morning. A few houses down. They don't know what happened.",
+      "I saw you out by the tape last night. Barefoot, Ethan. Is it true? Mrs. Elrod?",
     ),
   ],
   choices: [
     {
-      label: "They found her dead?",
+      label: "Yeah. Walter wouldn't tell me anything.",
       response: [
-        ethan("They found her dead?"),
-        npc(
-          "Linda",
-          "That's what he said. He asked when I last saw her. It's been a few days.",
-        ),
+        ethan("Yeah. Walter wouldn't tell me anything."),
+        npc("Linda", "He asked me when I last saw her. It's been a few days."),
       ],
     },
     {
@@ -565,9 +572,9 @@ export const momDeathConversation: Conversation = {
       ],
     },
     {
-      label: "Not even a guess?",
+      label: "Do they know who did it?",
       response: [
-        ethan("Not even a guess?"),
+        ethan("Do they know who did it?"),
         npc(
           "Linda",
           "No. They're still putting it together. I'm not going to guess.",
@@ -643,7 +650,7 @@ export const johnnyConversation: Conversation = {
 };
 
 export const walterConversation: Conversation = {
-  opening: [npc("Walter", "Something I can do for you?")],
+  opening: [npc("Walter", "Ethan. Figured you'd turn up.")],
   choices: [
     {
       label: "I'm looking for some information.",
@@ -653,10 +660,19 @@ export const walterConversation: Conversation = {
       ],
     },
     {
-      label: "Yeah. Anything happened in town?",
+      label: "Anything new on Mrs. Elrod?",
       response: [
-        ethan("Yeah. Has anything happened around town?"),
-        npc("Walter", "Nothing that concerns you."),
+        ethan("Anything new on Mrs. Elrod?"),
+        npc("Walter", "Nothing I can share."),
+      ],
+    },
+    {
+      label: "I saw someone last night. End of the street. In a hood.",
+      response: [
+        ethan("I saw someone last night. End of the street. In a hood."),
+        npc("Walter", "...You tell anyone else that?"),
+        ethan("No."),
+        npc("Walter", "Keep it that way. Go home, Ethan."),
       ],
     },
     {
@@ -838,9 +854,9 @@ export const margaretConversation: Conversation = {
       ],
     },
     {
-      label: "Thanks. Anything happening in town?",
+      label: "Thanks. People talking about Mrs. Elrod?",
       response: [
-        ethan("Thanks. Anything happening around town?"),
+        ethan("Thanks. People talking about Mrs. Elrod?"),
         npc(
           "Margaret",
           "People talk. Not much of it I'd repeat.",
@@ -971,7 +987,7 @@ export const ethanRoom: Scene = {
   id: "ethan-room",
   story: [
     narration("You step into your room."),
-    thought("I still don't know what happened last night."),
+    thought("I keep seeing him. Standing in the street like he belonged there."),
   ],
   location: "Ethan's room",
   image: {

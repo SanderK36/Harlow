@@ -34,11 +34,11 @@ export const metadata: Metadata = {
   title: "Harlow",
   applicationName: "Harlow",
   description:
-    "Harlow: 1982 — a moody small-town murder mystery. Play as Ethan Parker, explore an autumn town full of secrets, and find out what happened last night.",
+    "Harlow: 1982 — a moody small-town murder mystery. Play as Ethan Parker, explore an autumn town full of secrets, and find out what really happened to his sister ten years ago.",
   openGraph: {
     title: "Harlow: 1982",
     description:
-      "A moody small-town murder mystery set in autumn 1982. Play as Ethan Parker and find out what happened last night.",
+      "A moody small-town murder mystery set in autumn 1982. Play as Ethan Parker and find out what really happened to his sister ten years ago.",
     type: "website",
   },
 };

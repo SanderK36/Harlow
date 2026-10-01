@@ -34,6 +34,12 @@ export type ConversationChoice = {
   completesMomQuest?: boolean;
   /** Shows this response only after the matching story milestone. */
   requiresStoryFlag?: "momJobConcern";
+  /** Shows this response only once the choice with this label has been
+   *  picked in the same conversation (to answer a question it raised). */
+  requiresChoice?: string;
+  /** Hides this response once the choice with this label has been picked in
+   *  the same conversation (its question was already answered). */
+  excludesChoice?: string;
   /** Applies a permanent job reward when this response is selected. */
   jobOffer?: import("./quests").JobId;
   /** Hide this choice after Ethan has accepted a job. */
