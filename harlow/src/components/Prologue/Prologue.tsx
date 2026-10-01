@@ -1,16 +1,14 @@
 "use client";
 
-import { useEffect, useEffectEvent, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 
 import styles from "./Prologue.module.css";
 import dialogue from "@/components/DialogueScene/DialogueScene.module.css";
 import thoughtStyles from "@/components/ThoughtPanel/ThoughtPanel.module.css";
 import ActionButton from "@/components/ActionButton/ActionButton";
-import SceneHotspot from "@/components/SceneHotspot";
 import { revealDelay, useReducedMotion } from "@/components/DialogueScene/typewriter";
 import { harlowAudio } from "@/game/audio";
 import {
-  FAMILY_PHOTO_HOTSPOT,
   OUTDOOR_BEATS,
   PROLOGUE,
   PROLOGUE_IMAGES,
@@ -58,13 +56,13 @@ function isInteractive(target: EventTarget | null) {
 /**
  * The new-game prologue: full-frame art with lines in the dialogue box and
  * thought panel styles, a short conversation with Walter, and the lightning.
+ * Every picture is shown whole, with a blurred copy filling the rest.
  * Click, tap, Space or Enter moves on; Escape or the Skip button ends it.
  */
 export default function Prologue({ onDone }: PrologueProps) {
   const reducedMotion = useReducedMotion();
   const [position, setPosition] = useState<Position>({ node: 0, branch: [] });
   const [progress, setProgress] = useState({ key: "", revealed: 0 });
-  const [photoOpen, setPhotoOpen] = useState(false);
   const [strike, setStrike] = useState<Strike | null>(null);
   const [strikeTextReady, setStrikeTextReady] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -75,8 +73,8 @@ export default function Prologue({ onDone }: PrologueProps) {
   const beat = node.beat;
   const line: ActiveLine | null = position.branch[0] ?? (node.kind === "choice" ? null : node);
   const choice = !line && node.kind === "choice" ? node : null;
-  // The family photo waits to be looked at; the lightning text waits a beat.
-  const lineHidden = (beat === "stairs" && !photoOpen) || (beat === "strike" && !strikeTextReady);
+  // The lightning text waits a beat.
+  const lineHidden = beat === "strike" && !strikeTextReady;
   const lineKey = `${position.node}:${position.branch.length}:${line?.text ?? ""}`;
   // While Ethan picks a reply, the line he is answering stays in the box.
   const previous = PROLOGUE[position.node - 1];
@@ -124,10 +122,6 @@ export default function Prologue({ onDone }: PrologueProps) {
 
   function advance() {
     if (leaving) return;
-    if (beat === "stairs" && !photoOpen) {
-      setPhotoOpen(true);
-      return;
-    }
     if (!line || lineHidden) return;
     if (!lineComplete) {
       setProgress({ key: lineKey, revealed: text.length });
@@ -241,50 +235,11 @@ export default function Prologue({ onDone }: PrologueProps) {
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img className={styles.backdrop} src={PROLOGUE_IMAGES[image]} alt="" aria-hidden="true" />
-                <div
-                  className={`${styles.frame} ${image === "killer" ? styles.frameStill : ""} ${
-                    image === "stairs" ? styles.frameTop : ""
-                  }`}
-                >
+                <div className={styles.frame}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img className={styles.art} src={PROLOGUE_IMAGES[image]} alt="" />
                   {(image === "bed" || image === "window") && (
                     <div className={`${styles.sirens} ${sirens && active ? styles.sirensOn : ""}`} aria-hidden="true" />
-                  )}
-                  {image === "stairs" && active && (
-                    <div
-                      className={`scene-art ${styles.hotspotLayer} ${photoOpen ? styles.photoOpen : styles.photoWaiting}`}
-                      style={
-                        {
-                          "--spot-left": `${FAMILY_PHOTO_HOTSPOT.left}%`,
-                          "--spot-top": `${FAMILY_PHOTO_HOTSPOT.top}%`,
-                          "--spot-width": `${FAMILY_PHOTO_HOTSPOT.width}%`,
-                          "--spot-height": `${FAMILY_PHOTO_HOTSPOT.height}%`,
-                        } as CSSProperties
-                      }
-                    >
-                      <div className="scene-spotlight" aria-hidden="true">
-                        <div className="scene-spotlight-hole" />
-                      </div>
-                      <SceneHotspot
-                        type="button"
-                        className="scene-hotspot"
-                        data-kind="inspect"
-                        label="Family photo"
-                        aria-label="Look at the family photo"
-                        style={{
-                          left: `${FAMILY_PHOTO_HOTSPOT.left}%`,
-                          top: `${FAMILY_PHOTO_HOTSPOT.top}%`,
-                          width: `${FAMILY_PHOTO_HOTSPOT.width}%`,
-                          height: `${FAMILY_PHOTO_HOTSPOT.height}%`,
-                        }}
-                        onClick={(event) => {
-                          // Hand focus back so Space carries on with the story.
-                          event.currentTarget.blur();
-                          setPhotoOpen(true);
-                        }}
-                      />
-                    </div>
                   )}
                 </div>
               </>
@@ -309,12 +264,6 @@ export default function Prologue({ onDone }: PrologueProps) {
       </div>
 
       <div className={styles.textArea}>
-        {beat === "stairs" && !photoOpen && (
-          <p className={styles.photoHint} aria-hidden="true">
-            <span className={styles.hintPointer}>Click the photo on the wall</span>
-            <span className={styles.hintTouch}>Tap the photo on the wall</span>
-          </p>
-        )}
 
         {line && !lineHidden && line.kind === "thought" && (
           <div key={lineKey} className={thoughtStyles.panel} role="status">

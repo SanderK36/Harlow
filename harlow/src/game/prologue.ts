@@ -54,9 +54,6 @@ export const PROLOGUE_IMAGES = {
 
 export type PrologueImage = keyof typeof PROLOGUE_IMAGES;
 
-/** The family photo on the stairway wall (percent of the 1448×1086 art). */
-export const FAMILY_PHOTO_HOTSPOT = { left: 17.1, top: 11.3, width: 7.4, height: 14.5 };
-
 /** The beats that happen out of doors (for the night ambience). */
 export const OUTDOOR_BEATS: PrologueBeat[] = ["porch", "walter", "behind", "street", "strike", "aftermath"];
 
@@ -79,7 +76,6 @@ export const PROLOGUE: PrologueNode[] = [
 
   { beat: "window", kind: "say", speaker: "Ethan", text: "Sirens? On our street?" },
 
-  // Shown by clicking the family photo on the wall (or simply continuing).
   { beat: "stairs", kind: "thought", text: "Ten years, Em. The house still feels like it's waiting for you." },
 
   { beat: "porch", kind: "narration", text: "The rain has stopped, but the air still smells like it." },
@@ -99,7 +95,7 @@ export const PROLOGUE: PrologueNode[] = [
         label: "Is she... is she dead?",
         reply: [
           // "(beat)": Walter says nothing for a moment before he answers.
-          { kind: "say", speaker: "Walter", text: "… Go home, son.", pause: { after: 1, ms: 1300 } },
+          { kind: "say", speaker: "Walter", text: "... Go home, son.", pause: { after: 3, ms: 1300 } },
         ],
       },
     ],

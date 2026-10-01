@@ -26,7 +26,7 @@
   transition: opacity 900ms ease, filter 1600ms ease;
 }
 
-/* Only the picture on screen takes clicks (the photo hotspot). */
+/* Only the picture on screen is on top. */
 .layerActive {
   z-index: 1;
   opacity: 1;
@@ -44,51 +44,36 @@
   transition: none;
 }
 
-/* A blurred copy fills the screen where the picture doesn't (phones). */
+/* A blurred copy fills the screen around the picture. */
 .backdrop {
   position: absolute;
   inset: -40px;
-  display: none;
+  display: block;
   width: calc(100% + 80px);
   height: calc(100% + 80px);
   object-fit: cover;
   filter: blur(28px) brightness(0.45) saturate(1.15);
 }
 
-/* The art box always has the art's proportions, so hotspot percentages map
-   onto the picture. It covers the screen in landscape. */
+/* The art box has the art's proportions and always fits inside the screen,
+   so the whole picture shows at every aspect ratio (never cropped). */
 .frame {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: max(100vw, calc(100dvh * 1448 / 1086));
+  width: min(100vw, calc(100dvh * 1448 / 1086));
   aspect-ratio: 1448 / 1086;
+  box-shadow: 0 0 60px 20px rgba(3, 1, 2, 0.55);
   transform: translate(-50%, -50%);
-}
-
-/* The stairway photo hangs near the top of its picture: keep the top in view
-   (the crop falls on the lower steps instead). */
-@media (min-aspect-ratio: 1448/1086) {
-  .frameTop {
-    top: 0;
-    transform: translate(-50%, 0);
-  }
 }
 
 .art {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   user-select: none;
   -webkit-user-drag: none;
-}
-
-/* A slow push-in while each picture is on screen. It scales the whole art
-   box (`scale` composes with the centring transform), so hotspots stay put
-   on the picture. */
-.layerActive .frame:not(.frameStill) {
-  animation: drift 16s ease-out both;
 }
 
 /* Police lights from the street washing over Ethan's room. */
@@ -118,41 +103,6 @@
 
 .sirensOn::after {
   animation: sirenBlue 1.6s ease-in-out infinite;
-}
-
-.hotspotLayer {
-  position: absolute !important;
-  inset: 0;
-}
-
-/* Until it has been looked at, the photo's brackets breathe to invite a
-   click, and its nameplate shows. */
-.photoWaiting :global(.scene-hotspot)::before {
-  opacity: 1;
-  transform: none;
-  animation: photoInvite 2.4s ease-in-out infinite;
-}
-
-.photoWaiting :global(.scene-hotspot) span,
-.photoOpen :global(.scene-hotspot)::before {
-  opacity: 1;
-  transform: translate(
-    calc(-50% + var(--caption-offset, 0px)),
-    calc(-50% + var(--caption-lift, 0px))
-  );
-}
-
-.photoOpen :global(.scene-hotspot)::before {
-  transform: none;
-}
-
-/* Once looked at, the rest of the stairway dims around the photo. */
-.photoOpen > :global(.scene-spotlight) {
-  opacity: 1;
-}
-
-.photoOpen :global(.scene-hotspot) span {
-  opacity: 0;
 }
 
 .vignette {
@@ -268,22 +218,6 @@
   margin-top: 12px;
 }
 
-.photoHint {
-  width: max-content;
-  margin: 0 auto;
-  padding: 8px 14px 7px;
-  color: rgba(251, 230, 214, 0.85);
-  font-family: var(--font-ui);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  background: rgba(9, 5, 6, 0.72);
-  border: 1px solid rgba(237, 85, 98, 0.3);
-  border-radius: 6px;
-  animation: prologueIn 600ms 900ms ease-out both;
-}
-
 @media (hover: none), (pointer: coarse) {
   .hintPointer {
     display: none;
@@ -297,10 +231,6 @@
 /* Portrait phones: the whole picture across the width, a blurred copy of
    it behind, and the text underneath. */
 @media (max-aspect-ratio: 1/1) {
-  .backdrop {
-    display: block;
-  }
-
   .frame {
     top: 38%;
     width: 100vw;
@@ -333,16 +263,6 @@
   }
 }
 
-@keyframes drift {
-  from {
-    scale: 1.06;
-  }
-
-  to {
-    scale: 1;
-  }
-}
-
 @keyframes sirenRed {
   0%, 100% { opacity: 0.32; }
   50% { opacity: 0.04; }
@@ -351,12 +271,6 @@
 @keyframes sirenBlue {
   0%, 100% { opacity: 0; }
   50% { opacity: 0.8; }
-}
-
-@keyframes photoInvite {
-  50% {
-    opacity: 0.45;
-  }
 }
 
 @keyframes strobe {
@@ -368,10 +282,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .prologue,
-  .photoHint,
-  .layerActive .frame,
-  .photoWaiting :global(.scene-hotspot)::before {
+  .prologue {
     animation: none;
   }
 
