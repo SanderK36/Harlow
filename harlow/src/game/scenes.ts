@@ -50,7 +50,7 @@ export type Scene = {
 // Destinations listed here automatically appear in the walk and bus menus.
 // Add an exterior scene here after it has been added to `scenes` below.
 const exteriorDestinations = [
-  { id: "front-yard", label: "Home", walkMinutes: 30 },
+  { id: "front-yard", label: "your house", walkMinutes: 30 },
   { id: "needle-and-groove", label: "Needle & Groove", walkMinutes: 30 },
   { id: "gas-station", label: "the gas station", walkMinutes: 30 },
   { id: "police-station", label: "the police station", walkMinutes: 30 },
@@ -82,7 +82,7 @@ export function createWalkingChoices(
         availableDestinationIds.includes(destination.id),
     )
     .map((destination) => ({
-      label: `Walk to ${destination.label} (${destination.walkMinutes}min)`,
+      label: `Walk to ${destination.label} (${destination.walkMinutes} min)`,
       action: `walkTo${destination.id}`,
       nextScene: destination.id,
       timeCost: destination.walkMinutes,
@@ -97,7 +97,7 @@ export function createBusChoices(
   return exteriorDestinations
     .filter((destination) => availableDestinationIds.includes(destination.id))
     .map((destination) => ({
-      label: `Take the bus to ${destination.label} ($7 & 10min)`,
+      label: `Take the bus to ${destination.label} ($7, 10 min)`,
       action: `takeBusTo${destination.id}`,
       nextScene: destination.id,
       timeCost: 10,
@@ -117,8 +117,8 @@ export const hallway: Scene = {
   id: "hallway",
 
   story: [
-    narration("The rain taps softly against the windows."),
-    thought("I should probably get going."),
+    narration("Rain ticks against the windows."),
+    thought("I should get moving."),
   ],
 
   location: "Home",
@@ -178,8 +178,8 @@ export const hallway: Scene = {
 export const upstairsHallway: Scene = {
   id: "hallway-upstairs",
   story: [
-    narration("You head upstairs."),
-    thought("The upstairs hallway is quiet."),
+    narration("You take the stairs."),
+    thought("Quiet up here."),
   ],
   location: "Home",
   image: {
@@ -233,8 +233,8 @@ export const upstairsHallway: Scene = {
 export const upstairsHallwayAtticOpen: Scene = {
   id: "hallway-upstairs-attic-open",
   story: [
-    narration("The attic hatch swings open overhead."),
-    thought("The attic is open now."),
+    narration("The hatch swings open. Cold air drops out of the dark."),
+    thought("That's open. Dust, and whatever else is up there."),
   ],
   location: "Home",
   image: {
@@ -272,10 +272,8 @@ export const lookingAroundHouse: Scene = {
   id: "looking-around-house",
 
   story: [
-    narration(
-      "You spend some time looking around the house. Everything seems normal.",
-    ),
-    thought("A lot of memories in here..."),
+    narration("You look through the house. Nothing's out of place."),
+    thought("Too many memories in these rooms."),
   ],
 
   location: "Home",
@@ -313,8 +311,8 @@ export const madeCoffee: Scene = {
   id: "made-coffee",
 
   story: [
-    narration("You felt a bit drowsy, so you made yourself some coffee."),
-    thought("Just what I needed."),
+    narration("You put a pot of coffee on."),
+    thought("That'll wake me up."),
   ],
 
   choices: [
@@ -342,8 +340,8 @@ export const frontYard: Scene = {
   id: "front-yard",
 
   story: [
-    narration("You step outside into the rain. The cold air hits your face."),
-    thought("It's colder than I expected."),
+    narration("You step outside. Cold air hits your face."),
+    thought("Colder than I figured."),
   ],
 
   location: "Home front yard",
@@ -389,10 +387,8 @@ export const frontYard: Scene = {
 export const lightPole: Scene = {
   id: "light-pole",
   story: [
-    narration("Three weathered hiring flyers are stapled to the light pole."),
-    thought(
-      "I feel bad that mom is paying for everything, i need to get a job to help her",
-    ),
+    narration("Three hiring flyers, curled and faded, are stapled to the light pole."),
+    thought("Mom's covering everything. I need a job."),
   ],
   location: "Home front yard",
   image: {
@@ -434,13 +430,13 @@ export const lightPole: Scene = {
 export const backYard: Scene = {
   id: "back-yard",
 
-  story: [narration("You walk around to the backyard.")],
+  story: [narration("You come around to the backyard.")],
 
   thoughts: [
     { until: 1080, text: "" },
     {
       from: 1080,
-      text: "I always feel like i'm being watched being out here this late...",
+      text: "Out here this late, I always feel watched.",
     },
   ],
   location: "Home back yard",
@@ -484,7 +480,7 @@ export const momConversation: Conversation = {
 
       response: [
         ethan("Morning, Mom."),
-        npc("Linda", "You look tired. Did you sleep alright?"),
+        npc("Linda", "You look wrung out. Did you sleep any?"),
       ],
     },
 
@@ -493,7 +489,7 @@ export const momConversation: Conversation = {
 
       response: [
         ethan("Did you sleep well?"),
-        npc("Linda", "I slept alright. Just a little restless."),
+        npc("Linda", "Some. Kept waking up."),
       ],
     },
 
@@ -504,7 +500,7 @@ export const momConversation: Conversation = {
         ethan("How's it going at work?"),
         npc(
           "Linda",
-          "Honestly, not great. There haven't been enough shifts lately, and everything's gotten so expensive.",
+          "Not great. Shifts are thin, and everything costs more than it did.",
         ),
       ],
     },
@@ -516,7 +512,7 @@ export const momConversation: Conversation = {
         ethan("I'll find a way to help."),
         npc(
           "Linda",
-          "You're a good kid. Just be careful, and don't take the first thing that comes along.",
+          "You're a good kid. Be careful. Don't grab the first thing that pays.",
         ),
       ],
     },
@@ -526,15 +522,15 @@ export const momConversation: Conversation = {
 
       response: [
         ethan("I'm heading out."),
-        npc("Linda", "Alright, honey. Be careful out there."),
+        npc("Linda", "Alright. Watch yourself out there."),
       ],
       endsConversation: true,
     },
 
     {
-      label: "Nevermind.",
+      label: "I'll leave you to it.",
 
-      response: [ethan("Nevermind. It was nothing."), npc("Linda", "Alright.")],
+      response: [ethan("I'll leave you to it."), npc("Linda", "Alright, honey.")],
       endsConversation: true,
     },
   ],
@@ -544,7 +540,7 @@ export const momDeathConversation: Conversation = {
   opening: [
     npc(
       "Linda",
-      "Did you hear about Mrs. Elrod? The sheriff found her at home this morning. She lived a few houses down. They don't know what happened yet.",
+      "Did you hear? The sheriff found Mrs. Elrod at home this morning. A few houses down. They don't know what happened.",
     ),
   ],
   choices: [
@@ -554,7 +550,7 @@ export const momDeathConversation: Conversation = {
         ethan("They found her dead?"),
         npc(
           "Linda",
-          "That's what the sheriff said. He asked when I'd last seen her. It had been a few days.",
+          "That's what he said. He asked when I last saw her. It's been a few days.",
         ),
       ],
     },
@@ -564,17 +560,17 @@ export const momDeathConversation: Conversation = {
         ethan("Did you know her well?"),
         npc(
           "Linda",
-          "Not really. We'd talk now and then, usually when she was out getting the mail.",
+          "Not really. A word or two when she got the mail.",
         ),
       ],
     },
     {
-      label: "Do they know what happened?",
+      label: "Not even a guess?",
       response: [
-        ethan("Do they know what happened?"),
+        ethan("Not even a guess?"),
         npc(
           "Linda",
-          "No. They're still trying to piece things together. I don't want to guess.",
+          "No. They're still putting it together. I'm not going to guess.",
         ),
       ],
     },
@@ -584,13 +580,13 @@ export const momDeathConversation: Conversation = {
         ethan("I'm sorry, Mom. That's awful."),
         npc(
           "Linda",
-          "It is. She was alone in that house so much. Just... be careful, alright? And let the sheriff handle it.",
+          "I know. She was alone in that house so much. Be careful. And let the sheriff handle it.",
         ),
       ],
       completesMomQuest: true,
     },
     {
-      label: "Exit Conversation",
+      label: "Exit conversation",
       response: [],
       endsConversation: true,
     },
@@ -601,17 +597,17 @@ export const johnnyConversation: Conversation = {
   opening: [npc("Johnny", "Hey. Looking for something?")],
   choices: [
     {
-      label: "Just browsing.",
+      label: "Just looking around.",
       response: [
         ethan("Yeah. Just looking around."),
         npc("Johnny", "Take your time."),
       ],
     },
     {
-      label: "Do you own this place?",
+      label: "Not really. You own this place?",
       response: [
-        ethan("You own the shop?"),
-        npc("Johnny", "Sure do. Been running it for a few years now."),
+        ethan("Not really. You own this place?"),
+        npc("Johnny", "Yeah. A few years now."),
       ],
     },
     {
@@ -623,49 +619,49 @@ export const johnnyConversation: Conversation = {
         ethan("I'm looking for work."),
         npc(
           "Johnny",
-          "I can use a hand with stock and the counter. Welcome aboard—stick close and you'll hear plenty about this town.",
+          "I can use a hand on stock and the counter. You're hired. Stick around. You'll hear more about this town than you want.",
         ),
       ],
     },
     {
-      label: "Heard anything interesting?",
+      label: "Not a record. Heard anything?",
       requiresJob: "needle-groove",
       response: [
-        ethan("Heard anything interesting?"),
+        ethan("Not a record. Heard anything interesting?"),
         npc(
           "Johnny",
-          "Always. Start with the diner after lunch—people there talk louder than they think.",
+          "Always. Diner, after lunch. People talk louder than they think.",
         ),
       ],
     },
     {
-      label: "Nevermind.",
-      response: [ethan("Nevermind."), npc("Johnny", "Alright.")],
+      label: "Nothing.",
+      response: [ethan("Nothing."), npc("Johnny", "Suit yourself.")],
       endsConversation: true,
     },
   ],
 };
 
 export const walterConversation: Conversation = {
-  opening: [npc("Walter", "Can I help you?")],
+  opening: [npc("Walter", "Something I can do for you?")],
   choices: [
     {
       label: "I'm looking for some information.",
       response: [
         ethan("I'm looking for some information."),
-        npc("Walter", "What kind of information?"),
+        npc("Walter", "Information about what?"),
       ],
     },
     {
-      label: "Has anything happened around town?",
+      label: "Yeah. Anything happened in town?",
       response: [
-        ethan("Has anything happened around town lately?"),
-        npc("Walter", "Nothing you need to concern yourself with."),
+        ethan("Yeah. Has anything happened around town?"),
+        npc("Walter", "Nothing that concerns you."),
       ],
     },
     {
-      label: "Nevermind.",
-      response: [ethan("Nevermind."), npc("Walter", "Alright.")],
+      label: "Never mind.",
+      response: [ethan("Never mind."), npc("Walter", "Then we're done.")],
       endsConversation: true,
     },
   ],
@@ -679,10 +675,10 @@ export const livingRoom: Scene = {
   id: "living-room",
   story: [
     narration("You walk into the living room."),
-    thought("It's quiet in here.", { until: 420 }),
-    thought("It's quiet in here.", { from: 420, until: 540 }),
-    thought("Mom is here.", { from: 540, until: 1080 }),
-    thought("It's quiet in here when Mom's at work.", { from: 1080 }),
+    thought("Can't sleep. The house is too quiet.", { until: 420 }),
+    thought("Quiet in here.", { from: 420, until: 540 }),
+    thought("Mom's in here.", { from: 540, until: 1080 }),
+    thought("Quiet again. Mom's at work.", { from: 1080 }),
   ],
 
   location: "Living room",
@@ -701,7 +697,7 @@ export const livingRoom: Scene = {
 
   choices: [
     {
-      label: "Watch the TV",
+      label: "Watch TV",
       action: "watchTv",
       nextScene: "living-room",
       timeCost: 0,
@@ -715,7 +711,7 @@ export const livingRoom: Scene = {
       effects: { stamina: 15 },
     },
     {
-      label: "Talk to mom",
+      label: "Talk to Mom",
       action: "talkToMom",
       nextScene: "living-room",
       timeCost: 10,
@@ -740,10 +736,8 @@ export const livingRoom: Scene = {
 export const livingRoomRelaxing: Scene = {
   id: "living-room-relaxing",
   story: [
-    narration(
-      "You sink into the couch and let the noise of the day fade away.",
-    ),
-    thought("I needed that."),
+    narration("You drop onto the couch. The day goes quiet."),
+    thought("Yeah. I needed that."),
   ],
   location: "Living room",
   image: {
@@ -769,7 +763,7 @@ export const kitchen: Scene = {
 
   story: [
     narration("You step into the kitchen."),
-    thought("The house is quiet."),
+    thought("Smells like last night's coffee."),
   ],
 
   location: "Home",
@@ -831,37 +825,37 @@ export const kitchen: Scene = {
 kitchen.conversation = momConversation;
 
 export const margaretConversation: Conversation = {
-  opening: [npc("Margaret", "Take a seat anywhere you like, hon.")],
+  opening: [npc("Margaret", "Sit anywhere you like, hon.")],
   choices: [
     {
-      label: "How's business today?",
+      label: "Thanks. How's business?",
       response: [
-        ethan("How's business today?"),
+        ethan("Thanks. How's business today?"),
         npc(
           "Margaret",
-          "Quiet so far. That usually means the coffee gets cold before it gets poured.",
+          "Slow. Coffee goes cold before anybody orders it.",
         ),
       ],
     },
     {
-      label: "Anything happening around town?",
+      label: "Thanks. Anything happening in town?",
       response: [
-        ethan("Anything happening around town?"),
+        ethan("Thanks. Anything happening around town?"),
         npc(
           "Margaret",
-          "Folks have been talking, but nobody's saying much worth repeating.",
+          "People talk. Not much of it I'd repeat.",
         ),
       ],
     },
     {
-      label: "See you later.",
+      label: "Can't stay.",
       response: [
-        ethan("See you later."),
+        ethan("Can't stay. Catch you later."),
         npc("Margaret", "You take care now."),
       ],
     },
     {
-      label: "Exit Conversation",
+      label: "Exit conversation",
       response: [],
       endsConversation: true,
     },
@@ -870,21 +864,21 @@ export const margaretConversation: Conversation = {
 
 export const marleneConversation: Conversation = {
   opening: [
-    npc("Marlene", "Ethan. Make it quick, I'm in the middle of a shift."),
+    npc("Marlene", "Ethan. Make it quick. I'm on a shift."),
   ],
   choices: [
     {
-      label: "How's your shift going?",
+      label: "I'll be quick. How's the shift?",
       response: [
-        ethan("How's your shift going?"),
-        npc("Marlene", "Busy enough. That's all you need to know."),
+        ethan("I'll be quick. How's the shift?"),
+        npc("Marlene", "Busy. That's all you get."),
       ],
     },
     {
-      label: "Nevermind.",
+      label: "I'll get out of your way.",
       response: [
-        ethan("Nevermind."),
-        npc("Marlene", "Fine. Try not to make more work for me."),
+        ethan("I'll get out of your way."),
+        npc("Marlene", "Good. Don't make more work for me."),
       ],
       endsConversation: true,
     },
@@ -894,7 +888,7 @@ export const marleneConversation: Conversation = {
 export const fridge: Scene = {
   id: "fridge",
   story: [
-    narration("You open the fridge. A few bottles are still cold."),
+    narration("The fridge light hits a few cold bottles."),
     thought("A beer wouldn't hurt."),
   ],
   location: "Kitchen",
@@ -936,7 +930,7 @@ export const bathroom: Scene = {
 
   story: [
     narration("You step into the bathroom."),
-    thought("Nothing unusual."),
+    thought("Nothing in here. Good."),
   ],
 
   location: "Home",
@@ -977,7 +971,7 @@ export const ethanRoom: Scene = {
   id: "ethan-room",
   story: [
     narration("You step into your room."),
-    thought("I wonder what happened last night."),
+    thought("I still don't know what happened last night."),
   ],
   location: "Ethan's room",
   image: {
@@ -1012,8 +1006,8 @@ export const ethanRoom: Scene = {
 export const ethanRoomDesk: Scene = {
   id: "ethan-room-desk",
   story: [
-    narration("You look over the clutter on your desk."),
-    thought("I left a pack of cigarettes here."),
+    narration("Your desk is the usual mess."),
+    thought("Cigarettes ought to be in this clutter."),
   ],
   location: "Ethan's room",
   image: {
@@ -1022,7 +1016,7 @@ export const ethanRoomDesk: Scene = {
   },
   choices: [
     {
-      label: "Pick up cigarettes",
+      label: "Pick up the cigarettes",
       action: "pickUpCigarettes",
       nextScene: "ethan-room-desk-empty",
       timeCost: 0,
@@ -1040,8 +1034,8 @@ export const ethanRoomDesk: Scene = {
 export const momRoom: Scene = {
   id: "mom-room",
   story: [
-    narration("You enter Mom's room."),
-    thought("It feels strange being in here."),
+    narration("You step into Mom's room."),
+    thought("I shouldn't hang around in here."),
   ],
   location: "Mom's room",
   image: {
@@ -1054,8 +1048,8 @@ export const momRoom: Scene = {
 export const emilyRoom: Scene = {
   id: "emily-room",
   story: [
-    narration("You enter Emily's room."),
-    thought("Everything is exactly where she left it."),
+    narration("You step into Emily's room."),
+    thought("Everything's right where she left it."),
   ],
   location: "Emily's room",
   image: {
@@ -1068,8 +1062,8 @@ export const emilyRoom: Scene = {
 export const attic: Scene = {
   id: "attic",
   story: [
-    narration("You climb up into the attic."),
-    thought("The air is stale up here."),
+    narration("You climb into the attic."),
+    thought("Stale air. And dust."),
   ],
   location: "Attic",
   image: {
@@ -1082,8 +1076,8 @@ export const attic: Scene = {
 export const basement: Scene = {
   id: "basement",
   story: [
-    narration("You head down into the basement."),
-    thought("It's darker down here than it should be."),
+    narration("You go down into the basement."),
+    thought("Darker down here than it ought to be."),
   ],
   location: "Basement",
   image: {
@@ -1096,8 +1090,8 @@ export const basement: Scene = {
 export const garage: Scene = {
   id: "garage",
   story: [
-    narration("You walk into the garage."),
-    thought("It smells like oil and old wood."),
+    narration("You step into the garage."),
+    thought("Oil and old wood."),
   ],
   location: "Garage",
   image: {
@@ -1118,8 +1112,8 @@ export const garage: Scene = {
 export const garageBench: Scene = {
   id: "garage-bench",
   story: [
-    narration("The workbench is covered in old tools and loose bolts."),
-    thought("A flashlight is sitting near the edge."),
+    narration("Old tools and loose bolts cover the bench."),
+    thought("Flashlight, right on the edge."),
   ],
   location: "Garage",
   image: {
@@ -1128,7 +1122,7 @@ export const garageBench: Scene = {
   },
   choices: [
     {
-      label: "Pick up flashlight",
+      label: "Pick up the flashlight",
       action: "pickUpGarageFlashlight",
       nextScene: "garage-bench-empty",
       timeCost: 0,
@@ -1146,7 +1140,7 @@ export const garageBench: Scene = {
 export const garageBenchEmpty: Scene = {
   id: "garage-bench-empty",
   story: [
-    narration("The workbench is still cluttered, but the flashlight is gone."),
+    narration("The bench is still a mess. The flashlight is gone."),
   ],
   location: "Garage",
   image: {
@@ -1174,8 +1168,8 @@ export const garageBenchEmpty: Scene = {
 export const needleAndGroove: Scene = {
   id: "needle-and-groove",
   story: [
-    narration("You make your way to Needle & Groove."),
-    thought("The record store is just down the street."),
+    narration("You reach Needle & Groove."),
+    thought("Johnny's probably got something loud on."),
   ],
   location: "Needle & Groove",
   image: {
@@ -1201,7 +1195,7 @@ export const needleAndGrooveInside: Scene = {
   id: "needle-and-groove-inside",
   story: [
     narration("You step inside Needle & Groove."),
-    thought("The smell of old records fills the shop."),
+    thought("Old cardboard and vinyl. I could stay in here."),
   ],
   location: "Needle & Groove",
   image: {
@@ -1236,7 +1230,7 @@ export const needleAndGrooveInside: Scene = {
       timeCost: 0,
     },
     {
-      label: "Enter the backroom",
+      label: "Enter the back room",
       action: "enterNeedleAndGrooveBackroom",
       nextScene: "needle-and-groove-backroom",
       timeCost: 1,
@@ -1254,8 +1248,8 @@ export const needleAndGrooveInside: Scene = {
 export const needleAndGrooveBackroom: Scene = {
   id: "needle-and-groove-backroom",
   story: [
-    narration("You step into the backroom."),
-    thought("Boxes of records are stacked against the walls."),
+    narration("You step into the back room."),
+    thought("Boxes of records, stacked to the wall."),
   ],
   location: "Needle & Groove",
   image: {
@@ -1284,31 +1278,31 @@ export const needleAndGrooveBackroom: Scene = {
 // ----------------------------------------
 
 export const rayConversation: Conversation = {
-  opening: [npc("Ray", "Afternoon. Need fuel, snacks, or a little advice?")],
+  opening: [npc("Ray", "Afternoon. Gas, snacks, or you just looking?")],
   choices: [
     {
-      label: "I'm looking for work.",
+      label: "None of that. I need work.",
       requiresNoJob: true,
       requiresJobQuestTarget: "gas-station",
       jobOffer: "gas-station",
       response: [
-        ethan("I'm looking for work."),
+        ethan("None of that. I'm looking for work."),
         npc(
           "Ray",
-          "I could use reliable help. You're hired—and anything from the shop is half price while you're with us.",
+          "I can use somebody reliable. You're hired. Anything in the shop is half price while you work here.",
         ),
       ],
     },
     {
-      label: "Just looking around.",
+      label: "Just looking.",
       response: [
-        ethan("Just looking around."),
-        npc("Ray", "No rush. Let me know if you need anything."),
+        ethan("Just looking."),
+        npc("Ray", "Look all you want. Holler if you need something."),
       ],
     },
     {
-      label: "Never mind.",
-      response: [ethan("Never mind."), npc("Ray", "Take care.")],
+      label: "Nothing today.",
+      response: [ethan("Nothing today."), npc("Ray", "Drive safe.")],
       endsConversation: true,
     },
   ],
@@ -1318,8 +1312,8 @@ export const gasStation: Scene = {
   id: "gas-station",
 
   story: [
-    narration("You make your way to the gas station."),
-    thought("The place looks quiet."),
+    narration("You reach the gas station."),
+    thought("Quiet out here. For now."),
   ],
 
   location: "Gas Station",
@@ -1350,8 +1344,8 @@ export const gasStationInside: Scene = {
 
   story: [
     narration("You step inside the gas station."),
-    thought("Ray is here", { from: 540, until: 1380 }),
-    thought("It's quiet in here.", { from: 540 }),
+    thought("Ray's behind the counter.", { from: 540, until: 1380 }),
+    thought("Nobody in here but the cooler.", { from: 540 }),
   ],
 
   location: "Gas Station Inside",
@@ -1408,37 +1402,37 @@ export const tommyConversation: Conversation = {
   opening: [
     npc(
       "Tommy",
-      "Ethan! Give me a second to turn this down. This solo deserves better than these speakers.",
+      "Ethan! Hang on, I'll turn this down. That solo's wasted on these speakers.",
     ),
   ],
   choices: [
     {
       label: "Still playing guitar?",
       response: [
-        ethan("Still playing guitar, or just deafening everyone at work?"),
+        ethan("Still playing guitar, or just deafening everybody at work?"),
         npc(
           "Tommy",
-          "Both. Got a new metal riff that'll wake the whole street. Come over sometime and I'll play it for you.",
+          "Both. Got a new metal riff that'll wake the whole street. Come by sometime. I'll play it.",
         ),
       ],
     },
     {
-      label: "When do you get off work?",
+      label: "Hell of a solo. When are you off?",
       response: [
-        ethan("When do you get off work?"),
+        ethan("Hell of a solo. When do you get off?"),
         npc(
           "Tommy",
-          "I'm here from 08:00 to 17:00. Nine hours of engines, grease, and complaints about my music.",
+          "Eight in the morning till five. Nine hours of engines, grease, and people yelling about the music.",
         ),
       ],
     },
     {
-      label: "Things have been rough lately.",
+      label: "Rough week. I might need help.",
       response: [
-        ethan("Things have been rough lately. I might need your help."),
+        ethan("Turn it down a second. Things have been rough. I might need your help."),
         npc(
           "Tommy",
-          "Hey, I'm listening. Whatever it is, you don't have to face it alone. Call me and I'll be there.",
+          "Hey. Whatever it is, you don't face it alone. Call me. I'll come.",
         ),
         ethan("Thanks, man. That means a lot."),
       ],
@@ -1449,12 +1443,12 @@ export const tommyConversation: Conversation = {
         ethan("I'll let you get back to work."),
         npc(
           "Tommy",
-          "Yeah, this engine won't fix itself. Catch you later, brother.",
+          "Yeah. This engine won't fix itself. Later, man.",
         ),
       ],
     },
     {
-      label: "Exit Conversation",
+      label: "Exit conversation",
       response: [],
       endsConversation: true,
     },
@@ -1464,16 +1458,12 @@ export const tommyConversation: Conversation = {
 export const gasStationGarage: Scene = {
   id: "gas-station-garage",
   story: [
-    narration(
-      "You step into the gas station garage. The air smells of oil and rubber.",
-    ),
+    narration("You step into the station garage. Oil and hot rubber."),
     thought(
-      "Tommy's working, His leather jacket hangs beside the radio blasting metal.",
+      "Tommy's working. Leather jacket by the radio, metal blasting.",
       { from: 480, until: 1020 },
     ),
-    thought(
-      "Tommy's off work. It's strange hearing this place without his music.",
-    ),
+    thought("Tommy's off. Too quiet without that radio."),
   ],
   location: "Gas Station Garage",
   image: {
@@ -1519,52 +1509,52 @@ export const bigRoyConversation: Conversation = {
   opening: [
     npc(
       "Big Roy",
-      "Morning! Watch your step—this place bites, but only if you look tasty.",
+      "Morning. Watch your step. This place'll bite you if you let it.",
     ),
   ],
   choices: [
     {
-      label: "Busy day?",
+      label: "I'll watch it. Busy day?",
       response: [
-        ethan("Busy day?"),
+        ethan("I'll watch my step. Busy day?"),
         npc(
           "Big Roy",
-          "Always. Metal never takes a day off, and neither does my coffee cup.",
+          "Always. Scrap don't take days off. Neither does the coffee.",
         ),
       ],
     },
     {
-      label: "What do you do here?",
+      label: "I'll be careful. What do you do here?",
       response: [
-        ethan("What do you do here?"),
+        ethan("I'll be careful. What do you do here?"),
         npc(
           "Big Roy",
-          "I sort the good junk from the bad junk. The trick is knowing they're both somebody's treasure.",
+          "I sort the good junk from the bad. Trick is, both of 'em used to be somebody's.",
         ),
       ],
     },
     {
-      label: "I'm looking for work.",
+      label: "I'll watch it. I need work.",
       requiresNoJob: true,
       requiresJobQuestTarget: "scrapyard",
       jobOffer: "scrapyard",
       response: [
-        ethan("I'm looking for work."),
+        ethan("I'll watch my step. I'm looking for work."),
         npc(
           "Big Roy",
-          "Then grab this crowbar and welcome aboard! It'll open stubborn locks, and it's a fine argument in a pinch.",
+          "Then take this crowbar. You're hired. It'll pop a stubborn lock, and it's a weapon if it comes to that.",
         ),
       ],
     },
     {
-      label: "I'll let you get back to it.",
+      label: "Got it. I'll leave you to it.",
       response: [
-        ethan("I'll let you get back to it."),
-        npc("Big Roy", "Much appreciated, kid. Stay shiny out there!"),
+        ethan("Got it. I'll let you get back to it."),
+        npc("Big Roy", "Appreciate it, kid. Keep your eyes open out there."),
       ],
     },
     {
-      label: "Exit Conversation",
+      label: "Exit conversation",
       response: [],
       endsConversation: true,
     },
@@ -1574,8 +1564,8 @@ export const bigRoyConversation: Conversation = {
 export const scrapyard: Scene = {
   id: "scrapyard",
   story: [
-    narration("You arrive at the scrapyard on the edge of town."),
-    thought("The piles of rusted metal seem to go on forever."),
+    narration("You reach the scrapyard at the edge of town."),
+    thought("Rusted metal, piled up out of sight."),
   ],
   location: "Scrapyard",
   image: {
@@ -1595,12 +1585,12 @@ export const scrapyard: Scene = {
 export const scrapyardInside: Scene = {
   id: "scrapyard-inside",
   story: [
-    narration("You step between the wrecked cars and twisted sheets of metal."),
-    thought("Big Roy is sorting through a stack of old parts.", {
+    narration("You pick through wrecked cars and twisted sheet metal."),
+    thought("Big Roy's sorting a stack of old parts.", {
       from: 420,
       until: 900,
     }),
-    thought("Every sound carries farther than it should."),
+    thought("Every sound carries too far out here."),
   ],
   location: "Scrapyard",
   image: {
@@ -1641,8 +1631,8 @@ export const scrapyardInside: Scene = {
 export const scrapyardDesk: Scene = {
   id: "scrapyard-desk",
   story: [
-    narration("An old desk sits beneath a cracked window."),
-    thought("Someone left a knife here."),
+    narration("An old desk sits under a cracked window."),
+    thought("Somebody left a knife here."),
   ],
   location: "Scrapyard",
   image: {
@@ -1668,7 +1658,7 @@ export const scrapyardDesk: Scene = {
 
 export const scrapyardDeskEmpty: Scene = {
   id: "scrapyard-desk-empty",
-  story: [narration("The desk is bare now.")],
+  story: [narration("The desk is bare.")],
   location: "Scrapyard",
   image: {
     day: "./images/locations/scrapyard/scrapyardDesk.png",
@@ -1691,8 +1681,8 @@ export const scrapyardDeskEmpty: Scene = {
 export const policeStation: Scene = {
   id: "police-station",
   story: [
-    narration("You arrive at the police station."),
-    thought("There are a few cars parked outside."),
+    narration("You reach the police station."),
+    thought("A few cars out front. Nobody in a hurry."),
   ],
   location: "Police Station",
   image: {
@@ -1720,7 +1710,7 @@ export const policeStationInside: Scene = {
   id: "police-station-inside",
   story: [
     narration("You step inside the police station."),
-    thought("The station is quieter than you expected."),
+    thought("Quieter than I figured a station would be."),
   ],
   location: "Police Station Inside",
   image: {
@@ -1748,9 +1738,9 @@ export const sheriffOffice: Scene = {
 
   story: [
     narration("You step into the sheriff's office."),
-    thought("The Sheriff is here.", { from: 460, until: 960 }),
-    thought("No one is here at the moment.", { from: 960, until: 1080 }),
-    thought("I shouldn't be here this late.", { from: 1080 }),
+    thought("Sheriff's in.", { from: 460, until: 960 }),
+    thought("Nobody in. Just a desk full of paper.", { from: 960, until: 1080 }),
+    thought("I shouldn't be in here this late.", { from: 1080 }),
   ],
 
   location: "Sheriff's office",
@@ -1803,8 +1793,8 @@ export const sheriffOffice: Scene = {
 export const cementary: Scene = {
   id: "cementary",
   story: [
-    narration("You arrive at the cemetery."),
-    thought("The gate creaks softly in the wind."),
+    narration("You reach the cemetery."),
+    thought("That gate's complaining in the wind."),
   ],
   location: "Cementary",
   image: {
@@ -1835,8 +1825,8 @@ export const cementary: Scene = {
 export const cementaryInside: Scene = {
   id: "cementary-inside",
   story: [
-    narration("You walk between the old headstones."),
-    thought("It is quieter here than anywhere else in town."),
+    narration("You walk the rows of old headstones."),
+    thought("Quieter here than anywhere in town."),
   ],
   location: "Cementary",
   image: {
@@ -1862,8 +1852,8 @@ export const cementaryInside: Scene = {
 export const cementaryBackside: Scene = {
   id: "cementary-backside",
   story: [
-    narration("You reach the back of the cemetery."),
-    thought("Something about this place makes you uneasy."),
+    narration("You come around the back of the cemetery."),
+    thought("I don't like it back here."),
   ],
   location: "Cementary",
   image: {
@@ -1893,8 +1883,8 @@ export const cementaryBackside: Scene = {
 export const hospital: Scene = {
   id: "hospital",
   story: [
-    narration("You arrive at the hospital."),
-    thought("The building is quiet."),
+    narration("You reach the hospital."),
+    thought("Too quiet for a hospital."),
   ],
   location: "Hospital",
   image: {
@@ -1915,7 +1905,7 @@ export const hospitalReception: Scene = {
   id: "hospital-reception",
   story: [
     narration("You step inside the hospital."),
-    thought("The smell of disinfectant hangs in the air."),
+    thought("Disinfectant. Same smell as always."),
   ],
   location: "Hospital",
   image: {
@@ -1965,19 +1955,19 @@ export const hospitalReception: Scene = {
 
 export const earlConversation: Conversation = {
   opening: [
-    npc("Earl", "Yeah? You need a room, or are you just blocking my counter?"),
+    npc("Earl", "You need a room, or are you just in my way?"),
   ],
   choices: [
     {
-      label: "Just looking around.",
+      label: "Just looking.",
       response: [
-        ethan("Just looking around."),
-        npc("Earl", "Then look with your feet. I've got work to do."),
+        ethan("Just looking."),
+        npc("Earl", "Then look somewhere else. I've got work."),
       ],
     },
     {
-      label: "Nevermind.",
-      response: [ethan("Nevermind."), npc("Earl", "That's what I thought.")],
+      label: "No room. I'll move.",
+      response: [ethan("No room. I'll get out of your way."), npc("Earl", "That's what I thought.")],
       endsConversation: true,
     },
   ],
@@ -1987,7 +1977,7 @@ export const hospitalElevator: Scene = {
   id: "hospital-elevator",
   story: [
     narration("You wait by the hospital elevator."),
-    thought("The doors stand quietly at the end of the corridor."),
+    thought("Doors at the end of the hall. Not moving."),
   ],
   location: "Hospital",
   image: {
@@ -2014,7 +2004,7 @@ export const hospitalRoom312: Scene = {
   id: "hospital-room-312",
   story: [
     narration("You step into Room 312."),
-    thought("The room is still and quiet."),
+    thought("Still. Too still."),
   ],
   location: "Hospital",
   image: {
@@ -2034,8 +2024,8 @@ export const hospitalRoom312: Scene = {
 export const busStop: Scene = {
   id: "bus-stop",
   story: [
-    narration("You wait at the bus stop, watching the road for headlights."),
-    thought("The next bus should be here soon."),
+    narration("You wait at the stop, watching the road for headlights."),
+    thought("Bus ought to be along."),
   ],
   location: "Bus Stop",
   image: {
@@ -2054,7 +2044,7 @@ export const busStop: Scene = {
 
 export const ethanRoomDeskEmpty: Scene = {
   id: "ethan-room-desk-empty",
-  story: [narration("You pick up the pack of cigarettes from your desk.")],
+  story: [narration("The desk is clear where the cigarettes were.")],
   location: "Ethan's room",
   image: {
     day: "./images/locations/home/ethanDeskEmptyDay.png",
@@ -2077,8 +2067,8 @@ export const ethanRoomDeskEmpty: Scene = {
 export const motel: Scene = {
   id: "motel",
   story: [
-    narration("You arrive at the roadside motel."),
-    thought("The vacancy sign flickers above the office."),
+    narration("You reach the motel off the road."),
+    thought("The vacancy sign won't stay lit."),
   ],
   location: "Motel",
   image: {
@@ -2101,9 +2091,9 @@ export const motel: Scene = {
 export const motelInside: Scene = {
   id: "motel-inside",
   story: [
-    narration("You step into the motel reception."),
-    thought("Earl is working the front desk.", { from: 480, until: 1020 }),
-    thought("The front desk is unattended."),
+    narration("You step into the motel office."),
+    thought("Earl's on the desk.", { from: 480, until: 1020 }),
+    thought("Nobody on the desk."),
   ],
   location: "Motel",
   image: {
@@ -2145,7 +2135,7 @@ export const motelRoom203: Scene = {
   id: "motel-room-203",
   story: [
     narration("You step into Room 203."),
-    thought("For the moment, it is quiet."),
+    thought("Quiet. For now."),
   ],
   location: "Motel",
   image: {
@@ -2169,8 +2159,8 @@ export const motelRoom203: Scene = {
 export const diner: Scene = {
   id: "diner",
   story: [
-    narration("You arrive at the diner. The neon sign hums above the door."),
-    thought("A warm meal sounds good right now."),
+    narration("You reach the diner. Neon hums over the door."),
+    thought("I could eat."),
   ],
   location: "Diner",
   image: {
@@ -2190,11 +2180,9 @@ export const diner: Scene = {
 export const dinerInside: Scene = {
   id: "diner-inside",
   story: [
-    narration(
-      "You step into the diner. The air smells of coffee and fried food.",
-    ),
-    thought("Margaret is working the floor.", { from: 660, until: 900 }),
-    thought("The diner is quiet at this hour."),
+    narration("You step into the diner. Coffee and fried food."),
+    thought("Margaret's working the floor.", { from: 660, until: 900 }),
+    thought("Dead in here, this hour."),
   ],
   location: "Diner",
   image: {
@@ -2233,10 +2221,8 @@ export const dinerInside: Scene = {
 export const sanatorium: Scene = {
   id: "sanatorium",
   story: [
-    narration(
-      "You arrive at the sanatorium. The building looms ahead, its windows silent.",
-    ),
-    thought("Something about this place makes me hesitate."),
+    narration("You reach the sanatorium. The building sits there, windows dark."),
+    thought("I don't want to go in."),
   ],
   location: "Sanatorium",
   image: {
@@ -2256,8 +2242,8 @@ export const sanatorium: Scene = {
 export const sanatoriumEntrance: Scene = {
   id: "sanatorium-entrance",
   story: [
-    narration("You stop in front of the sanatorium entrance."),
-    thought("I could still turn back."),
+    narration("You stop at the sanatorium entrance."),
+    thought("I could still turn around."),
   ],
   location: "Sanatorium",
   image: {
@@ -2283,10 +2269,8 @@ export const sanatoriumEntrance: Scene = {
 export const sanatoriumMainFloor: Scene = {
   id: "sanatorium-main-floor",
   story: [
-    narration(
-      "You step onto the main floor. Your footsteps echo through the sanatorium.",
-    ),
-    thought("Every sound seems louder in here."),
+    narration("You step onto the main floor. Your footsteps come back at you."),
+    thought("Everything's louder in here."),
   ],
   location: "Sanatorium",
   image: {
@@ -2312,8 +2296,8 @@ export const sanatoriumMainFloor: Scene = {
 export const sanatoriumHallway: Scene = {
   id: "sanatorium-hallway",
   story: [
-    narration("You walk along the hallway, pausing beside the room doors."),
-    thought("Do I really want to see what's behind them?"),
+    narration("You walk the hall and stop by the doors."),
+    thought("Do I really want what's behind these?"),
   ],
   location: "Sanatorium",
   image: {
@@ -2340,7 +2324,7 @@ export const sanatoriumHallway: Scene = {
       timeCost: 1,
     },
     {
-      label: "Back to main floor",
+      label: "Back to the main floor",
       action: "returnToSanatoriumMainFloor",
       nextScene: "sanatorium-main-floor",
       timeCost: 1,
@@ -2351,8 +2335,8 @@ export const sanatoriumHallway: Scene = {
 export const sanatoriumRoom1: Scene = {
   id: "sanatorium-room-1",
   story: [
-    narration("You ease open the first door and step into the room."),
-    thought("I wonder who stayed here."),
+    narration("You ease the first door open and step in."),
+    thought("Who stayed in here? I'd rather not know."),
   ],
   location: "Sanatorium",
   image: {
@@ -2372,10 +2356,8 @@ export const sanatoriumRoom1: Scene = {
 export const sanatoriumRoom2: Scene = {
   id: "sanatorium-room-2",
   story: [
-    narration(
-      "You enter the second room, listening for any movement beyond the doorway.",
-    ),
-    thought("Just my own footsteps. I think."),
+    narration("You step into the second room and listen past the door."),
+    thought("Just my footsteps. I think."),
   ],
   location: "Sanatorium",
   image: {

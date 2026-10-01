@@ -53,7 +53,7 @@ const hotspotLabels: Record<string, string> = {
   goEmilyRoom: "Emily's room",
   pickUpCigarettes: "Cigarettes",
   goLivingRoom: "Living room",
-  talkToMom: "Talk to mom",
+  talkToMom: "Talk to Mom",
   watchTv: "Watch TV",
   relaxOnCouch: "Relax on the couch",
   goKitchen: "Kitchen",
@@ -69,7 +69,7 @@ const hotspotLabels: Record<string, string> = {
   talkToRay: "Ray",
   enterNeedleAndGroove: "Enter shop",
   talkToJohnny: "Johnny",
-  enterNeedleAndGrooveBackroom: "Backroom",
+  enterNeedleAndGrooveBackroom: "Back room",
   enterPoliceStation: "Enter station",
   leavePoliceStation: "Go outside",
   enterHospital: "Enter hospital",
@@ -147,9 +147,9 @@ function hotspotKind(action: string) {
 const OPENING_THOUGHTS = [
   "I hardly slept last night.",
   "What the fuck happened?",
-  "Who was that in the body bag?",
-  "And who the fuck was the hooded guy I saw near the forest?",
-  "I need to talk to Mom. Maybe she knows something.",
+  "Who was in that body bag?",
+  "And who the fuck was that hooded guy near the forest?",
+  "I gotta talk to Mom. Maybe she knows.",
 ];
 const OPENING_THOUGHT_BASE_MS = 1500;
 const OPENING_THOUGHT_PER_CHARACTER_MS = 45;
@@ -285,7 +285,7 @@ export default function Home() {
       window.clearTimeout(openingThoughtTimer.current);
     }
     setTvNewsLine(
-      "News anchor: The small town of Harlow is in shock after police found an elderly woman murdered in her own home. The investigation is ongoing, and no suspect has been identified so far.",
+      "An elderly woman was found murdered in her home here in Harlow. Police say the investigation is ongoing. No suspect has been identified.",
     );
     openingThoughtTimer.current = window.setTimeout(() => {
       setTvNewsLine(null);
@@ -562,7 +562,7 @@ export default function Home() {
   const bottomThought =
     lateNightActionThought ??
     (showLateNightThought && isLateNight
-      ? "It's 3 AM. I'm very tired and should head home."
+      ? "Middle of the night. I'm beat. I should get home."
       : null);
   const actionList = (
     <ActionList
@@ -815,7 +815,7 @@ export default function Home() {
               className="opening-thought"
               speaker="Ethan"
               caption="Inner thought"
-              text="I love playing rock music on this thing. Mom got it for me for Christmas last year."
+              text="I love this thing. Mom got it for me last Christmas."
             />
           )}
           {openingThoughtIndex !== null ? (

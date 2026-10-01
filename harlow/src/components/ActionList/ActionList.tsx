@@ -81,7 +81,7 @@ export default function ActionList({
           <>
             <ActionButton label="Walk" onClick={onWalk} />
             <ActionButton
-              label="Go to bus stop"
+              label="Go to the bus stop"
               onClick={onGoToBusStop}
             />
           </>
