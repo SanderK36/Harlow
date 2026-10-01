@@ -45,14 +45,14 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  :global(.scene-image-frame:not(.scene-image-frame-has-conversation):has(> .scene-hotspot:hover)) > .overlayActionList:not(:has(:focus-visible)) {
+  :global(.scene-image-frame:not(.scene-image-frame-has-conversation):has(> .scene-art > .scene-hotspot:hover)) > .overlayActionList:not(:has(:focus-visible)) {
     opacity: 0;
     transform: translateY(24px);
     visibility: hidden;
     transition: opacity 240ms ease, transform 280ms ease, visibility 0s 280ms;
   }
 
-  :global(.scene-image-frame:not(.scene-image-frame-has-conversation):has(> .scene-hotspot:hover)) > .overlayActionList:not(:has(:focus-visible)) * {
+  :global(.scene-image-frame:not(.scene-image-frame-has-conversation):has(> .scene-art > .scene-hotspot:hover)) > .overlayActionList:not(:has(:focus-visible)) * {
     pointer-events: none;
   }
 }
@@ -61,6 +61,20 @@
   .overlayActionList {
     transition: none !important;
     transform: none !important;
+  }
+}
+
+/* Phones: scene actions sit below the art (see .scene-image-frame in
+   globals.css) instead of over its lower half. */
+@media (max-width: 640px) {
+  :global(.scene-image-frame) > .overlayActionList {
+    position: relative;
+    inset: auto;
+    order: 3;
+    max-height: none;
+    padding: 4px 0 0;
+    overflow: visible;
+    background: none;
   }
 }
 

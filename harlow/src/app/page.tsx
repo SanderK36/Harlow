@@ -11,6 +11,7 @@ import StatsWindow from "@/components/StatsWindow/StatsWindow";
 import StoryLog from "@/components/StoryLog/StoryLog";
 import CharacterLine from "@/components/CharacterLine/CharacterLine";
 import DialogueScene from "@/components/DialogueScene/DialogueScene";
+import ThoughtPanel from "@/components/ThoughtPanel/ThoughtPanel";
 import TravelOverlay from "@/components/TravelOverlay/TravelOverlay";
 import TravelWindow from "@/components/TravelWindow/TravelWindow";
 import InventoryWindow from "@/components/InventoryWindow/InventoryWindow";
@@ -289,17 +290,30 @@ export default function Home() {
     });
   }
 
+  const hasConversationOverlay = conversation.length > 0;
+
   // Character art has priority, then weather-specific art, then day/night art.
   const momInKitchen = currentScene.id === "kitchen" && gameState.time >= 450 && gameState.time < 540;
+  // The scene as it looks without anyone painted into it.
+  const emptySceneImage =
+    currentScene.image.weather?.[gameState.weather] ??
+    (isNightTime(gameState.time)
+      ? currentScene.image.night
+      : currentScene.image.day);
   const sceneImage = momInKitchen
     ? "./images/locations/home/momMorningKitchen.png"
     : (isNightTime(gameState.time) && activeCharacter?.nightImage
       ? activeCharacter.nightImage
       : activeCharacter?.image) ??
-    currentScene.image.weather?.[gameState.weather] ??
-    (isNightTime(gameState.time)
-      ? currentScene.image.night
-      : currentScene.image.day);
+    emptySceneImage;
+  // In a conversation the speaker stands in front as a portrait, so the scene
+  // behind swaps to its empty variant rather than showing them twice. It is
+  // layered over the character art (which keeps sizing the frame) and simply
+  // isn't shown when a scene has no separate empty art.
+  const conversationBackdrop =
+    hasConversationOverlay && emptySceneImage && emptySceneImage !== sceneImage
+      ? emptySceneImage
+      : null;
   const hotspotActions =
     sanatoriumHotspotActions[currentScene.id] ?? (
     currentScene.id === "living-room"
@@ -379,7 +393,6 @@ export default function Home() {
       "response" in choice ||
       (!hotspotActions.includes(choice.action) && !choice.hotspots?.length)
   );
-  const hasConversationOverlay = conversation.length > 0;
   const bottomThought = lateNightActionThought ?? (
     showLateNightThought && isLateNight
       ? "It's 3 AM. I'm very tired and should head home."
@@ -510,44 +523,93 @@ export default function Home() {
         />
 
         <div className={`scene-image-frame scene-image-frame-${currentScene.id}${hasConversationOverlay ? " scene-image-frame-has-conversation" : ""}${conversationActive ? " scene-image-frame-conversation-active" : ""}`}>
-          {/* A soft, blurred spill of the art fills any space around the frame. */}
-          <div
-            className="scene-ambient"
-            aria-hidden="true"
-            style={{ backgroundImage: `url("${sceneImage}")` }}
-          />
-          <img
-            src={sceneImage}
-            alt=""
-            className={`scene-image${sceneImageEntering ? " scene-image-enter" : ""}`}
-            onLoad={replaySceneImageEnter}
-          />
+          {/* The picture and its hotspots share one box, so percentage hotspot
+              positions always map onto the art, wherever the panels sit. */}
+          <div className="scene-art">
+            {/* A soft, blurred spill of the art fills any space around the frame. */}
+            <div
+              className="scene-ambient"
+              aria-hidden="true"
+              style={{ backgroundImage: `url("${conversationActive && conversationBackdrop ? conversationBackdrop : sceneImage}")` }}
+            />
+            <img
+              src={sceneImage}
+              alt=""
+              className={`scene-image${sceneImageEntering ? " scene-image-enter" : ""}`}
+              onLoad={replaySceneImageEnter}
+            />
+            {conversationBackdrop && (
+              <img
+                src={conversationBackdrop}
+                alt=""
+                aria-hidden="true"
+                className={`scene-image scene-image-backdrop${conversationActive ? " scene-image-backdrop-active" : ""}`}
+              />
+            )}
+            {/* Dims everything but the hotspot under the pointer or focus. */}
+            <div className="scene-spotlight" aria-hidden="true">
+              <div className="scene-spotlight-hole" />
+            </div>
+            {!(showOpeningThought || showVinylThought || tvNewsLine !== null) && sceneHotspots.flatMap((sceneHotspot) =>
+              (sceneHotspot.hotspots ?? [undefined]).map((region, index) => (
+              <SceneHotspot
+                key={`${sceneHotspot.action}-${index}`}
+                type="button"
+                className={`scene-hotspot scene-hotspot-${sceneHotspot.action} scene-hotspot-${currentScene.id}-${sceneHotspot.action}`}
+                style={region ? {
+                  left: `${region.left}%`,
+                  top: `${region.top}%`,
+                  width: `${region.width}%`,
+                  height: `${region.height}%`,
+                } : undefined}
+                aria-label={hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label}
+                label={hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label}
+                onClick={() => {
+                  if (sceneHotspot.action === "watchTv") {
+                    showTvNews();
+                    return;
+                  }
+
+                  if (sceneHotspot.action === "playVinyl") {
+                    showVinylPlayerThought();
+                  }
+                  handleChoice(sceneHotspot);
+                }}
+              />
+              ))
+            )}
+          </div>
           <div className="scene-info-stack">
             <div className="scene-info-panel">
-              {currentThought && (
-                <CharacterLine
-                  key={currentThought}
-                  text={currentThought}
-                  variant="inline"
-                  effect={
-                    currentEffects[0]?.type === "effect"
-                      ? {
-                          stat: currentEffects[0].stat,
-                          amount: currentEffects[0].amount,
-                        }
-                      : undefined
-                  }
+              {/* Narration first: a caption at the top-left of the art. */}
+              <div className="scene-caption-narration">
+                <StoryLog
+                  entries={currentScene.story.filter(
+                    (entry) => entry.type !== "thought"
+                  )}
+                  title="Scene"
+                  variant="narration"
+                  layout="combined"
                 />
+              </div>
+              {/* Ethan's thought: a quieter aside at the top-right. */}
+              {currentThought && (
+                <div className="scene-caption-thought">
+                  <CharacterLine
+                    key={currentThought}
+                    text={currentThought}
+                    variant="inline"
+                    effect={
+                      currentEffects[0]?.type === "effect"
+                        ? {
+                            stat: currentEffects[0].stat,
+                            amount: currentEffects[0].amount,
+                          }
+                        : undefined
+                    }
+                  />
+                </div>
               )}
-
-              <StoryLog
-                entries={currentScene.story.filter(
-                  (entry) => entry.type !== "thought"
-                )}
-                title="Scene"
-                variant="narration"
-                layout="combined"
-              />
             </div>
             {questNotification && (
               <div className={`quest-notification${questNotificationExiting ? " quest-notification-exiting" : ""}`} role="status">
@@ -557,54 +619,32 @@ export default function Home() {
             )}
           </div>
           {bottomThought && (
-            <div className="opening-thought late-night-thought" role="status">
-              <span>ETHAN — INNER THOUGHT</span>
-              <p>{bottomThought}</p>
-            </div>
+            <ThoughtPanel
+              className="opening-thought late-night-thought"
+              speaker="Ethan"
+              caption="Inner thought"
+              text={bottomThought}
+            />
           )}
           {showVinylThought && !bottomThought && (
-            <div className="opening-thought" role="status">
-              <span>ETHAN — INNER THOUGHT</span>
-              <p>I love playing rock music on this thing. Mom got it for me for Christmas last year.</p>
-            </div>
+            <ThoughtPanel
+              className="opening-thought"
+              speaker="Ethan"
+              caption="Inner thought"
+              text="I love playing rock music on this thing. Mom got it for me for Christmas last year."
+            />
           )}
           {(showOpeningThought || tvNewsLine !== null) && (
-            <div className="opening-thought" role="status">
-              <span>{showOpeningThought ? "ETHAN — INNER THOUGHT" : "TV NEWS"}</span>
-              <p>{showOpeningThought
+            <ThoughtPanel
+              className="opening-thought"
+              speaker={showOpeningThought ? "Ethan" : "TV news"}
+              caption={showOpeningThought ? "Inner thought" : "Local broadcast"}
+              kind={showOpeningThought ? "thought" : "news"}
+              text={showOpeningThought
                 ? "What the fuck happened last night? I gotta talk to mom, maybe she knows something."
-                : tvNewsLine}</p>
-            </div>
-          )}
-          {!(showOpeningThought || showVinylThought || tvNewsLine !== null) && sceneHotspots.flatMap((sceneHotspot) =>
-            (sceneHotspot.hotspots ?? [undefined]).map((region, index) => (
-            <SceneHotspot
-              key={`${sceneHotspot.action}-${index}`}
-              type="button"
-              className={`scene-hotspot scene-hotspot-${sceneHotspot.action} scene-hotspot-${currentScene.id}-${sceneHotspot.action}`}
-              style={region ? {
-                left: `${region.left}%`,
-                top: `${region.top}%`,
-                width: `${region.width}%`,
-                height: `${region.height}%`,
-              } : undefined}
-              aria-label={hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label}
-              label={hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label}
-              onClick={() => {
-                if (sceneHotspot.action === "watchTv") {
-                  showTvNews();
-                  return;
-                }
-
-                if (sceneHotspot.action === "playVinyl") {
-                  showVinylPlayerThought();
-                }
-                handleChoice(sceneHotspot);
-              }}
+                : tvNewsLine ?? ""}
             />
-            ))
           )}
-
           {hasConversationOverlay && (
             <div
               className={`conversation-overlay${conversationActive ? " conversation-overlay-active" : ""}`}
