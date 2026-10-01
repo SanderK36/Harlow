@@ -146,10 +146,10 @@ function hotspotKind(action: string) {
 // panel; the "Talk to Mom" quest starts after the last one.
 const OPENING_THOUGHTS = [
   "I hardly slept last night.",
-  "What the fuck happened?",
-  "Who was in that body bag?",
-  "And who the fuck was that hooded guy near the forest?",
-  "I gotta talk to Mom. Maybe she knows.",
+  "Mrs. Elrod. Somebody actually killed her.",
+  "And that guy in the hood at the end of the street, by the woods... he was looking right at me.",
+  "Walter looked scared. Walter doesn't get scared.",
+  "I should check on Mom.",
 ];
 const OPENING_THOUGHT_BASE_MS = 1500;
 const OPENING_THOUGHT_PER_CHARACTER_MS = 45;
@@ -285,7 +285,7 @@ export default function Home() {
       window.clearTimeout(openingThoughtTimer.current);
     }
     setTvNewsLine(
-      "An elderly woman was found murdered in her home here in Harlow. Police say the investigation is ongoing. No suspect has been identified.",
+      "An elderly woman was found murdered in her home here in Harlow last night. Police say the investigation is ongoing. No suspect has been identified.",
     );
     openingThoughtTimer.current = window.setTimeout(() => {
       setTvNewsLine(null);

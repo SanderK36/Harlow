@@ -267,7 +267,7 @@ export function useGame() {
   }
 
   function notifyMomQuest() {
-    showQuestNotification("Talk to Mom. Maybe she knows what happened last night.", "New quest");
+    showQuestNotification("Mom should be in the kitchen. She'll have heard about Mrs. Elrod by now.", "New quest");
   }
 
   function applyChoiceEffects(choice: Choice) {
@@ -732,6 +732,8 @@ export function useGame() {
           (!choice.requiresJob || choice.requiresJob === job) &&
           (!choice.requiresJobQuestTarget || choice.requiresJobQuestTarget === jobQuestTarget) &&
           (!choice.requiresStoryFlag || (choice.requiresStoryFlag === "momJobConcern" && momJobConcernHeard)) &&
+          (!choice.requiresChoice || usedConversationChoices.includes(choice.requiresChoice)) &&
+          (!choice.excludesChoice || !usedConversationChoices.includes(choice.excludesChoice)) &&
           (choice.endsConversation || !usedConversationChoices.includes(choice.label))
       )
     : currentScene.choices.filter(isChoiceAvailable);
