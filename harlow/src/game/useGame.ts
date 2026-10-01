@@ -100,6 +100,8 @@ export function useGame() {
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   const [usedConversationChoices, setUsedConversationChoices] = useState<string[]>([]);
   const [replyPending, setReplyPending] = useState(false);
+  // A closing choice was picked: its reply plays, then the next click closes.
+  const [conversationEnding, setConversationEnding] = useState(false);
   const replyTimer = useRef<number | null>(null);
   const questNotificationTimer = useRef<number | null>(null);
   const locationDiscoveryTimer = useRef<number | null>(null);
@@ -247,6 +249,7 @@ export function useGame() {
     }
 
     setActiveConversation(selectedConversation ?? null);
+    setConversationEnding(false);
     setUsedConversationChoices([]);
     setConversation(opening);
     setConversationActive(true);
@@ -254,6 +257,7 @@ export function useGame() {
 
   function closeConversation() {
     setConversationActive(false);
+    setConversationEnding(false);
     window.setTimeout(() => {
       setConversation([]);
       setActiveConversation(null);
@@ -367,7 +371,10 @@ export function useGame() {
     }
 
     if (choice.endsConversation) {
-      closeConversation();
+      // Let the reply be read first; DialogueScene closes on the next click.
+      // A closing choice with nothing to say ("Exit conversation") closes now.
+      if (choice.response.length === 0) closeConversation();
+      else setConversationEnding(true);
       return;
     }
 
@@ -725,7 +732,7 @@ export function useGame() {
     );
   });
 
-  const activeChoices = replyPending ? [] : conversationActive
+  const activeChoices = replyPending || conversationEnding ? [] : conversationActive
     ? (activeConversation?.choices ?? []).filter(
         (choice) =>
           (!choice.requiresNoJob || !job) &&
@@ -772,6 +779,7 @@ export function useGame() {
     dismissNewDayAnnouncement: () => setNewDayAnnouncement(null),
     conversation,
     conversationActive,
+    finishConversation: conversationEnding ? closeConversation : undefined,
     activeCharacter,
     activeChoices,
     travelingTo,

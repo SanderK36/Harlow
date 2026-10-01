@@ -25,6 +25,9 @@ type DialogueSceneProps = {
   active: boolean;
   /** Reply buttons; only shown once the latest line has been read. */
   choices?: ReactNode;
+  /** Set while a closing reply plays: called once its last line has been
+   *  read and the player clicks on (or right after Ethan's own last line). */
+  onFinish?: () => void;
 };
 
 // Ethan's own (already chosen) line steps aside on its own for the NPC reply.
@@ -62,6 +65,7 @@ export default function DialogueScene({
   entries,
   active,
   choices,
+  onFinish,
 }: DialogueSceneProps) {
   const lines = toDialogueLines(entries);
   const reducedMotion = useReducedMotion();
@@ -97,6 +101,7 @@ export default function DialogueScene({
   const hasQueuedLines = lineIndex < lines.length - 1;
   const readyForChoices = active && lineComplete && !hasQueuedLines;
   const speakerIsEthan = isEthan(line?.speaker ?? null);
+  const canFinish = active && !!onFinish && lineComplete && !hasQueuedLines;
   const partner = lines.find((entry) => entry.speaker && !isEthan(entry.speaker))?.speaker ?? null;
 
   // Typewriter: reveal one character per tick.
@@ -120,6 +125,14 @@ export default function DialogueScene({
     return () => window.clearTimeout(timer);
   }, [active, hasQueuedLines, lineComplete, lineIndex, reducedMotion, speakerIsEthan]);
 
+  // A closing choice whose last line is Ethan's own leaves on its own, the
+  // same way his chosen lines step aside for a reply.
+  useEffect(() => {
+    if (!canFinish || !speakerIsEthan || !onFinish) return;
+    const timer = window.setTimeout(onFinish, reducedMotion ? 0 : ETHAN_AUTO_ADVANCE);
+    return () => window.clearTimeout(timer);
+  }, [canFinish, onFinish, reducedMotion, speakerIsEthan]);
+
   function advance() {
     if (!active) return;
     if (!lineComplete) {
@@ -129,7 +142,9 @@ export default function DialogueScene({
     if (hasQueuedLines) {
       setCursor(lineIndex + 1);
       setRevealed(0);
+      return;
     }
+    if (onFinish) onFinish();
   }
 
   const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
@@ -204,7 +219,7 @@ export default function DialogueScene({
 
   if (!line) return null;
 
-  const awaitingContinue = lineComplete && hasQueuedLines && !speakerIsEthan;
+  const awaitingContinue = lineComplete && (hasQueuedLines || canFinish) && !speakerIsEthan;
 
   return (
     <div ref={stageRef} className={styles.stage}>
@@ -272,10 +287,12 @@ export default function DialogueScene({
             lineComplete
               ? hasQueuedLines
                 ? "Continue to the next line"
-                : `${line.speaker ?? "Narration"}: ${line.text}`
+                : canFinish
+                  ? "End the conversation"
+                  : `${line.speaker ?? "Narration"}: ${line.text}`
               : "Show the full line"
           }
-          tabIndex={active && !readyForChoices ? 0 : -1}
+          tabIndex={active && (!readyForChoices || canFinish) ? 0 : -1}
         >
           <span
             key={lineIndex}
