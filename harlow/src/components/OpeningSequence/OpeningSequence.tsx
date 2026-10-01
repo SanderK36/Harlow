@@ -154,7 +154,7 @@ export default function OpeningSequence({
   // The first pictures of the prologue load while the film plays.
   if (inSplash) {
     preload(PROLOGUE_IMAGES.comic, { as: "image", fetchPriority: "low" });
-    preload(PROLOGUE_IMAGES.bed, { as: "image", fetchPriority: "low" });
+    preload(PROLOGUE_IMAGES.reading, { as: "image", fetchPriority: "low" });
   }
   const date = `${dayOfWeek}, ${month} ${dayNumber}, ${YEAR}`;
 

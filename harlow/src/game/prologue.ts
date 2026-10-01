@@ -6,6 +6,7 @@
 
 export type PrologueBeat =
   | "comic"
+  | "reading"
   | "bed"
   | "window"
   | "stairs"
@@ -42,6 +43,7 @@ const IMAGE_ROOT = "/images/intro";
 /** Which picture each layer shows. "street" is reused after the strike. */
 export const PROLOGUE_IMAGES = {
   comic: `${IMAGE_ROOT}/EthanPickingUpComic.jpg`,
+  reading: `${IMAGE_ROOT}/EthanInBedReading.jpg`,
   bed: `${IMAGE_ROOT}/EthanInBedRedAndBlue.jpg`,
   window: `${IMAGE_ROOT}/EthanLookingAtWindow.jpg`,
   stairs: `${IMAGE_ROOT}/ethanWalkingDownTheStairs.jpg`,
@@ -71,7 +73,8 @@ export const PROLOGUE: PrologueNode[] = [
   },
   { beat: "comic", kind: "say", speaker: "Ethan", text: "Web Runner, issue twelve... I've read this a hundred times." },
 
-  { beat: "bed", kind: "say", speaker: "Ethan", text: "Just one more page." },
+  { beat: "reading", kind: "say", speaker: "Ethan", text: "Just one more page." },
+
   { beat: "bed", kind: "narration", text: "Red. Blue. Red. The colors crawl across the walls." },
 
   { beat: "window", kind: "say", speaker: "Ethan", text: "Sirens? On our street?" },
