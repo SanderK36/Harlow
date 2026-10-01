@@ -19,7 +19,7 @@
   box-shadow: 0 28px 80px rgba(0, 0, 0, 0.5);
 }
 
-.window h2 { margin: 0; color: var(--gold); font-family: Georgia, "Times New Roman", serif; font-size: 30px; font-weight: 400; }
+.window h2 { margin: 0; color: var(--gold); font-family: var(--font-display); font-size: 28px; font-weight: 600; letter-spacing: .06em; }
 .instructions { margin: 8px 0 22px; color: var(--muted); font-size: 13px; }
 .slots { display: grid; gap: 8px; }
 

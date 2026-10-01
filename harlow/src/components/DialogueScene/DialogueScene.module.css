@@ -1,0 +1,470 @@
+/* Visual-novel conversation layer. Sits inside .conversation-overlay, which
+   covers the scene frame; the scene art stays visible (dimmed) behind it. */
+
+.stage {
+  --stage-pad: clamp(10px, 1.8vw, 20px);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: var(--stage-pad);
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+/* ---------- Portraits ---------- */
+
+.cast {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Each speaker is a bust standing behind the dialogue box: the source art
+   (shoulders and chest at its bottom edge) is shown nearly whole, only the
+   top and sides are feathered, and the bottom is tucked behind the box top.
+   The box holds its tallest height for the conversation (see the TSX), so
+   the portraits stay put once the replies have appeared. */
+.portrait {
+  --portrait-height: min(50%, 330px);
+  --tuck: 0.12;
+  position: absolute;
+  bottom: calc(
+    var(--dialogue-box-height, 200px) + var(--stage-pad) -
+      var(--portrait-height) * var(--tuck)
+  );
+  height: var(--portrait-height);
+  /* Square, like the portraits; taller ones lose a little of their lower
+     body behind the box rather than their head. */
+  aspect-ratio: 1;
+  overflow: hidden;
+  -webkit-mask-image:
+    linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%),
+    linear-gradient(180deg, transparent 0%, #000 12%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%),
+    linear-gradient(180deg, transparent 0%, #000 12%);
+  mask-composite: intersect;
+  transition:
+    opacity 320ms ease,
+    filter 320ms ease,
+    transform 380ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    bottom 380ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.portrait img {
+  object-fit: cover;
+  object-position: 50% 0%;
+}
+
+.partnerPortrait {
+  left: clamp(-16px, 0%, 8px);
+  animation: portraitEnterLeft 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.ethanPortrait {
+  --portrait-height: min(46%, 305px);
+  right: clamp(-16px, 0%, 8px);
+  animation: portraitEnterRight 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* Both busts stay on stage for the whole conversation; whoever is talking
+   is lit, the listener steps back into a dark tint. */
+.portrait::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(14, 6, 8, 0.38), rgba(10, 4, 6, 0.5));
+  opacity: 0;
+  transition: opacity 320ms ease;
+  content: "";
+}
+
+.portraitIdle {
+  z-index: 0;
+  filter: brightness(0.62) saturate(0.6);
+  transform: translateY(6px) scale(0.975);
+}
+
+.portraitIdle::after {
+  opacity: 1;
+}
+
+.portraitSpeaking {
+  z-index: 1;
+  filter: none;
+  transform: none;
+}
+
+/* ---------- Dialogue box ---------- */
+
+.box {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  padding: clamp(24px, 2.6vw, 30px) clamp(18px, 2.4vw, 30px) clamp(14px, 1.8vw, 20px);
+  color: #f4e9e2;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(169, 22, 36, 0.16), transparent 55%),
+    linear-gradient(180deg, rgba(24, 13, 14, 0.9), rgba(9, 5, 6, 0.95));
+  border: 1px solid rgba(237, 85, 98, 0.3);
+  border-radius: 12px;
+  box-shadow:
+    0 -12px 44px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 220, 205, 0.08);
+  -webkit-backdrop-filter: blur(8px) saturate(1.1);
+  backdrop-filter: blur(8px) saturate(1.1);
+  pointer-events: auto;
+  animation: boxEnter 360ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* Hairline of red light along the top edge. */
+.box::before {
+  position: absolute;
+  top: -1px;
+  right: 14%;
+  left: 14%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 120, 120, 0.85), transparent);
+  content: "";
+}
+
+.namePlate {
+  position: absolute;
+  top: 0;
+  left: clamp(16px, 2.4vw, 28px);
+  padding: 7px 18px 6px;
+  color: #fbe6d6;
+  font-family: var(--font-display);
+  font-size: clamp(13px, 1.25vw, 16px);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+  background: linear-gradient(180deg, #8e1a26, #4d0d15);
+  border: 1px solid rgba(255, 196, 178, 0.38);
+  border-radius: 3px;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 220, 205, 0.25);
+  transform: translateY(-58%);
+  animation: plateEnter 260ms ease-out both;
+}
+
+.namePlateEthan {
+  right: clamp(16px, 2.4vw, 28px);
+  left: auto;
+  background: linear-gradient(180deg, #3a2a26, #1d1513);
+  border-color: rgba(230, 200, 170, 0.32);
+}
+
+.history {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  padding: 3px 8px;
+  color: rgba(245, 230, 225, 0.5);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+
+.boxEthan .history {
+  right: auto;
+  left: 10px;
+}
+
+.history:hover,
+.history:focus-visible,
+.history[aria-pressed="true"] {
+  color: #fbe6d6;
+  border-color: rgba(255, 196, 178, 0.35);
+  outline: none;
+}
+
+.lineButton {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.lineButton:focus-visible {
+  border-radius: 6px;
+  outline: 1px dashed rgba(255, 196, 178, 0.4);
+  outline-offset: 6px;
+}
+
+.line {
+  display: block;
+  min-height: 3em;
+  padding-right: 24px;
+  font-family: var(--font-body);
+  font-size: clamp(19px, 1.85vw, 23px);
+  font-weight: 400;
+  line-height: 1.5;
+  text-wrap: pretty;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.lineNarration {
+  color: #dccbc3;
+  font-style: italic;
+}
+
+.unrevealed {
+  color: transparent;
+  text-shadow: none;
+}
+
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 0.95em;
+  margin: 0 1px -0.12em;
+  background: rgba(255, 140, 140, 0.75);
+  animation: caretBlink 900ms steps(1) infinite;
+}
+
+.prompt {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+  color: rgba(245, 225, 215, 0.55);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.promptGlyph {
+  width: 0;
+  height: 0;
+  border-top: 6px solid var(--accent-bright);
+  border-right: 5px solid transparent;
+  border-left: 5px solid transparent;
+  animation: promptBob 1100ms ease-in-out infinite;
+}
+
+/* ---------- Replies ---------- */
+
+/* Replies are laid out from the first line on (just invisible and inert
+   until the line has been read), so the box doesn't jump when they appear. */
+.choices {
+  margin-top: 14px;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 220ms ease,
+    visibility 0s 220ms;
+}
+
+.choicesVisible {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 220ms ease,
+    visibility 0s;
+}
+
+/* ---------- Conversation log ---------- */
+
+.historyPanel {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: clamp(10px, 1.8vw, 20px);
+  background: rgba(8, 4, 5, 0.82);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+  animation: boxEnter 240ms ease-out both;
+}
+
+.historyPanel > section {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+}
+
+.historyClose {
+  align-self: center;
+  padding: 9px 18px;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: rgba(21, 12, 13, 0.92);
+  border: 1px solid rgba(237, 85, 98, 0.45);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.historyClose:hover,
+.historyClose:focus-visible {
+  background: rgba(169, 22, 36, 0.4);
+  outline: none;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes portraitEnterLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-26px);
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes portraitEnterRight {
+  from {
+    opacity: 0;
+    transform: translateX(26px);
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes boxEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes plateEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-30%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(-58%);
+  }
+}
+
+@keyframes caretBlink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes promptBob {
+  50% {
+    transform: translateY(3px);
+  }
+}
+
+/* Narrow screens: shorter portraits, roomier type, replies stacked. */
+@media (max-width: 640px) {
+  .stage {
+    --stage-pad: 10px;
+    position: relative;
+    inset: auto;
+    flex: 1 1 auto;
+    padding: var(--stage-pad);
+  }
+
+  .stage::before {
+    /* Reserve headroom above the box for the portraits. */
+    flex: 1 0 230px;
+    content: "";
+  }
+
+  .portrait {
+    --portrait-height: 200px;
+  }
+
+  .partnerPortrait {
+    left: -14px;
+  }
+
+  .ethanPortrait {
+    --portrait-height: 180px;
+    right: -14px;
+  }
+
+  /* Stacked replies are tall; reserving them would leave a mostly empty box
+     on a phone, so they take no space until the line has been read. */
+  .choices:not(.choicesVisible) {
+    display: none;
+  }
+
+  .box {
+    padding: 24px 16px 14px;
+  }
+
+  .line {
+    min-height: 0;
+    font-size: 19px;
+    line-height: 1.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portrait,
+  .partnerPortrait,
+  .box,
+  .namePlate,
+  .historyPanel,
+  .caret,
+  .promptGlyph {
+    animation: none;
+  }
+
+  .portrait,
+  .portrait::after,
+  .ethanPortrait,
+  .choices {
+    transition: none;
+  }
+
+  .portraitIdle {
+    transform: none;
+  }
+}

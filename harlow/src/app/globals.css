@@ -9,6 +9,14 @@
   --accent: #a91624;
   --accent-bright: #ed5562;
   --gold: #d93443;
+
+  /* Type system (fonts are loaded with next/font in app/layout.tsx).
+     Display: inscriptional capitals for the wordmark and window titles.
+     Body: a bookish serif for narration, thoughts, and dialogue.
+     UI: a condensed grotesque for labels, stats, and controls. */
+  --font-display: var(--font-cinzel), "Trajan Pro", Georgia, serif;
+  --font-body: var(--font-crimson), Georgia, "Times New Roman", serif;
+  --font-ui: var(--font-oswald), "Arial Narrow", Arial, sans-serif;
 }
 
 * {
@@ -20,8 +28,12 @@ body {
   min-width: 320px;
   margin: 0;
   color: var(--text);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
+  font-weight: 400;
   background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body.production-splash-active {
@@ -153,21 +165,25 @@ button {
   padding-left: 15px;
   color: #f7e5e6;
   font-size: clamp(13px, 1.5vw, 17px);
-  font-weight: 700;
-  letter-spacing: 0.16em;
+  font-weight: 400;
+  letter-spacing: 0.3em;
   line-height: 1.4;
   text-transform: uppercase;
 }
 
 .mainMenu h1 {
   margin: 0;
-  color: var(--text);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(52px, 7.4vw, 100px);
-  font-weight: 400;
-  letter-spacing: 0.055em;
+  color: #f7ece6;
+  font-family: var(--font-display);
+  font-size: clamp(50px, 7vw, 96px);
+  font-weight: 600;
+  letter-spacing: 0.08em;
   line-height: 1;
   white-space: nowrap;
+  text-shadow:
+    0 0 1px rgba(255, 235, 225, 0.5),
+    0 6px 28px rgba(0, 0, 0, 0.9),
+    0 0 60px rgba(169, 22, 36, 0.35);
 }
 
 .mainMenuActions {
@@ -182,9 +198,9 @@ button {
   padding: 13px 24px;
   color: var(--text);
   font: inherit;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   background: rgba(169, 22, 36, 0.72);
   border: 1px solid rgba(255, 220, 222, 0.55);
@@ -305,11 +321,11 @@ button {
 
 .game-panel > h1 {
   margin: 0 0 2px;
-  color: var(--text);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(32px, 6vw, 54px);
-  font-weight: 400;
-  letter-spacing: 0.16em;
+  color: #f4e7e1;
+  font-family: var(--font-display);
+  font-size: clamp(30px, 5.6vw, 50px);
+  font-weight: 600;
+  letter-spacing: 0.2em;
   line-height: 1;
   text-shadow: 0 8px 24px rgba(0, 0, 0, 0.42);
 }
@@ -318,6 +334,23 @@ button {
   position: relative;
   width: min(100%, 1100px);
   margin: 28px auto 0;
+}
+
+/* Blurred spill of the current art behind the frame, so the space around a
+   narrower image glows with its colours instead of reading as an empty band. */
+.scene-ambient {
+  position: absolute;
+  inset: -18px -96px;
+  z-index: -1;
+  background-position: center;
+  background-size: cover;
+  border-radius: 40px;
+  filter: blur(42px) brightness(0.6) saturate(1.2);
+  opacity: 0.9;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(closest-side, #000 62%, transparent);
+  mask-image: radial-gradient(closest-side, #000 62%, transparent);
+  transition: background-image 420ms ease;
 }
 
 .scene-image {
@@ -336,9 +369,81 @@ button {
   animation: sceneImageEnter 420ms ease-out;
 }
 
+/* Conversations keep the scene in view, pushed back so the speakers lead. */
 .scene-image-frame-conversation-active .scene-image {
-  opacity: 0.18;
-  filter: brightness(0.42) saturate(0.72);
+  filter: brightness(0.55) saturate(0.78) blur(2.5px);
+}
+
+/* The picture plus its hotspots. Hotspot percentages resolve against this
+   box, which is always exactly the size of the art. */
+.scene-art {
+  position: relative;
+}
+
+/* The empty version of a scene, faded in over the character art while that
+   character is in a conversation (their portrait stands in front instead). */
+.scene-image.scene-image-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  object-fit: cover;
+  opacity: 0;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.scene-image.scene-image-backdrop-active {
+  opacity: 1;
+}
+
+/* Hotspot spotlight: a dark veil over the art with a soft-edged hole that
+   follows the hotspot under the pointer (positioned by SceneHotspot.tsx). */
+.scene-spotlight {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+}
+
+.scene-spotlight-hole {
+  position: absolute;
+  top: var(--spot-top, 0);
+  left: var(--spot-left, 0);
+  width: var(--spot-width, 0);
+  height: var(--spot-height, 0);
+  border-radius: 18px;
+  box-shadow:
+    0 0 0 200vmax rgba(7, 3, 4, 0.56),
+    inset 0 0 26px 6px rgba(7, 3, 4, 0.42);
+  transition:
+    top 260ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    left 260ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    width 260ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    height 260ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.scene-art[data-spotlight-jump] .scene-spotlight-hole {
+  transition: none;
+}
+
+.scene-art:has(> .scene-hotspot:focus-visible) > .scene-spotlight {
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .scene-image-frame:not(.scene-image-frame-has-conversation)
+    .scene-art:has(> .scene-hotspot:hover)
+    > .scene-spotlight {
+    opacity: 1;
+  }
 }
 
 .scene-info-stack {
@@ -353,32 +458,108 @@ button {
   pointer-events: none;
 }
 
+/* Over the art the scene text is a caption on a soft dark gradient rather
+   than a box: narration top-left, Ethan's thought as a quieter aside
+   top-right. Both keep to the edges so the middle of the picture stays clear. */
 .scene-info-panel {
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 20px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 28px;
   width: 100%;
   margin: 0;
-  padding: 14px;
+  padding: clamp(14px, 1.6vw, 20px) clamp(16px, 2vw, 24px) clamp(40px, 5vw, 64px);
   background: linear-gradient(
     180deg,
-    rgba(8, 4, 5, 0.86),
-    rgba(21, 16, 16, 0.72)
+    rgba(8, 4, 5, 0.84) 0%,
+    rgba(8, 4, 5, 0.5) 48%,
+    rgba(8, 4, 5, 0) 100%
   );
-  border: 1px solid rgba(237, 85, 98, 0.34);
-  border-radius: 10px;
-  box-shadow:
-    0 8px 22px rgba(0, 0, 0, 0.2),
-    inset 3px 0 0 var(--accent);
+  border-radius: 14px 14px 0 0;
   transition:
     opacity 240ms ease,
     transform 280ms ease;
 }
 
+.scene-caption-narration {
+  flex: 0 1 auto;
+  max-width: min(46%, 440px);
+}
+
+.scene-info-panel .scene-caption-narration section {
+  padding: 0;
+  border: 0;
+}
+
+.scene-info-panel .scene-caption-narration h2 {
+  margin: 0 0 5px;
+  padding: 0;
+  color: var(--accent-bright);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  border: 0;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+}
+
+.scene-info-panel .scene-caption-narration p {
+  margin: 0;
+  color: #f4e9e2;
+  font-family: var(--font-body);
+  font-size: clamp(18px, 1.7vw, 21px);
+  line-height: 1.35;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+.scene-caption-thought {
+  flex: 0 1 auto;
+  max-width: min(36%, 340px);
+  padding-left: 14px;
+  border-left: 1px solid rgba(237, 85, 98, 0.45);
+}
+
+.scene-caption-thought img {
+  width: 34px;
+  height: 42px;
+  border-radius: 5px;
+}
+
+.scene-caption-thought strong {
+  margin-bottom: 3px;
+  font-size: 10px;
+}
+
+.scene-caption-thought p {
+  color: #e6d6d4;
+  font-size: 16px;
+  line-height: 1.4;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+/* The Needle & Groove sign runs across the top of the shop; keep both lines
+   in the left corner, over the shelves, so the sign stays readable. */
+@media (min-width: 641px) {
+  .scene-image-frame-needle-and-groove-inside .scene-info-panel {
+    flex-direction: column;
+    gap: 14px;
+    width: max-content;
+    max-width: 36%;
+    align-self: flex-start;
+    padding-right: 48px;
+    background: radial-gradient(130% 120% at 0% 0%, rgba(8, 4, 5, 0.86), rgba(8, 4, 5, 0.5) 55%, transparent 80%);
+  }
+
+  .scene-image-frame-needle-and-groove-inside .scene-caption-narration,
+  .scene-image-frame-needle-and-groove-inside .scene-caption-thought {
+    max-width: 100%;
+  }
+}
+
 @media (hover: hover) and (pointer: fine) {
   .scene-image-frame:not(.scene-image-frame-has-conversation):has(
-      > .scene-hotspot:hover
+      > .scene-art > .scene-hotspot:hover
     )
     > .scene-info-stack
     > .scene-info-panel {
@@ -394,43 +575,14 @@ button {
   transition: opacity 280ms ease;
 }
 
+/* Bottom-of-scene line (Ethan's thoughts, the TV); the look comes from
+   ThoughtPanel.module.css, this only places it over the art. */
 .opening-thought {
   position: absolute;
   right: clamp(12px, 2.4vw, 28px);
   bottom: clamp(12px, 2.4vw, 28px);
   left: clamp(12px, 2.4vw, 28px);
   z-index: 5;
-  padding: clamp(14px, 2vw, 22px) clamp(16px, 2.4vw, 28px);
-  color: #fff;
-  background: linear-gradient(
-    180deg,
-    rgba(8, 4, 5, 0.86),
-    rgba(21, 16, 16, 0.72)
-  );
-  border: 1px solid rgba(237, 85, 98, 0.34);
-  border-radius: 10px;
-  box-shadow:
-    0 8px 22px rgba(0, 0, 0, 0.2),
-    inset 3px 0 0 var(--accent);
-  animation: openingThoughtEnter 320ms ease-out;
-}
-
-.opening-thought span {
-  display: block;
-  margin-bottom: 7px;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-}
-
-.opening-thought p {
-  margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(16px, 2vw, 22px);
-  font-style: italic;
-  font-weight: 500;
-  line-height: 1.4;
 }
 
 /* Keep the late-night route-home actions above the persistent thought panel. */
@@ -438,18 +590,6 @@ button {
   z-index: 6;
   padding-bottom: clamp(128px, 15vw, 170px);
   background: transparent;
-}
-
-@keyframes openingThoughtEnter {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .new-day-screen {
@@ -482,17 +622,18 @@ button {
   display: block;
   margin: 0;
   color: rgba(255, 255, 255, 0.7);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.26em;
   text-transform: uppercase;
 }
 
 .new-day-screen-content h2 {
   margin: 12px 0 4px;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(48px, 9vw, 82px);
-  font-weight: 500;
+  font-family: var(--font-display);
+  font-size: clamp(44px, 8.4vw, 76px);
+  font-weight: 600;
+  letter-spacing: 0.06em;
 }
 
 @keyframes newDayScreenFade {
@@ -521,126 +662,209 @@ button {
   position: absolute;
   inset: 0;
   z-index: 6;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 12px;
-  padding: clamp(12px, 2.4vw, 28px);
-  overflow-y: auto;
-  background: linear-gradient(
-    0deg,
-    rgba(8, 4, 5, 0.84),
-    rgba(8, 4, 5, 0.68) 42%,
-    rgba(8, 4, 5, 0.2) 75%,
-    transparent
-  );
+  overflow: hidden;
+  border-radius: 14px;
+  /* Vignette + floor shadow so portraits and the dialogue box read cleanly
+     over any art while the scene stays visible. */
+  background:
+    radial-gradient(130% 90% at 50% 30%, transparent 40%, rgba(8, 4, 5, 0.55)),
+    linear-gradient(0deg, rgba(8, 4, 5, 0.78), rgba(8, 4, 5, 0.12) 55%, transparent);
   opacity: 0;
   pointer-events: none;
-  transform: translateY(10px);
-  transition:
-    opacity 300ms ease,
-    transform 300ms ease;
+  transition: opacity 300ms ease;
 }
 
 .conversation-overlay-active {
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(0);
   animation: conversationOverlayEnter 300ms ease-out both;
-}
-
-.conversation-overlay [aria-live="polite"] {
-  position: relative;
-  flex: 1 1 0;
-  min-height: 0;
-  z-index: 0;
-  width: 100%;
-  height: auto;
-  max-height: none;
-  margin: 0;
-  padding: clamp(16px, 2.4vw, 28px);
-  border-radius: 14px;
-  background: linear-gradient(
-    135deg,
-    rgba(31, 17, 18, 0.76),
-    rgba(12, 8, 9, 0.76)
-  );
 }
 
 @keyframes conversationOverlayEnter {
   from {
     opacity: 0;
-    transform: translateY(10px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
+/* Hotspots read like a camera viewfinder: thin corner brackets frame what
+   can be used, and a nameplate (the dialogue box's, in miniature) sits on
+   the bottom edge so it never covers a face. */
 .scene-hotspot {
+  --bracket: rgba(255, 228, 216, 0.9);
   position: absolute;
+  z-index: 2;
   display: grid;
   place-items: center;
   padding: 0;
-  color: #fff4f4;
-  background: rgba(217, 52, 67, 0);
-  border: 1px solid transparent;
-  border-radius: 8px;
+  color: #fbe6d6;
+  background: transparent;
+  border: 0;
+  border-radius: 18px;
   cursor: pointer;
+}
+
+.scene-hotspot::before {
+  position: absolute;
+  inset: -5px;
+  background:
+    linear-gradient(var(--bracket), var(--bracket)) 0 0 / 20px 1.5px no-repeat,
+    linear-gradient(var(--bracket), var(--bracket)) 0 0 / 1.5px 20px no-repeat,
+    linear-gradient(var(--bracket), var(--bracket)) 100% 0 / 20px 1.5px no-repeat,
+    linear-gradient(var(--bracket), var(--bracket)) 100% 0 / 1.5px 20px no-repeat,
+    linear-gradient(var(--bracket), var(--bracket)) 0 100% / 20px 1.5px no-repeat,
+    linear-gradient(var(--bracket), var(--bracket)) 0 100% / 1.5px 20px no-repeat,
+    linear-gradient(var(--bracket), var(--bracket)) 100% 100% / 20px 1.5px no-repeat,
+    linear-gradient(var(--bracket), var(--bracket)) 100% 100% / 1.5px 20px no-repeat;
+  filter: drop-shadow(0 0 4px rgba(237, 85, 98, 0.75));
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(1.04);
   transition:
-    background 160ms ease,
-    border-color 160ms ease,
-    box-shadow 160ms ease;
+    opacity 200ms ease,
+    transform 260ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 .scene-hotspot span {
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: 100%;
   box-sizing: border-box;
   width: max-content;
-  padding: 6px 9px;
-  border: 1px solid rgba(255, 220, 222, 0.35);
-  border-radius: 6px;
-  background: rgba(28, 14, 17, 0.94);
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
-  pointer-events: none;
+  padding: 6px 15px 5px;
+  color: #fbe6d6;
+  font-family: var(--font-display);
   font-size: clamp(11px, 1vw, 13px);
   font-weight: 700;
-  letter-spacing: 0.02em;
-  line-height: 1.3;
-  opacity: 0;
-  white-space: nowrap;
+  letter-spacing: 0.16em;
+  line-height: 1;
   text-align: center;
   text-transform: uppercase;
-  text-shadow: 0 2px 5px #000;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  background: linear-gradient(180deg, #8e1a26, #4d0d15);
+  border: 1px solid rgba(255, 196, 178, 0.38);
+  border-radius: 3px;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 220, 205, 0.25);
+  opacity: 0;
+  pointer-events: none;
   transform: translate(
     calc(-50% + var(--caption-offset, 0px)),
-    calc(-50% + 3px)
+    calc(-50% + var(--caption-lift, 0px) + 4px)
   );
   transition:
-    opacity 160ms ease,
-    transform 160ms ease;
+    opacity 180ms ease,
+    transform 220ms ease;
 }
 
-.scene-hotspot:hover,
 .scene-hotspot:focus-visible {
-  z-index: 2;
-  background: rgba(217, 52, 67, 0.2);
-  border-color: rgba(255, 220, 222, 0.8);
-  box-shadow:
-    inset 0 0 28px rgba(255, 89, 102, 0.4),
-    0 0 16px rgba(217, 52, 67, 0.48);
   outline: none;
 }
 
-.scene-hotspot:hover span,
+.scene-hotspot:focus-visible::before,
 .scene-hotspot:focus-visible span {
   opacity: 1;
-  transform: translate(calc(-50% + var(--caption-offset, 0px)), -50%);
+}
+
+.scene-hotspot:focus-visible::before {
+  transform: none;
+}
+
+.scene-hotspot:focus-visible span {
+  transform: translate(
+    calc(-50% + var(--caption-offset, 0px)),
+    calc(-50% + var(--caption-lift, 0px))
+  );
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .scene-hotspot:hover::before,
+  .scene-hotspot:hover span {
+    opacity: 1;
+  }
+
+  .scene-hotspot:hover::before {
+    transform: none;
+  }
+
+  .scene-hotspot:hover span {
+    transform: translate(
+      calc(-50% + var(--caption-offset, 0px)),
+      calc(-50% + var(--caption-lift, 0px))
+    );
+  }
+}
+
+/* Touch screens have no hover, so every hotspot shows a slow ember pulse
+   with a small label under it. */
+@media (hover: none), (pointer: coarse) {
+  .scene-hotspot::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    margin: -6px 0 0 -6px;
+    background: radial-gradient(
+      circle,
+      #ffe3d6 0 28%,
+      rgba(237, 85, 98, 0.95) 34% 58%,
+      transparent 62%
+    );
+    border-radius: 50%;
+    content: "";
+    pointer-events: none;
+    animation: hotspotEmber 2.8s ease-out infinite;
+  }
+
+  .scene-hotspot span {
+    top: calc(50% + 22px);
+    padding: 4px 9px 3px;
+    color: rgba(251, 230, 214, 0.94);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    background: rgba(20, 8, 10, 0.78);
+    border-color: rgba(255, 196, 178, 0.26);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+    opacity: 1;
+    transform: translate(calc(-50% + var(--caption-offset, 0px)), -50%);
+  }
+
+  .scene-hotspot:active::before {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes hotspotEmber {
+  0% {
+    box-shadow: 0 0 0 0 rgba(237, 85, 98, 0.6);
+  }
+
+  70%,
+  100% {
+    box-shadow: 0 0 0 16px rgba(237, 85, 98, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-hotspot::after {
+    box-shadow: 0 0 0 5px rgba(237, 85, 98, 0.22);
+    animation: none;
+  }
+
+  .scene-hotspot::before,
+  .scene-hotspot span,
+  .scene-spotlight,
+  .scene-spotlight-hole {
+    transition: none;
+  }
 }
 
 .scene-hotspot-living-room-talkToMom {
@@ -1031,8 +1255,8 @@ button {
   margin-right: 4px;
   color: var(--muted);
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-weight: 500;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
 }
 
@@ -1194,13 +1418,14 @@ button {
     line-height: 36px;
   }
 
+  /* The frame hugs the image exactly (no min-width), so the art fills it
+     edge to edge and percentage hotspots map onto the picture itself. */
   .scene-image-frame {
     grid-column: 2;
     grid-row: 2;
     align-self: start;
     width: fit-content;
     max-width: 100%;
-    min-width: min(100%, 1024px);
     margin: 0 auto;
   }
 
@@ -1210,23 +1435,11 @@ button {
     max-height: max(460px, calc(100dvh - 128px));
   }
 
-  .scene-info-panel {
-    gap: 14px;
-    padding: 12px;
-  }
-
   .waitControls {
     grid-column: 2;
     margin: 0 auto;
   }
 
-  .conversation-overlay {
-    padding: 16px;
-  }
-
-  .conversation-overlay [aria-live="polite"] {
-    padding: 14px;
-  }
 }
 
 @media (max-width: 640px) {
@@ -1250,8 +1463,8 @@ button {
   }
 
   .mainMenu h1 {
-    font-size: clamp(44px, 12vw, 68px);
-    letter-spacing: 0.035em;
+    font-size: clamp(38px, 10.6vw, 64px);
+    letter-spacing: 0.04em;
   }
 
   .mainMenuActions {
@@ -1263,19 +1476,98 @@ button {
     padding: 0;
   }
 
+  /* Phones: the art is short, so the scene text sits above it and the
+     actions below it instead of on top. Hotspots live in .scene-art, so
+     their percentages still map onto the picture. */
+  .scene-image-frame {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .scene-art {
+    order: 1;
+  }
+
+  .scene-info-stack {
+    position: relative;
+    z-index: auto;
+    order: 0;
+  }
+
+  .scene-image-frame-has-conversation .scene-info-stack {
+    display: none;
+  }
+
   .scene-info-panel {
-    grid-template-columns: 1fr;
-    gap: 14px;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px;
+    background: linear-gradient(180deg, rgba(24, 13, 14, 0.92), rgba(12, 7, 8, 0.95));
+    border: 1px solid rgba(237, 85, 98, 0.24);
+    border-radius: 12px;
   }
 
-  .conversation-overlay {
-    gap: 8px;
-    padding: 12px;
+  .scene-caption-narration,
+  .scene-caption-thought {
+    max-width: none;
   }
 
-  .conversation-overlay [aria-live="polite"] {
-    max-height: none;
-    padding: 12px;
+  .scene-info-panel .scene-caption-narration p {
+    font-size: 18px;
+    text-shadow: none;
+  }
+
+  .scene-caption-thought {
+    align-self: stretch;
+    padding: 10px 0 0;
+    border-top: 1px solid rgba(239, 221, 221, 0.1);
+    border-left: 0;
+  }
+
+  .scene-caption-thought p {
+    text-shadow: none;
+  }
+
+  /* The plate tab overhangs the panel's top edge. */
+  .opening-thought {
+    position: relative;
+    inset: auto;
+    order: 2;
+    margin-top: 12px;
+  }
+
+  .scene-image-frame-conversation-active .scene-art {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* Phones: the art is short, so a conversation grows the frame into a
+     taller stage and lets the dimmed scene cover it. */
+  .scene-image-frame-conversation-active {
+    min-height: min(640px, calc(100svh - 24px));
+  }
+
+  .scene-image-frame-conversation-active .scene-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin-top: 0;
+    object-fit: cover;
+  }
+
+  .scene-image-frame-conversation-active .scene-ambient {
+    display: none;
+  }
+
+  .scene-image-frame-conversation-active .conversation-overlay {
+    position: relative;
+    inset: auto;
+    display: flex;
+    min-height: inherit;
+    border-radius: 10px;
   }
 
   .game-panel {
@@ -1288,7 +1580,10 @@ button {
   }
 
   .scene-image {
-    margin-top: 20px;
+    border-radius: 10px;
+  }
+
+  .scene-spotlight {
     border-radius: 10px;
   }
 
@@ -1318,15 +1613,16 @@ button {
 
 .quest-notification span {
   color: #e69b66;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
 }
 
 .quest-notification p {
   margin: 5px 0 0;
-  font-size: 14px;
+  font-family: var(--font-body);
+  font-size: 17px;
   line-height: 1.35;
 }
 
@@ -1358,7 +1654,7 @@ button {
     animation: none;
   }
 
-  .scene-image-frame:has(> .scene-hotspot:hover)
+  .scene-image-frame:has(> .scene-art > .scene-hotspot:hover)
     > .scene-info-stack
     > .scene-info-panel {
     transform: none;
@@ -1374,6 +1670,10 @@ button {
   .gameCloud,
   .conversation-overlay-active {
     animation: none;
+  }
+
+  .scene-ambient {
+    transition: none;
   }
 
   .scene-image,

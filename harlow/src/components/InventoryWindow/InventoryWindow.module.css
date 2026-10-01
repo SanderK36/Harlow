@@ -86,6 +86,8 @@
 
 .itemBio p {
   margin: 8px 0 0;
+  font-family: var(--font-body);
+  font-size: 1.12em;
   overflow-wrap: break-word;
 }
 
@@ -125,7 +127,9 @@ button.slot:focus-visible {
 }
 
 .feedback p {
-  line-height: 1.6;
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.5;
 }
 
 .dismiss {
