@@ -345,7 +345,7 @@ export function useGame() {
 
     if (choice.storyFlag === "momJobConcern") {
       setMomJobConcernHeard(true);
-      setCurrentThought("I gotta get a job. Those flyers on the light pole out front.");
+      setCurrentThought("I gotta get a job. Maybe those flyers on the light pole out front.");
       pendingQuestNotification.current = {
         message: "New quest: Find a Job — there's got to be a way to help.",
         label: "Quest started",

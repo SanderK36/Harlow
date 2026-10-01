@@ -50,7 +50,7 @@ export type Scene = {
 // Destinations listed here automatically appear in the walk and bus menus.
 // Add an exterior scene here after it has been added to `scenes` below.
 const exteriorDestinations = [
-  { id: "front-yard", label: "Home", walkMinutes: 30 },
+  { id: "front-yard", label: "your house", walkMinutes: 30 },
   { id: "needle-and-groove", label: "Needle & Groove", walkMinutes: 30 },
   { id: "gas-station", label: "the gas station", walkMinutes: 30 },
   { id: "police-station", label: "the police station", walkMinutes: 30 },
@@ -82,7 +82,7 @@ export function createWalkingChoices(
         availableDestinationIds.includes(destination.id),
     )
     .map((destination) => ({
-      label: `Walk to ${destination.label} (${destination.walkMinutes}min)`,
+      label: `Walk to ${destination.label} (${destination.walkMinutes} min)`,
       action: `walkTo${destination.id}`,
       nextScene: destination.id,
       timeCost: destination.walkMinutes,
@@ -97,7 +97,7 @@ export function createBusChoices(
   return exteriorDestinations
     .filter((destination) => availableDestinationIds.includes(destination.id))
     .map((destination) => ({
-      label: `Take the bus to ${destination.label} ($7 & 10min)`,
+      label: `Take the bus to ${destination.label} ($7, 10 min)`,
       action: `takeBusTo${destination.id}`,
       nextScene: destination.id,
       timeCost: 10,
@@ -471,7 +471,7 @@ export const momConversation: Conversation = {
 
       response: [
         ethan("Morning, Mom."),
-        npc("Linda", "You look wrung out. You sleep any?"),
+        npc("Linda", "You look wrung out. Did you sleep any?"),
       ],
     },
 
@@ -519,9 +519,9 @@ export const momConversation: Conversation = {
     },
 
     {
-      label: "Never mind.",
+      label: "I'll leave you to it.",
 
-      response: [ethan("Never mind. It was nothing."), npc("Linda", "Alright, honey.")],
+      response: [ethan("I'll leave you to it."), npc("Linda", "Alright, honey.")],
       endsConversation: true,
     },
   ],
@@ -541,7 +541,7 @@ export const momDeathConversation: Conversation = {
         ethan("They found her dead?"),
         npc(
           "Linda",
-          "That's what he said. Asked when I last saw her. Been a few days.",
+          "That's what he said. He asked when I last saw her. It's been a few days.",
         ),
       ],
     },
@@ -556,9 +556,9 @@ export const momDeathConversation: Conversation = {
       ],
     },
     {
-      label: "Do they know what happened?",
+      label: "Not even a guess?",
       response: [
-        ethan("Do they know what happened?"),
+        ethan("Not even a guess?"),
         npc(
           "Linda",
           "No. They're still putting it together. I'm not going to guess.",
@@ -577,7 +577,7 @@ export const momDeathConversation: Conversation = {
       completesMomQuest: true,
     },
     {
-      label: "Exit Conversation",
+      label: "Exit conversation",
       response: [],
       endsConversation: true,
     },
@@ -595,10 +595,10 @@ export const johnnyConversation: Conversation = {
       ],
     },
     {
-      label: "You own this place?",
+      label: "Not really. You own this place?",
       response: [
-        ethan("You own this place?"),
-        npc("Johnny", "Yeah. Few years now."),
+        ethan("Not really. You own this place?"),
+        npc("Johnny", "Yeah. A few years now."),
       ],
     },
     {
@@ -615,10 +615,10 @@ export const johnnyConversation: Conversation = {
       ],
     },
     {
-      label: "Heard anything interesting?",
+      label: "Not a record. Heard anything?",
       requiresJob: "needle-groove",
       response: [
-        ethan("Heard anything interesting?"),
+        ethan("Not a record. Heard anything interesting?"),
         npc(
           "Johnny",
           "Always. Diner, after lunch. People talk louder than they think.",
@@ -626,8 +626,8 @@ export const johnnyConversation: Conversation = {
       ],
     },
     {
-      label: "Never mind.",
-      response: [ethan("Never mind."), npc("Johnny", "Suit yourself.")],
+      label: "Nothing.",
+      response: [ethan("Nothing."), npc("Johnny", "Suit yourself.")],
       endsConversation: true,
     },
   ],
@@ -644,9 +644,9 @@ export const walterConversation: Conversation = {
       ],
     },
     {
-      label: "Has anything happened around town?",
+      label: "Yeah. Anything happened in town?",
       response: [
-        ethan("Has anything happened around town lately?"),
+        ethan("Yeah. Has anything happened around town?"),
         npc("Walter", "Nothing that concerns you."),
       ],
     },
@@ -688,7 +688,7 @@ export const livingRoom: Scene = {
 
   choices: [
     {
-      label: "Watch the TV",
+      label: "Watch TV",
       action: "watchTv",
       nextScene: "living-room",
       timeCost: 0,
@@ -702,7 +702,7 @@ export const livingRoom: Scene = {
       effects: { stamina: 15 },
     },
     {
-      label: "Talk to mom",
+      label: "Talk to Mom",
       action: "talkToMom",
       nextScene: "living-room",
       timeCost: 10,
@@ -819,9 +819,9 @@ export const margaretConversation: Conversation = {
   opening: [npc("Margaret", "Sit anywhere you like, hon.")],
   choices: [
     {
-      label: "How's business today?",
+      label: "Thanks. How's business?",
       response: [
-        ethan("How's business today?"),
+        ethan("Thanks. How's business today?"),
         npc(
           "Margaret",
           "Slow. Coffee goes cold before anybody orders it.",
@@ -829,9 +829,9 @@ export const margaretConversation: Conversation = {
       ],
     },
     {
-      label: "Anything happening around town?",
+      label: "Thanks. Anything happening in town?",
       response: [
-        ethan("Anything happening around town?"),
+        ethan("Thanks. Anything happening around town?"),
         npc(
           "Margaret",
           "People talk. Not much of it I'd repeat.",
@@ -839,14 +839,14 @@ export const margaretConversation: Conversation = {
       ],
     },
     {
-      label: "See you later.",
+      label: "Can't stay.",
       response: [
-        ethan("See you later."),
+        ethan("Can't stay. Catch you later."),
         npc("Margaret", "You take care now."),
       ],
     },
     {
-      label: "Exit Conversation",
+      label: "Exit conversation",
       response: [],
       endsConversation: true,
     },
@@ -859,16 +859,16 @@ export const marleneConversation: Conversation = {
   ],
   choices: [
     {
-      label: "How's your shift going?",
+      label: "I'll be quick. How's the shift?",
       response: [
-        ethan("How's your shift going?"),
+        ethan("I'll be quick. How's the shift?"),
         npc("Marlene", "Busy. That's all you get."),
       ],
     },
     {
-      label: "Never mind.",
+      label: "I'll get out of your way.",
       response: [
-        ethan("Never mind."),
+        ethan("I'll get out of your way."),
         npc("Marlene", "Good. Don't make more work for me."),
       ],
       endsConversation: true,
@@ -1007,7 +1007,7 @@ export const ethanRoomDesk: Scene = {
   },
   choices: [
     {
-      label: "Pick up cigarettes",
+      label: "Pick up the cigarettes",
       action: "pickUpCigarettes",
       nextScene: "ethan-room-desk-empty",
       timeCost: 0,
@@ -1113,7 +1113,7 @@ export const garageBench: Scene = {
   },
   choices: [
     {
-      label: "Pick up flashlight",
+      label: "Pick up the flashlight",
       action: "pickUpGarageFlashlight",
       nextScene: "garage-bench-empty",
       timeCost: 0,
@@ -1221,7 +1221,7 @@ export const needleAndGrooveInside: Scene = {
       timeCost: 0,
     },
     {
-      label: "Enter the backroom",
+      label: "Enter the back room",
       action: "enterNeedleAndGrooveBackroom",
       nextScene: "needle-and-groove-backroom",
       timeCost: 1,
@@ -1272,12 +1272,12 @@ export const rayConversation: Conversation = {
   opening: [npc("Ray", "Afternoon. Gas, snacks, or you just looking?")],
   choices: [
     {
-      label: "I'm looking for work.",
+      label: "None of that. I need work.",
       requiresNoJob: true,
       requiresJobQuestTarget: "gas-station",
       jobOffer: "gas-station",
       response: [
-        ethan("I'm looking for work."),
+        ethan("None of that. I'm looking for work."),
         npc(
           "Ray",
           "I can use somebody reliable. You're hired. Anything in the shop is half price while you work here.",
@@ -1285,15 +1285,15 @@ export const rayConversation: Conversation = {
       ],
     },
     {
-      label: "Just looking around.",
+      label: "Just looking.",
       response: [
-        ethan("Just looking around."),
+        ethan("Just looking."),
         npc("Ray", "Look all you want. Holler if you need something."),
       ],
     },
     {
-      label: "Never mind.",
-      response: [ethan("Never mind."), npc("Ray", "Drive safe.")],
+      label: "Nothing today.",
+      response: [ethan("Nothing today."), npc("Ray", "Drive safe.")],
       endsConversation: true,
     },
   ],
@@ -1408,9 +1408,9 @@ export const tommyConversation: Conversation = {
       ],
     },
     {
-      label: "When do you get off work?",
+      label: "Hell of a solo. When are you off?",
       response: [
-        ethan("When do you get off work?"),
+        ethan("Hell of a solo. When do you get off?"),
         npc(
           "Tommy",
           "Eight in the morning till five. Nine hours of engines, grease, and people yelling about the music.",
@@ -1418,9 +1418,9 @@ export const tommyConversation: Conversation = {
       ],
     },
     {
-      label: "Things have been rough lately.",
+      label: "Rough week. I might need help.",
       response: [
-        ethan("Things have been rough lately. I might need your help."),
+        ethan("Turn it down a second. Things have been rough. I might need your help."),
         npc(
           "Tommy",
           "Hey. Whatever it is, you don't face it alone. Call me. I'll come.",
@@ -1439,7 +1439,7 @@ export const tommyConversation: Conversation = {
       ],
     },
     {
-      label: "Exit Conversation",
+      label: "Exit conversation",
       response: [],
       endsConversation: true,
     },
@@ -1505,9 +1505,9 @@ export const bigRoyConversation: Conversation = {
   ],
   choices: [
     {
-      label: "Busy day?",
+      label: "I'll watch it. Busy day?",
       response: [
-        ethan("Busy day?"),
+        ethan("I'll watch my step. Busy day?"),
         npc(
           "Big Roy",
           "Always. Scrap don't take days off. Neither does the coffee.",
@@ -1515,22 +1515,22 @@ export const bigRoyConversation: Conversation = {
       ],
     },
     {
-      label: "What do you do here?",
+      label: "I'll be careful. What do you do here?",
       response: [
-        ethan("What do you do here?"),
+        ethan("I'll be careful. What do you do here?"),
         npc(
           "Big Roy",
-          "Sort the good junk from the bad. Trick is, both of 'em used to be somebody's.",
+          "I sort the good junk from the bad. Trick is, both of 'em used to be somebody's.",
         ),
       ],
     },
     {
-      label: "I'm looking for work.",
+      label: "I'll watch it. I need work.",
       requiresNoJob: true,
       requiresJobQuestTarget: "scrapyard",
       jobOffer: "scrapyard",
       response: [
-        ethan("I'm looking for work."),
+        ethan("I'll watch my step. I'm looking for work."),
         npc(
           "Big Roy",
           "Then take this crowbar. You're hired. It'll pop a stubborn lock, and it's a weapon if it comes to that.",
@@ -1538,14 +1538,14 @@ export const bigRoyConversation: Conversation = {
       ],
     },
     {
-      label: "I'll let you get back to it.",
+      label: "Got it. I'll leave you to it.",
       response: [
-        ethan("I'll let you get back to it."),
+        ethan("Got it. I'll let you get back to it."),
         npc("Big Roy", "Appreciate it, kid. Keep your eyes open out there."),
       ],
     },
     {
-      label: "Exit Conversation",
+      label: "Exit conversation",
       response: [],
       endsConversation: true,
     },
@@ -1950,15 +1950,15 @@ export const earlConversation: Conversation = {
   ],
   choices: [
     {
-      label: "Just looking around.",
+      label: "Just looking.",
       response: [
-        ethan("Just looking around."),
+        ethan("Just looking."),
         npc("Earl", "Then look somewhere else. I've got work."),
       ],
     },
     {
-      label: "Never mind.",
-      response: [ethan("Never mind."), npc("Earl", "That's what I thought.")],
+      label: "No room. I'll move.",
+      response: [ethan("No room. I'll get out of your way."), npc("Earl", "That's what I thought.")],
       endsConversation: true,
     },
   ],
@@ -2315,7 +2315,7 @@ export const sanatoriumHallway: Scene = {
       timeCost: 1,
     },
     {
-      label: "Back to main floor",
+      label: "Back to the main floor",
       action: "returnToSanatoriumMainFloor",
       nextScene: "sanatorium-main-floor",
       timeCost: 1,
