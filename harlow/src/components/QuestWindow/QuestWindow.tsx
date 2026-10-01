@@ -25,14 +25,14 @@ export default function QuestWindow({ job, jobQuestTarget, momTalked, momJobConc
         {isMomQuestActive ? (
           <p>Mom should be in the kitchen. Maybe she knows what happened last night.</p>
         ) : !hasJobQuest ? (
-          <p>You had a moment to catch up.</p>
+          <p>You caught up with Mom.</p>
         ) : details ? (
           <>
-            <p>You are working at <strong>{details.name}</strong>.</p>
+            <p>{"You're working at "}<strong>{details.name}</strong>.</p>
             <p className={styles.benefit}>{details.benefit}</p>
           </>
         ) : jobQuestTarget ? (
-          <p>One of the leads might be worth following up on.</p>
+          <p>One of those leads is worth following up.</p>
         ) : (
           <p>{findAJobQuest.objective}</p>
         )}

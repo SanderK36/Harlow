@@ -4,7 +4,7 @@ export const jobDetails: Record<JobId, { name: string; employer: string; benefit
   "needle-groove": {
     name: "Needle & Groove",
     employer: "Johnny at Needle & Groove",
-    benefit: "Johnny shares extra town information in conversation.",
+    benefit: "Johnny tells you more about town when you talk.",
   },
   "gas-station": {
     name: "Harlow Gas & Service",
@@ -14,11 +14,11 @@ export const jobDetails: Record<JobId, { name: string; employer: string; benefit
   scrapyard: {
     name: "Scrapyard",
     employer: "Big Roy at the scrapyard",
-    benefit: "A sturdy crowbar for prying open locks and as a weapon.",
+    benefit: "A sturdy crowbar. It pries locks open, and it works as a weapon.",
   },
 };
 
 export const findAJobQuest = {
   title: "Find a Job",
-  objective: "Maybe there's a way to lend a hand.",
+  objective: "There's got to be a way to help out.",
 };
