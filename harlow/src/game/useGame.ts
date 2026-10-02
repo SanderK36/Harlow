@@ -11,6 +11,7 @@ import {
   momDeathConversation,
   scenes,
 } from "@/game/scenes";
+import { harlowAudio } from "@/game/audio";
 import { advanceGameTime } from "@/game/time";
 import { isNightTime } from "@/game/utils";
 import {
@@ -24,6 +25,18 @@ import type { Choice, GameChoice } from "@/game/choices";
 import type { Conversation, StoryEntry } from "@/game/story";
 import type { JobId } from "@/game/quests";
 import type { GameState, Weather } from "@/game/types";
+
+/**
+ * Going through a door: a quick dip to black while the door opens and shuts
+ * (the scene swaps while the screen is black). In milliseconds; under 1s.
+ */
+export const DOOR_FADE_IN = 250;
+export const DOOR_HOLD = 350;
+export const DOOR_FADE_OUT = 300;
+/** With reduced motion there is no fade; doors are just ignored this long. */
+const DOOR_REDUCED_MOTION_LOCK = 400;
+
+export type DoorTransitionPhase = "idle" | "closing" | "black" | "opening";
 
 const CONVERSATION_ACTIONS = new Set([
   // Add an action name here when a scene choice should open its conversation data.
@@ -112,8 +125,12 @@ export function useGame() {
   const questNotificationTimer = useRef<number | null>(null);
   const locationDiscoveryTimer = useRef<number | null>(null);
   const pendingQuestNotification = useRef<{ message: string; label: string } | null>(null);
+  const [doorTransition, setDoorTransition] = useState<DoorTransitionPhase>("idle");
+  const doorBusy = useRef(false);
+  const doorTimers = useRef<number[]>([]);
 
   useEffect(() => () => {
+    doorTimers.current.forEach((timer) => window.clearTimeout(timer));
     if (replyTimer.current !== null) window.clearTimeout(replyTimer.current);
     if (questNotificationTimer.current !== null) window.clearTimeout(questNotificationTimer.current);
     if (locationDiscoveryTimer.current !== null) window.clearTimeout(locationDiscoveryTimer.current);
@@ -430,9 +447,12 @@ export function useGame() {
     }, TRAVEL_DURATION);
   }
 
-  function handleChoice(choice: GameChoice) {
+  function handleChoice(choice: GameChoice, throughDoor = false) {
     // This is the central choice router. Prefer declarative scene fields
     // (`nextScene`, `itemToAdd`, `effects`) over adding action-specific cases.
+    // Nothing else can be chosen while a door transition is playing.
+    if (doorBusy.current && !throughDoor) return;
+
     if (!canTakeLateNightAction(choice)) {
       showLateNightActionThought();
       return;
@@ -446,6 +466,11 @@ export function useGame() {
     if (!isChoiceAvailable(choice)) return;
 
     if (choice.requirements?.money !== undefined && playerState.money < choice.requirements.money) {
+      return;
+    }
+
+    if (choice.door && !throughDoor) {
+      walkThroughDoor(choice);
       return;
     }
 
@@ -555,6 +580,42 @@ export function useGame() {
     }
 
     applyChoiceEffects(choice);
+  }
+
+  // The door transition calls back into the router once the screen is black;
+  // this keeps that call on the latest render's state.
+  const latestHandleChoice = useRef(handleChoice);
+  useEffect(() => {
+    latestHandleChoice.current = handleChoice;
+  });
+
+  /** Dip to black, play the door, and take the choice while it's dark. */
+  function walkThroughDoor(choice: Choice) {
+    doorBusy.current = true;
+    doorTimers.current.forEach((timer) => window.clearTimeout(timer));
+    const later = (callback: () => void, delay: number) => {
+      doorTimers.current.push(window.setTimeout(callback, delay));
+    };
+    const done = () => {
+      doorTimers.current = [];
+      doorBusy.current = false;
+      setDoorTransition("idle");
+    };
+    harlowAudio().door();
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      latestHandleChoice.current(choice, true);
+      later(done, DOOR_REDUCED_MOTION_LOCK);
+      return;
+    }
+
+    setDoorTransition("closing");
+    later(() => {
+      latestHandleChoice.current(choice, true);
+      setDoorTransition("black");
+    }, DOOR_FADE_IN);
+    later(() => setDoorTransition("opening"), DOOR_FADE_IN + DOOR_HOLD);
+    later(done, DOOR_FADE_IN + DOOR_HOLD + DOOR_FADE_OUT);
   }
 
   function goToBusStop() {
@@ -818,7 +879,8 @@ export function useGame() {
     loadMostRecentGame,
     startNewGameSession,
     notifyMomQuest,
-    handleChoice,
+    handleChoice: (choice: GameChoice) => handleChoice(choice),
+    doorTransition,
     goToBusStop,
     adminTravel,
     // The pass-time controls are developer tools, so they intentionally ignore

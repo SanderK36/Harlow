@@ -30,6 +30,13 @@ export type Choice = {
   hotspots?: { left: number; top: number; width: number; height: number }[];
   /** Uses the travel overlay instead of moving to the scene immediately. */
   travel?: boolean;
+  /**
+   * The choice goes through an actual door (a room door, a front or back
+   * door, a shop entrance): the screen dips to black and a door opens and
+   * shuts while the scene changes. Not for stairs, ladders, open doorways,
+   * walking around outside or the travel map.
+   */
+  door?: boolean;
   /** Disable the choice until these conditions are met. Extend this for new rules. */
   requirements?: {
     money?: number;
