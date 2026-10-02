@@ -490,34 +490,24 @@ export const backYard: Scene = {
 // ----------------------------------------
 
 export const momConversation: Conversation = {
-  opening: [npc("Linda", "Morning, honey.")],
+  opening: [npc("Linda", "Hey, honey.")],
 
   choices: [
     {
-      label: "Morning, Mom.",
+      label: "Hey, Mom.",
 
       response: [
-        ethan("Morning, Mom."),
-        npc("Linda", "You look wrung out. Did you sleep any?"),
+        ethan("Hey, Mom."),
+        npc("Linda", "You look wrung out."),
       ],
     },
 
     {
-      label: "Not really. Kept hearing sirens in my head.",
-      requiresChoice: "Morning, Mom.",
+      label: "Didn't sleep much. Kept hearing sirens.",
+      requiresChoice: "Hey, Mom.",
       response: [
-        ethan("Not really. Kept hearing sirens in my head."),
+        ethan("Didn't sleep much. Kept hearing sirens."),
         npc("Linda", "You and me both, kiddo."),
-      ],
-    },
-
-    {
-      label: "Did you sleep well?",
-      excludesChoice: "Not really. Kept hearing sirens in my head.",
-
-      response: [
-        ethan("Did you sleep well?"),
-        npc("Linda", "Some. Kept waking up."),
       ],
     },
 
@@ -536,6 +526,7 @@ export const momConversation: Conversation = {
     {
       label: "I'll find a way to help.",
       requiresStoryFlag: "momJobConcern",
+      requiresNoJob: true,
       response: [
         ethan("I'll find a way to help."),
         npc(
@@ -568,21 +559,21 @@ export const momDeathConversation: Conversation = {
   opening: [
     npc(
       "Linda",
-      "I saw you out by the tape last night. Barefoot, Ethan. Is it true? Mrs. Elrod?",
+      "I saw you out by the tape last night. Is it true? Mrs. Elrod?",
     ),
   ],
   choices: [
     {
-      label: "Yeah. Walter wouldn't tell me anything.",
+      label: "Yeah. It's true.",
       response: [
-        ethan("Yeah. Walter wouldn't tell me anything."),
+        ethan("Yeah. It's true. Walter wouldn't tell me anything else."),
         npc("Linda", "He asked me when I last saw her. It's been a few days."),
       ],
     },
     {
-      label: "Did you know her well?",
+      label: "Yeah. Did you know her well?",
       response: [
-        ethan("Did you know her well?"),
+        ethan("Yeah. Did you know her well?"),
         npc(
           "Linda",
           "Not really. A word or two when she got the mail.",
@@ -590,9 +581,9 @@ export const momDeathConversation: Conversation = {
       ],
     },
     {
-      label: "Do they know who did it?",
+      label: "Yeah. Do they know who did it?",
       response: [
-        ethan("Do they know who did it?"),
+        ethan("Yeah. Do they know who did it?"),
         npc(
           "Linda",
           "No. They're still putting it together. I'm not going to guess.",
@@ -600,12 +591,12 @@ export const momDeathConversation: Conversation = {
       ],
     },
     {
-      label: "I'm sorry, Mom. That's awful.",
+      label: "Yeah. I can't believe it.",
       response: [
-        ethan("I'm sorry, Mom. That's awful."),
+        ethan("Yeah. I can't believe it."),
         npc(
           "Linda",
-          "I know. She was alone in that house so much. Be careful. And let the sheriff handle it.",
+          "Me neither. She was alone in that house so much. Be careful. And let the sheriff handle it.",
         ),
       ],
       completesMomQuest: true,
@@ -620,9 +611,14 @@ export const momDeathConversation: Conversation = {
 
 export const johnnyConversation: Conversation = {
   opening: [npc("Johnny", "Hey. Looking for something?")],
+  jobOpening: {
+    job: "needle-groove",
+    opening: [npc("Johnny", "Hey, new guy. These records won't shelve themselves.")],
+  },
   choices: [
     {
       label: "Just looking around.",
+      excludesJob: "needle-groove",
       response: [
         ethan("Yeah. Just looking around."),
         npc("Johnny", "Take your time."),
@@ -630,6 +626,7 @@ export const johnnyConversation: Conversation = {
     },
     {
       label: "Not really. You own this place?",
+      excludesJob: "needle-groove",
       response: [
         ethan("Not really. You own this place?"),
         npc("Johnny", "Yeah. A few years now."),
@@ -649,10 +646,18 @@ export const johnnyConversation: Conversation = {
       ],
     },
     {
-      label: "Not a record. Heard anything?",
+      label: "Thanks, Johnny. When do I start?",
       requiresJob: "needle-groove",
       response: [
-        ethan("Not a record. Heard anything interesting?"),
+        ethan("Thanks, Johnny. When do I start?"),
+        npc("Johnny", "You just did. Grab a box."),
+      ],
+    },
+    {
+      label: "Heard anything interesting?",
+      requiresJob: "needle-groove",
+      response: [
+        ethan("Heard anything interesting lately?"),
         npc(
           "Johnny",
           "Always. Diner, after lunch. People talk louder than they think.",
@@ -661,7 +666,14 @@ export const johnnyConversation: Conversation = {
     },
     {
       label: "Nothing.",
+      excludesJob: "needle-groove",
       response: [ethan("Nothing."), npc("Johnny", "Suit yourself.")],
+      endsConversation: true,
+    },
+    {
+      label: "Catch you later.",
+      requiresJob: "needle-groove",
+      response: [ethan("Catch you later."), npc("Johnny", "Don't be late.")],
       endsConversation: true,
     },
   ],
@@ -878,9 +890,9 @@ export const margaretConversation: Conversation = {
       ],
     },
     {
-      label: "Thanks. People talking about Mrs. Elrod?",
+      label: "People talking about Mrs. Elrod?",
       response: [
-        ethan("Thanks. People talking about Mrs. Elrod?"),
+        ethan("People talking about Mrs. Elrod?"),
         npc(
           "Margaret",
           "People talk. Not much of it I'd repeat.",
@@ -1335,7 +1347,11 @@ export const needleAndGrooveBackroom: Scene = {
 // ----------------------------------------
 
 export const rayConversation: Conversation = {
-  opening: [npc("Ray", "Afternoon. Gas, snacks, or you just looking?")],
+  opening: [npc("Ray", "Hey there. Gas, snacks, or you just looking?")],
+  jobOpening: {
+    job: "gas-station",
+    opening: [npc("Ray", "There's my new hire. Coffee's in the back.")],
+  },
   choices: [
     {
       label: "None of that. I need work.",
@@ -1352,14 +1368,30 @@ export const rayConversation: Conversation = {
     },
     {
       label: "Just looking.",
+      excludesJob: "gas-station",
       response: [
         ethan("Just looking."),
         npc("Ray", "Look all you want. Holler if you need something."),
       ],
     },
     {
+      label: "Thanks, Ray. I won't let you down.",
+      requiresJob: "gas-station",
+      response: [
+        ethan("Thanks, Ray. I won't let you down."),
+        npc("Ray", "Show up on time and we'll get along fine."),
+      ],
+    },
+    {
       label: "Nothing today.",
+      excludesJob: "gas-station",
       response: [ethan("Nothing today."), npc("Ray", "Drive safe.")],
+      endsConversation: true,
+    },
+    {
+      label: "See you, Ray.",
+      requiresJob: "gas-station",
+      response: [ethan("See you, Ray."), npc("Ray", "See you, kid.")],
       endsConversation: true,
     },
   ],
@@ -1486,14 +1518,14 @@ export const tommyConversation: Conversation = {
         ethan("Hell of a solo. When do you get off?"),
         npc(
           "Tommy",
-          "Eight in the morning till five. Nine hours of engines, grease, and people yelling about the music.",
+          "Five. Eight to five, every day. Nine hours of engines, grease, and people yelling about the music.",
         ),
       ],
     },
     {
-      label: "Rough week. I might need help.",
+      label: "Things have been rough. I might need help.",
       response: [
-        ethan("Turn it down a second. Things have been rough. I might need your help."),
+        ethan("Things have been rough. I might need your help."),
         npc(
           "Tommy",
           "Hey. Whatever it is, you don't face it alone. Call me. I'll come.",
@@ -1574,12 +1606,17 @@ export const bigRoyConversation: Conversation = {
   opening: [
     npc(
       "Big Roy",
-      "Morning. Watch your step. This place'll bite you if you let it.",
+      "Watch your step, kid. This place'll bite you if you let it.",
     ),
   ],
+  jobOpening: {
+    job: "scrapyard",
+    opening: [npc("Big Roy", "Crowbar still in one piece? Good. So are you.")],
+  },
   choices: [
     {
       label: "I'll watch it. Busy day?",
+      excludesJob: "scrapyard",
       response: [
         ethan("I'll watch my step. Busy day?"),
         npc(
@@ -1590,6 +1627,7 @@ export const bigRoyConversation: Conversation = {
     },
     {
       label: "I'll be careful. What do you do here?",
+      excludesJob: "scrapyard",
       response: [
         ethan("I'll be careful. What do you do here?"),
         npc(
@@ -1609,6 +1647,14 @@ export const bigRoyConversation: Conversation = {
           "Big Roy",
           "Then take this crowbar. You're hired. It'll pop a stubborn lock, and it's a weapon if it comes to that.",
         ),
+      ],
+    },
+    {
+      label: "Thanks, Roy. I'll put it to good use.",
+      requiresJob: "scrapyard",
+      response: [
+        ethan("Thanks, Roy. I'll put it to good use."),
+        npc("Big Roy", "Locks first. Skulls only if you have to."),
       ],
     },
     {

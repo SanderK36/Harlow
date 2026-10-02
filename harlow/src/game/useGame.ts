@@ -246,7 +246,10 @@ export function useGame() {
     const selectedConversation = currentScene.id === "kitchen" && !momTalked
       ? momDeathConversation
       : currentScene.conversation;
-    const opening = selectedConversation?.opening;
+    const opening =
+      selectedConversation?.jobOpening && selectedConversation.jobOpening.job === job
+        ? selectedConversation.jobOpening.opening
+        : selectedConversation?.opening;
 
     if (!opening) {
       return;
@@ -351,7 +354,8 @@ export function useGame() {
       showQuestNotification("Talk to Mom", "Quest complete");
     }
 
-    if (choice.storyFlag === "momJobConcern") {
+    // Only the first time, and not once Ethan already has a job.
+    if (choice.storyFlag === "momJobConcern" && !momJobConcernHeard && !job) {
       setMomJobConcernHeard(true);
       setCurrentThought("I gotta get a job. Maybe those flyers on the light pole out front.");
       pendingQuestNotification.current = {
@@ -744,7 +748,7 @@ export function useGame() {
           (!choice.requiresJobQuestTarget || choice.requiresJobQuestTarget === jobQuestTarget) &&
           (!choice.requiresStoryFlag || (choice.requiresStoryFlag === "momJobConcern" && momJobConcernHeard)) &&
           (!choice.requiresChoice || usedConversationChoices.includes(choice.requiresChoice)) &&
-          (!choice.excludesChoice || !usedConversationChoices.includes(choice.excludesChoice)) &&
+          (!choice.excludesJob || choice.excludesJob !== job) &&
           (choice.endsConversation || !usedConversationChoices.includes(choice.label))
       )
     : currentScene.choices.filter(isChoiceAvailable);
