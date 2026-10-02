@@ -106,6 +106,8 @@ export function useGame() {
   const [replyPending, setReplyPending] = useState(false);
   // A closing choice was picked: its reply plays, then the next click closes.
   const [conversationEnding, setConversationEnding] = useState(false);
+  // The conversation opened with its jobOpening (Ethan came back as an employee).
+  const [openedAsEmployee, setOpenedAsEmployee] = useState(false);
   const replyTimer = useRef<number | null>(null);
   const questNotificationTimer = useRef<number | null>(null);
   const locationDiscoveryTimer = useRef<number | null>(null);
@@ -246,10 +248,11 @@ export function useGame() {
     const selectedConversation = currentScene.id === "kitchen" && !momTalked
       ? momDeathConversation
       : currentScene.conversation;
-    const opening =
-      selectedConversation?.jobOpening && selectedConversation.jobOpening.job === job
-        ? selectedConversation.jobOpening.opening
-        : selectedConversation?.opening;
+    const asEmployee =
+      !!selectedConversation?.jobOpening && selectedConversation.jobOpening.job === job;
+    const opening = asEmployee
+      ? selectedConversation.jobOpening!.opening
+      : selectedConversation?.opening;
 
     if (!opening) {
       return;
@@ -257,6 +260,7 @@ export function useGame() {
 
     setActiveConversation(selectedConversation ?? null);
     setConversationEnding(false);
+    setOpenedAsEmployee(asEmployee);
     setUsedConversationChoices([]);
     setConversation(opening);
     setConversationActive(true);
@@ -749,6 +753,7 @@ export function useGame() {
           (!choice.requiresStoryFlag || (choice.requiresStoryFlag === "momJobConcern" && momJobConcernHeard)) &&
           (!choice.requiresChoice || usedConversationChoices.includes(choice.requiresChoice)) &&
           (!choice.excludesJob || choice.excludesJob !== job) &&
+          (!choice.returningEmployee || openedAsEmployee) &&
           (choice.endsConversation || !usedConversationChoices.includes(choice.label))
       )
     : currentScene.choices.filter(isChoiceAvailable);
