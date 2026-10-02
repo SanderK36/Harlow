@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * Harlow's sound, generated in the browser with the Web Audio API: no sound
- * files, so there is nothing to license. A steady rain bed (filtered noise),
- * the rare roll of thunder, and a soft hotspot tick. Everything goes through
- * one master gain that the mute toggle controls; the choice is remembered in
- * localStorage.
+ * Harlow's sound, mostly generated in the browser with the Web Audio API: a
+ * steady rain bed (filtered noise), the rare roll of thunder, and a soft
+ * hotspot tick. The one recorded sound is the door (public/sounds/door.mp3,
+ * CC0, see public/sounds/CREDITS.md). Everything goes through one master gain
+ * that the mute toggle controls; the choice is remembered in localStorage.
  *
  * There used to be a low drone too: two sines at 55 and 55.6 Hz beat against
  * each other 0.6 times a second, which came through as a thumping behind the
@@ -20,6 +20,8 @@ export type Ambience = {
 
 const STORAGE_KEY = "harlow-sound";
 const MASTER_LEVEL = 0.8;
+const DOOR_SOUND_URL = "./sounds/door.mp3";
+const DOOR_LEVEL = 0.5;
 
 const RAIN_LEVEL: Record<string, number> = {
   Sunny: 0,
@@ -41,6 +43,9 @@ class HarlowAudio {
   private wanted: Ambience | null = null;
   private listeners = new Set<Listener>();
   private lastHover = 0;
+  private doorBuffer: AudioBuffer | null = null;
+  private doorLoading: Promise<AudioBuffer | null> | null = null;
+  private doorSource: AudioBufferSourceNode | null = null;
 
   constructor() {
     if (typeof window !== "undefined") {
@@ -96,6 +101,31 @@ class HarlowAudio {
     this.blip(420, 0.06, 0.09);
   }
 
+  /**
+   * A door opening and swinging shut. A second door cuts the first one off
+   * rather than playing over it, so quick clicks never stack.
+   */
+  door() {
+    const context = this.ready();
+    if (!context || !this.master) return;
+    const requested = context.currentTime;
+    void this.loadDoor().then((buffer) => {
+      // Still loading after a beat: the moment has passed, so skip it.
+      if (!buffer || !this.master || this.muted || context.currentTime - requested > 0.35) return;
+      this.doorSource?.stop();
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      const gain = context.createGain();
+      gain.gain.value = DOOR_LEVEL;
+      source.connect(gain).connect(this.master);
+      source.onended = () => {
+        if (this.doorSource === source) this.doorSource = null;
+      };
+      this.doorSource = source;
+      source.start();
+    });
+  }
+
   /** A roll of thunder; `distance` 0 is overhead, 1 is far off. */
   thunder(distance = 0.5) {
     const context = this.ready();
@@ -123,6 +153,25 @@ class HarlowAudio {
   }
 
   // ---------- internals ----------
+
+  private loadDoor() {
+    if (this.doorBuffer) return Promise.resolve(this.doorBuffer);
+    const context = this.context;
+    if (!context) return Promise.resolve(null);
+    this.doorLoading ??= fetch(DOOR_SOUND_URL)
+      .then((response) => (response.ok ? response.arrayBuffer() : Promise.reject()))
+      .then((data) => context.decodeAudioData(data))
+      .then((buffer) => {
+        this.doorBuffer = buffer;
+        return buffer;
+      })
+      .catch(() => {
+        // Let a later door try again (e.g. after a dropped connection).
+        this.doorLoading = null;
+        return null;
+      });
+    return this.doorLoading;
+  }
 
   private ready() {
     if (this.muted) return null;
@@ -182,6 +231,8 @@ class HarlowAudio {
     rain.start();
 
     this.applyAmbience();
+    // Fetch the door sound now, so the first door already has it.
+    void this.loadDoor();
   }
 
   private applyAmbience() {

@@ -156,6 +156,7 @@ export const hallway: Scene = {
     {
       label: "Go to the bathroom",
       action: "goBathroom",
+      door: true,
       nextScene: "bathroom",
       timeCost: 0,
       hotspots: [{ left: 46, top: 21, width: 12, height: 41 }],
@@ -175,12 +176,14 @@ export const hallway: Scene = {
     {
       label: "Go to the garage",
       action: "goGarage",
+      door: true,
       nextScene: "garage",
       timeCost: 0,
     },
     {
       label: "Go outside",
       action: "leaveHouse",
+      door: true,
       nextScene: "front-yard",
       timeCost: 5,
     },
@@ -211,6 +214,7 @@ export const upstairsHallway: Scene = {
     {
       label: "Go to your room",
       action: "goEthanRoom",
+      door: true,
       nextScene: "ethan-room",
       timeCost: 0,
       hotspots: [{ left: 74, top: 18, width: 10, height: 59 }],
@@ -218,6 +222,7 @@ export const upstairsHallway: Scene = {
     {
       label: "Go to Mom's room",
       action: "goMomRoom",
+      door: true,
       nextScene: "mom-room",
       timeCost: 0,
       hotspots: [{ left: 45, top: 21, width: 12, height: 39 }],
@@ -225,6 +230,7 @@ export const upstairsHallway: Scene = {
     {
       label: "Go to Emily's room",
       action: "goEmilyRoom",
+      door: true,
       nextScene: "emily-room",
       timeCost: 0,
       hotspots: [{ left: 64.5, top: 15, width: 4.5, height: 26 }],
@@ -381,6 +387,7 @@ export const frontYard: Scene = {
     {
       label: "Enter the garage",
       action: "enterGarage",
+      door: true,
       nextScene: "garage",
       timeCost: 2,
     },
@@ -399,6 +406,7 @@ export const frontYard: Scene = {
     {
       label: "Go back inside",
       action: "goHome",
+      door: true,
       nextScene: "hallway",
       timeCost: 5,
     },
@@ -479,6 +487,7 @@ export const backYard: Scene = {
     {
       label: "Go to the kitchen",
       action: "goKitchen",
+      door: true,
       nextScene: "kitchen",
       timeCost: 5,
     },
@@ -859,6 +868,7 @@ export const kitchen: Scene = {
     {
       label: "Go to the backyard",
       action: "goBackYard",
+      door: true,
       nextScene: "back-yard",
       timeCost: 5,
     },
@@ -1009,6 +1019,7 @@ export const bathroom: Scene = {
     {
       label: "Go to the hallway",
       action: "goHome",
+      door: true,
       nextScene: "hallway",
       timeCost: 0,
     },
@@ -1064,7 +1075,7 @@ export const ethanRoom: Scene = {
       nextScene: "ethan-room-desk",
       timeCost: 0,
     },
-    returnToUpstairsHallway,
+    { ...returnToUpstairsHallway, door: true },
   ],
 };
 
@@ -1111,7 +1122,7 @@ export const momRoom: Scene = {
     weather: rainArt("./images/locations/home/motherRoomDay-rain.jpg"),
     weatherDayOnly: true,
   },
-  choices: [returnToUpstairsHallway],
+  choices: [{ ...returnToUpstairsHallway, door: true }],
 };
 
 export const emilyRoom: Scene = {
@@ -1129,7 +1140,7 @@ export const emilyRoom: Scene = {
     weather: rainArt("./images/locations/home/sisterRoomDay-rain.jpg"),
     weatherDayOnly: true,
   },
-  choices: [returnToUpstairsHallway],
+  choices: [{ ...returnToUpstairsHallway, door: true }],
 };
 
 export const attic: Scene = {
@@ -1184,7 +1195,7 @@ export const garage: Scene = {
       nextScene: "garage-bench",
       timeCost: 0,
     },
-    returnToHallway,
+    { ...returnToHallway, door: true },
   ],
 };
 
@@ -1264,6 +1275,7 @@ export const needleAndGroove: Scene = {
     {
       label: "Go inside",
       action: "enterNeedleAndGroove",
+      door: true,
       nextScene: "needle-and-groove-inside",
       timeCost: 2,
     },
@@ -1311,12 +1323,14 @@ export const needleAndGrooveInside: Scene = {
     {
       label: "Enter the back room",
       action: "enterNeedleAndGrooveBackroom",
+      door: true,
       nextScene: "needle-and-groove-backroom",
       timeCost: 1,
     },
     {
       label: "Go outside",
       action: "leaveNeedleAndGroove",
+      door: true,
       nextScene: "needle-and-groove",
       timeCost: 0,
     },
@@ -1346,6 +1360,7 @@ export const needleAndGrooveBackroom: Scene = {
     {
       label: "Go back to the shop",
       action: "leaveNeedleAndGrooveBackroom",
+      door: true,
       nextScene: "needle-and-groove-inside",
       timeCost: 0,
     },
@@ -1443,6 +1458,7 @@ export const gasStation: Scene = {
     {
       label: "Go inside",
       action: "enterGasStation",
+      door: true,
       nextScene: "gas-station-inside",
       timeCost: 2,
     },
@@ -1504,6 +1520,7 @@ export const gasStationInside: Scene = {
     {
       label: "Go outside",
       action: "leaveGasStation",
+      door: true,
       nextScene: "gas-station",
       timeCost: 0,
     },
@@ -1718,6 +1735,7 @@ export const scrapyard: Scene = {
     {
       label: "Enter the scrapyard",
       action: "enterScrapyard",
+      door: true,
       nextScene: "scrapyard-inside",
       timeCost: 2,
     },
@@ -1842,6 +1860,7 @@ export const policeStation: Scene = {
     {
       label: "Go inside",
       action: "enterPoliceStation",
+      door: true,
       nextScene: "police-station-inside",
       timeCost: 2,
     },
@@ -1863,12 +1882,14 @@ export const policeStationInside: Scene = {
     {
       label: "Go outside",
       action: "leavePoliceStation",
+      door: true,
       nextScene: "police-station",
       timeCost: 0,
     },
     {
       label: "Go to the sheriff's office",
       action: "goToSheriffOffice",
+      door: true,
       nextScene: "sheriff-office",
       timeCost: 2,
     },
@@ -1917,6 +1938,7 @@ export const sheriffOffice: Scene = {
     {
       label: "Go back to the station",
       action: "leaveSheriffOffice",
+      door: true,
       nextScene: "police-station-inside",
       timeCost: 0,
     },
@@ -1955,6 +1977,7 @@ export const cementary: Scene = {
     {
       label: "Enter the cemetery",
       action: "enterCemetery",
+      door: true,
       nextScene: "cementary-inside",
       timeCost: 1,
     },
@@ -1982,12 +2005,14 @@ export const cementaryInside: Scene = {
     {
       label: "Walk toward the back",
       action: "goCemeteryBackside",
+      door: true,
       nextScene: "cementary-backside",
       timeCost: 2,
     },
     {
       label: "Go back to the entrance",
       action: "leaveCemetery",
+      door: true,
       nextScene: "cementary",
       timeCost: 1,
     },
@@ -2015,6 +2040,7 @@ export const cementaryBackside: Scene = {
     {
       label: "Go back inside",
       action: "leaveCemeteryBackside",
+      door: true,
       nextScene: "cementary-inside",
       timeCost: 2,
     },
@@ -2040,6 +2066,7 @@ export const hospital: Scene = {
     {
       label: "Go inside",
       action: "enterHospital",
+      door: true,
       nextScene: "hospital-reception",
       timeCost: 2,
     },
@@ -2092,6 +2119,7 @@ export const hospitalReception: Scene = {
     {
       label: "Go outside",
       action: "leaveHospital",
+      door: true,
       nextScene: "hospital",
       timeCost: 0,
     },
@@ -2239,6 +2267,7 @@ export const motel: Scene = {
     {
       label: "Go inside",
       action: "enterMotel",
+      door: true,
       nextScene: "motel-inside",
       timeCost: 1,
     },
@@ -2282,6 +2311,7 @@ export const motelInside: Scene = {
     {
       label: "Go outside",
       action: "leaveMotel",
+      door: true,
       nextScene: "motel",
       timeCost: 0,
     },
@@ -2335,6 +2365,7 @@ export const diner: Scene = {
     {
       label: "Go inside",
       action: "enterDiner",
+      door: true,
       nextScene: "diner-inside",
       timeCost: 1,
     },
@@ -2371,6 +2402,7 @@ export const dinerInside: Scene = {
     {
       label: "Go outside",
       action: "leaveDiner",
+      door: true,
       nextScene: "diner",
       timeCost: 0,
     },
@@ -2418,6 +2450,7 @@ export const sanatoriumEntrance: Scene = {
     {
       label: "Go inside",
       action: "enterSanatorium",
+      door: true,
       nextScene: "sanatorium-main-floor",
       timeCost: 1,
     },
@@ -2451,6 +2484,7 @@ export const sanatoriumMainFloor: Scene = {
     {
       label: "Go outside",
       action: "leaveSanatorium",
+      door: true,
       nextScene: "sanatorium-entrance",
       timeCost: 1,
     },
@@ -2472,18 +2506,21 @@ export const sanatoriumHallway: Scene = {
     {
       label: "Enter the first room",
       action: "enterSanatoriumRoom1",
+      door: true,
       nextScene: "sanatorium-room-1",
       timeCost: 1,
     },
     {
       label: "Enter the second room",
       action: "enterSanatoriumRoom2",
+      door: true,
       nextScene: "sanatorium-room-2",
       timeCost: 1,
     },
     {
       label: "Go outside",
       action: "leaveSanatoriumHallway",
+      door: true,
       nextScene: "sanatorium-entrance",
       timeCost: 1,
     },
@@ -2511,6 +2548,7 @@ export const sanatoriumRoom1: Scene = {
     {
       label: "Return to the hallway",
       action: "leaveSanatoriumRoom1",
+      door: true,
       nextScene: "sanatorium-hallway",
       timeCost: 1,
     },
@@ -2532,6 +2570,7 @@ export const sanatoriumRoom2: Scene = {
     {
       label: "Return to the hallway",
       action: "leaveSanatoriumRoom2",
+      door: true,
       nextScene: "sanatorium-hallway",
       timeCost: 1,
     },

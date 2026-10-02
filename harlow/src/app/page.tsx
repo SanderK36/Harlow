@@ -198,6 +198,7 @@ export default function Home() {
     showInventory,
     setShowInventory,
     handleChoice,
+    doorTransition,
     adminWait,
     adminTravel,
     travelingTo,
@@ -343,6 +344,17 @@ export default function Home() {
       window.removeEventListener("keydown", unlock);
     };
   }, []);
+
+  // Keys wait while a door transition plays (clicks hit its overlay).
+  useEffect(() => {
+    if (doorTransition === "idle") return;
+    const swallow = (event: KeyboardEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    window.addEventListener("keydown", swallow, true);
+    return () => window.removeEventListener("keydown", swallow, true);
+  }, [doorTransition]);
 
   const inGame = Boolean(hasStarted ?? resumedSession);
   const sceneIsIndoor = !(
@@ -955,6 +967,15 @@ export default function Home() {
             location={travelingTo.location}
             method={travelingTo.method}
             isNight={travelingTo.isNight}
+          />
+        )}
+
+        {/* Going through a door: a quick dip to black that also swallows
+            clicks until the new scene is back. */}
+        {doorTransition !== "idle" && (
+          <div
+            className={`door-transition door-transition-${doorTransition}`}
+            aria-hidden="true"
           />
         )}
 

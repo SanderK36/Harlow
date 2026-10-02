@@ -1774,3 +1774,33 @@ button {
   }
 
 }
+
+/* Going through a door (see DOOR_FADE_* in useGame): fade to black, hold
+   while the scene swaps, fade back. The overlay also blocks clicks. */
+.door-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #000;
+  opacity: 1;
+  pointer-events: auto;
+  cursor: default;
+}
+
+.door-transition-closing {
+  animation: doorFadeIn 250ms ease-in forwards;
+}
+
+.door-transition-opening {
+  animation: doorFadeOut 300ms ease-out forwards;
+}
+
+@keyframes doorFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes doorFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
