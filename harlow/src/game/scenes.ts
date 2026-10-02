@@ -648,9 +648,19 @@ export const johnnyConversation: Conversation = {
     {
       label: "Thanks, Johnny. When do I start?",
       requiresJob: "needle-groove",
+      requiresChoice: "I'm looking for work.",
       response: [
         ethan("Thanks, Johnny. When do I start?"),
         npc("Johnny", "You just did. Grab a box."),
+      ],
+    },
+    {
+      label: "On it.",
+      requiresJob: "needle-groove",
+      returningEmployee: true,
+      response: [
+        ethan("On it."),
+        npc("Johnny", "Alphabetical this time. Not by how cool the cover is."),
       ],
     },
     {
@@ -1377,9 +1387,19 @@ export const rayConversation: Conversation = {
     {
       label: "Thanks, Ray. I won't let you down.",
       requiresJob: "gas-station",
+      requiresChoice: "None of that. I need work.",
       response: [
         ethan("Thanks, Ray. I won't let you down."),
         npc("Ray", "Show up on time and we'll get along fine."),
+      ],
+    },
+    {
+      label: "Thanks. I'll grab a cup.",
+      requiresJob: "gas-station",
+      returningEmployee: true,
+      response: [
+        ethan("Thanks. I'll grab a cup."),
+        npc("Ray", "Don't drink it all. It's the only thing keeping me alive."),
       ],
     },
     {
@@ -1652,9 +1672,19 @@ export const bigRoyConversation: Conversation = {
     {
       label: "Thanks, Roy. I'll put it to good use.",
       requiresJob: "scrapyard",
+      requiresChoice: "I'll watch it. I need work.",
       response: [
         ethan("Thanks, Roy. I'll put it to good use."),
         npc("Big Roy", "Locks first. Skulls only if you have to."),
+      ],
+    },
+    {
+      label: "Still in one piece. Barely.",
+      requiresJob: "scrapyard",
+      returningEmployee: true,
+      response: [
+        ethan("Still in one piece. Barely."),
+        npc("Big Roy", "That's the whole job description."),
       ],
     },
     {

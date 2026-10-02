@@ -48,6 +48,9 @@ export type ConversationChoice = {
   requiresNoJob?: boolean;
   /** Show this choice only when Ethan has this job. */
   requiresJob?: import("./quests").JobId;
+  /** Show this choice only when the conversation opened with jobOpening,
+   *  i.e. on a later visit as an employee, never in the hiring talk. */
+  returningEmployee?: boolean;
   /** Hide this choice while Ethan has this job (other jobs don't matter). */
   excludesJob?: import("./quests").JobId;
   /** Show this offer only after selecting its matching flyer. */
