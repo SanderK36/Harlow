@@ -12,15 +12,14 @@ type StormLightningProps = {
   active: boolean;
 };
 
-// Seconds between strikes [min, max] and how bright they are.
+// Seconds between strikes [min, max] and how bright they are. Only a
+// Thunderstorm has lightning; Rainy and Heavy rain are rain only.
 const STORMS: Partial<Record<Weather, { gap: [number, number]; strength: number }>> = {
   Thunderstorm: { gap: [14, 32], strength: 1 },
-  "Heavy rain": { gap: [35, 80], strength: 0.75 },
-  Rainy: { gap: [70, 150], strength: 0.5 },
 };
 
 /**
- * Lightning over the scene art in bad weather: the picture whites out for a
+ * Lightning over the scene art in a thunderstorm: the picture whites out for a
  * moment, then thunder rolls in after a delay that suggests the distance.
  * Inside the house the flash is softer, as if through a window.
  */

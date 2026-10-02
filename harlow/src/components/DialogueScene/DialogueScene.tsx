@@ -33,6 +33,12 @@ type DialogueSceneProps = {
 // Ethan's own (already chosen) line steps aside on its own for the NPC reply.
 const ETHAN_AUTO_ADVANCE = 520;
 
+// A closing reply stays up long enough to read, then the conversation closes
+// by itself: 2.5 s plus 60 ms a character, kept between 3 and 10 seconds.
+export function closingReadTime(text: string) {
+  return Math.min(10_000, Math.max(3_000, 2_500 + text.length * 60));
+}
+
 function toDialogueLines(entries: StoryEntry[]): DialogueLine[] {
   return entries.flatMap((entry): DialogueLine[] => {
     if (entry.type === "conversation") {
@@ -133,6 +139,15 @@ export default function DialogueScene({
     return () => window.clearTimeout(timer);
   }, [canFinish, onFinish, reducedMotion, speakerIsEthan]);
 
+  // A closing NPC reply: once it has fully typed out, close after a reading
+  // delay. A click, tap or key press (advance) still closes it sooner.
+  const closingText = canFinish && !speakerIsEthan ? line?.text ?? "" : null;
+  useEffect(() => {
+    if (closingText === null || !onFinish) return;
+    const timer = window.setTimeout(onFinish, closingReadTime(closingText));
+    return () => window.clearTimeout(timer);
+  }, [closingText, onFinish]);
+
   function advance() {
     if (!active) return;
     if (!lineComplete) {
@@ -219,7 +234,7 @@ export default function DialogueScene({
 
   if (!line) return null;
 
-  const awaitingContinue = lineComplete && (hasQueuedLines || canFinish) && !speakerIsEthan;
+  const awaitingContinue = lineComplete && hasQueuedLines && !speakerIsEthan;
 
   return (
     <div ref={stageRef} className={styles.stage}>
