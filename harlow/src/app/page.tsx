@@ -29,6 +29,7 @@ import QuestWindow from "@/components/QuestWindow/QuestWindow";
 
 import { isNightTime } from "@/game/utils";
 import { useGame } from "@/game/useGame";
+import { storyEntryApplies } from "@/game/story";
 import { isExteriorScene, RAIN_WEATHER, scenes } from "@/game/scenes";
 import { clearSessionSave, readSessionSave } from "@/game/save";
 import { harlowAudio } from "@/game/audio";
@@ -767,7 +768,9 @@ export default function Home() {
               <div className="scene-caption-narration">
                 <StoryLog
                   entries={currentScene.story.filter(
-                    (entry) => entry.type !== "thought",
+                    (entry) =>
+                      entry.type !== "thought" &&
+                      storyEntryApplies(entry, gameState.time, gameState.weather),
                   )}
                   variant="narration"
                   layout="combined"

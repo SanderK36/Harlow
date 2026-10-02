@@ -1,12 +1,17 @@
+import type { Weather } from "./types";
+
 export type ThoughtCondition = {
   from?: number;
   until?: number;
+  /** Only in these weather states (the same values as the image weather map). */
+  weather?: Weather[];
 };
 
 export type StoryEntry =
   | {
       type: "narration";
       text: string;
+      condition?: ThoughtCondition;
     }
   | {
       type: "thought";
@@ -55,11 +60,12 @@ export type Conversation = {
   choices: ConversationChoice[];
 };
 
-export function narration(text: string): StoryEntry {
-  // Scene description without a speaker.
+export function narration(text: string, condition?: ThoughtCondition): StoryEntry {
+  // Scene description without a speaker; an optional time/weather condition.
   return {
     type: "narration",
     text,
+    condition,
   };
 }
 
@@ -67,12 +73,23 @@ export function thought(
   text: string,
   condition?: ThoughtCondition
 ): StoryEntry {
-  // Ethan's internal narration; an optional time condition controls visibility.
+  // Ethan's internal narration; an optional time/weather condition controls visibility.
   return {
     type: "thought",
     text,
     condition,
   };
+}
+
+/** Whether a narration or thought line applies at this time and weather. */
+export function storyEntryApplies(entry: StoryEntry, time: number, weather: Weather) {
+  if (entry.type !== "narration" && entry.type !== "thought") return true;
+  const condition = entry.condition;
+  if (!condition) return true;
+  const afterStart = condition.from === undefined || time >= condition.from;
+  const beforeEnd = condition.until === undefined || time < condition.until;
+  const weatherMatches = !condition.weather || condition.weather.includes(weather);
+  return afterStart && beforeEnd && weatherMatches;
 }
 
 export function ethan(text: string): StoryEntry {
