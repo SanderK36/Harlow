@@ -57,6 +57,8 @@ export type StoryFlag =
   | "sanatoriumEntranceFear"
   | "sanatoriumHallwayFear"
   | "tapeSeen"
+  /** Earl told Ethan to look somewhere else. Hides "Just looking." */
+  | "earlLookElsewhere"
   | "chapter1Complete";
 
 export type QuestDef = {

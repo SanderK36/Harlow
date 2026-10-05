@@ -1259,11 +1259,6 @@ export const margaretConversation: Conversation = {
       ],
       endsConversation: true,
     },
-    {
-      label: "Exit conversation",
-      response: [],
-      endsConversation: true,
-    },
   ],
 };
 
@@ -2478,6 +2473,8 @@ export const earlConversation: Conversation = {
   choices: [
     {
       label: "Just looking.",
+      excludesStoryFlag: "earlLookElsewhere",
+      storyFlag: "earlLookElsewhere",
       response: [
         ethan("Just looking."),
         npc("Earl", "Then look somewhere else. I've got work."),

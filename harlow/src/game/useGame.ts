@@ -237,6 +237,14 @@ export function useGame() {
     if (!shouldNoticeHill(sceneId, time, migrated, flags)) return migrated;
     return startQuest(migrated, "light-on-the-hill");
   });
+  // React applies setQuests after this handler returns. A second update in the
+  // same click must read this list, not the quests from the last render.
+  const questsRef = useRef(quests);
+  function commitQuests(next: QuestProgress[]) {
+    questsRef.current = next;
+    setQuests(next);
+    return next;
+  }
   const [storyFlags, setStoryFlags] = useState<Partial<Record<StoryFlag, boolean>>>(
     () => sessionSave?.storyFlags ?? (
       sessionSave?.momJobConcernHeard ? { momJobConcern: true } : {}
@@ -305,16 +313,14 @@ export function useGame() {
   }
 
   function openHillQuest() {
-    // Compute from the quests already on screen. A setQuests updater is not
-    // run until the next render once this handler has called setState, so a
-    // flag set inside the updater is still false when this function returns.
+    const current = questsRef.current;
     if (
-      isQuestActive(quests, "light-on-the-hill")
-      || isQuestCompleted(quests, "light-on-the-hill")
+      isQuestActive(current, "light-on-the-hill")
+      || isQuestCompleted(current, "light-on-the-hill")
     ) {
       return;
     }
-    setQuests(startQuest(quests, "light-on-the-hill"));
+    commitQuests(startQuest(current, "light-on-the-hill"));
     enqueueLead("light-on-the-hill", "Light on the Hill");
   }
 
@@ -368,10 +374,9 @@ export function useGame() {
     notifyStart?: string;
     notifyComplete?: string;
   }) {
-    // Same reason as openHillQuest: derive the next list here, then notify.
-    // Reading a variable written inside setQuests misses every lead that
-    // starts during dialogue or at nightfall.
-    let next = quests;
+    // Read the list committed earlier in this same click, then notify from
+    // the result. Do not read `quests` from the last render.
+    let next = questsRef.current;
     let started: QuestId | undefined;
     let startedHill = false;
     let completedTitle: string | undefined;
@@ -397,7 +402,7 @@ export function useGame() {
       next = startQuest(next, "light-on-the-hill");
       startedHill = true;
     }
-    if (next !== quests) setQuests(next);
+    commitQuests(next);
     if (completedTitle) {
       enqueueNotice({ kind: "notice", label: "Quest complete", message: completedTitle });
     }
@@ -667,7 +672,7 @@ export function useGame() {
     if (choice.jobOffer && !job) {
       setJob(choice.jobOffer);
       setJobQuestTarget(null);
-      setQuests((previous) => completeQuest(previous, "find-a-job", "working"));
+      commitQuests(completeQuest(questsRef.current, "find-a-job", "working"));
       enqueueNotice({ kind: "notice", label: "Quest complete", message: "Find a Job" });
 
       if (choice.jobOffer === "scrapyard") {
@@ -688,12 +693,11 @@ export function useGame() {
       });
     } else if (choice.questStep) {
       // Conversation choices (e.g. Margaret coffee) advance Faded Poster.
-      setQuests((previous) => {
-        if (isQuestActive(previous, "faded-poster")) {
-          return setQuestStep(previous, "faded-poster", choice.questStep!);
-        }
-        return previous;
-      });
+      commitQuests(
+        isQuestActive(questsRef.current, "faded-poster")
+          ? setQuestStep(questsRef.current, "faded-poster", choice.questStep!)
+          : questsRef.current,
+      );
     }
 
     if (choice.closeup) {
@@ -726,7 +730,7 @@ export function useGame() {
         );
       if (answeredMom) {
         setMomTalked(true);
-        setQuests((previous) => startQuest(completeQuest(previous, "talk-to-mom"), "the-tape"));
+        commitQuests(startQuest(completeQuest(questsRef.current, "talk-to-mom"), "the-tape"));
         enqueueNotice({ kind: "notice", label: "Quest complete", message: "Talk to Mom" });
         enqueueLead("the-tape", "The Tape");
       }
@@ -839,12 +843,12 @@ export function useGame() {
 
     // Poster found before Linda's coffee errand: start as Faded Poster.
     if (choice.action === "lookAtDinerBulletin") {
-      if (!isQuestCompleted(quests, "faded-poster")) {
-        if (!isQuestActive(quests, "faded-poster")) {
-          setQuests(startQuest(quests, "faded-poster", "poster"));
+      if (!isQuestCompleted(questsRef.current, "faded-poster")) {
+        if (!isQuestActive(questsRef.current, "faded-poster")) {
+          commitQuests(startQuest(questsRef.current, "faded-poster", "poster"));
           enqueueLead("faded-poster", "Faded Poster");
         } else {
-          setQuests(setQuestStep(quests, "faded-poster", "poster"));
+          commitQuests(setQuestStep(questsRef.current, "faded-poster", "poster"));
         }
       }
     } else if (choice.startsQuest || choice.completesQuest) {
@@ -854,18 +858,19 @@ export function useGame() {
         questStep: choice.questStep,
       });
     } else if (choice.questStep) {
-      setQuests((previous) => {
+      commitQuests((() => {
+        const current = questsRef.current;
         if (
           choice.action === "lookAtElrodTape"
-          && isQuestActive(previous, "the-tape")
+          && isQuestActive(current, "the-tape")
         ) {
-          return setQuestStep(previous, "the-tape", choice.questStep!);
+          return setQuestStep(current, "the-tape", choice.questStep!);
         }
-        if (isQuestActive(previous, "faded-poster")) {
-          return setQuestStep(previous, "faded-poster", choice.questStep!);
+        if (isQuestActive(current, "faded-poster")) {
+          return setQuestStep(current, "faded-poster", choice.questStep!);
         }
-        return previous;
-      });
+        return current;
+      })());
     }
     if (
       choice.completesQuest === "light-on-the-hill"
@@ -881,7 +886,7 @@ export function useGame() {
         setPlayerState((previous) => applyEffects(previous, { fear: 10 }));
         setCurrentEffects([{ type: "effect", stat: "fear", amount: 10 }]);
       }
-      setQuests((previous) => setQuestStep(previous, "light-on-the-hill", "inside"));
+      commitQuests(setQuestStep(questsRef.current, "light-on-the-hill", "inside"));
     }
     if (choice.action === "enterSanatoriumHallway") {
       if (!hasFlag("sanatoriumHallwayFear")) {
@@ -900,7 +905,7 @@ export function useGame() {
 
     if (selectedJob && !job && !jobQuestTarget) {
       setJobQuestTarget(selectedJob);
-      setQuests((previous) => setQuestStep(previous, "find-a-job", "flyer"));
+      commitQuests(setQuestStep(questsRef.current, "find-a-job", "flyer"));
       enqueueNotice({ kind: "notice", label: "Quest updated", message: "Follow up on that lead." });
       const discoveredLocation: Record<JobId, string> = {
         "needle-groove": "Needle & Groove",
@@ -1231,7 +1236,7 @@ export function useGame() {
     setMomJobConcernHeard(save.momJobConcernHeard ?? false);
     setJob(save.job ?? null);
     setJobQuestTarget(save.jobQuestTarget ?? null);
-    setQuests(restoredQuests);
+    commitQuests(restoredQuests);
     setStoryFlags(restoredFlags);
     setChapter(save.chapter ?? 1);
     setCloseup(null);
@@ -1289,7 +1294,7 @@ export function useGame() {
     setMomJobConcernHeard(false);
     setJob(null);
     setJobQuestTarget(null);
-    setQuests([{ id: "talk-to-mom", status: "active" }]);
+    commitQuests([{ id: "talk-to-mom", status: "active" }]);
     setStoryFlags({});
     setChapter(1);
     setCloseup(null);
