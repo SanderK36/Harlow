@@ -113,6 +113,7 @@ export function useGame() {
       sessionScene?.id ?? ethanRoom.id,
       sessionSave?.gameState.time ?? initialGameState.time,
       sessionSave?.gameState.weather ?? initialGameState.weather,
+      sessionSave?.gameState.dayOfWeek ?? initialGameState.dayOfWeek,
     )
   );
   const [currentEffects, setCurrentEffects] = useState<StoryEntry[]>([]);
@@ -346,12 +347,22 @@ export function useGame() {
     const nextGameState = advanceGameTime(gameState, timeToAdvance);
 
     setGameState(nextGameState);
-    setCurrentThought(getSceneThought(currentScene.id, nextGameState.time, nextGameState.weather));
+    setCurrentThought(getSceneThought(
+      currentScene.id,
+      nextGameState.time,
+      nextGameState.weather,
+      nextGameState.dayOfWeek,
+    ));
 
     return nextGameState;
   }
 
-  function moveToScene(sceneId: string, time: number, weather: Weather = gameState.weather) {
+  function moveToScene(
+    sceneId: string,
+    time: number,
+    weather: Weather = gameState.weather,
+    day: GameState["dayOfWeek"] = gameState.dayOfWeek,
+  ) {
     // Every `nextScene` in scene data must match a key in `scenes`.
     const nextScene = scenes[sceneId as keyof typeof scenes];
 
@@ -388,7 +399,7 @@ export function useGame() {
         return startQuest(previous, "light-on-the-hill");
       });
     } else {
-      setCurrentThought(getSceneThought(nextScene.id, time, weather));
+      setCurrentThought(getSceneThought(nextScene.id, time, weather, day));
     }
 
     setGameState((previous) => ({
@@ -480,6 +491,11 @@ export function useGame() {
     }
 
     if (choice.action === "goToSleep" && currentScene.id === "ethan-room") {
+      return true;
+    }
+    // The hill is only there after dark, including the hours Ethan is otherwise
+    // too tired to wander. Looking from his own yard does not count as going out.
+    if (choice.action === "lookAtSanatoriumHill") {
       return true;
     }
 
@@ -625,7 +641,7 @@ export function useGame() {
 
     window.setTimeout(() => {
       const nextGameState = advanceTime(choice.timeCost);
-      moveToScene(choice.nextScene, nextGameState.time, nextGameState.weather);
+      moveToScene(choice.nextScene, nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek);
       applyChoiceEffects(choice);
       setTravelingTo(null);
     }, TRAVEL_DURATION);
@@ -678,6 +694,18 @@ export function useGame() {
       return;
     }
     if (choice.requirements?.excludesFlags && hasAnyFlag(choice.requirements.excludesFlags)) {
+      return;
+    }
+
+    // The dark hallway needs a light before any transition starts.
+    if (choice.action === "enterSanatoriumHallway" && !playerState.inventory.includes("Flashlight")) {
+      setCurrentThought("Not without a light.");
+      return;
+    }
+
+    // Side effects (flags, fear, quests) run once, while the screen is black.
+    if (choice.door && !throughDoor) {
+      walkThroughDoor(choice);
       return;
     }
 
@@ -744,13 +772,6 @@ export function useGame() {
       setShowChapterEnd(true);
     }
 
-    // Lobby is open; the hallway past it needs a flashlight.
-    if (choice.action === "enterSanatoriumHallway") {
-      if (!playerState.inventory.includes("Flashlight")) {
-        setCurrentThought("Not without a light.");
-        return;
-      }
-    }
     if (choice.action === "enterSanatorium") {
       if (!hasFlag("sanatoriumEntranceFear")) {
         applyFlags("sanatoriumEntranceFear");
@@ -767,11 +788,6 @@ export function useGame() {
       }
     }
 
-    if (choice.door && !throughDoor) {
-      walkThroughDoor(choice);
-      return;
-    }
-
     const flyerJobs: Partial<Record<string, JobId>> = {
       chooseNeedleGrooveJob: "needle-groove",
       chooseGasStationJob: "gas-station",
@@ -782,7 +798,7 @@ export function useGame() {
     if (selectedJob && !job && !jobQuestTarget) {
       setJobQuestTarget(selectedJob);
       setQuests((previous) => setQuestStep(previous, "find-a-job", "flyer"));
-      showQuestNotification("New quest: Find a Job — follow up on that lead.");
+      showQuestNotification("Follow up on that lead.", "Quest updated");
       const discoveredLocation: Record<JobId, string> = {
         "needle-groove": "Needle & Groove",
         "gas-station": "The gas station",
@@ -826,14 +842,14 @@ export function useGame() {
         ? 420 - gameState.time
         : 1440 - gameState.time + 420;
       const nextGameState = advanceTime(minutesUntilSevenAm, false, true);
-      moveToScene("ethan-room", nextGameState.time, nextGameState.weather);
+      moveToScene("ethan-room", nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek);
       setNewDayAnnouncement(nextGameState);
       return;
     }
 
     if (choice.action === "leaveBusStop") {
       const nextGameState = advanceTime(choice.timeCost);
-      moveToScene(busStopReturnSceneId, nextGameState.time, nextGameState.weather);
+      moveToScene(busStopReturnSceneId, nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek);
       return;
     }
 
@@ -865,10 +881,15 @@ export function useGame() {
             ? "garage-bench-empty"
             : choice.nextScene;
 
-    moveToScene(nextSceneId, nextGameState.time, nextGameState.weather);
+    moveToScene(nextSceneId, nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek);
 
-    if (selectedJob === "needle-groove") {
-      setCurrentThought("Needle & Groove. That one feels right.");
+    if (selectedJob && !job && !jobQuestTarget) {
+      const leadThought: Record<JobId, string> = {
+        "needle-groove": "Needle & Groove. That one feels right.",
+        "gas-station": "Harlow Gas. Ray's always looking for help.",
+        scrapyard: "The scrapyard. Roy'll take a pair of hands.",
+      };
+      setCurrentThought(leadThought[selectedJob]);
     }
 
     if (choice.itemToAdd) {
@@ -924,7 +945,7 @@ export function useGame() {
     }
     setBusStopReturnSceneId(currentScene.id);
     const nextGameState = advanceTime(0);
-    moveToScene("bus-stop", nextGameState.time, nextGameState.weather);
+    moveToScene("bus-stop", nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek);
   }
 
   function adminTravel(sceneId: string) {
@@ -1063,7 +1084,12 @@ export function useGame() {
     setGameState(save.gameState);
     setPlayerState(save.playerState);
     setCurrentScene(savedScene);
-    setCurrentThought(getSceneThought(savedScene.id, save.gameState.time, save.gameState.weather));
+    setCurrentThought(getSceneThought(
+      savedScene.id,
+      save.gameState.time,
+      save.gameState.weather,
+      save.gameState.dayOfWeek,
+    ));
     setCurrentEffects([]);
     setBusStopReturnSceneId(save.busStopReturnSceneId);
     setMarleneActive(save.marleneActive);
@@ -1114,7 +1140,12 @@ export function useGame() {
     setGameState(freshGameState);
     setPlayerState(freshPlayer);
     setCurrentScene(ethanRoom);
-    setCurrentThought(getSceneThought(ethanRoom.id, freshGameState.time, freshGameState.weather));
+    setCurrentThought(getSceneThought(
+      ethanRoom.id,
+      freshGameState.time,
+      freshGameState.weather,
+      freshGameState.dayOfWeek,
+    ));
     setCurrentEffects([]);
     setBusStopReturnSceneId("front-yard");
     setMarleneActive(false);

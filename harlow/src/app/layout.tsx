@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import type { ReactNode } from "react";
 import { Cinzel, Crimson_Pro, Oswald } from "next/font/google";
 import "./globals.css";
 
@@ -47,7 +48,7 @@ export const viewport: Viewport = {
   themeColor: "#080405",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"

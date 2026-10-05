@@ -135,13 +135,22 @@ const ADMIN_SCENE_NAMES: Record<string, string> = {
   "gas-station": "Gas station",
   "police-station": "Police station",
   "sanatorium-room-2": "Sanatorium room 2",
-  cementary: "Cemetery",
+  cementary: "Entrance",
+  "cementary-inside": "Inside",
+  "cementary-backside": "Behind the church",
 };
+
+function adminSceneName(id: string) {
+  return (
+    ADMIN_SCENE_NAMES[id]
+    ?? id.replaceAll("cementary", "cemetery").replaceAll("-", " ")
+  );
+}
 
 const adminDestinations = Object.values(scenes)
   .map((scene) => ({
     id: scene.id,
-    label: `${scene.location} — ${ADMIN_SCENE_NAMES[scene.id] ?? scene.id.replaceAll("-", " ")}`,
+    label: `${scene.location} — ${adminSceneName(scene.id)}`,
   }))
   .sort((a, b) => a.label.localeCompare(b.label));
 
@@ -177,6 +186,36 @@ const OPENING_THOUGHT_PER_CHARACTER_MS = 45;
 // The first line starts while the title card is still lifting.
 const OPENING_THOUGHT_FIRST_EXTRA_MS = 900;
 
+/** Playtest tools stay available after ?debug=1, including a production build. */
+const PLAYTEST_DEBUG_KEY = "harlow-debug";
+
+function persistPlaytestDebugQuery() {
+  if (typeof window === "undefined") return;
+  const flag = new URLSearchParams(window.location.search).get("debug");
+  try {
+    if (flag === "1") window.localStorage.setItem(PLAYTEST_DEBUG_KEY, "1");
+    else if (flag === "0") window.localStorage.removeItem(PLAYTEST_DEBUG_KEY);
+  } catch {
+    // Storage can be blocked. The query string is checked again below.
+  }
+}
+
+persistPlaytestDebugQuery();
+
+function subscribePlaytestDebug() {
+  return () => {};
+}
+
+function playtestDebugOnClient() {
+  const flag = new URLSearchParams(window.location.search).get("debug");
+  if (flag === "0") return false;
+  try {
+    return flag === "1" || window.localStorage.getItem(PLAYTEST_DEBUG_KEY) === "1";
+  } catch {
+    return flag === "1";
+  }
+}
+
 export default function Home() {
   // Restore the session until the player explicitly chooses a screen.
   // Returning to the menu must override the session detected on refresh.
@@ -189,6 +228,13 @@ export default function Home() {
   const [showCharacterDirectory, setShowCharacterDirectory] = useState(false);
   const [showQuestLog, setShowQuestLog] = useState(false);
   const [showAdminTravel, setShowAdminTravel] = useState(false);
+  // Production builds hide Pass time and Admin travel unless ?debug=1 was set.
+  const playtestDebug = useSyncExternalStore(
+    subscribePlaytestDebug,
+    playtestDebugOnClient,
+    () => false,
+  );
+  const showPlaytestControls = process.env.NODE_ENV !== "production" || playtestDebug;
   const [showProductionSplash, setShowProductionSplash] = useState(false);
   // Index into OPENING_THOUGHTS while Ethan's first thoughts play, else null.
   const [openingThoughtIndex, setOpeningThoughtIndex] = useState<number | null>(null);
@@ -230,7 +276,6 @@ export default function Home() {
     activeShop,
     setActiveShop,
     job,
-    jobQuestTarget,
     quests,
     closeup,
     dismissCloseup,
@@ -238,7 +283,6 @@ export default function Home() {
     dismissChapterEnd,
     storyFlags,
     momTalked,
-    momJobConcernHeard,
     questNotification,
     questNotificationLabel,
     questNotificationExiting,
@@ -485,6 +529,11 @@ export default function Home() {
     && activeCharacter?.name === "Ray Mercer"
     && RAIN_WEATHER.includes(gameState.weather)
     && !isNightTime(gameState.time);
+  const walterRainy =
+    currentScene.id === "sheriff-office"
+    && activeCharacter?.name === "Walter Harrington"
+    && RAIN_WEATHER.includes(gameState.weather)
+    && !isNightTime(gameState.time);
   const emptySceneImage =
     sanatoriumCigaretteRoom
       ? "./images/locations/sanatorium/sanatoriumRoom2NightCigarette.png"
@@ -500,6 +549,8 @@ export default function Home() {
       ? "./images/locations/scrapyard/bigRoyWorkingRainy.png"
     : rayRainy
       ? "./images/locations/gas_station/rayMercerGasStationRainy.png"
+    : walterRainy
+      ? "./images/locations/police_station/WalterHarringtonOfficeRain.jpg"
     : elrodWithRachel
       ? "./images/locations/ElrodHouse/ElrodHouseRachelOutsideDay.png"
     : ((isNightTime(gameState.time) && activeCharacter?.nightImage
@@ -603,7 +654,6 @@ export default function Home() {
                                                               "goBackYard",
                                                               "goHome",
                                                               "enterGarage",
-                                                              "talkToRachel",
                                                               "lookAtSanatoriumHill",
                                                             ]
                                                           : currentScene.id ===
@@ -841,7 +891,12 @@ export default function Home() {
                   entries={currentScene.story.filter(
                     (entry) =>
                       entry.type !== "thought" &&
-                      storyEntryApplies(entry, gameState.time, gameState.weather),
+                      storyEntryApplies(
+                        entry,
+                        gameState.time,
+                        gameState.weather,
+                        gameState.dayOfWeek,
+                      ),
                   )}
                   variant="narration"
                   layout="combined"
@@ -982,6 +1037,7 @@ export default function Home() {
           />
         )}
 
+        {showPlaytestControls && (
         <div className="waitControls">
           <span>Pass time</span>
           <ActionButton label="Wait 1 min" onClick={() => adminWait(1)} />
@@ -994,7 +1050,9 @@ export default function Home() {
 
           <ActionButton label="Wait 1 hour" onClick={() => adminWait(60)} />
         </div>
+        )}
 
+        {showPlaytestControls && (
         <div className="adminTravelControls">
           <ActionButton
             label={showAdminTravel ? "Hide admin travel" : "Admin travel"}
@@ -1023,6 +1081,7 @@ export default function Home() {
             </div>
           )}
         </div>
+        )}
 
         {closeup && (
           <CloseupOverlay closeup={closeup} onDismiss={dismissCloseup} />

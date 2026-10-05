@@ -133,12 +133,6 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
   },
 };
 
-/** Kept for older call sites that still import the name. */
-export const findAJobQuest = {
-  title: QUEST_DEFS["find-a-job"].title,
-  objective: QUEST_DEFS["find-a-job"].objectives.default,
-};
-
 export type QuestObjectiveContext = {
   inventory?: string[];
   storyFlags?: Partial<Record<StoryFlag, boolean>>;
