@@ -15,12 +15,16 @@
 
 .travelImage {
   position: absolute;
-  inset: 6%;
-  width: 75%;
-  height: 100%;
-  margin: auto;
-  object-fit: fill;
-  object-position: center;
+  top: 46%;
+  left: 50%;
+  width: auto;
+  height: auto;
+  max-width: min(92vw, 1100px);
+  max-height: min(72vh, 760px);
+  object-fit: contain;
+  border: 1px solid rgba(255, 220, 200, 0.16);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  transform: translate(-50%, -50%);
 }
 
 .travelBackdrop {
@@ -50,8 +54,8 @@
 
 .method {
   margin: 0 0 8px;
-  color: #e34d5d;
-  font-size: 11px;
+  color: #f0a8ae;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;

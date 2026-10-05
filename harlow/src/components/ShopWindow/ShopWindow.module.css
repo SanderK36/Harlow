@@ -12,7 +12,9 @@
 
 .window {
   width: min(560px, 100%);
+  max-height: min(90vh, 820px);
   padding: 28px;
+  overflow: auto;
   background: linear-gradient(145deg, #251515, #100a0b);
   border: 1px solid var(--line-strong);
   border-radius: 16px;
@@ -60,7 +62,8 @@
 .item img {
   width: 72px;
   height: 72px;
-  object-fit: cover;
+  object-fit: contain;
+  background: rgba(0, 0, 0, 0.28);
   border-radius: 7px;
 }
 
@@ -74,6 +77,7 @@
 }
 
 .item button {
+  min-height: 44px;
   white-space: nowrap;
 }
 

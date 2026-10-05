@@ -45,7 +45,7 @@
 }
 
 .actionButton:disabled {
-  color: #786868;
+  color: #c9baba;
   background: rgba(255, 255, 255, 0.018);
   border-color: rgba(239, 221, 221, 0.07);
   cursor: not-allowed;

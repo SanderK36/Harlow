@@ -4,75 +4,129 @@
   z-index: 1100;
   display: grid;
   place-items: center;
-  padding: 20px;
-  background: rgba(8,3,4,.78);
+  padding: 16px;
+  background: rgba(8, 3, 4, 0.78);
   backdrop-filter: blur(8px);
 }
 
 .window {
   position: relative;
-  width: min(460px, 100%);
-  padding: 30px;
-  background: linear-gradient(145deg, #251515, #100a0b);
-  border: 1px solid var(--line-strong);
-  border-radius: 16px;
-  box-shadow: 0 28px 80px rgba(0,0,0,.5);
-  animation: modalEnter .22s ease-out;
+  display: flex;
+  flex-direction: column;
+  width: min(420px, calc(100vw - 28px), calc((100dvh - 28px) * 1225 / 1284));
+  aspect-ratio: 1225 / 1284;
+  padding: 14% 10% 8%;
+  overflow: hidden;
+  color: #f6ebe6;
+  background: #14080a url("/statsBackground.png") center / 100% 100% no-repeat;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.7);
+  animation: modalEnter 0.22s ease-out;
 }
 
 .window h2 {
-  margin: 0 0 24px;
-  color: var(--text);
+  flex: 0 0 auto;
+  margin: 0 0 10px;
+  color: #f6ebe6;
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: clamp(18px, 2.2vw, 24px);
   font-weight: 600;
-  letter-spacing: .16em;
+  letter-spacing: 0.18em;
+  line-height: 1.1;
+  text-align: center;
   text-transform: uppercase;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.65);
+}
+
+.list {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  min-height: 0;
+  padding: 4px 12px;
+  background: rgba(8, 3, 4, 0.62);
+  border: 1px solid rgba(240, 200, 180, 0.18);
+  border-radius: 8px;
 }
 
 .window p {
   display: flex;
   justify-content: space-between;
+  gap: 12px;
   margin: 0;
-  padding: 13px 0;
-  color: var(--muted);
-  border-top: 1px solid var(--line);
+  padding: 7px 0;
+  color: #f4e9e2;
+  font-family: var(--font-body);
+  font-size: clamp(16px, 1.8vw, 18px);
+  border-top: 1px solid rgba(240, 200, 180, 0.16);
+}
+
+.window p:first-child {
+  border-top: 0;
 }
 
 .statsNumber {
-  color: var(--gold);
-  font-size: 18px;
-  font-weight: 700;
+  color: #f3ddb0;
+  font-family: var(--font-ui);
+  font-size: 1.05em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
 }
 
 .closeButton {
-  position: absolute;
-  top: 13px;
-  right: 14px;
-  width: 32px;
-  height: 32px;
-  color: var(--muted);
-  font-size: 20px;
-  background: transparent;
-  border: 0;
-  border-radius: 7px;
+  flex: 0 0 auto;
+  min-height: 44px;
+  margin-top: 12px;
+  padding: 10px 16px;
+  color: #f6ebe6;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: rgba(169, 22, 36, 0.72);
+  border: 1px solid rgba(255, 196, 178, 0.45);
+  border-radius: 6px;
   cursor: pointer;
 }
 
-.closeButton:hover {
-  color: var(--text);
-  background: rgba(255,255,255,.08);
+.closeButton:hover,
+.closeButton:focus-visible {
+  background: rgba(201, 48, 62, 0.88);
+  outline: 2px solid #f0c8c4;
+  outline-offset: 2px;
 }
 
 @keyframes modalEnter {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(.98);
+    transform: translateY(10px) scale(0.98);
   }
 
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
 
+@media (max-width: 640px) {
+  .window {
+    padding: 11% 7% 6%;
+  }
+
+  .window p {
+    padding: 5px 0;
+  }
+
+  .closeButton {
+    margin-top: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .window {
+    animation: none;
+  }
 }
