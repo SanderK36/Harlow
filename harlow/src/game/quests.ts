@@ -69,7 +69,7 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
     id: "talk-to-mom",
     title: "Talk to Mom",
     objectives: {
-      default: "Mom should be in the kitchen. She'll have heard about Mrs. Elrod by now.",
+      default: "Mom's in the kitchen.",
     },
   },
   "find-a-job": {
@@ -95,7 +95,7 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
     id: "down-to-the-station",
     title: "Down to the Station",
     objectives: {
-      default: "Walter. Tell him about the hood.",
+      default: "Walter's at the station.",
       done: "That drawer was still open. PARKER, E.",
     },
   },
@@ -111,13 +111,13 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
   },
   "faded-poster": {
     id: "faded-poster",
+    /** After posterFound; before that questTitle() returns "Coffee for Mom". */
     title: "Faded Poster",
     objectives: {
-      default: "Mom wants coffee. Board at Margaret's.",
-      /** Stored step still used as a coarse mark; display prefers inventory. */
+      default: "Mom wants coffee. Margaret's.",
       coffee: "Got the coffee.",
-      poster: "Found her poster. Show Mom.",
-      both: "Coffee and the poster. Go home.",
+      poster: "Emily. Missing. Show Mom.",
+      both: "Coffee. And Emily. Go home.",
       done: "Showed Mom. She changed the subject.",
     },
   },
@@ -125,9 +125,8 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
     id: "light-on-the-hill",
     title: "Light on the Hill",
     objectives: {
-      default: "One light on the hill. Flashlight.",
-      /** Active while exploring; same voice as start until the cigarette. */
-      inside: "One light on the hill. Flashlight.",
+      default: "One light on the hill.",
+      inside: "One light on the hill.",
       done: "Warm cigarette. Someone was here.",
     },
   },
@@ -144,6 +143,34 @@ export type QuestObjectiveContext = {
   storyFlags?: Partial<Record<StoryFlag, boolean>>;
 };
 
+/** True once Ethan has found Emily's poster (item or flag). */
+export function hasFoundPoster(
+  ctx: QuestObjectiveContext = {},
+): boolean {
+  const inventory = ctx.inventory ?? [];
+  return (
+    inventory.includes("Missing Poster")
+    || Boolean(ctx.storyFlags?.posterFound)
+  );
+}
+
+/**
+ * Notebook / toast title. Faded Poster stays "Coffee for Mom" until
+ * posterFound so the log never spoils the diner board.
+ */
+export function questTitle(
+  progress: QuestProgress | QuestId,
+  ctx: QuestObjectiveContext = {},
+): string {
+  const id = typeof progress === "string" ? progress : progress.id;
+  const status = typeof progress === "string" ? undefined : progress.status;
+  if (id === "faded-poster") {
+    if (status === "completed" || hasFoundPoster(ctx)) return "Faded Poster";
+    return "Coffee for Mom";
+  }
+  return QUEST_DEFS[id]?.title ?? id;
+}
+
 /**
  * Notebook line for a quest. Faded Poster middle lines are derived from
  * inventory / posterFound so coffee-vs-poster order does not matter.
@@ -158,9 +185,7 @@ export function questObjective(
   if (progress.id === "faded-poster" && progress.status === "active") {
     const inventory = ctx.inventory ?? [];
     const hasCoffee = inventory.includes("Coffee");
-    const hasPoster =
-      inventory.includes("Missing Poster")
-      || Boolean(ctx.storyFlags?.posterFound);
+    const hasPoster = hasFoundPoster(ctx);
     if (hasCoffee && hasPoster) return def.objectives.both;
     if (hasCoffee) return def.objectives.coffee;
     if (hasPoster) return def.objectives.poster;

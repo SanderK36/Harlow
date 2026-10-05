@@ -110,7 +110,7 @@ const hotspotLabels: Record<string, string> = {
   lookAtElrodTape: "Police tape",
   lookAtDinerBulletin: "Bulletin board",
   lookAtSanatoriumHill: "The hill",
-  lookAtSanatoriumCigarette: "Cigarette",
+  lookAtSanatoriumCigarette: "Sill",
 };
 
 const sanatoriumHotspotActions: Record<string, string[]> = {
