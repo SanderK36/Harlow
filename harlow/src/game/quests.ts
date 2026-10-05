@@ -69,7 +69,7 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
     id: "talk-to-mom",
     title: "Talk to Mom",
     objectives: {
-      default: "Mom should be in the kitchen. She'll have heard about Mrs. Elrod by now.",
+      default: "Mom's in the kitchen.",
     },
   },
   "find-a-job": {
@@ -85,44 +85,49 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
     id: "the-tape",
     title: "The Tape",
     objectives: {
-      default: "Yellow tape on Elrod Street. Go see what's left.",
-      rachel: "Talk to Rachel at the Elrod house.",
-      done: "Rachel told you to see Walter.",
+      default: "Tape on Elrod Street. Go look.",
+      /** Set the moment Look at the tape runs (tapeSeen). */
+      rachel: "Rachel's at the tape.",
+      done: "Rachel said talk to Walter.",
     },
   },
   "down-to-the-station": {
     id: "down-to-the-station",
     title: "Down to the Station",
     objectives: {
-      default: "Walter's at the station. Tell him what you saw.",
-      done: "Walter knows. That drawer was still open.",
+      default: "Walter's at the station.",
+      done: "That drawer was still open. PARKER, E.",
     },
   },
   "what-walter-said": {
     id: "what-walter-said",
     title: "What Walter Said",
     objectives: {
-      default: "Rachel's waiting out front. Tell her what Walter said. Or don't.",
-      done: "You told Rachel what you could.",
-      shut: "You shut Rachel out.",
+      default: "Rachel's on the lawn. She wants answers.",
+      /** Trusted (hood or file). */
+      done: "Told her.",
+      shut: "Shut her out.",
     },
   },
   "faded-poster": {
     id: "faded-poster",
+    /** After posterFound; before that questTitle() returns "Coffee for Mom". */
     title: "Faded Poster",
     objectives: {
-      default: "Mom needs coffee from Margaret's. Check the board while you're there.",
-      coffee: "Got the coffee. Bring Mom the poster too.",
-      done: "Mom saw the poster. She changed the subject.",
+      default: "Mom wants coffee. Margaret's.",
+      coffee: "Got the coffee.",
+      poster: "Emily. Missing. Show Mom.",
+      both: "Coffee. And Emily. Go home.",
+      done: "Showed Mom. She changed the subject.",
     },
   },
   "light-on-the-hill": {
     id: "light-on-the-hill",
     title: "Light on the Hill",
     objectives: {
-      default: "One window lit on the hill. Take a flashlight.",
-      inside: "Someone was just here. Look around.",
-      done: "A warm cigarette. Chapter over.",
+      default: "One light on the hill.",
+      inside: "One light on the hill.",
+      done: "Warm cigarette. Someone was here.",
     },
   },
 };
@@ -133,9 +138,60 @@ export const findAJobQuest = {
   objective: QUEST_DEFS["find-a-job"].objectives.default,
 };
 
-export function questObjective(progress: QuestProgress): string {
+export type QuestObjectiveContext = {
+  inventory?: string[];
+  storyFlags?: Partial<Record<StoryFlag, boolean>>;
+};
+
+/** True once Ethan has found Emily's poster (item or flag). */
+export function hasFoundPoster(
+  ctx: QuestObjectiveContext = {},
+): boolean {
+  const inventory = ctx.inventory ?? [];
+  return (
+    inventory.includes("Missing Poster")
+    || Boolean(ctx.storyFlags?.posterFound)
+  );
+}
+
+/**
+ * Notebook / toast title. Faded Poster stays "Coffee for Mom" until
+ * posterFound so the log never spoils the diner board.
+ */
+export function questTitle(
+  progress: QuestProgress | QuestId,
+  ctx: QuestObjectiveContext = {},
+): string {
+  const id = typeof progress === "string" ? progress : progress.id;
+  const status = typeof progress === "string" ? undefined : progress.status;
+  if (id === "faded-poster") {
+    if (status === "completed" || hasFoundPoster(ctx)) return "Faded Poster";
+    return "Coffee for Mom";
+  }
+  return QUEST_DEFS[id]?.title ?? id;
+}
+
+/**
+ * Notebook line for a quest. Faded Poster middle lines are derived from
+ * inventory / posterFound so coffee-vs-poster order does not matter.
+ */
+export function questObjective(
+  progress: QuestProgress,
+  ctx: QuestObjectiveContext = {},
+): string {
   const def = QUEST_DEFS[progress.id];
   if (!def) return progress.id;
+
+  if (progress.id === "faded-poster" && progress.status === "active") {
+    const inventory = ctx.inventory ?? [];
+    const hasCoffee = inventory.includes("Coffee");
+    const hasPoster = hasFoundPoster(ctx);
+    if (hasCoffee && hasPoster) return def.objectives.both;
+    if (hasCoffee) return def.objectives.coffee;
+    if (hasPoster) return def.objectives.poster;
+    return def.objectives.default;
+  }
+
   const step = progress.step;
   if (step && def.objectives[step]) return def.objectives[step];
   return def.objectives.default;

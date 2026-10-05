@@ -600,6 +600,7 @@ export const elrodHouse: Scene = {
         label: "1972 memory",
       },
       setsFlags: ["tapeSeen"],
+      questStep: "rachel",
       hotspots: [{ left: 28, top: 42, width: 44, height: 28 }],
     },
     {
@@ -2884,7 +2885,7 @@ export const sanatoriumRoom2: Scene = {
   id: "sanatorium-room-2",
   story: [
     narration("You step into the second room and listen past the door."),
-    thought("Ash on the sill. Someone was just here."),
+    thought("Ash on the sill."),
     thought("Just my footsteps. I think."),
   ],
   location: "Sanatorium",
@@ -2894,7 +2895,7 @@ export const sanatoriumRoom2: Scene = {
   },
   choices: [
     {
-      label: "Look at the cigarette",
+      label: "Look at the sill",
       action: "lookAtSanatoriumCigarette",
       nextScene: "sanatorium-room-2",
       timeCost: 0,

@@ -36,7 +36,7 @@ import {
   type QuestId,
   type QuestProgress,
   type StoryFlag,
-  QUEST_DEFS,
+  questTitle,
 } from "@/game/quests";
 import type { GameState, Weather } from "@/game/types";
 import type { CloseupContent } from "@/components/CloseupOverlay/CloseupOverlay";
@@ -278,7 +278,10 @@ export function useGame() {
         const before = next;
         next = startQuest(next, options.startsQuest);
         if (next !== before) {
-          const title = QUEST_DEFS[options.startsQuest].title;
+          const title = questTitle(
+            { id: options.startsQuest, status: "active" },
+            { inventory: playerState.inventory, storyFlags },
+          );
           pendingQuestNotification.current = {
             message: options.notifyStart ?? `New quest: ${title}`,
             label: "Quest started",
@@ -288,7 +291,11 @@ export function useGame() {
       if (options.completesQuest) {
         next = completeQuest(next, options.completesQuest, options.questStep);
         showQuestNotification(
-          options.notifyComplete ?? QUEST_DEFS[options.completesQuest].title,
+          options.notifyComplete
+            ?? questTitle(
+              { id: options.completesQuest, status: "completed" },
+              { inventory: playerState.inventory, storyFlags },
+            ),
           "Quest complete",
         );
       }
@@ -411,7 +418,7 @@ export function useGame() {
   }
 
   function notifyMomQuest() {
-    showQuestNotification("Mom should be in the kitchen. She'll have heard about Mrs. Elrod by now.", "New quest");
+    showQuestNotification("Mom's in the kitchen.", "New quest");
   }
 
   function applyChoiceEffects(choice: Choice) {
@@ -495,7 +502,7 @@ export function useGame() {
       });
       showQuestNotification("Talk to Mom", "Quest complete");
       pendingQuestNotification.current = {
-        message: "New quests: The Tape — and Mom needs coffee from Margaret's.",
+        message: "New quests: The Tape — Coffee for Mom.",
         label: "Quest started",
       };
     }
@@ -550,6 +557,7 @@ export function useGame() {
         questStep: choice.questStep,
       });
     } else if (choice.questStep) {
+      // Conversation choices (e.g. Margaret coffee) advance Faded Poster.
       setQuests((previous) => {
         if (isQuestActive(previous, "faded-poster")) {
           return setQuestStep(previous, "faded-poster", choice.questStep!);
@@ -675,6 +683,19 @@ export function useGame() {
         startsQuest: choice.startsQuest,
         completesQuest: choice.completesQuest,
         questStep: choice.questStep,
+      });
+    } else if (choice.questStep) {
+      setQuests((previous) => {
+        if (
+          choice.action === "lookAtElrodTape"
+          && isQuestActive(previous, "the-tape")
+        ) {
+          return setQuestStep(previous, "the-tape", choice.questStep!);
+        }
+        if (isQuestActive(previous, "faded-poster")) {
+          return setQuestStep(previous, "faded-poster", choice.questStep!);
+        }
+        return previous;
       });
     }
     if (
