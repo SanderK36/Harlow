@@ -305,18 +305,17 @@ export function useGame() {
   }
 
   function openHillQuest() {
-    let started = false;
-    setQuests((previous) => {
-      if (
-        isQuestActive(previous, "light-on-the-hill")
-        || isQuestCompleted(previous, "light-on-the-hill")
-      ) {
-        return previous;
-      }
-      started = true;
-      return startQuest(previous, "light-on-the-hill");
-    });
-    if (started) enqueueLead("light-on-the-hill", "Light on the Hill");
+    // Compute from the quests already on screen. A setQuests updater is not
+    // run until the next render once this handler has called setState, so a
+    // flag set inside the updater is still false when this function returns.
+    if (
+      isQuestActive(quests, "light-on-the-hill")
+      || isQuestCompleted(quests, "light-on-the-hill")
+    ) {
+      return;
+    }
+    setQuests(startQuest(quests, "light-on-the-hill"));
+    enqueueLead("light-on-the-hill", "Light on the Hill");
   }
 
   function hasFlag(flag: StoryFlag) {
@@ -369,35 +368,36 @@ export function useGame() {
     notifyStart?: string;
     notifyComplete?: string;
   }) {
+    // Same reason as openHillQuest: derive the next list here, then notify.
+    // Reading a variable written inside setQuests misses every lead that
+    // starts during dialogue or at nightfall.
+    let next = quests;
     let started: QuestId | undefined;
     let startedHill = false;
     let completedTitle: string | undefined;
-    setQuests((previous) => {
-      let next = previous;
-      if (options.completesQuest) {
-        const wasComplete = isQuestCompleted(next, options.completesQuest);
-        next = completeQuest(next, options.completesQuest, options.questStep);
-        if (!wasComplete) {
-          completedTitle = options.notifyComplete
-            ?? questTitle(
-              { id: options.completesQuest, status: "completed" },
-              { inventory: playerState.inventory, storyFlags },
-            );
-        }
+    if (options.completesQuest) {
+      const wasComplete = isQuestCompleted(next, options.completesQuest);
+      next = completeQuest(next, options.completesQuest, options.questStep);
+      if (!wasComplete) {
+        completedTitle = options.notifyComplete
+          ?? questTitle(
+            { id: options.completesQuest, status: "completed" },
+            { inventory: playerState.inventory, storyFlags },
+          );
       }
-      if (options.startsQuest) {
-        // New quests always open on their default step — never inherit "done".
-        const before = next;
-        next = startQuest(next, options.startsQuest);
-        if (next !== before) started = options.startsQuest;
-      }
-      // Last prerequisite can finish while Ethan is already in the yard.
-      if (shouldNoticeHill(currentScene.id, gameState.time, next, storyFlags)) {
-        next = startQuest(next, "light-on-the-hill");
-        startedHill = true;
-      }
-      return next;
-    });
+    }
+    if (options.startsQuest) {
+      // New quests always open on their default step — never inherit "done".
+      const before = next;
+      next = startQuest(next, options.startsQuest);
+      if (next !== before) started = options.startsQuest;
+    }
+    // Last prerequisite can finish while Ethan is already in the yard.
+    if (shouldNoticeHill(currentScene.id, gameState.time, next, storyFlags)) {
+      next = startQuest(next, "light-on-the-hill");
+      startedHill = true;
+    }
+    if (next !== quests) setQuests(next);
     if (completedTitle) {
       enqueueNotice({ kind: "notice", label: "Quest complete", message: completedTitle });
     }
@@ -839,16 +839,14 @@ export function useGame() {
 
     // Poster found before Linda's coffee errand: start as Faded Poster.
     if (choice.action === "lookAtDinerBulletin") {
-      let startedPoster = false;
-      setQuests((previous) => {
-        if (isQuestCompleted(previous, "faded-poster")) return previous;
-        if (!isQuestActive(previous, "faded-poster")) {
-          startedPoster = true;
-          return startQuest(previous, "faded-poster", "poster");
+      if (!isQuestCompleted(quests, "faded-poster")) {
+        if (!isQuestActive(quests, "faded-poster")) {
+          setQuests(startQuest(quests, "faded-poster", "poster"));
+          enqueueLead("faded-poster", "Faded Poster");
+        } else {
+          setQuests(setQuestStep(quests, "faded-poster", "poster"));
         }
-        return setQuestStep(previous, "faded-poster", "poster");
-      });
-      if (startedPoster) enqueueLead("faded-poster", "Faded Poster");
+      }
     } else if (choice.startsQuest || choice.completesQuest) {
       applyQuestHooks({
         startsQuest: choice.startsQuest,

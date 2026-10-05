@@ -710,6 +710,7 @@ export const momConversation: Conversation = {
     {
       label: "I'll find a way to help.",
       requiresStoryFlag: "momJobConcern",
+      excludesStoryFlag: "willHelpMom",
       requiresNoJob: true,
       storyFlag: "willHelpMom",
       startsQuest: "find-a-job",
