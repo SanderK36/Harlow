@@ -25,7 +25,7 @@ export type StoryEntry =
     }
   | {
       type: "effect";
-      stat: "health" | "stamina" | "fear" | "money";
+      stat: "health" | "stamina" | "fear" | "money" | "courage";
       amount: number;
     };
 
@@ -33,12 +33,14 @@ export type ConversationChoice = {
   label: string;
   response: StoryEntry[];
   endsConversation?: boolean;
-  /** Marks a story milestone when this response is selected. */
-  storyFlag?: "momJobConcern";
-  /** Completes the opening objective after this conversation response. */
+  /** Marks one or more story milestones when this response is selected. */
+  storyFlag?: import("./quests").StoryFlag | import("./quests").StoryFlag[];
+  /** Completes the opening Mom objective after this conversation response. */
   completesMomQuest?: boolean;
-  /** Shows this response only after the matching story milestone. */
-  requiresStoryFlag?: "momJobConcern";
+  /** Shows this response only after every listed story flag is set. */
+  requiresStoryFlag?: import("./quests").StoryFlag | import("./quests").StoryFlag[];
+  /** Hides this response once any listed story flag is set. */
+  excludesStoryFlag?: import("./quests").StoryFlag | import("./quests").StoryFlag[];
   /** Shows this response only once the choice with this label has been
    *  picked in the same conversation (to answer a question it raised). */
   requiresChoice?: string;
@@ -55,6 +57,30 @@ export type ConversationChoice = {
   excludesJob?: import("./quests").JobId;
   /** Show this offer only after selecting its matching flyer. */
   requiresJobQuestTarget?: import("./quests").JobId;
+  /** Requires this exact inventory item name. */
+  requiresItem?: string;
+  /** Adds this item to inventory when selected. */
+  givesItem?: string;
+  /** Removes this inventory item when selected (e.g. handing Mom the coffee). */
+  removesItem?: string;
+  /** Hide once Ethan already carries this item. */
+  excludesItem?: string;
+  /** Starts or advances a quest when selected. */
+  startsQuest?: import("./quests").QuestId;
+  /** Completes a quest when selected. */
+  completesQuest?: import("./quests").QuestId;
+  /** Show only while this quest is active. */
+  requiresQuestActive?: import("./quests").QuestId;
+  /** Optional quest step id to set while the quest is active. */
+  questStep?: string;
+  /** Show a closeup after this reply finishes (drawer, poster, memory). */
+  closeup?: {
+    image: string;
+    thought: string;
+    label?: string;
+    /** Optional follow-up closeup (e.g. drawer shut). */
+    next?: { image: string; thought: string; label?: string };
+  };
 };
 
 export type Conversation = {

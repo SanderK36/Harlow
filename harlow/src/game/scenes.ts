@@ -16,9 +16,15 @@ export type SceneCharacter = {
   name: string;
   from?: number;
   until?: number;
+  /** If set, the character only appears on these weekdays. */
+  days?: import("./types").DayOfWeek[];
   image?: string;
   /** Alternative scene artwork used when the character is present at night. */
   nightImage?: string;
+  /** Requires every listed story flag. */
+  requiresFlags?: import("./quests").StoryFlag[];
+  /** Hidden once any listed story flag is set. */
+  excludesFlags?: import("./quests").StoryFlag[];
 };
 
 export type Scene = {
@@ -404,11 +410,203 @@ export const frontYard: Scene = {
       timeCost: 1,
     },
     {
+      label: "Walk to the Elrod house",
+      action: "goElrodHouse",
+      nextScene: "elrod-house",
+      timeCost: 10,
+      /* Availability: the-tape active or rachelMet — gated in useGame. */
+    },
+    {
+      label: "Talk to Rachel",
+      action: "talkToRachel",
+      nextScene: "front-yard",
+      timeCost: 0,
+      requirements: { flags: ["walterStationTalk"] },
+    },
+    {
+      label: "Look toward the hill",
+      action: "lookAtSanatoriumHill",
+      nextScene: "front-yard",
+      timeCost: 0,
+      closeup: {
+        image: "./images/locations/sanatorium/sanatoriumFromTheStreetsNight.png",
+        thought: "One window lit. Up on the hill. That place has been dead for years.",
+        label: "Light on the hill",
+      },
+      setsFlags: ["sanatoriumSeenFromStreet"],
+      startsQuest: "light-on-the-hill",
+    },
+    {
       label: "Go back inside",
       action: "goHome",
       door: true,
       nextScene: "hallway",
       timeCost: 5,
+    },
+  ],
+};
+
+
+export const rachelElrodConversation: Conversation = {
+  opening: [npc("Rachel", "Hey, Ethan. You look like hell.")],
+  choices: [
+    {
+      label: "Didn't sleep. Sirens all night.",
+      response: [
+        ethan("Didn't sleep. Sirens all night."),
+        npc("Rachel", "Whole street heard them. I kept waiting for somebody to say it was a mistake."),
+      ],
+    },
+    {
+      label: "You okay, Rach?",
+      response: [
+        ethan("You okay, Rach?"),
+        npc("Rachel", "No. She gave us butterscotch every Halloween. Remember?"),
+      ],
+    },
+    {
+      label: "Who'd do this to her?",
+      response: [
+        ethan("Who'd do this to her?"),
+        npc("Rachel", "Somebody who knew the house. Tape doesn't go up this fast for strangers."),
+      ],
+    },
+    {
+      label: "This feels like Emily.",
+      response: [
+        ethan("This feels like Emily."),
+        npc("Rachel", "Your mom left the porch light on for a month."),
+        thought("I'd forgotten about the porch light."),
+      ],
+    },
+    {
+      label: "I gotta go.",
+      requiresStoryFlag: "tapeSeen",
+      response: [
+        ethan("I gotta go."),
+        npc(
+          "Rachel",
+          "Go see Walter. He knows something. And Ethan? Tell me what he says.",
+        ),
+      ],
+      endsConversation: true,
+      storyFlag: "rachelMet",
+      completesQuest: "the-tape",
+      questStep: "done",
+      startsQuest: "down-to-the-station",
+    },
+  ],
+};
+
+export const rachelFrontYardConversation: Conversation = {
+  opening: [npc("Rachel", "Been out here an hour. What'd Walter say?")],
+  choices: [
+    {
+      label: "I told him about the hooded man.",
+      excludesStoryFlag: "rachelShutOut",
+      response: [
+        ethan("I told him about the hooded man."),
+        npc("Rachel", "...A hood. Okay. Then we find him before he finds you."),
+      ],
+      storyFlag: ["rachelTrusted", "rachelKnowsHood"],
+      completesQuest: "what-walter-said",
+      questStep: "done",
+      endsConversation: true,
+    },
+    {
+      label: "There was a file. PARKER, E. Still open.",
+      excludesStoryFlag: "rachelShutOut",
+      response: [
+        ethan("There was a file. PARKER, E. Still open."),
+        npc(
+          "Rachel",
+          "They stopped looking after a month. So why's he still keeping it in a drawer?",
+        ),
+      ],
+      storyFlag: ["rachelTrusted", "rachelKnowsFile"],
+      completesQuest: "what-walter-said",
+      questStep: "done",
+      endsConversation: true,
+    },
+    {
+      label: "I can't tell you, Rach.",
+      excludesStoryFlag: "rachelTrusted",
+      response: [
+        ethan("I can't tell you, Rach."),
+        npc("Rachel", "Can't, or won't?"),
+        ethan("Both."),
+        npc("Rachel", "Fine. I'll find out myself. I always do."),
+      ],
+      storyFlag: "rachelShutOut",
+      completesQuest: "what-walter-said",
+      questStep: "shut",
+      endsConversation: true,
+    },
+    {
+      label: "He told me to go home.",
+      response: [
+        ethan("He told me to go home."),
+        npc("Rachel", "Walter's been telling people to go home for ten years."),
+      ],
+    },
+    {
+      label: "Not now, Rach.",
+      response: [
+        ethan("Not now, Rach."),
+        npc("Rachel", "Fine. But I'm not dropping this, Ethan."),
+      ],
+      endsConversation: true,
+    },
+  ],
+};
+
+export const elrodHouse: Scene = {
+  id: "elrod-house",
+  story: [
+    narration("You stop at the Elrod house. Yellow tape across the porch."),
+    thought("Rain's beating the tape flat. Washing the street clean.", { weather: WET }),
+    thought("Her porch light's off. First time in twenty years.", { from: 1080 }),
+    thought("Yellow tape and a dead geranium. That's all that's left of her."),
+  ],
+  location: "Elrod House",
+  image: {
+    day: "./images/locations/ElrodHouse/ElrodHouseDay.png",
+    night: "./images/locations/ElrodHouse/ElrodHouseNight.png",
+  },
+  characters: [
+    {
+      name: "Rachel Bennet",
+      from: 420,
+      until: 1140,
+      excludesFlags: ["rachelMet"],
+    },
+  ],
+  conversation: rachelElrodConversation,
+  choices: [
+    {
+      label: "Talk to Rachel",
+      action: "talkToRachel",
+      nextScene: "elrod-house",
+      timeCost: 0,
+    },
+    {
+      label: "Look at the tape",
+      action: "lookAtElrodTape",
+      nextScene: "elrod-house",
+      timeCost: 0,
+      closeup: {
+        image: "./images/misc/flashbackEthanPovForest.png",
+        thought: "Flashlights in the trees. October night. Same night Emily never came home.",
+        label: "1972 memory",
+      },
+      setsFlags: ["tapeSeen"],
+      hotspots: [{ left: 28, top: 42, width: 44, height: 28 }],
+    },
+    {
+      label: "Go back home",
+      action: "leaveElrodHouse",
+      nextScene: "front-yard",
+      timeCost: 10,
     },
   ],
 };
@@ -546,6 +744,59 @@ export const momConversation: Conversation = {
     },
 
     {
+      label: "Heading out. Need anything?",
+      excludesStoryFlag: "coffeeErrandHeard",
+      response: [
+        ethan("Heading out. Need anything?"),
+        npc(
+          "Linda",
+          "We're out of coffee. Run down to Margaret's for me. Put it on my tab.",
+        ),
+      ],
+      storyFlag: "coffeeErrandHeard",
+    },
+
+    {
+      label: "I found Emily's poster at the diner.",
+      requiresItem: "Coffee",
+      requiresStoryFlag: "posterFound",
+      excludesStoryFlag: "posterShownToMom",
+      response: [
+        ethan("I found Emily's poster at the diner."),
+        npc("Linda", "Put that away."),
+      ],
+      storyFlag: ["posterShownToMom", "coffeeDelivered"],
+      completesQuest: "faded-poster",
+      questStep: "done",
+      removesItem: "Coffee",
+    },
+    {
+      label: "I found Emily's poster at the diner.",
+      excludesItem: "Coffee",
+      requiresStoryFlag: "posterFound",
+      excludesStoryFlag: "posterShownToMom",
+      response: [
+        ethan("I found Emily's poster at the diner."),
+        npc("Linda", "...Did you get the coffee?"),
+      ],
+      storyFlag: "posterShownToMom",
+      completesQuest: "faded-poster",
+      questStep: "done",
+    },
+    {
+      label: "Got your coffee.",
+      requiresItem: "Coffee",
+      requiresStoryFlag: "posterShownToMom",
+      excludesStoryFlag: "coffeeDelivered",
+      response: [
+        ethan("Got your coffee."),
+        npc("Linda", "Thanks, honey."),
+      ],
+      storyFlag: "coffeeDelivered",
+      removesItem: "Coffee",
+    },
+
+    {
       label: "I'm heading out.",
 
       response: [
@@ -606,6 +857,10 @@ export const momDeathConversation: Conversation = {
         npc(
           "Linda",
           "Me neither. She was alone in that house so much. Be careful. And let the sheriff handle it.",
+        ),
+        npc(
+          "Linda",
+          "We're out of coffee. Run down to Margaret's for me when you can. Put it on my tab.",
         ),
       ],
       completesMomQuest: true,
@@ -719,12 +974,28 @@ export const walterConversation: Conversation = {
     },
     {
       label: "I saw someone last night. End of the street. In a hood.",
+      requiresStoryFlag: "rachelMet",
+      excludesStoryFlag: "walterStationTalk",
       response: [
         ethan("I saw someone last night. End of the street. In a hood."),
         npc("Walter", "...You tell anyone else that?"),
         ethan("No."),
         npc("Walter", "Keep it that way. Go home, Ethan."),
       ],
+      storyFlag: ["walterStationTalk", "fileDrawerSeen"],
+      completesQuest: "down-to-the-station",
+      questStep: "done",
+      startsQuest: "what-walter-said",
+      closeup: {
+        image: "./images/locations/police_station/filingCabinetOpen.png",
+        thought: "PARKER, E. – 1972. Still open. Still there.",
+        label: "Open filing drawer",
+        next: {
+          image: "./images/locations/police_station/filingCabinetClosed.png",
+          thought: "He shut it with his boot. Like it was nothing.",
+          label: "Closed filing drawer",
+        },
+      },
     },
     {
       label: "Never mind.",
@@ -760,6 +1031,14 @@ export const livingRoom: Scene = {
       name: "Linda",
       from: 540,
       until: 1080,
+      days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      image: "./images/locations/home/LindaParkerHome.jpg",
+    },
+    {
+      name: "Linda",
+      from: 540,
+      until: 1320,
+      days: ["Saturday", "Sunday"],
       image: "./images/locations/home/LindaParkerHome.jpg",
     },
   ],
@@ -850,6 +1129,12 @@ export const kitchen: Scene = {
       from: 450,
       until: 540,
     },
+    {
+      name: "Linda",
+      from: 720,
+      until: 1140,
+      days: ["Saturday", "Sunday"],
+    },
   ],
 
   choices: [
@@ -900,6 +1185,18 @@ export const margaretConversation: Conversation = {
   opening: [npc("Margaret", "Sit anywhere you like, hon.")],
   choices: [
     {
+      label: "Mom's coffee. On her tab.",
+      requiresStoryFlag: "coffeeErrandHeard",
+      excludesItem: "Coffee",
+      excludesStoryFlag: "coffeeDelivered",
+      response: [
+        ethan("Mom's coffee. On her tab."),
+        npc("Margaret", "Coming up. Tell Linda I said hey."),
+      ],
+      givesItem: "Coffee",
+      questStep: "coffee",
+    },
+    {
       label: "Thanks. How's business?",
       response: [
         ethan("Thanks. How's business today?"),
@@ -917,6 +1214,14 @@ export const margaretConversation: Conversation = {
           "Margaret",
           "People talk. Not much of it I'd repeat.",
         ),
+      ],
+    },
+    {
+      label: "That poster on the board...",
+      requiresStoryFlag: "posterFound",
+      response: [
+        ethan("That poster on the board. Emily."),
+        npc("Margaret", "I know, hon. Nobody ever had the heart to take it down."),
       ],
     },
     {
@@ -1730,6 +2035,11 @@ export const scrapyard: Scene = {
   image: {
     day: "./images/locations/scrapyard/ScrapyardDay.png",
     night: "./images/locations/scrapyard/Scrapyardnight.png",
+    weather: {
+      Rainy: "./images/locations/scrapyard/ScrapyardRainy.png",
+      "Heavy rain": "./images/locations/scrapyard/ScrapyardRainy.png",
+      Thunderstorm: "./images/locations/scrapyard/ScrapyardThunder.png",
+    },
   },
   choices: [
     {
@@ -1756,6 +2066,8 @@ export const scrapyardInside: Scene = {
   image: {
     day: "./images/locations/scrapyard/ScrapyardInsideDay.png",
     night: "./images/locations/scrapyard/ScrapyardInsideNight.png",
+    weather: rainArt("./images/locations/scrapyard/ScrapyardInsideRainy.png"),
+    weatherDayOnly: true,
   },
   characters: [
     {
@@ -1763,6 +2075,7 @@ export const scrapyardInside: Scene = {
       from: 420,
       until: 900,
       image: "./images/locations/scrapyard/bigRoyWorking.png",
+      // Rain art for Roy when present is swapped in page.tsx.
     },
   ],
   conversation: bigRoyConversation,
@@ -1877,6 +2190,8 @@ export const policeStationInside: Scene = {
   image: {
     day: "./images/locations/police_station/policeStationInsideDay.png",
     night: "./images/locations/police_station/policeStationInsideNight.png",
+    weather: rainArt("./images/locations/police_station/policeStationInsideRainy.png"),
+    weatherDayOnly: true,
   },
   choices: [
     {
@@ -1912,6 +2227,12 @@ export const sheriffOffice: Scene = {
   image: {
     day: "./images/locations/police_station/walterOfficeDay.png",
     night: "./images/locations/police_station/walterOfficeNight.png",
+    weather: {
+      Rainy: "./images/locations/police_station/walterOfficeRain.png",
+      "Heavy rain": "./images/locations/police_station/walterOfficeRain.png",
+      Thunderstorm: "./images/locations/police_station/walterOfficeRain.png",
+    },
+    weatherDayOnly: true,
   },
 
   characters: [
@@ -1920,17 +2241,6 @@ export const sheriffOffice: Scene = {
       from: 480,
       until: 960,
       image: "./images/locations/police_station/WalterHarringtonOffice.jpg",
-    },
-    {
-      name: "Walter Harrington",
-      from: 960,
-      until: 1080,
-      image: "./images/locations/police_station/walterOfficeDay.png",
-    },
-    {
-      name: "Walter Harrington",
-      from: 1080,
-      image: "./images/locations/police_station/walterOfficeNight.png",
     },
   ],
   conversation: walterConversation,
@@ -2400,6 +2710,21 @@ export const dinerInside: Scene = {
       timeCost: 0,
     },
     {
+      label: "Look at the bulletin board",
+      action: "lookAtDinerBulletin",
+      nextScene: "diner-inside",
+      timeCost: 0,
+      hotspots: [{ left: 8, top: 18, width: 14, height: 42 }],
+      closeup: {
+        image: "./images/misc/EmilyMissingPoster.png",
+        thought: "Emily Parker. Seventeen. October 1972. Ten years.",
+        label: "Missing poster",
+      },
+      setsFlags: ["posterFound"],
+      itemToAdd: "Missing Poster",
+      questStep: "coffee",
+    },
+    {
       label: "Go outside",
       action: "leaveDiner",
       door: true,
@@ -2559,6 +2884,7 @@ export const sanatoriumRoom2: Scene = {
   id: "sanatorium-room-2",
   story: [
     narration("You step into the second room and listen past the door."),
+    thought("Ash on the sill. Someone was just here."),
     thought("Just my footsteps. I think."),
   ],
   location: "Sanatorium",
@@ -2567,6 +2893,22 @@ export const sanatoriumRoom2: Scene = {
     night: "./images/locations/sanatorium/sanatoriumRoom2Night.png",
   },
   choices: [
+    {
+      label: "Look at the cigarette",
+      action: "lookAtSanatoriumCigarette",
+      nextScene: "sanatorium-room-2",
+      timeCost: 0,
+      closeup: {
+        image: "./images/locations/sanatorium/sanatoriumRoom2NightCigarette.png",
+        thought: "Still warm. Someone was just here.",
+        label: "Cigarette",
+      },
+      setsFlags: ["sanatoriumCigaretteSeen", "chapter1Complete"],
+      effects: { courage: 1 },
+      completesQuest: "light-on-the-hill",
+      questStep: "done",
+      hotspots: [{ left: 40, top: 55, width: 18, height: 20 }],
+    },
     {
       label: "Return to the hallway",
       action: "leaveSanatoriumRoom2",
@@ -2604,6 +2946,7 @@ export const scenes = {
   "looking-around-house": lookingAroundHouse,
   "made-coffee": madeCoffee,
   "front-yard": frontYard,
+  "elrod-house": elrodHouse,
   "light-pole": lightPole,
   "back-yard": backYard,
   "living-room": livingRoom,

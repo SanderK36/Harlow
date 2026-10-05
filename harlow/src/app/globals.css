@@ -1804,3 +1804,52 @@ button {
   from { opacity: 1; }
   to { opacity: 0; }
 }
+
+.scene-hotspot-front-yard-goElrodHouse {
+  top: 48%;
+  left: 12%;
+  width: 14%;
+  height: 18%;
+}
+
+.scene-hotspot-front-yard-talkToRachel {
+  top: 42%;
+  left: 55%;
+  width: 12%;
+  height: 40%;
+}
+
+.scene-hotspot-front-yard-lookAtSanatoriumHill {
+  top: 8%;
+  left: 70%;
+  width: 22%;
+  height: 22%;
+}
+
+.scene-hotspot-lookAtElrodTape {
+  top: 42%;
+  left: 28%;
+  width: 44%;
+  height: 28%;
+}
+
+.scene-hotspot-elrod-house-talkToRachel {
+  top: 30%;
+  left: 38%;
+  width: 22%;
+  height: 55%;
+}
+
+.scene-hotspot-lookAtDinerBulletin {
+  top: 18%;
+  left: 8%;
+  width: 14%;
+  height: 42%;
+}
+
+.scene-hotspot-lookAtSanatoriumCigarette {
+  top: 55%;
+  left: 40%;
+  width: 18%;
+  height: 20%;
+}

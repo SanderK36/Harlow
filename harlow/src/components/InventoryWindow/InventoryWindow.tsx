@@ -20,6 +20,8 @@ const itemBios: Record<string, string> = {
   "leopard hazard": "A Leopard Hazard record from Needle & Groove. A collectible with no stat effect.",
   "puppet masters": "A Puppet Masters record from Needle & Groove. A collectible with no stat effect.",
   "ricky valentine": "A Ricky Valentine record from Needle & Groove. A collectible with no stat effect.",
+  coffee: "A tin of coffee from Margaret's. Mom's waiting on it.",
+  "missing poster": "Emily Parker. Seventeen. Missing since October 1972. Taken from the diner board.",
 };
 
 function getItemImage(item: string) {
@@ -35,6 +37,10 @@ function getItemImage(item: string) {
     case "flashlight":
       return "/images/items/Flashlight.png";
 
+    case "coffee":
+      return "/images/items/beer.png"; // fallback until a coffee tin art exists
+    case "missing poster":
+      return "/images/misc/EmilyMissingPoster.png";
     case "knife":
       return "/images/items/Knife.png";
 

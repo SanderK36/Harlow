@@ -9,6 +9,8 @@ import {
   ethanRoom,
   getSceneThought,
   momDeathConversation,
+  rachelElrodConversation,
+  rachelFrontYardConversation,
   scenes,
 } from "@/game/scenes";
 import { harlowAudio } from "@/game/audio";
@@ -22,9 +24,22 @@ import {
   writeSessionSave,
 } from "@/game/save";
 import type { Choice, GameChoice } from "@/game/choices";
-import type { Conversation, StoryEntry } from "@/game/story";
-import type { JobId } from "@/game/quests";
+import type { Conversation, ConversationChoice, StoryEntry } from "@/game/story";
+import {
+  completeQuest,
+  isQuestActive,
+  isQuestCompleted,
+  migrateQuestsFromLegacy,
+  setQuestStep,
+  startQuest,
+  type JobId,
+  type QuestId,
+  type QuestProgress,
+  type StoryFlag,
+  QUEST_DEFS,
+} from "@/game/quests";
 import type { GameState, Weather } from "@/game/types";
+import type { CloseupContent } from "@/components/CloseupOverlay/CloseupOverlay";
 
 /**
  * Going through a door: a quick dip to black while the door opens and shuts
@@ -49,6 +64,7 @@ const CONVERSATION_ACTIONS = new Set([
   "talkToBigRoy",
   "talkToRay",
   "talkToTommy",
+  "talkToRachel",
 ]);
 
 const NPC_REPLY_DELAY = 450;
@@ -161,6 +177,18 @@ export function useGame() {
   // Completing Find a Job sets one permanent workplace benefit.
   const [job, setJob] = useState<JobId | null>(sessionSave?.job ?? null);
   const [jobQuestTarget, setJobQuestTarget] = useState<JobId | null>(sessionSave?.jobQuestTarget ?? null);
+  const [quests, setQuests] = useState<QuestProgress[]>(() =>
+    migrateQuestsFromLegacy(sessionSave ?? { momTalked: true }),
+  );
+  const [storyFlags, setStoryFlags] = useState<Partial<Record<StoryFlag, boolean>>>(
+    () => sessionSave?.storyFlags ?? (
+      sessionSave?.momJobConcernHeard ? { momJobConcern: true } : {}
+    ),
+  );
+  const [chapter, setChapter] = useState(sessionSave?.chapter ?? 1);
+  const [closeup, setCloseup] = useState<CloseupContent | null>(null);
+  const closeupQueue = useRef<CloseupContent[]>([]);
+  const [showChapterEnd, setShowChapterEnd] = useState(false);
   const [questNotification, setQuestNotification] = useState<string | null>(null);
   const [questNotificationLabel, setQuestNotificationLabel] = useState("Quest started");
   const [questNotificationExiting, setQuestNotificationExiting] = useState(false);
@@ -192,6 +220,82 @@ export function useGame() {
     }, 6500);
   }
 
+
+  function hasFlag(flag: StoryFlag) {
+    return Boolean(storyFlags[flag]);
+  }
+
+  function hasAllFlags(flags: StoryFlag[] | StoryFlag | undefined) {
+    if (!flags) return true;
+    const list = Array.isArray(flags) ? flags : [flags];
+    return list.every((flag) => hasFlag(flag));
+  }
+
+  function hasAnyFlag(flags: StoryFlag[] | StoryFlag | undefined) {
+    if (!flags) return false;
+    const list = Array.isArray(flags) ? flags : [flags];
+    return list.some((flag) => hasFlag(flag));
+  }
+
+  function applyFlags(flags: StoryFlag[] | StoryFlag | undefined) {
+    if (!flags) return;
+    const list = Array.isArray(flags) ? flags : [flags];
+    setStoryFlags((previous) => {
+      const next = { ...previous };
+      for (const flag of list) next[flag] = true;
+      return next;
+    });
+    // Keep legacy mirror in sync.
+    if (list.includes("momJobConcern")) setMomJobConcernHeard(true);
+  }
+
+  function enqueueCloseup(first: CloseupContent, next?: CloseupContent) {
+    closeupQueue.current = next ? [next] : [];
+    setCloseup(first);
+  }
+
+  function dismissCloseup() {
+    const queued = closeupQueue.current.shift();
+    if (queued) {
+      setCloseup(queued);
+      return;
+    }
+    setCloseup(null);
+  }
+
+  function applyQuestHooks(options: {
+    startsQuest?: QuestId;
+    completesQuest?: QuestId;
+    /** Applied only to completesQuest (never to a quest started by the same choice). */
+    questStep?: string;
+    notifyStart?: string;
+    notifyComplete?: string;
+  }) {
+    setQuests((previous) => {
+      let next = previous;
+      if (options.startsQuest) {
+        // New quests always open on their default step — never inherit "done".
+        const before = next;
+        next = startQuest(next, options.startsQuest);
+        if (next !== before) {
+          const title = QUEST_DEFS[options.startsQuest].title;
+          pendingQuestNotification.current = {
+            message: options.notifyStart ?? `New quest: ${title}`,
+            label: "Quest started",
+          };
+        }
+      }
+      if (options.completesQuest) {
+        next = completeQuest(next, options.completesQuest, options.questStep);
+        showQuestNotification(
+          options.notifyComplete ?? QUEST_DEFS[options.completesQuest].title,
+          "Quest complete",
+        );
+      }
+      return next;
+    });
+  }
+
   const currentSave = useCallback(() => {
     return {
       version: 1 as const,
@@ -207,8 +311,11 @@ export function useGame() {
       momJobConcernHeard,
       job: job ?? undefined,
       jobQuestTarget: jobQuestTarget ?? undefined,
+      quests,
+      storyFlags,
+      chapter,
     };
-  }, [gameState, playerState, currentScene, busStopReturnSceneId, marleneActive, deskCigarettesPickedUp, scrapyardKnifePickedUp, garageFlashlightPickedUp, momTalked, momJobConcernHeard, job, jobQuestTarget]);
+  }, [gameState, playerState, currentScene, busStopReturnSceneId, marleneActive, deskCigarettesPickedUp, scrapyardKnifePickedUp, garageFlashlightPickedUp, momTalked, momJobConcernHeard, job, jobQuestTarget, quests, storyFlags, chapter]);
 
   // This is a temporary, per-tab resume point. It survives refreshes but is
   // automatically cleared when the browser tab is closed.
@@ -262,9 +369,14 @@ export function useGame() {
   function openConversation() {
     cancelPendingReply();
     // The action determines *which* NPC to talk to; the scene owns the dialogue.
-    const selectedConversation = currentScene.id === "kitchen" && !momTalked
-      ? momDeathConversation
-      : currentScene.conversation;
+    const selectedConversation =
+      currentScene.id === "kitchen" && !momTalked
+        ? momDeathConversation
+        : currentScene.id === "front-yard"
+          ? rachelFrontYardConversation
+          : currentScene.id === "elrod-house"
+            ? rachelElrodConversation
+            : currentScene.conversation;
     const asEmployee =
       !!selectedConversation?.jobOpening && selectedConversation.jobOpening.job === job;
     const opening = asEmployee
@@ -367,27 +479,59 @@ export function useGame() {
     }, NPC_REPLY_DELAY);
   }
 
-  function finishConversationChoice(choice: Extract<GameChoice, { response: StoryEntry[] }>) {
+  function finishConversationChoice(choice: ConversationChoice) {
     setConversation((previous) => [...previous, ...choice.response]);
 
     if (choice.completesMomQuest && !momTalked) {
       setMomTalked(true);
+      // Coffee errand is live as soon as Faded Poster starts (Mom already asked).
+      applyFlags("coffeeErrandHeard");
+      setQuests((previous) => {
+        let next = completeQuest(previous, "talk-to-mom");
+        // Chapter 1: The Tape and Faded Poster start in parallel after Mom.
+        next = startQuest(next, "the-tape");
+        next = startQuest(next, "faded-poster");
+        return next;
+      });
       showQuestNotification("Talk to Mom", "Quest complete");
+      pendingQuestNotification.current = {
+        message: "New quests: The Tape — and Mom needs coffee from Margaret's.",
+        label: "Quest started",
+      };
     }
 
-    // Only the first time, and not once Ethan already has a job.
-    if (choice.storyFlag === "momJobConcern" && !momJobConcernHeard && !job) {
+    const flags = choice.storyFlag;
+    const flagList = !flags ? [] : Array.isArray(flags) ? flags : [flags];
+    if (flagList.includes("momJobConcern") && !momJobConcernHeard && !job) {
       setMomJobConcernHeard(true);
       setCurrentThought("I gotta get a job. Maybe those flyers on the light pole out front.");
+      setQuests((previous) => startQuest(previous, "find-a-job"));
       pendingQuestNotification.current = {
         message: "New quest: Find a Job — there's got to be a way to help.",
         label: "Quest started",
       };
     }
+    if (flagList.length) applyFlags(flagList);
+
+    if (choice.givesItem) {
+      setPlayerState((previous) =>
+        previous.inventory.includes(choice.givesItem!)
+          ? previous
+          : { ...previous, inventory: [...previous.inventory, choice.givesItem!] },
+      );
+    }
+    if (choice.removesItem) {
+      setPlayerState((previous) => ({
+        ...previous,
+        inventory: previous.inventory.filter((item) => item !== choice.removesItem),
+      }));
+    }
 
     if (choice.jobOffer && !job) {
       setJob(choice.jobOffer);
       setJobQuestTarget(null);
+      setQuests((previous) => completeQuest(previous, "find-a-job", "working"));
+      showQuestNotification("Find a Job", "Quest complete");
 
       if (choice.jobOffer === "scrapyard") {
         setPlayerState((previous) => ({
@@ -399,9 +543,39 @@ export function useGame() {
       }
     }
 
+    if (choice.startsQuest || choice.completesQuest) {
+      applyQuestHooks({
+        startsQuest: choice.startsQuest,
+        completesQuest: choice.completesQuest,
+        questStep: choice.questStep,
+      });
+    } else if (choice.questStep) {
+      setQuests((previous) => {
+        if (isQuestActive(previous, "faded-poster")) {
+          return setQuestStep(previous, "faded-poster", choice.questStep!);
+        }
+        return previous;
+      });
+    }
+
+    if (choice.closeup) {
+      enqueueCloseup(
+        {
+          image: choice.closeup.image.replace(/^\.\//, "/"),
+          thought: choice.closeup.thought,
+          label: choice.closeup.label,
+        },
+        choice.closeup.next
+          ? {
+              image: choice.closeup.next.image.replace(/^\.\//, "/"),
+              thought: choice.closeup.next.thought,
+              label: choice.closeup.next.label,
+            }
+          : undefined,
+      );
+    }
+
     if (choice.endsConversation) {
-      // Let the reply be read first; DialogueScene closes on the next click.
-      // A closing choice with nothing to say ("Exit conversation") closes now.
       if (choice.response.length === 0) closeConversation();
       else setConversationEnding(true);
       return;
@@ -468,6 +642,71 @@ export function useGame() {
     if (choice.requirements?.money !== undefined && playerState.money < choice.requirements.money) {
       return;
     }
+    if (choice.requirements?.item && !playerState.inventory.includes(choice.requirements.item)) {
+      return;
+    }
+    if (choice.requirements?.flags && !hasAllFlags(choice.requirements.flags)) {
+      return;
+    }
+    if (choice.requirements?.excludesFlags && hasAnyFlag(choice.requirements.excludesFlags)) {
+      return;
+    }
+
+    if (choice.closeup) {
+      const toUrl = (path: string) => path.replace(/^\.\//, "/");
+      enqueueCloseup(
+        {
+          image: toUrl(choice.closeup.image),
+          thought: choice.closeup.thought,
+          label: choice.closeup.label,
+        },
+        choice.closeup.next
+          ? {
+              image: toUrl(choice.closeup.next.image),
+              thought: choice.closeup.next.thought,
+              label: choice.closeup.next.label,
+            }
+          : undefined,
+      );
+    }
+    if (choice.setsFlags) applyFlags(choice.setsFlags);
+    if (choice.startsQuest || choice.completesQuest) {
+      applyQuestHooks({
+        startsQuest: choice.startsQuest,
+        completesQuest: choice.completesQuest,
+        questStep: choice.questStep,
+      });
+    }
+    if (
+      choice.completesQuest === "light-on-the-hill"
+      || (choice.setsFlags && choice.setsFlags.includes("chapter1Complete"))
+    ) {
+      setChapter(2);
+      setShowChapterEnd(true);
+    }
+
+    // Lobby is open; the hallway past it needs a flashlight.
+    if (choice.action === "enterSanatoriumHallway") {
+      if (!playerState.inventory.includes("Flashlight")) {
+        setCurrentThought("Not without a light.");
+        return;
+      }
+    }
+    if (choice.action === "enterSanatorium") {
+      if (!hasFlag("sanatoriumEntranceFear")) {
+        applyFlags("sanatoriumEntranceFear");
+        setPlayerState((previous) => applyEffects(previous, { fear: 10 }));
+        setCurrentEffects([{ type: "effect", stat: "fear", amount: 10 }]);
+      }
+      setQuests((previous) => setQuestStep(previous, "light-on-the-hill", "inside"));
+    }
+    if (choice.action === "enterSanatoriumHallway") {
+      if (!hasFlag("sanatoriumHallwayFear")) {
+        applyFlags("sanatoriumHallwayFear");
+        setPlayerState((previous) => applyEffects(previous, { fear: 10 }));
+        setCurrentEffects([{ type: "effect", stat: "fear", amount: 10 }]);
+      }
+    }
 
     if (choice.door && !throughDoor) {
       walkThroughDoor(choice);
@@ -483,6 +722,7 @@ export function useGame() {
 
     if (selectedJob && !job && !jobQuestTarget) {
       setJobQuestTarget(selectedJob);
+      setQuests((previous) => setQuestStep(previous, "find-a-job", "flyer"));
       showQuestNotification("New quest: Find a Job — follow up on that lead.");
       const discoveredLocation: Record<JobId, string> = {
         "needle-groove": "Needle & Groove",
@@ -661,15 +901,24 @@ export function useGame() {
     }
 
     if (action === "talkToMom") {
-      return currentScene.id === "kitchen"
-        ? time >= 450 && time < 540
-        : currentScene.id === "living-room" && time >= 540 && time < 1080;
+      const weekend =
+        gameState.dayOfWeek === "Saturday" || gameState.dayOfWeek === "Sunday";
+      if (currentScene.id === "kitchen") {
+        return (time >= 450 && time < 540)
+          || (weekend && time >= 720 && time < 1140);
+      }
+      if (currentScene.id === "living-room") {
+        return weekend
+          ? time >= 540 && time < 1320
+          : time >= 540 && time < 1080;
+      }
+      return false;
     }
     if (action === "talkToJohnny") return time >= 480 && time < 840;
     if (action === "workNeedleGrooveShift") {
       return job === "needle-groove" && time >= 600 && time < 1140;
     }
-    if (action === "talkToWalter") return time >= 480 && time < 1080;
+    if (action === "talkToWalter") return time >= 480 && time < 960;
     if (action === "talkToMargaret") return time >= 660 && time < 900;
     if (action === "talkToEarl") return time >= 480 && time < 1020;
     if (action === "talkToBigRoy") return time >= 420 && time < 900;
@@ -689,6 +938,50 @@ export function useGame() {
     if (action.startsWith("choose") && action.endsWith("Job")) {
       return momJobConcernHeard && !job && !jobQuestTarget;
     }
+
+    if (action === "goElrodHouse") {
+      return momTalked && (
+        isQuestActive(quests, "the-tape")
+        || hasFlag("rachelMet")
+        || isQuestCompleted(quests, "the-tape")
+      );
+    }
+    if (action === "talkToRachel") {
+      // Elrod: Rachel is only out 07:00–19:00 (matches her standing art).
+      if (currentScene.id === "elrod-house") {
+        return !hasFlag("rachelMet") && time >= 420 && time < 1140;
+      }
+      // Front yard follow-up: 07:00–21:00.
+      if (currentScene.id === "front-yard") {
+        return (
+          hasFlag("walterStationTalk")
+          && isQuestActive(quests, "what-walter-said")
+          && time >= 420
+          && time < 1260
+        );
+      }
+      return false;
+    }
+    if (action === "lookAtSanatoriumHill") {
+      const night = time >= 1080 || time < 360;
+      return (
+        night
+        && isQuestCompleted(quests, "what-walter-said")
+        && isQuestCompleted(quests, "faded-poster")
+        && !hasFlag("sanatoriumSeenFromStreet")
+      );
+    }
+    if (action === "lookAtDinerBulletin") {
+      return isQuestActive(quests, "faded-poster") && !hasFlag("posterFound");
+    }
+    if (action === "lookAtSanatoriumCigarette") {
+      return isNightTime(time) && !hasFlag("sanatoriumCigaretteSeen");
+    }
+    if (action === "lookAtElrodTape") return true;
+
+    if (choice.requirements?.flags && !hasAllFlags(choice.requirements.flags)) return false;
+    if (choice.requirements?.excludesFlags && hasAnyFlag(choice.requirements.excludesFlags)) return false;
+    if (choice.requirements?.item && !playerState.inventory.includes(choice.requirements.item)) return false;
 
     return true;
   }
@@ -720,6 +1013,12 @@ export function useGame() {
     setMomJobConcernHeard(save.momJobConcernHeard ?? false);
     setJob(save.job ?? null);
     setJobQuestTarget(save.jobQuestTarget ?? null);
+    setQuests(migrateQuestsFromLegacy(save));
+    setStoryFlags(save.storyFlags ?? (save.momJobConcernHeard ? { momJobConcern: true } : {}));
+    setChapter(save.chapter ?? 1);
+    setCloseup(null);
+    closeupQueue.current = [];
+    setShowChapterEnd(false);
     clearQuestNotification();
 
     // Modal and transition state is not saved, so always resume at the scene.
@@ -765,6 +1064,12 @@ export function useGame() {
     setMomJobConcernHeard(false);
     setJob(null);
     setJobQuestTarget(null);
+    setQuests([{ id: "talk-to-mom", status: "active" }]);
+    setStoryFlags({});
+    setChapter(1);
+    setCloseup(null);
+    closeupQueue.current = [];
+    setShowChapterEnd(false);
     clearQuestNotification();
     setShowStats(false);
     setShowInventory(false);
@@ -789,6 +1094,9 @@ export function useGame() {
       scrapyardKnifePickedUp: false,
       garageFlashlightPickedUp: false,
       momTalked: false,
+      quests: [{ id: "talk-to-mom", status: "active" }],
+      storyFlags: {},
+      chapter: 1,
     });
   }
 
@@ -796,6 +1104,15 @@ export function useGame() {
   // is rendered over the scene image.
   const activeCharacter = currentScene.characters?.find((character) => {
     if (character.name === "Marlene" && !marleneActive) {
+      return false;
+    }
+    if (character.days && !character.days.includes(gameState.dayOfWeek)) {
+      return false;
+    }
+    if (character.requiresFlags && !character.requiresFlags.every((flag) => hasFlag(flag))) {
+      return false;
+    }
+    if (character.excludesFlags && character.excludesFlags.some((flag) => hasFlag(flag))) {
       return false;
     }
 
@@ -811,21 +1128,34 @@ export function useGame() {
           (!choice.requiresNoJob || !job) &&
           (!choice.requiresJob || choice.requiresJob === job) &&
           (!choice.requiresJobQuestTarget || choice.requiresJobQuestTarget === jobQuestTarget) &&
-          (!choice.requiresStoryFlag || (choice.requiresStoryFlag === "momJobConcern" && momJobConcernHeard)) &&
+          hasAllFlags(choice.requiresStoryFlag) &&
+          !hasAnyFlag(choice.excludesStoryFlag) &&
           (!choice.requiresChoice || usedConversationChoices.includes(choice.requiresChoice)) &&
           (!choice.excludesJob || choice.excludesJob !== job) &&
           (!choice.returningEmployee || openedAsEmployee) &&
+          (!choice.requiresItem || playerState.inventory.includes(choice.requiresItem)) &&
+          (!choice.excludesItem || !playerState.inventory.includes(choice.excludesItem)) &&
+          (!choice.requiresQuestActive || isQuestActive(quests, choice.requiresQuestActive)) &&
           (choice.endsConversation || !usedConversationChoices.includes(choice.label))
       )
     : currentScene.choices.filter(isChoiceAvailable);
   const availableTravelDestinations = [
     "front-yard",
     "hospital",
+    ...(momTalked ? ["diner"] : []),
+    ...(hasFlag("rachelMet")
+      || isQuestActive(quests, "down-to-the-station")
+      || isQuestCompleted(quests, "down-to-the-station")
+      ? ["police-station"]
+      : []),
+    ...(hasFlag("sanatoriumSeenFromStreet")
+      || isQuestActive(quests, "light-on-the-hill")
+      || isQuestCompleted(quests, "light-on-the-hill")
+      ? ["sanatorium"]
+      : []),
     ...(jobQuestTarget === "needle-groove" || job === "needle-groove"
       ? ["needle-and-groove"]
       : []),
-    // The other two flyers lead somewhere too; without these the Find a Job
-    // quest could never be finished after picking them.
     ...(jobQuestTarget === "gas-station" || job === "gas-station"
       ? ["gas-station"]
       : []),
@@ -869,6 +1199,13 @@ export function useGame() {
     setActiveShop,
     job,
     jobQuestTarget,
+    quests,
+    storyFlags,
+    chapter,
+    closeup,
+    dismissCloseup,
+    showChapterEnd,
+    dismissChapterEnd: () => setShowChapterEnd(false),
     momTalked,
     momJobConcernHeard,
     questNotification,

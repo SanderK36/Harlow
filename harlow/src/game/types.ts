@@ -68,7 +68,8 @@ export type Location =
 "Diner" |
 "Motel" |
 "Sanatorium" |
-"Scrapyard";
+"Scrapyard" |
+"Elrod House";
 
 export type Weather =
 "Sunny" |
