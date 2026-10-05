@@ -765,7 +765,7 @@ export const momConversation: Conversation = {
         ethan("I found Emily's poster at the diner."),
         npc("Linda", "Put that away."),
       ],
-      storyFlag: "posterShownToMom",
+      storyFlag: ["posterShownToMom", "coffeeDelivered"],
       completesQuest: "faded-poster",
       questStep: "done",
       removesItem: "Coffee",
@@ -787,10 +787,12 @@ export const momConversation: Conversation = {
       label: "Got your coffee.",
       requiresItem: "Coffee",
       requiresStoryFlag: "posterShownToMom",
+      excludesStoryFlag: "coffeeDelivered",
       response: [
         ethan("Got your coffee."),
         npc("Linda", "Thanks, honey."),
       ],
+      storyFlag: "coffeeDelivered",
       removesItem: "Coffee",
     },
 
@@ -1186,7 +1188,7 @@ export const margaretConversation: Conversation = {
       label: "Mom's coffee. On her tab.",
       requiresStoryFlag: "coffeeErrandHeard",
       excludesItem: "Coffee",
-      requiresQuestActive: "faded-poster",
+      excludesStoryFlag: "coffeeDelivered",
       response: [
         ethan("Mom's coffee. On her tab."),
         npc("Margaret", "Coming up. Tell Linda I said hey."),

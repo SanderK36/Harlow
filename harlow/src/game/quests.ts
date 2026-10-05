@@ -49,6 +49,7 @@ export type StoryFlag =
   | "posterFound"
   | "posterShownToMom"
   | "coffeeErrandHeard"
+  | "coffeeDelivered"
   | "sanatoriumSeenFromStreet"
   | "sanatoriumCigaretteSeen"
   | "sanatoriumEntranceFear"
