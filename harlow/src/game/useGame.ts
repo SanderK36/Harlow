@@ -72,6 +72,46 @@ const TRAVEL_DURATION = 3000;
 const BEDTIME_START = 1320;
 const BEDTIME_END = 180;
 const EXHAUSTION_LOCK_TIME = 210;
+const HILL_THOUGHT = "There's a light up on the hill. Nobody goes up there.";
+/** Slide in, then hold, then fade. The hold is the time the card sits still. */
+const LEAD_ENTER_MS = 200;
+const LEAD_HOLD_MS = 2000;
+const LEAD_EXIT_MS = 300;
+
+const SANATORIUM_SCENE_IDS = new Set([
+  "sanatorium",
+  "sanatorium-entrance",
+  "sanatorium-main-floor",
+  "sanatorium-hallway",
+  "sanatorium-room-1",
+  "sanatorium-room-2",
+]);
+
+type QuestNotice = {
+  kind: "lead" | "notice";
+  label: string;
+  message: string;
+};
+
+/** Night thought + Light on the Hill, once both prerequisite quests are done. */
+function shouldNoticeHill(
+  sceneId: string,
+  time: number,
+  questList: QuestProgress[],
+  flags: Partial<Record<StoryFlag, boolean>>,
+) {
+  const night = time >= 1080 || time < 360;
+  return (
+    sceneId === "front-yard"
+    && night
+    && isQuestCompleted(questList, "what-walter-said")
+    && isQuestCompleted(questList, "faded-poster")
+    && !flags.sanatoriumSeenFromStreet
+    && !isQuestActive(questList, "light-on-the-hill")
+    && !isQuestCompleted(questList, "light-on-the-hill")
+  );
+}
+
 const HOME_SCENE_IDS = new Set([
   "ethan-room",
   "ethan-room-desk",
@@ -108,14 +148,18 @@ export function useGame() {
 
   // The currently displayed scene and its short, time-aware thought.
   const [currentScene, setCurrentScene] = useState(sessionScene ?? ethanRoom);
-  const [currentThought, setCurrentThought] = useState<string | null>(
-    getSceneThought(
-      sessionScene?.id ?? ethanRoom.id,
-      sessionSave?.gameState.time ?? initialGameState.time,
-      sessionSave?.gameState.weather ?? initialGameState.weather,
-      sessionSave?.gameState.dayOfWeek ?? initialGameState.dayOfWeek,
-    )
-  );
+  const [currentThought, setCurrentThought] = useState<string | null>(() => {
+    const sceneId = sessionScene?.id ?? ethanRoom.id;
+    const time = sessionSave?.gameState.time ?? initialGameState.time;
+    const weather = sessionSave?.gameState.weather ?? initialGameState.weather;
+    const day = sessionSave?.gameState.dayOfWeek ?? initialGameState.dayOfWeek;
+    const migrated = migrateQuestsFromLegacy(sessionSave ?? { momTalked: true });
+    const flags = sessionSave?.storyFlags ?? (
+      sessionSave?.momJobConcernHeard ? { momJobConcern: true } : {}
+    );
+    if (shouldNoticeHill(sceneId, time, migrated, flags)) return HILL_THOUGHT;
+    return getSceneThought(sceneId, time, weather, day);
+  });
   const [currentEffects, setCurrentEffects] = useState<StoryEntry[]>([]);
   const [lateNightActionThought, setLateNightActionThought] = useState<string | null>(null);
   const [newDayAnnouncement, setNewDayAnnouncement] = useState<GameState | null>(null);
@@ -141,7 +185,12 @@ export function useGame() {
   const replyTimer = useRef<number | null>(null);
   const questNotificationTimer = useRef<number | null>(null);
   const locationDiscoveryTimer = useRef<number | null>(null);
-  const pendingQuestNotification = useRef<{ message: string; label: string } | null>(null);
+  const noticeQueue = useRef<QuestNotice[]>([]);
+  const noticeShowing = useRef(false);
+  const announcedNotices = useRef<Set<string>>(new Set());
+  // True while dialogue is on screen. Leads wait so the card is not hidden
+  // under the conversation (or display:none on a phone).
+  const conversationActiveRef = useRef(false);
   const [doorTransition, setDoorTransition] = useState<DoorTransitionPhase>("idle");
   const doorBusy = useRef(false);
   const doorTimers = useRef<number[]>([]);
@@ -178,9 +227,16 @@ export function useGame() {
   // Completing Find a Job sets one permanent workplace benefit.
   const [job, setJob] = useState<JobId | null>(sessionSave?.job ?? null);
   const [jobQuestTarget, setJobQuestTarget] = useState<JobId | null>(sessionSave?.jobQuestTarget ?? null);
-  const [quests, setQuests] = useState<QuestProgress[]>(() =>
-    migrateQuestsFromLegacy(sessionSave ?? { momTalked: true }),
-  );
+  const [quests, setQuests] = useState<QuestProgress[]>(() => {
+    const migrated = migrateQuestsFromLegacy(sessionSave ?? { momTalked: true });
+    const sceneId = sessionScene?.id ?? ethanRoom.id;
+    const time = sessionSave?.gameState.time ?? initialGameState.time;
+    const flags = sessionSave?.storyFlags ?? (
+      sessionSave?.momJobConcernHeard ? { momJobConcern: true } : {}
+    );
+    if (!shouldNoticeHill(sceneId, time, migrated, flags)) return migrated;
+    return startQuest(migrated, "light-on-the-hill");
+  });
   const [storyFlags, setStoryFlags] = useState<Partial<Record<StoryFlag, boolean>>>(
     () => sessionSave?.storyFlags ?? (
       sessionSave?.momJobConcernHeard ? { momJobConcern: true } : {}
@@ -191,7 +247,8 @@ export function useGame() {
   const closeupQueue = useRef<CloseupContent[]>([]);
   const [showChapterEnd, setShowChapterEnd] = useState(false);
   const [questNotification, setQuestNotification] = useState<string | null>(null);
-  const [questNotificationLabel, setQuestNotificationLabel] = useState("Quest started");
+  const [questNotificationLabel, setQuestNotificationLabel] = useState("NEW LEAD");
+  const [questNotificationKind, setQuestNotificationKind] = useState<QuestNotice["kind"]>("lead");
   const [questNotificationExiting, setQuestNotificationExiting] = useState(false);
 
   function clearQuestNotification() {
@@ -199,28 +256,68 @@ export function useGame() {
     if (locationDiscoveryTimer.current !== null) window.clearTimeout(locationDiscoveryTimer.current);
     questNotificationTimer.current = null;
     locationDiscoveryTimer.current = null;
-    pendingQuestNotification.current = null;
+    noticeQueue.current = [];
+    noticeShowing.current = false;
+    announcedNotices.current = new Set();
     setQuestNotification(null);
-    setQuestNotificationLabel("Quest started");
+    setQuestNotificationLabel("NEW LEAD");
+    setQuestNotificationKind("lead");
     setQuestNotificationExiting(false);
   }
 
-  function showQuestNotification(message: string, label = "Quest started") {
-    if (questNotificationTimer.current !== null) window.clearTimeout(questNotificationTimer.current);
-    setQuestNotification(message);
-    setQuestNotificationLabel(label);
+  function pumpNotices() {
+    if (noticeShowing.current || conversationActiveRef.current) return;
+    const next = noticeQueue.current.shift();
+    if (!next) return;
+    noticeShowing.current = true;
+    setQuestNotification(next.message);
+    setQuestNotificationLabel(next.label);
+    setQuestNotificationKind(next.kind);
     setQuestNotificationExiting(false);
     questNotificationTimer.current = window.setTimeout(() => {
       setQuestNotificationExiting(true);
       questNotificationTimer.current = window.setTimeout(() => {
+        noticeShowing.current = false;
         setQuestNotification(null);
-        setQuestNotificationLabel("Quest started");
+        setQuestNotificationLabel("NEW LEAD");
+        setQuestNotificationKind("lead");
         setQuestNotificationExiting(false);
         questNotificationTimer.current = null;
-      }, 240);
-    }, 6500);
+        pumpNotices();
+      }, LEAD_EXIT_MS);
+    }, LEAD_ENTER_MS + LEAD_HOLD_MS);
   }
 
+  function enqueueNotice(notice: QuestNotice, key?: string) {
+    const dedupeKey = key ?? `${notice.kind}:${notice.label}:${notice.message}`;
+    if (announcedNotices.current.has(dedupeKey)) return;
+    announcedNotices.current.add(dedupeKey);
+    noticeQueue.current.push(notice);
+    pumpNotices();
+  }
+
+  function enqueueLead(id: QuestId, title?: string) {
+    const message = title ?? questTitle(
+      { id, status: "active" },
+      { inventory: playerState.inventory, storyFlags },
+    );
+    enqueueNotice({ kind: "lead", label: "NEW LEAD", message }, `lead:${id}`);
+  }
+
+  function openHillQuest() {
+    let started = false;
+    setQuests((previous) => {
+      if (
+        isQuestActive(previous, "light-on-the-hill")
+        || isQuestCompleted(previous, "light-on-the-hill")
+      ) {
+        return previous;
+      }
+      started = true;
+      return startQuest(previous, "light-on-the-hill");
+    });
+    if (started) enqueueLead("light-on-the-hill", "Light on the Hill");
+  }
 
   function hasFlag(flag: StoryFlag) {
     return Boolean(storyFlags[flag]);
@@ -272,36 +369,43 @@ export function useGame() {
     notifyStart?: string;
     notifyComplete?: string;
   }) {
+    let started: QuestId | undefined;
+    let startedHill = false;
+    let completedTitle: string | undefined;
     setQuests((previous) => {
       let next = previous;
+      if (options.completesQuest) {
+        const wasComplete = isQuestCompleted(next, options.completesQuest);
+        next = completeQuest(next, options.completesQuest, options.questStep);
+        if (!wasComplete) {
+          completedTitle = options.notifyComplete
+            ?? questTitle(
+              { id: options.completesQuest, status: "completed" },
+              { inventory: playerState.inventory, storyFlags },
+            );
+        }
+      }
       if (options.startsQuest) {
         // New quests always open on their default step — never inherit "done".
         const before = next;
         next = startQuest(next, options.startsQuest);
-        if (next !== before) {
-          const title = questTitle(
-            { id: options.startsQuest, status: "active" },
-            { inventory: playerState.inventory, storyFlags },
-          );
-          pendingQuestNotification.current = {
-            message: options.notifyStart ?? `New quest: ${title}`,
-            label: "Quest started",
-          };
-        }
+        if (next !== before) started = options.startsQuest;
       }
-      if (options.completesQuest) {
-        next = completeQuest(next, options.completesQuest, options.questStep);
-        showQuestNotification(
-          options.notifyComplete
-            ?? questTitle(
-              { id: options.completesQuest, status: "completed" },
-              { inventory: playerState.inventory, storyFlags },
-            ),
-          "Quest complete",
-        );
+      // Last prerequisite can finish while Ethan is already in the yard.
+      if (shouldNoticeHill(currentScene.id, gameState.time, next, storyFlags)) {
+        next = startQuest(next, "light-on-the-hill");
+        startedHill = true;
       }
       return next;
     });
+    if (completedTitle) {
+      enqueueNotice({ kind: "notice", label: "Quest complete", message: completedTitle });
+    }
+    if (started) enqueueLead(started, options.notifyStart);
+    if (startedHill) {
+      setCurrentThought(HILL_THOUGHT);
+      enqueueLead("light-on-the-hill", "Light on the Hill");
+    }
   }
 
   const currentSave = useCallback(() => {
@@ -347,12 +451,25 @@ export function useGame() {
     const nextGameState = advanceGameTime(gameState, timeToAdvance);
 
     setGameState(nextGameState);
-    setCurrentThought(getSceneThought(
+    const hillNow = shouldNoticeHill(
       currentScene.id,
       nextGameState.time,
-      nextGameState.weather,
-      nextGameState.dayOfWeek,
-    ));
+      quests,
+      storyFlags,
+    );
+    // The line lands first. openHillQuest adds the quest on this same update,
+    // so the look action is not on screen before the sentence.
+    setCurrentThought(
+      hillNow
+        ? HILL_THOUGHT
+        : getSceneThought(
+          currentScene.id,
+          nextGameState.time,
+          nextGameState.weather,
+          nextGameState.dayOfWeek,
+        ),
+    );
+    if (hillNow) openHillQuest();
 
     return nextGameState;
   }
@@ -377,30 +494,14 @@ export function useGame() {
     setCurrentScene(nextScene);
     setCurrentEffects([]);
 
-    const night = time >= 1080 || time < 360;
-    const hillReady =
-      sceneId === "front-yard"
-      && currentScene.id !== "front-yard"
-      && night
-      && isQuestCompleted(quests, "what-walter-said")
-      && isQuestCompleted(quests, "faded-poster")
-      && !hasFlag("sanatoriumSeenFromStreet");
-
-    if (hillReady) {
-      setCurrentThought("There's a light up on the hill. Nobody goes up there.");
-      setQuests((previous) => {
-        if (
-          isQuestActive(previous, "light-on-the-hill")
-          || isQuestCompleted(previous, "light-on-the-hill")
-        ) {
-          return previous;
-        }
-        showQuestNotification("New quest: Light on the Hill", "Quest started");
-        return startQuest(previous, "light-on-the-hill");
-      });
-    } else {
-      setCurrentThought(getSceneThought(nextScene.id, time, weather, day));
-    }
+    const hillNow = shouldNoticeHill(sceneId, time, quests, storyFlags);
+    // The look action stays hidden until this line has been said.
+    setCurrentThought(
+      hillNow
+        ? HILL_THOUGHT
+        : getSceneThought(nextScene.id, time, weather, day),
+    );
+    if (hillNow) openHillQuest();
 
     setGameState((previous) => ({
       ...previous,
@@ -430,6 +531,7 @@ export function useGame() {
       return;
     }
 
+    conversationActiveRef.current = true;
     setActiveConversation(selectedConversation ?? null);
     setConversationEnding(false);
     setOpenedAsEmployee(asEmployee);
@@ -442,19 +544,16 @@ export function useGame() {
     setConversationActive(false);
     setConversationEnding(false);
     window.setTimeout(() => {
+      conversationActiveRef.current = false;
       setConversation([]);
       setActiveConversation(null);
       setUsedConversationChoices([]);
-      const pendingNotification = pendingQuestNotification.current;
-      pendingQuestNotification.current = null;
-      if (pendingNotification) {
-        showQuestNotification(pendingNotification.message, pendingNotification.label);
-      }
+      pumpNotices();
     }, 300);
   }
 
   function notifyMomQuest() {
-    showQuestNotification("Mom's in the kitchen.", "New quest");
+    enqueueLead("talk-to-mom", "Talk to Mom");
   }
 
   function applyChoiceEffects(choice: Choice) {
@@ -498,6 +597,17 @@ export function useGame() {
     if (choice.action === "lookAtSanatoriumHill") {
       return true;
     }
+    // Light on the Hill stays playable through the 03:00 lock. A walk that
+    // leaves after 02:00 arrives after 03:00, and by morning the cigarette is gone.
+    if (
+      isQuestActive(quests, "light-on-the-hill")
+      && (
+        SANATORIUM_SCENE_IDS.has(currentScene.id)
+        || ("nextScene" in choice && SANATORIUM_SCENE_IDS.has(choice.nextScene))
+      )
+    ) {
+      return true;
+    }
 
     // At night, Ethan can only travel home, then follow the route through the
     // house to his bedroom. Everything else waits until morning.
@@ -530,30 +640,13 @@ export function useGame() {
   function finishConversationChoice(choice: ConversationChoice) {
     setConversation((previous) => [...previous, ...choice.response]);
 
-    if (choice.completesMomQuest && !momTalked) {
-      setMomTalked(true);
-      setQuests((previous) => {
-        let next = completeQuest(previous, "talk-to-mom");
-        next = startQuest(next, "the-tape");
-        return next;
-      });
-      showQuestNotification("Talk to Mom", "Quest complete");
-      pendingQuestNotification.current = {
-        message: "New quest: The Tape",
-        label: "Quest started",
-      };
-    }
-
     const flags = choice.storyFlag;
     const flagList = !flags ? [] : Array.isArray(flags) ? flags : [flags];
-    if (flagList.includes("momJobConcern") && !momJobConcernHeard && !job) {
+    if (flagList.includes("momJobConcern") && !momJobConcernHeard) {
       setMomJobConcernHeard(true);
+    }
+    if (flagList.includes("willHelpMom") && !job) {
       setCurrentThought("I gotta get a job. Maybe those flyers on the light pole out front.");
-      setQuests((previous) => startQuest(previous, "find-a-job"));
-      pendingQuestNotification.current = {
-        message: "New quest: Find a Job — there's got to be a way to help.",
-        label: "Quest started",
-      };
     }
     if (flagList.length) applyFlags(flagList);
 
@@ -575,7 +668,7 @@ export function useGame() {
       setJob(choice.jobOffer);
       setJobQuestTarget(null);
       setQuests((previous) => completeQuest(previous, "find-a-job", "working"));
-      showQuestNotification("Find a Job", "Quest complete");
+      enqueueNotice({ kind: "notice", label: "Quest complete", message: "Find a Job" });
 
       if (choice.jobOffer === "scrapyard") {
         setPlayerState((previous) => ({
@@ -621,6 +714,22 @@ export function useGame() {
     }
 
     if (choice.endsConversation) {
+      // Talk to Mom ends once Ethan has actually answered, on any reply.
+      const answeredMom =
+        !momTalked
+        && activeConversation === momDeathConversation
+        && (
+          usedConversationChoices.length > 0
+          || choice.response.some(
+            (entry) => entry.type === "conversation" && entry.character === "Ethan",
+          )
+        );
+      if (answeredMom) {
+        setMomTalked(true);
+        setQuests((previous) => startQuest(completeQuest(previous, "talk-to-mom"), "the-tape"));
+        enqueueNotice({ kind: "notice", label: "Quest complete", message: "Talk to Mom" });
+        enqueueLead("the-tape", "The Tape");
+      }
       if (choice.response.length === 0) closeConversation();
       else setConversationEnding(true);
       return;
@@ -730,14 +839,16 @@ export function useGame() {
 
     // Poster found before Linda's coffee errand: start as Faded Poster.
     if (choice.action === "lookAtDinerBulletin") {
+      let startedPoster = false;
       setQuests((previous) => {
         if (isQuestCompleted(previous, "faded-poster")) return previous;
         if (!isQuestActive(previous, "faded-poster")) {
-          showQuestNotification("New quest: Faded Poster", "Quest started");
+          startedPoster = true;
           return startQuest(previous, "faded-poster", "poster");
         }
         return setQuestStep(previous, "faded-poster", "poster");
       });
+      if (startedPoster) enqueueLead("faded-poster", "Faded Poster");
     } else if (choice.startsQuest || choice.completesQuest) {
       applyQuestHooks({
         startsQuest: choice.startsQuest,
@@ -757,12 +868,6 @@ export function useGame() {
         }
         return previous;
       });
-    }
-    // Scene choices don't go through closeConversation — flush start toasts now.
-    if (pendingQuestNotification.current) {
-      const pending = pendingQuestNotification.current;
-      pendingQuestNotification.current = null;
-      showQuestNotification(pending.message, pending.label);
     }
     if (
       choice.completesQuest === "light-on-the-hill"
@@ -798,14 +903,18 @@ export function useGame() {
     if (selectedJob && !job && !jobQuestTarget) {
       setJobQuestTarget(selectedJob);
       setQuests((previous) => setQuestStep(previous, "find-a-job", "flyer"));
-      showQuestNotification("Follow up on that lead.", "Quest updated");
+      enqueueNotice({ kind: "notice", label: "Quest updated", message: "Follow up on that lead." });
       const discoveredLocation: Record<JobId, string> = {
         "needle-groove": "Needle & Groove",
         "gas-station": "The gas station",
         scrapyard: "The scrapyard",
       };
       locationDiscoveryTimer.current = window.setTimeout(() => {
-        showQuestNotification(`${discoveredLocation[selectedJob]} discovered.`, "Location discovered");
+        enqueueNotice({
+          kind: "notice",
+          label: "Location discovered",
+          message: `${discoveredLocation[selectedJob]} discovered.`,
+        });
         locationDiscoveryTimer.current = null;
       }, 6800);
     }
@@ -954,6 +1063,7 @@ export function useGame() {
     }
 
     cancelPendingReply();
+    conversationActiveRef.current = false;
     setConversation([]);
     setActiveConversation(null);
     setConversationActive(false);
@@ -1016,7 +1126,12 @@ export function useGame() {
     }
     if (action === "pickUpGarageFlashlight") return !garageFlashlightPickedUp;
     if (action.startsWith("choose") && action.endsWith("Job")) {
-      return momJobConcernHeard && !job && !jobQuestTarget;
+      // The flyers are the job quest. Hearing Mom worry is not enough.
+      return (
+        !job
+        && !jobQuestTarget
+        && (isQuestActive(quests, "find-a-job") || hasFlag("willHelpMom"))
+      );
     }
 
     if (action === "goElrodHouse") {
@@ -1044,10 +1159,14 @@ export function useGame() {
     }
     if (action === "lookAtSanatoriumHill") {
       const night = time >= 1080 || time < 360;
+      // Hidden until the night line has started the quest. The button itself
+      // says there is something on the hill.
       return (
         night
-        && isQuestCompleted(quests, "what-walter-said")
-        && isQuestCompleted(quests, "faded-poster")
+        && (
+          isQuestActive(quests, "light-on-the-hill")
+          || isQuestCompleted(quests, "light-on-the-hill")
+        )
         && !hasFlag("sanatoriumSeenFromStreet")
       );
     }
@@ -1083,13 +1202,27 @@ export function useGame() {
 
     setGameState(save.gameState);
     setPlayerState(save.playerState);
-    setCurrentScene(savedScene);
-    setCurrentThought(getSceneThought(
+    const restoredFlags = save.storyFlags ?? (save.momJobConcernHeard ? { momJobConcern: true } : {});
+    let restoredQuests = migrateQuestsFromLegacy(save);
+    const restoredHill = shouldNoticeHill(
       savedScene.id,
       save.gameState.time,
-      save.gameState.weather,
-      save.gameState.dayOfWeek,
-    ));
+      restoredQuests,
+      restoredFlags,
+    );
+    if (restoredHill) restoredQuests = startQuest(restoredQuests, "light-on-the-hill");
+
+    setCurrentScene(savedScene);
+    setCurrentThought(
+      restoredHill
+        ? HILL_THOUGHT
+        : getSceneThought(
+          savedScene.id,
+          save.gameState.time,
+          save.gameState.weather,
+          save.gameState.dayOfWeek,
+        ),
+    );
     setCurrentEffects([]);
     setBusStopReturnSceneId(save.busStopReturnSceneId);
     setMarleneActive(save.marleneActive);
@@ -1100,13 +1233,14 @@ export function useGame() {
     setMomJobConcernHeard(save.momJobConcernHeard ?? false);
     setJob(save.job ?? null);
     setJobQuestTarget(save.jobQuestTarget ?? null);
-    setQuests(migrateQuestsFromLegacy(save));
-    setStoryFlags(save.storyFlags ?? (save.momJobConcernHeard ? { momJobConcern: true } : {}));
+    setQuests(restoredQuests);
+    setStoryFlags(restoredFlags);
     setChapter(save.chapter ?? 1);
     setCloseup(null);
     closeupQueue.current = [];
     setShowChapterEnd(false);
     clearQuestNotification();
+    if (restoredHill) enqueueLead("light-on-the-hill", "Light on the Hill");
 
     // Modal and transition state is not saved, so always resume at the scene.
     setShowStats(false);
@@ -1114,6 +1248,7 @@ export function useGame() {
     setShowTravel(false);
     setActiveShop(null);
     cancelPendingReply();
+    conversationActiveRef.current = false;
     setConversation([]);
     setActiveConversation(null);
     setConversationActive(false);
@@ -1168,6 +1303,7 @@ export function useGame() {
     setShowTravel(false);
     setActiveShop(null);
     cancelPendingReply();
+    conversationActiveRef.current = false;
     setConversation([]);
     setActiveConversation(null);
     setConversationActive(false);
@@ -1302,6 +1438,7 @@ export function useGame() {
     momJobConcernHeard,
     questNotification,
     questNotificationLabel,
+    questNotificationKind,
     questNotificationExiting,
     saveGame,
     loadGame,

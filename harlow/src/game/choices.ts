@@ -57,6 +57,11 @@ export type Choice = {
   /** Stat effects applied when this choice is taken (also on ChoiceEffects). */
   startsQuest?: import("./quests").QuestId;
   completesQuest?: import("./quests").QuestId;
+  /**
+   * Show the subtle new-lead marker until this quest exists.
+   * Only for a person asking something of Ethan, never a discovery.
+   */
+  leadQuest?: import("./quests").QuestId;
   questStep?: string;
   setsFlags?: import("./quests").StoryFlag[];
 };

@@ -37,8 +37,6 @@ export type ConversationChoice = {
   endsConversation?: boolean;
   /** Marks one or more story milestones when this response is selected. */
   storyFlag?: import("./quests").StoryFlag | import("./quests").StoryFlag[];
-  /** Completes the opening Mom objective after this conversation response. */
-  completesMomQuest?: boolean;
   /** Shows this response only after every listed story flag is set. */
   requiresStoryFlag?: import("./quests").StoryFlag | import("./quests").StoryFlag[];
   /** Hides this response once any listed story flag is set. */
@@ -69,6 +67,11 @@ export type ConversationChoice = {
   excludesItem?: string;
   /** Starts or advances a quest when selected. */
   startsQuest?: import("./quests").QuestId;
+  /**
+   * Show the subtle new-lead marker until this quest exists.
+   * Only for a person asking something of Ethan, never a discovery.
+   */
+  leadQuest?: import("./quests").QuestId;
   /** Completes a quest when selected. */
   completesQuest?: import("./quests").QuestId;
   /** Show only while this quest is active. */

@@ -6,6 +6,8 @@ type ActionListProps = {
   title: string;
   choices: GameChoice[];
   onChoice: (choice: GameChoice) => void;
+  /** True when this choice should show the new-lead mark. */
+  leadsQuest?: (choice: GameChoice) => boolean;
   onWalk: () => void;
   onBus: () => void;
   onGoToBusStop: () => void;
@@ -26,6 +28,7 @@ export default function ActionList({
   canTravel,
   playerMoney,
   layout = "default",
+  leadsQuest,
 }: ActionListProps) {
   const localChoices = choices.filter(
     (choice) => "response" in choice || !choice.travel
@@ -66,6 +69,7 @@ export default function ActionList({
             label={choice.label}
             onClick={() => onChoice(choice)}
             disabled={isDisabled(choice)}
+            leadsQuest={leadsQuest?.(choice) ?? false}
           />
         ))}
 

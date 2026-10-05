@@ -4,7 +4,11 @@ import { useLayoutEffect, useRef, type ButtonHTMLAttributes } from "react";
 
 import { harlowAudio } from "@/game/audio";
 
-type Props = ButtonHTMLAttributes<HTMLButtonElement> & { label: string };
+type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
+  label: string;
+  /** Notebook mark inside the name label. Hidden until the label is shown. */
+  leadsQuest?: boolean;
+};
 
 // Pending "spotlight off" timers per scene, so gliding from one hotspot to
 // the next moves the cut-out instead of snapping it in from nowhere.
@@ -48,6 +52,7 @@ function releaseSpotlight(button: HTMLButtonElement) {
 
 export default function SceneHotspot({
   label,
+  leadsQuest = false,
   onPointerEnter,
   onPointerLeave,
   onFocus,
@@ -120,7 +125,23 @@ export default function SceneHotspot({
         onBlur?.(event);
       }}
     >
-      <span ref={labelRef}>{label}</span>
+      <span ref={labelRef}>
+        {label}
+        {leadsQuest && (
+          <svg
+            className="scene-hotspot-lead"
+            width="14"
+            height="14"
+            viewBox="0 0 14 14"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <rect x="1.15" y="1.35" width="7.15" height="10.5" rx="0.7" stroke="currentColor" strokeWidth="1.1" fill="none" />
+            <path d="M2.85 4.15h3.7M2.85 6.35h3.7M2.85 8.55h2.4" stroke="currentColor" strokeWidth="0.85" strokeLinecap="round" />
+            <path d="M8.35 8.75 11.7 5.4l.9.9-3.35 3.35-1.05.25z" fill="currentColor" />
+          </svg>
+        )}
+      </span>
     </button>
   );
 }
