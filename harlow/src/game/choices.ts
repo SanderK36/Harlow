@@ -40,7 +40,25 @@ export type Choice = {
   /** Disable the choice until these conditions are met. Extend this for new rules. */
   requirements?: {
     money?: number;
-  }
+    /** Requires this inventory item. */
+    item?: string;
+    /** Requires every listed story flag. */
+    flags?: import("./quests").StoryFlag[];
+    /** Hidden once any listed story flag is set. */
+    excludesFlags?: import("./quests").StoryFlag[];
+  };
+  /** Show a closeup instead of (or before) moving scenes. */
+  closeup?: {
+    image: string;
+    thought: string;
+    label?: string;
+    next?: { image: string; thought: string; label?: string };
+  };
+  /** Stat effects applied when this choice is taken (also on ChoiceEffects). */
+  startsQuest?: import("./quests").QuestId;
+  completesQuest?: import("./quests").QuestId;
+  questStep?: string;
+  setsFlags?: import("./quests").StoryFlag[];
 };
 
 export type GameChoice = Choice | ConversationChoice;

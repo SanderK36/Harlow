@@ -48,3 +48,51 @@
   background: rgba(230, 155, 102, 0.12);
   border-left: 3px solid #e69b66;
 }
+
+.section {
+  margin: 0 0 18px;
+}
+
+.sectionLabel {
+  margin: 0 0 8px !important;
+  color: #e69b66;
+  font-size: 11px !important;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.quest,
+.questDone {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(230, 155, 102, 0.22);
+  border-radius: 8px;
+}
+
+.questDone {
+  opacity: 0.72;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.quest h3,
+.questDone h3 {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.quest p,
+.questDone p {
+  margin: 0 !important;
+  font-size: 15px !important;
+}
+
+.window {
+  width: min(100%, 520px);
+  max-height: min(86vh, 720px);
+  overflow: auto;
+}

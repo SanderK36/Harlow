@@ -35,6 +35,7 @@ import { clearSessionSave, readSessionSave } from "@/game/save";
 import { harlowAudio } from "@/game/audio";
 import Atmosphere from "@/components/Atmosphere/Atmosphere";
 import StormLightning from "@/components/StormLightning/StormLightning";
+import CloseupOverlay from "@/components/CloseupOverlay/CloseupOverlay";
 import type { Choice } from "@/game/choices";
 
 function subscribeToSession() {
@@ -104,6 +105,12 @@ const hotspotLabels: Record<string, string> = {
   leaveSanatoriumHallway: "Go outside",
   leaveSanatoriumRoom1: "Return to hallway",
   leaveSanatoriumRoom2: "Return to hallway",
+  goElrodHouse: "Elrod house",
+  talkToRachel: "Rachel",
+  lookAtElrodTape: "Police tape",
+  lookAtDinerBulletin: "Bulletin board",
+  lookAtSanatoriumHill: "The hill",
+  lookAtSanatoriumCigarette: "Cigarette",
 };
 
 const sanatoriumHotspotActions: Record<string, string[]> = {
@@ -119,10 +126,22 @@ const sanatoriumHotspotActions: Record<string, string[]> = {
   "sanatorium-room-2": ["leaveSanatoriumRoom2"],
 };
 
+const ADMIN_SCENE_NAMES: Record<string, string> = {
+  "elrod-house": "Elrod house",
+  "ethan-room": "Ethan's room",
+  "front-yard": "Front yard",
+  "sheriff-office": "Sheriff's office",
+  "needle-and-groove": "Needle & Groove",
+  "gas-station": "Gas station",
+  "police-station": "Police station",
+  "sanatorium-room-2": "Sanatorium room 2",
+  cementary: "Cemetery",
+};
+
 const adminDestinations = Object.values(scenes)
   .map((scene) => ({
     id: scene.id,
-    label: `${scene.location} — ${scene.id.replaceAll("-", " ")}`,
+    label: `${scene.location} — ${ADMIN_SCENE_NAMES[scene.id] ?? scene.id.replaceAll("-", " ")}`,
   }))
   .sort((a, b) => a.label.localeCompare(b.label));
 
@@ -132,6 +151,7 @@ const OUTDOOR_SCENE_IDS = new Set([
   "light-pole",
   "cementary-backside",
   "sanatorium-entrance",
+  "elrod-house",
 ]);
 
 /** Which cursor a hotspot gets: look, go, talk or take (see globals.css). */
@@ -211,6 +231,12 @@ export default function Home() {
     setActiveShop,
     job,
     jobQuestTarget,
+    quests,
+    closeup,
+    dismissCloseup,
+    showChapterEnd,
+    dismissChapterEnd,
+    storyFlags,
     momTalked,
     momJobConcernHeard,
     questNotification,
@@ -288,7 +314,7 @@ export default function Home() {
       window.clearTimeout(openingThoughtTimer.current);
     }
     setTvNewsLine(
-      "An elderly woman was found murdered in her home here in Harlow last night. Police say the investigation is ongoing. No suspect has been identified.",
+      "An elderly woman was found murdered in her home here in Harlow last night, October first. Police say the investigation is ongoing. No suspect has been identified.",
     );
     openingThoughtTimer.current = window.setTimeout(() => {
       setTvNewsLine(null);
@@ -426,18 +452,35 @@ export default function Home() {
   const hasConversationOverlay = conversation.length > 0;
 
   // Character art has priority, then weather-specific art, then day/night art.
+  const isWeekend =
+    gameState.dayOfWeek === "Saturday" || gameState.dayOfWeek === "Sunday";
   const momInKitchen =
     currentScene.id === "kitchen" &&
-    gameState.time >= 450 &&
-    gameState.time < 540;
+    ((gameState.time >= 450 && gameState.time < 540)
+      || (isWeekend && gameState.time >= 720 && gameState.time < 1140));
   // The scene as it looks without anyone painted into it.
   // Daylit weather art (weatherDayOnly) gives way to the night art after dark.
   const weatherImage =
     isNightTime(gameState.time) && currentScene.image.weatherDayOnly
       ? undefined
       : currentScene.image.weather?.[gameState.weather];
+  const elrodWithRachel =
+    currentScene.id === "elrod-house" && !storyFlags.rachelMet && !isNightTime(gameState.time);
+  const sanatoriumCigaretteRoom =
+    currentScene.id === "sanatorium-room-2"
+    && isNightTime(gameState.time)
+    && !storyFlags.sanatoriumCigaretteSeen;
+  const royRainy =
+    currentScene.id === "scrapyard-inside"
+    && activeCharacter?.name === "Big Roy"
+    && RAIN_WEATHER.includes(gameState.weather)
+    && !isNightTime(gameState.time);
   const emptySceneImage =
-    weatherImage ??
+    elrodWithRachel
+      ? "./images/locations/ElrodHouse/ElrodHouseRachelOutsideDay.png"
+      : sanatoriumCigaretteRoom
+        ? "./images/locations/sanatorium/sanatoriumRoom2NightCigarette.png"
+      : weatherImage ??
     (isNightTime(gameState.time)
       ? currentScene.image.night
       : currentScene.image.day);
@@ -445,6 +488,8 @@ export default function Home() {
     ? RAIN_WEATHER.includes(gameState.weather)
       ? "./images/locations/home/momMorningKitchen-rain.jpg"
       : "./images/locations/home/momMorningKitchen.png"
+    : royRainy
+      ? "./images/locations/scrapyard/bigRoyWorkingRainy.png"
     : ((isNightTime(gameState.time) && activeCharacter?.nightImage
         ? activeCharacter.nightImage
         : activeCharacter?.image) ?? emptySceneImage);
@@ -546,6 +591,9 @@ export default function Home() {
                                                               "goBackYard",
                                                               "goHome",
                                                               "enterGarage",
+                                                              "goElrodHouse",
+                                                              "talkToRachel",
+                                                              "lookAtSanatoriumHill",
                                                             ]
                                                           : currentScene.id ===
                                                               "light-pole"
@@ -901,12 +949,10 @@ export default function Home() {
         )}
         {showQuestLog && (
           <QuestWindow
-            job={job}
-            jobQuestTarget={jobQuestTarget}
-            momTalked={momTalked}
-            momJobConcernHeard={momJobConcernHeard}
-            onClose={() => setShowQuestLog(false)}
-          />
+          quests={quests}
+          job={job}
+          onClose={() => setShowQuestLog(false)}
+        />
         )}
         {showTravel && (
           <TravelWindow
@@ -961,6 +1007,26 @@ export default function Home() {
             </div>
           )}
         </div>
+
+        {closeup && (
+          <CloseupOverlay closeup={closeup} onDismiss={dismissCloseup} />
+        )}
+
+        {showChapterEnd && (
+          <div
+            className="new-day-screen"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="chapter-end-title"
+            onClick={dismissChapterEnd}
+          >
+            <div className="new-day-screen-content">
+              <p>Harlow</p>
+              <h2 id="chapter-end-title">End of Chapter 1</h2>
+              <span>Click to continue</span>
+            </div>
+          </div>
+        )}
 
         {travelingTo && (
           <TravelOverlay

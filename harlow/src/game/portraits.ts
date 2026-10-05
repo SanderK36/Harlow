@@ -31,6 +31,12 @@ export function getPortrait(character: string) {
     case "tommy":
       return "/images/characters/TommyVance/TommyVance.png";
 
+    case "rachel":
+      return "/images/characters/RachelBennet/RachelBennet.png";
+
+    case "emily":
+      return "/images/characters/EmilyParker/EmilyParker.png";
+
     default:
       return "/images/characters/EthanParker/EthanParker.jpg";
   }

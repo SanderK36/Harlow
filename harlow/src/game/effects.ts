@@ -29,7 +29,7 @@ export function applyEffects(
       0,
       player.maxStamina
     ),
-    fear: player.fear + (effects.fear ?? 0),
+    fear: Math.max(0, player.fear + (effects.fear ?? 0)),
     money: clamp(player.money + (effects.money ?? 0), 0, Infinity),
   };
 }
@@ -42,7 +42,8 @@ export function effectsToStory(effects: ChoiceEffects): StoryEntry[] {
         | "health"
         | "stamina"
         | "fear"
-        | "money",
+        | "money"
+        | "courage",
       amount: amount as number,
     })
   );

@@ -1,5 +1,5 @@
 import type { GameState, Player } from "@/game/types";
-import type { JobId } from "@/game/quests";
+import type { JobId, QuestProgress, StoryFlag } from "@/game/quests";
 
 const LEGACY_SAVE_KEY = "harlow-save";
 const SAVE_SLOTS_KEY = "harlow-save-slots";
@@ -21,6 +21,10 @@ export type SavedGame = {
   momJobConcernHeard?: boolean;
   job?: JobId;
   jobQuestTarget?: JobId;
+  /** Missing on older saves; migrate via migrateQuestsFromLegacy. */
+  quests?: QuestProgress[];
+  storyFlags?: Partial<Record<StoryFlag, boolean>>;
+  chapter?: number;
 };
 
 export type SavedGameSlot = {
