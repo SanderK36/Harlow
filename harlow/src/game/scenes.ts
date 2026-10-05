@@ -1355,6 +1355,9 @@ export const ethanRoom: Scene = {
   image: {
     day: "./images/locations/home/ethanRoomDay.png",
     night: "./images/locations/home/ethanRoomNight.png",
+    // ethanRoomRainy.png exists but is NOT wired: pennant says RIVERTON
+    // (must be Harlow) and is 1024×768 vs day art 1448×1086. Wire via rainArt
+    // once Sander replaces the asset.
   },
   choices: [
     {
@@ -1787,6 +1790,8 @@ export const gasStationInside: Scene = {
   image: {
     day: "./images/locations/gas_station/GasStationInsideDay.png",
     night: "./images/locations/gas_station/GasStationInsideNight.png",
+    weather: rainArt("./images/locations/gas_station/GasStationInsideRainy.png"),
+    weatherDayOnly: true,
   },
 
   characters: [
@@ -1796,6 +1801,7 @@ export const gasStationInside: Scene = {
       until: 1380,
       image: "./images/locations/gas_station/rayMercerGasStation.png",
       nightImage: "./images/locations/gas_station/rayMercerGasStationNight.png",
+      // Rain art for Ray when present is swapped in page.tsx.
     },
   ],
   conversation: rayConversation,
@@ -1905,6 +1911,8 @@ export const gasStationGarage: Scene = {
   image: {
     day: "./images/locations/gas_station/gasStationGarageDay.png",
     night: "./images/locations/gas_station/gasStationGarageNight.png",
+    weather: rainArt("./images/locations/gas_station/gasStationGarageRainy.png"),
+    weatherDayOnly: true,
   },
   characters: [
     {
