@@ -31,12 +31,12 @@
 }
 
 .statsButton {
-  min-height: 34px;
-  padding: 6px;
+  min-height: 44px;
+  padding: 8px 6px;
   color: var(--muted);
   font: inherit;
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
   letter-spacing: .08em;
   background: rgba(255,255,255,.03);
   border: 1px solid var(--line);
@@ -101,31 +101,31 @@
 }
 
 .healthMeter span {
-  background: #a02b2b;
+  background: #d4656a;
 }
 
 .staminaMeter span {
-  background: rgb(74, 74, 215);
+  background: #8f8ec4;
 }
 
 .fearMeter span {
-  background: rgba(255, 255, 0, .703);
+  background: #c9a36a;
 }
 
 .money {
-  color: rgb(45, 133, 45);
+  color: #b7dcb8;
 }
 
 .health {
-  color: #a02b2b;
+  color: #f0b4b4;
 }
 
 .stamina {
-  color: rgb(74, 74, 215);
+  color: #c9c6f2;
 }
 
 .fear {
-  color: rgba(255, 255, 0, 0.703);
+  color: #f3ddb0;
 }
 
 .worldInfo {
@@ -161,8 +161,8 @@
 
 .dateInfo span, .locationInfo span {
   color: var(--muted);
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
   letter-spacing: .1em;
   text-transform: uppercase;
 }
@@ -215,10 +215,6 @@
   .statMeter {
     width: 100%;
   }
-
-  .health { color: #ed7777; }
-  .stamina { color: #9292ff; }
-  .money { color: #80be8b; }
 
   .worldInfo {
     flex-direction: column;

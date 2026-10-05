@@ -1,8 +1,8 @@
 /* Matches the game menu's hamburger button beside it. */
 .toggle {
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   place-content: center;
   padding: 0;
   color: var(--text);
@@ -48,14 +48,3 @@
   outline: none;
 }
 
-@media (min-width: 1000px) {
-  .toggle {
-    width: 36px;
-    height: 36px;
-  }
-
-  .toggle svg {
-    width: 18px;
-    height: 18px;
-  }
-}

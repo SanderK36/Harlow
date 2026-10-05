@@ -9,8 +9,8 @@
 
 .toggle {
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   gap: 5px;
   place-content: center;
   padding: 0;
@@ -53,10 +53,11 @@
 }
 
 .actions button {
+  min-height: 44px;
   padding: 10px 12px;
   color: var(--text);
   font: inherit;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-align: left;
@@ -74,7 +75,7 @@
 }
 
 .actions button:disabled {
-  color: #806e70;
+  color: #c9baba;
   cursor: not-allowed;
 }
 
@@ -98,11 +99,6 @@
   .menu {
     top: 12px;
     right: 12px;
-  }
-
-  .toggle {
-    width: 36px;
-    height: 36px;
   }
 }
 

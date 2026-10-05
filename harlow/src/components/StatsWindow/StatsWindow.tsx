@@ -9,15 +9,24 @@ type StatsWindowProps = {
 export default function StatsWindow({ player, onClose }: StatsWindowProps) {
   return (
     <div className={styles.backdrop}>
-        <div className={styles.window}>
-            <h2>Stats</h2>
-            <button className={styles.closeButton} onClick={onClose}>X</button>
-            <p>Courage: <span className={styles.statsNumber}>{player.courage}</span></p>
-            <p>Intelligence: <span className={styles.statsNumber}>{player.intelligence}</span></p>
-            <p>Charisma: <span className={styles.statsNumber}>{player.charisma}</span></p>
-            <p>Athletics: <span className={styles.statsNumber}>{player.athletics}</span></p>
-            <p>Strength: <span className={styles.statsNumber}>{player.strength}</span></p>
+      <div
+        className={styles.window}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="stats-title"
+      >
+        <h2 id="stats-title">Stats</h2>
+        <div className={styles.list}>
+          <p>Courage <span className={styles.statsNumber}>{player.courage}</span></p>
+          <p>Intelligence <span className={styles.statsNumber}>{player.intelligence}</span></p>
+          <p>Charisma <span className={styles.statsNumber}>{player.charisma}</span></p>
+          <p>Athletics <span className={styles.statsNumber}>{player.athletics}</span></p>
+          <p>Strength <span className={styles.statsNumber}>{player.strength}</span></p>
         </div>
+        <button className={styles.closeButton} type="button" onClick={onClose}>
+          Close
+        </button>
+      </div>
     </div>
   );
 }

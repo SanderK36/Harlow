@@ -38,7 +38,7 @@ function getItemImage(item: string) {
       return "/images/items/Flashlight.png";
 
     case "coffee":
-      return "/images/items/beer.png"; // fallback until a coffee tin art exists
+      return null; // no coffee-tin art yet; the slot shows the name instead of the beer bottle
     case "missing poster":
       return "/images/misc/EmilyMissingPoster.png";
     case "knife":
@@ -116,12 +116,14 @@ export default function InventoryWindow({
                 } : undefined}
               >
                 <div className={styles.itemVisual}>
-                  {image && (
+                  {image ? (
                     <img
                       src={image}
                       alt={item}
                       className={styles.itemImage}
                     />
+                  ) : (
+                    <span className={styles.itemFallback}>{item}</span>
                   )}
                   <span className={styles.quantity}>{quantity}</span>
                 </div>
