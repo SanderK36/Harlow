@@ -38,7 +38,8 @@ function getItemImage(item: string) {
       return "/images/items/Flashlight.png";
 
     case "coffee":
-      return null; // no coffee-tin art yet; the slot shows the name instead of the beer bottle
+      return "/images/items/HarlowCoffee.png";
+
     case "missing poster":
       return "/images/misc/EmilyMissingPoster.png";
     case "knife":
@@ -48,7 +49,7 @@ function getItemImage(item: string) {
       return "/images/items/beer.png";
 
     case "sturdy crowbar":
-      return null;
+      return "/images/items/Crowbar.png";
 
     case "steel maiden":
       return "/images/locations/NeedleGroove/shop/SteelMaiden.png";
