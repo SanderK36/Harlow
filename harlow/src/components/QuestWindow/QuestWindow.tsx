@@ -5,6 +5,7 @@ import {
   questObjective,
   type JobId,
   type QuestProgress,
+  type StoryFlag,
 } from "@/game/quests";
 import type { DayOfWeek, Month } from "@/game/types";
 
@@ -16,6 +17,8 @@ type QuestWindowProps = {
   dayOfWeek: DayOfWeek;
   dayNumber: number;
   currentMonth: Month;
+  inventory: string[];
+  storyFlags: Partial<Record<StoryFlag, boolean>>;
   onClose: () => void;
 };
 
@@ -63,8 +66,11 @@ export default function QuestWindow({
   dayOfWeek,
   dayNumber,
   currentMonth,
+  inventory,
+  storyFlags,
   onClose,
 }: QuestWindowProps) {
+  const objectiveCtx = { inventory, storyFlags };
   const active = quests.filter((quest) => quest.status === "active");
   const completed = quests.filter((quest) => quest.status === "completed");
   const details = job ? jobDetails[job] : null;
@@ -105,7 +111,7 @@ export default function QuestWindow({
                     <h3 className={styles.entryTitle}>
                       {QUEST_DEFS[quest.id]?.title ?? quest.id}
                     </h3>
-                    <p className={styles.note}>{questObjective(quest)}</p>
+                    <p className={styles.note}>{questObjective(quest, objectiveCtx)}</p>
                   </li>
                 ))}
               </ul>
@@ -124,7 +130,7 @@ export default function QuestWindow({
                     <h3 className={styles.entryTitleDone}>
                       {QUEST_DEFS[quest.id]?.title ?? quest.id}
                     </h3>
-                    <p className={styles.noteDone}>{questObjective(quest)}</p>
+                    <p className={styles.noteDone}>{questObjective(quest, objectiveCtx)}</p>
                   </li>
                 ))}
               </ul>

@@ -550,6 +550,7 @@ export function useGame() {
         questStep: choice.questStep,
       });
     } else if (choice.questStep) {
+      // Conversation choices (e.g. Margaret coffee) advance Faded Poster.
       setQuests((previous) => {
         if (isQuestActive(previous, "faded-poster")) {
           return setQuestStep(previous, "faded-poster", choice.questStep!);
@@ -675,6 +676,19 @@ export function useGame() {
         startsQuest: choice.startsQuest,
         completesQuest: choice.completesQuest,
         questStep: choice.questStep,
+      });
+    } else if (choice.questStep) {
+      setQuests((previous) => {
+        if (
+          choice.action === "lookAtElrodTape"
+          && isQuestActive(previous, "the-tape")
+        ) {
+          return setQuestStep(previous, "the-tape", choice.questStep!);
+        }
+        if (isQuestActive(previous, "faded-poster")) {
+          return setQuestStep(previous, "faded-poster", choice.questStep!);
+        }
+        return previous;
       });
     }
     if (

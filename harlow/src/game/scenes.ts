@@ -600,6 +600,7 @@ export const elrodHouse: Scene = {
         label: "1972 memory",
       },
       setsFlags: ["tapeSeen"],
+      questStep: "rachel",
       hotspots: [{ left: 28, top: 42, width: 44, height: 28 }],
     },
     {

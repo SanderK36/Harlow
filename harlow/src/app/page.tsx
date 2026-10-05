@@ -959,6 +959,8 @@ export default function Home() {
             dayOfWeek={gameState.dayOfWeek}
             dayNumber={gameState.dayNumber}
             currentMonth={gameState.currentMonth}
+            inventory={playerState.inventory}
+            storyFlags={storyFlags}
             onClose={() => setShowQuestLog(false)}
           />
         )}
