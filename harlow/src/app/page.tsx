@@ -480,6 +480,11 @@ export default function Home() {
     && activeCharacter?.name === "Big Roy"
     && RAIN_WEATHER.includes(gameState.weather)
     && !isNightTime(gameState.time);
+  const rayRainy =
+    currentScene.id === "gas-station-inside"
+    && activeCharacter?.name === "Ray Mercer"
+    && RAIN_WEATHER.includes(gameState.weather)
+    && !isNightTime(gameState.time);
   const emptySceneImage =
     sanatoriumCigaretteRoom
       ? "./images/locations/sanatorium/sanatoriumRoom2NightCigarette.png"
@@ -493,6 +498,8 @@ export default function Home() {
       : "./images/locations/home/momMorningKitchen.png"
     : royRainy
       ? "./images/locations/scrapyard/bigRoyWorkingRainy.png"
+    : rayRainy
+      ? "./images/locations/gas_station/rayMercerGasStationRainy.png"
     : elrodWithRachel
       ? "./images/locations/ElrodHouse/ElrodHouseRachelOutsideDay.png"
     : ((isNightTime(gameState.time) && activeCharacter?.nightImage
