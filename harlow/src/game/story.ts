@@ -1,10 +1,12 @@
-import type { Weather } from "./types";
+import type { DayOfWeek, Weather } from "./types";
 
 export type ThoughtCondition = {
   from?: number;
   until?: number;
   /** Only in these weather states (the same values as the image weather map). */
   weather?: Weather[];
+  /** Only on these weekdays. Omit to apply every day. */
+  days?: DayOfWeek[];
 };
 
 export type StoryEntry =
@@ -111,15 +113,21 @@ export function thought(
   };
 }
 
-/** Whether a narration or thought line applies at this time and weather. */
-export function storyEntryApplies(entry: StoryEntry, time: number, weather: Weather) {
+/** Whether a narration or thought line applies at this time, weather, and weekday. */
+export function storyEntryApplies(
+  entry: StoryEntry,
+  time: number,
+  weather: Weather,
+  day?: DayOfWeek,
+) {
   if (entry.type !== "narration" && entry.type !== "thought") return true;
   const condition = entry.condition;
   if (!condition) return true;
   const afterStart = condition.from === undefined || time >= condition.from;
   const beforeEnd = condition.until === undefined || time < condition.until;
   const weatherMatches = !condition.weather || condition.weather.includes(weather);
-  return afterStart && beforeEnd && weatherMatches;
+  const dayMatches = !condition.days || (day !== undefined && condition.days.includes(day));
+  return afterStart && beforeEnd && weatherMatches && dayMatches;
 }
 
 export function ethan(text: string): StoryEntry {

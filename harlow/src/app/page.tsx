@@ -135,13 +135,22 @@ const ADMIN_SCENE_NAMES: Record<string, string> = {
   "gas-station": "Gas station",
   "police-station": "Police station",
   "sanatorium-room-2": "Sanatorium room 2",
-  cementary: "Cemetery",
+  cementary: "Entrance",
+  "cementary-inside": "Inside",
+  "cementary-backside": "Behind the church",
 };
+
+function adminSceneName(id: string) {
+  return (
+    ADMIN_SCENE_NAMES[id]
+    ?? id.replaceAll("cementary", "cemetery").replaceAll("-", " ")
+  );
+}
 
 const adminDestinations = Object.values(scenes)
   .map((scene) => ({
     id: scene.id,
-    label: `${scene.location} — ${ADMIN_SCENE_NAMES[scene.id] ?? scene.id.replaceAll("-", " ")}`,
+    label: `${scene.location} — ${adminSceneName(scene.id)}`,
   }))
   .sort((a, b) => a.label.localeCompare(b.label));
 
@@ -230,7 +239,6 @@ export default function Home() {
     activeShop,
     setActiveShop,
     job,
-    jobQuestTarget,
     quests,
     closeup,
     dismissCloseup,
@@ -238,7 +246,6 @@ export default function Home() {
     dismissChapterEnd,
     storyFlags,
     momTalked,
-    momJobConcernHeard,
     questNotification,
     questNotificationLabel,
     questNotificationExiting,
@@ -485,6 +492,11 @@ export default function Home() {
     && activeCharacter?.name === "Ray Mercer"
     && RAIN_WEATHER.includes(gameState.weather)
     && !isNightTime(gameState.time);
+  const walterRainy =
+    currentScene.id === "sheriff-office"
+    && activeCharacter?.name === "Walter Harrington"
+    && RAIN_WEATHER.includes(gameState.weather)
+    && !isNightTime(gameState.time);
   const emptySceneImage =
     sanatoriumCigaretteRoom
       ? "./images/locations/sanatorium/sanatoriumRoom2NightCigarette.png"
@@ -500,6 +512,8 @@ export default function Home() {
       ? "./images/locations/scrapyard/bigRoyWorkingRainy.png"
     : rayRainy
       ? "./images/locations/gas_station/rayMercerGasStationRainy.png"
+    : walterRainy
+      ? "./images/locations/police_station/WalterHarringtonOfficeRain.jpg"
     : elrodWithRachel
       ? "./images/locations/ElrodHouse/ElrodHouseRachelOutsideDay.png"
     : ((isNightTime(gameState.time) && activeCharacter?.nightImage
@@ -603,7 +617,6 @@ export default function Home() {
                                                               "goBackYard",
                                                               "goHome",
                                                               "enterGarage",
-                                                              "talkToRachel",
                                                               "lookAtSanatoriumHill",
                                                             ]
                                                           : currentScene.id ===
@@ -841,7 +854,12 @@ export default function Home() {
                   entries={currentScene.story.filter(
                     (entry) =>
                       entry.type !== "thought" &&
-                      storyEntryApplies(entry, gameState.time, gameState.weather),
+                      storyEntryApplies(
+                        entry,
+                        gameState.time,
+                        gameState.weather,
+                        gameState.dayOfWeek,
+                      ),
                   )}
                   variant="narration"
                   layout="combined"

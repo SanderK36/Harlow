@@ -1,4 +1,4 @@
-import type { Location, Weather } from "./types";
+import type { DayOfWeek, Location, Weather } from "./types";
 import type { Choice } from "./choices";
 
 import {
@@ -58,6 +58,8 @@ const STORM: Weather[] = ["Thunderstorm"];
 const WET: Weather[] = RAIN_WEATHER;
 const DRY: Weather[] = ["Sunny", "Cloudy"];
 const HEAVY: Weather[] = ["Heavy rain", "Thunderstorm"];
+const WEEKDAYS: DayOfWeek[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+const WEEKEND: DayOfWeek[] = ["Saturday", "Sunday"];
 
 /** Rain art for every rainy weather state (thunder art for storms if given). */
 export function rainArt(rain: string, thunder = rain): Partial<Record<Weather, string>> {
@@ -293,45 +295,6 @@ export const upstairsHallwayAtticOpen: Scene = {
 };
 
 // ----------------------------------------
-// LOOKING AROUND THE HOUSE
-// ----------------------------------------
-
-export const lookingAroundHouse: Scene = {
-  id: "looking-around-house",
-
-  story: [
-    narration("You look through the house. Nothing's out of place."),
-    thought("Too many memories in these rooms."),
-  ],
-
-  location: "Home",
-
-  image: {
-    day: "./images/locations/home/homeHallway.jpg",
-    night: "./images/locations/home/homeHallway.jpg",
-  },
-
-  choices: [
-    {
-      label: "Make some coffee",
-      action: "makeCoffee",
-      nextScene: "made-coffee",
-      timeCost: 10,
-
-      effects: {
-        stamina: 5,
-      },
-    },
-    {
-      label: "Go back to the hallway",
-      action: "goHome",
-      nextScene: "hallway",
-      timeCost: 0,
-    },
-  ],
-};
-
-// ----------------------------------------
 // MADE COFFEE
 // ----------------------------------------
 
@@ -478,6 +441,15 @@ export const rachelElrodConversation: Conversation = {
         npc("Rachel", "Your mom left the porch light on for a month."),
         thought("I'd forgotten about the porch light."),
       ],
+    },
+    {
+      label: "Hang on. Let me look at the tape.",
+      excludesStoryFlag: "tapeSeen",
+      response: [
+        ethan("Hang on. Let me look at the tape."),
+        npc("Rachel", "Yeah. Look at it. Then tell me you're leaving."),
+      ],
+      endsConversation: true,
     },
     {
       label: "I gotta go.",
@@ -775,11 +747,37 @@ export const momConversation: Conversation = {
     {
       label: "I found Emily's poster at the diner.",
       excludesItem: "Coffee",
-      requiresStoryFlag: "posterFound",
+      requiresStoryFlag: ["posterFound", "coffeeDelivered"],
       excludesStoryFlag: "posterShownToMom",
       response: [
         ethan("I found Emily's poster at the diner."),
+        npc("Linda", "Put that away."),
+      ],
+      storyFlag: "posterShownToMom",
+      completesQuest: "faded-poster",
+      questStep: "done",
+    },
+    {
+      label: "I found Emily's poster at the diner.",
+      excludesItem: "Coffee",
+      requiresStoryFlag: ["posterFound", "coffeeErrandHeard"],
+      excludesStoryFlag: ["posterShownToMom", "coffeeDelivered"],
+      response: [
+        ethan("I found Emily's poster at the diner."),
         npc("Linda", "...Did you get the coffee?"),
+      ],
+      storyFlag: "posterShownToMom",
+      completesQuest: "faded-poster",
+      questStep: "done",
+    },
+    {
+      label: "I found Emily's poster at the diner.",
+      excludesItem: "Coffee",
+      requiresStoryFlag: "posterFound",
+      excludesStoryFlag: ["posterShownToMom", "coffeeErrandHeard"],
+      response: [
+        ethan("I found Emily's poster at the diner."),
+        npc("Linda", "Put that away."),
       ],
       storyFlag: "posterShownToMom",
       completesQuest: "faded-poster",
@@ -1012,8 +1010,11 @@ export const livingRoom: Scene = {
     narration("You walk into the living room."),
     thought("Can't sleep. The house is too quiet.", { until: 420 }),
     thought("Quiet in here.", { from: 420, until: 540 }),
-    thought("Mom's in here.", { from: 540, until: 1080 }),
-    thought("Quiet again. Mom's at work.", { from: 1080 }),
+    // Weekdays she leaves for work at six. Weekends she stays until ten.
+    thought("Mom's in here.", { from: 540, until: 1080, days: WEEKDAYS }),
+    thought("Mom's in here.", { from: 540, until: 1320, days: WEEKEND }),
+    thought("Quiet again. Mom's at work.", { from: 1080, days: WEEKDAYS }),
+    thought("Quiet again.", { from: 1320, days: WEEKEND }),
   ],
 
   location: "Living room",
@@ -1782,7 +1783,7 @@ export const gasStationInside: Scene = {
   story: [
     narration("You step inside the gas station."),
     thought("Ray's behind the counter.", { from: 540, until: 1380 }),
-    thought("Nobody in here but the cooler.", { from: 540 }),
+    thought("Nobody in here but the cooler."),
   ],
 
   location: "Gas Station Inside",
@@ -2924,17 +2925,22 @@ export const sanatoriumRoom2: Scene = {
   ],
 };
 
-export function getSceneThought(sceneId: string, time: number, weather: Weather) {
+export function getSceneThought(
+  sceneId: string,
+  time: number,
+  weather: Weather,
+  day?: DayOfWeek,
+) {
   const scene = scenes[sceneId as keyof typeof scenes];
 
   if (!scene) {
     return null;
   }
 
-  // The first thought whose time and weather conditions match is shown, so
+  // The first thought whose time, weather, and weekday match is shown, so
   // weather lines are listed before a scene's everyday thought.
   const thoughtEntry = scene.story.find(
-    (entry) => entry.type === "thought" && storyEntryApplies(entry, time, weather),
+    (entry) => entry.type === "thought" && storyEntryApplies(entry, time, weather, day),
   );
 
   return thoughtEntry?.type === "thought" ? thoughtEntry.text : null;
@@ -2948,7 +2954,6 @@ export const scenes = {
   hallway,
   "hallway-upstairs": upstairsHallway,
   "hallway-upstairs-attic-open": upstairsHallwayAtticOpen,
-  "looking-around-house": lookingAroundHouse,
   "made-coffee": madeCoffee,
   "front-yard": frontYard,
   "elrod-house": elrodHouse,
