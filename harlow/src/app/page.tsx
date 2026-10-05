@@ -464,8 +464,13 @@ export default function Home() {
     isNightTime(gameState.time) && currentScene.image.weatherDayOnly
       ? undefined
       : currentScene.image.weather?.[gameState.weather];
+  // Elrod: Rachel is painted into the day art until she's met. During her talk
+  // the empty house (day/night) is the backdrop so she isn't on screen twice.
   const elrodWithRachel =
-    currentScene.id === "elrod-house" && !storyFlags.rachelMet && !isNightTime(gameState.time);
+    currentScene.id === "elrod-house"
+    && !storyFlags.rachelMet
+    && gameState.time >= 420
+    && gameState.time < 1140;
   const sanatoriumCigaretteRoom =
     currentScene.id === "sanatorium-room-2"
     && isNightTime(gameState.time)
@@ -476,10 +481,8 @@ export default function Home() {
     && RAIN_WEATHER.includes(gameState.weather)
     && !isNightTime(gameState.time);
   const emptySceneImage =
-    elrodWithRachel
-      ? "./images/locations/ElrodHouse/ElrodHouseRachelOutsideDay.png"
-      : sanatoriumCigaretteRoom
-        ? "./images/locations/sanatorium/sanatoriumRoom2NightCigarette.png"
+    sanatoriumCigaretteRoom
+      ? "./images/locations/sanatorium/sanatoriumRoom2NightCigarette.png"
       : weatherImage ??
     (isNightTime(gameState.time)
       ? currentScene.image.night
@@ -490,6 +493,8 @@ export default function Home() {
       : "./images/locations/home/momMorningKitchen.png"
     : royRainy
       ? "./images/locations/scrapyard/bigRoyWorkingRainy.png"
+    : elrodWithRachel
+      ? "./images/locations/ElrodHouse/ElrodHouseRachelOutsideDay.png"
     : ((isNightTime(gameState.time) && activeCharacter?.nightImage
         ? activeCharacter.nightImage
         : activeCharacter?.image) ?? emptySceneImage);

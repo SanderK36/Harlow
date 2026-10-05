@@ -461,7 +461,7 @@ export const rachelElrodConversation: Conversation = {
       label: "You okay, Rach?",
       response: [
         ethan("You okay, Rach?"),
-        npc("Rachel", "No. But I'm standing here, so that counts for something."),
+        npc("Rachel", "No. She gave us butterscotch every Halloween. Remember?"),
       ],
     },
     {
@@ -475,14 +475,13 @@ export const rachelElrodConversation: Conversation = {
       label: "This feels like Emily.",
       response: [
         ethan("This feels like Emily."),
-        npc(
-          "Rachel",
-          "Don't. Not here. Her porch light's been on every night for twenty years. Look at it now.",
-        ),
+        npc("Rachel", "Your mom left the porch light on for a month."),
+        thought("I'd forgotten about the porch light."),
       ],
     },
     {
       label: "I gotta go.",
+      requiresStoryFlag: "tapeSeen",
       response: [
         ethan("I gotta go."),
         npc(
@@ -507,7 +506,7 @@ export const rachelFrontYardConversation: Conversation = {
       excludesStoryFlag: "rachelShutOut",
       response: [
         ethan("I told him about the hooded man."),
-        npc("Rachel", "And he told you to keep quiet. Of course he did."),
+        npc("Rachel", "...A hood. Okay. Then we find him before he finds you."),
       ],
       storyFlag: ["rachelTrusted", "rachelKnowsHood"],
       completesQuest: "what-walter-said",
@@ -534,7 +533,9 @@ export const rachelFrontYardConversation: Conversation = {
       excludesStoryFlag: "rachelTrusted",
       response: [
         ethan("I can't tell you, Rach."),
-        npc("Rachel", "Then don't ask me to wait next time."),
+        npc("Rachel", "Can't, or won't?"),
+        ethan("Both."),
+        npc("Rachel", "Fine. I'll find out myself. I always do."),
       ],
       storyFlag: "rachelShutOut",
       completesQuest: "what-walter-said",
@@ -552,7 +553,7 @@ export const rachelFrontYardConversation: Conversation = {
       label: "Not now, Rach.",
       response: [
         ethan("Not now, Rach."),
-        npc("Rachel", "Fine. I'll be here."),
+        npc("Rachel", "Fine. But I'm not dropping this, Ethan."),
       ],
       endsConversation: true,
     },
@@ -598,6 +599,7 @@ export const elrodHouse: Scene = {
         thought: "Flashlights in the trees. October night. Same night Emily never came home.",
         label: "1972 memory",
       },
+      setsFlags: ["tapeSeen"],
       hotspots: [{ left: 28, top: 42, width: 44, height: 28 }],
     },
     {
@@ -756,16 +758,40 @@ export const momConversation: Conversation = {
 
     {
       label: "I found Emily's poster at the diner.",
-      requiresItem: "Missing Poster",
+      requiresItem: "Coffee",
       requiresStoryFlag: "posterFound",
       excludesStoryFlag: "posterShownToMom",
       response: [
-        ethan("I found Emily's poster at the diner. Still up on the board."),
+        ethan("I found Emily's poster at the diner."),
+        npc("Linda", "Put that away."),
+      ],
+      storyFlag: "posterShownToMom",
+      completesQuest: "faded-poster",
+      questStep: "done",
+      removesItem: "Coffee",
+    },
+    {
+      label: "I found Emily's poster at the diner.",
+      excludesItem: "Coffee",
+      requiresStoryFlag: "posterFound",
+      excludesStoryFlag: "posterShownToMom",
+      response: [
+        ethan("I found Emily's poster at the diner."),
         npc("Linda", "...Did you get the coffee?"),
       ],
       storyFlag: "posterShownToMom",
       completesQuest: "faded-poster",
       questStep: "done",
+    },
+    {
+      label: "Got your coffee.",
+      requiresItem: "Coffee",
+      requiresStoryFlag: "posterShownToMom",
+      response: [
+        ethan("Got your coffee."),
+        npc("Linda", "Thanks, honey."),
+      ],
+      removesItem: "Coffee",
     },
 
     {
@@ -1159,6 +1185,8 @@ export const margaretConversation: Conversation = {
     {
       label: "Mom's coffee. On her tab.",
       requiresStoryFlag: "coffeeErrandHeard",
+      excludesItem: "Coffee",
+      requiresQuestActive: "faded-poster",
       response: [
         ethan("Mom's coffee. On her tab."),
         npc("Margaret", "Coming up. Tell Linda I said hey."),

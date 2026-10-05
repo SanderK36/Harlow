@@ -51,6 +51,9 @@ export type StoryFlag =
   | "coffeeErrandHeard"
   | "sanatoriumSeenFromStreet"
   | "sanatoriumCigaretteSeen"
+  | "sanatoriumEntranceFear"
+  | "sanatoriumHallwayFear"
+  | "tapeSeen"
   | "chapter1Complete";
 
 export type QuestDef = {
@@ -157,24 +160,38 @@ export function migrateQuestsFromLegacy(save: {
   jobQuestTarget?: JobId | null;
   quests?: QuestProgress[];
 }): QuestProgress[] {
+  let quests: QuestProgress[];
   if (save.quests && Array.isArray(save.quests)) {
-    return save.quests;
-  }
-
-  const quests: QuestProgress[] = [];
-  if (save.momTalked === false) {
-    quests.push({ id: "talk-to-mom", status: "active" });
+    quests = [...save.quests];
   } else {
-    // Missing or true: already talked (legacy default was true).
-    quests.push({ id: "talk-to-mom", status: "completed" });
+    quests = [];
+    if (save.momTalked === false) {
+      quests.push({ id: "talk-to-mom", status: "active" });
+    } else {
+      // Missing or true: already talked (legacy default was true).
+      quests.push({ id: "talk-to-mom", status: "completed" });
+    }
+
+    if (save.job) {
+      quests.push({ id: "find-a-job", status: "completed", step: "working" });
+    } else if (save.jobQuestTarget) {
+      quests.push({ id: "find-a-job", status: "active", step: "flyer" });
+    } else if (save.momJobConcernHeard) {
+      quests.push({ id: "find-a-job", status: "active" });
+    }
   }
 
-  if (save.job) {
-    quests.push({ id: "find-a-job", status: "completed", step: "working" });
-  } else if (save.jobQuestTarget) {
-    quests.push({ id: "find-a-job", status: "active", step: "flyer" });
-  } else if (save.momJobConcernHeard) {
-    quests.push({ id: "find-a-job", status: "active" });
+  // Old saves that already talked to Mom still need Chapter 1 quests.
+  const momDone =
+    save.momTalked !== false
+    || quests.some((quest) => quest.id === "talk-to-mom" && quest.status === "completed");
+  if (momDone) {
+    if (!quests.some((quest) => quest.id === "the-tape")) {
+      quests.push({ id: "the-tape", status: "active" });
+    }
+    if (!quests.some((quest) => quest.id === "faded-poster")) {
+      quests.push({ id: "faded-poster", status: "active" });
+    }
   }
 
   return quests;

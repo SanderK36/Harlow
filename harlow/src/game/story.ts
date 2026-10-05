@@ -61,10 +61,16 @@ export type ConversationChoice = {
   requiresItem?: string;
   /** Adds this item to inventory when selected. */
   givesItem?: string;
+  /** Removes this inventory item when selected (e.g. handing Mom the coffee). */
+  removesItem?: string;
+  /** Hide once Ethan already carries this item. */
+  excludesItem?: string;
   /** Starts or advances a quest when selected. */
   startsQuest?: import("./quests").QuestId;
   /** Completes a quest when selected. */
   completesQuest?: import("./quests").QuestId;
+  /** Show only while this quest is active. */
+  requiresQuestActive?: import("./quests").QuestId;
   /** Optional quest step id to set while the quest is active. */
   questStep?: string;
   /** Show a closeup after this reply finishes (drawer, poster, memory). */

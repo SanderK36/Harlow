@@ -266,6 +266,7 @@ export function useGame() {
   function applyQuestHooks(options: {
     startsQuest?: QuestId;
     completesQuest?: QuestId;
+    /** Applied only to completesQuest (never to a quest started by the same choice). */
     questStep?: string;
     notifyStart?: string;
     notifyComplete?: string;
@@ -273,8 +274,9 @@ export function useGame() {
     setQuests((previous) => {
       let next = previous;
       if (options.startsQuest) {
+        // New quests always open on their default step — never inherit "done".
         const before = next;
-        next = startQuest(next, options.startsQuest, options.questStep);
+        next = startQuest(next, options.startsQuest);
         if (next !== before) {
           const title = QUEST_DEFS[options.startsQuest].title;
           pendingQuestNotification.current = {
@@ -289,11 +291,6 @@ export function useGame() {
           options.notifyComplete ?? QUEST_DEFS[options.completesQuest].title,
           "Quest complete",
         );
-      } else if (options.questStep && options.startsQuest === undefined) {
-        // Step update on an already-active quest (optional id inferred elsewhere).
-      }
-      if (options.questStep && options.completesQuest === undefined && options.startsQuest) {
-        next = setQuestStep(next, options.startsQuest, options.questStep);
       }
       return next;
     });
@@ -523,6 +520,12 @@ export function useGame() {
           : { ...previous, inventory: [...previous.inventory, choice.givesItem!] },
       );
     }
+    if (choice.removesItem) {
+      setPlayerState((previous) => ({
+        ...previous,
+        inventory: previous.inventory.filter((item) => item !== choice.removesItem),
+      }));
+    }
 
     if (choice.jobOffer && !job) {
       setJob(choice.jobOffer);
@@ -682,20 +685,27 @@ export function useGame() {
       setShowChapterEnd(true);
     }
 
-    if (choice.action === "enterSanatorium" || choice.action === "enterSanatoriumHallway") {
+    // Lobby is open; the hallway past it needs a flashlight.
+    if (choice.action === "enterSanatoriumHallway") {
       if (!playerState.inventory.includes("Flashlight")) {
         setCurrentThought("Not without a light.");
         return;
       }
     }
     if (choice.action === "enterSanatorium") {
-      setPlayerState((previous) => applyEffects(previous, { fear: 10 }));
-      setCurrentEffects([{ type: "effect", stat: "fear", amount: 10 }]);
+      if (!hasFlag("sanatoriumEntranceFear")) {
+        applyFlags("sanatoriumEntranceFear");
+        setPlayerState((previous) => applyEffects(previous, { fear: 10 }));
+        setCurrentEffects([{ type: "effect", stat: "fear", amount: 10 }]);
+      }
       setQuests((previous) => setQuestStep(previous, "light-on-the-hill", "inside"));
     }
     if (choice.action === "enterSanatoriumHallway") {
-      setPlayerState((previous) => applyEffects(previous, { fear: 10 }));
-      setCurrentEffects([{ type: "effect", stat: "fear", amount: 10 }]);
+      if (!hasFlag("sanatoriumHallwayFear")) {
+        applyFlags("sanatoriumHallwayFear");
+        setPlayerState((previous) => applyEffects(previous, { fear: 10 }));
+        setCurrentEffects([{ type: "effect", stat: "fear", amount: 10 }]);
+      }
     }
 
     if (choice.door && !throughDoor) {
@@ -937,11 +947,17 @@ export function useGame() {
       );
     }
     if (action === "talkToRachel") {
-      if (currentScene.id === "elrod-house") return !hasFlag("rachelMet");
+      // Elrod: Rachel is only out 07:00–19:00 (matches her standing art).
+      if (currentScene.id === "elrod-house") {
+        return !hasFlag("rachelMet") && time >= 420 && time < 1140;
+      }
+      // Front yard follow-up: 07:00–21:00.
       if (currentScene.id === "front-yard") {
         return (
           hasFlag("walterStationTalk")
           && isQuestActive(quests, "what-walter-said")
+          && time >= 420
+          && time < 1260
         );
       }
       return false;
@@ -1118,6 +1134,8 @@ export function useGame() {
           (!choice.excludesJob || choice.excludesJob !== job) &&
           (!choice.returningEmployee || openedAsEmployee) &&
           (!choice.requiresItem || playerState.inventory.includes(choice.requiresItem)) &&
+          (!choice.excludesItem || !playerState.inventory.includes(choice.excludesItem)) &&
+          (!choice.requiresQuestActive || isQuestActive(quests, choice.requiresQuestActive)) &&
           (choice.endsConversation || !usedConversationChoices.includes(choice.label))
       )
     : currentScene.choices.filter(isChoiceAvailable);
