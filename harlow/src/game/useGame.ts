@@ -365,7 +365,32 @@ export function useGame() {
 
     setCurrentScene(nextScene);
     setCurrentEffects([]);
-    setCurrentThought(getSceneThought(nextScene.id, time, weather));
+
+    const night = time >= 1080 || time < 360;
+    const hillReady =
+      sceneId === "front-yard"
+      && currentScene.id !== "front-yard"
+      && night
+      && isQuestCompleted(quests, "what-walter-said")
+      && isQuestCompleted(quests, "faded-poster")
+      && !hasFlag("sanatoriumSeenFromStreet");
+
+    if (hillReady) {
+      setCurrentThought("There's a light up on the hill. Nobody goes up there.");
+      setQuests((previous) => {
+        if (
+          isQuestActive(previous, "light-on-the-hill")
+          || isQuestCompleted(previous, "light-on-the-hill")
+        ) {
+          return previous;
+        }
+        showQuestNotification("New quest: Light on the Hill", "Quest started");
+        return startQuest(previous, "light-on-the-hill");
+      });
+    } else {
+      setCurrentThought(getSceneThought(nextScene.id, time, weather));
+    }
+
     setGameState((previous) => ({
       ...previous,
       time,
@@ -491,18 +516,14 @@ export function useGame() {
 
     if (choice.completesMomQuest && !momTalked) {
       setMomTalked(true);
-      // Coffee errand is live as soon as Faded Poster starts (Mom already asked).
-      applyFlags("coffeeErrandHeard");
       setQuests((previous) => {
         let next = completeQuest(previous, "talk-to-mom");
-        // Chapter 1: The Tape and Faded Poster start in parallel after Mom.
         next = startQuest(next, "the-tape");
-        next = startQuest(next, "faded-poster");
         return next;
       });
       showQuestNotification("Talk to Mom", "Quest complete");
       pendingQuestNotification.current = {
-        message: "New quests: The Tape — Coffee for Mom.",
+        message: "New quest: The Tape",
         label: "Quest started",
       };
     }
@@ -678,7 +699,18 @@ export function useGame() {
       );
     }
     if (choice.setsFlags) applyFlags(choice.setsFlags);
-    if (choice.startsQuest || choice.completesQuest) {
+
+    // Poster found before Linda's coffee errand: start as Faded Poster.
+    if (choice.action === "lookAtDinerBulletin") {
+      setQuests((previous) => {
+        if (isQuestCompleted(previous, "faded-poster")) return previous;
+        if (!isQuestActive(previous, "faded-poster")) {
+          showQuestNotification("New quest: Faded Poster", "Quest started");
+          return startQuest(previous, "faded-poster", "poster");
+        }
+        return setQuestStep(previous, "faded-poster", "poster");
+      });
+    } else if (choice.startsQuest || choice.completesQuest) {
       applyQuestHooks({
         startsQuest: choice.startsQuest,
         completesQuest: choice.completesQuest,
@@ -697,6 +729,12 @@ export function useGame() {
         }
         return previous;
       });
+    }
+    // Scene choices don't go through closeConversation — flush start toasts now.
+    if (pendingQuestNotification.current) {
+      const pending = pendingQuestNotification.current;
+      pendingQuestNotification.current = null;
+      showQuestNotification(pending.message, pending.label);
     }
     if (
       choice.completesQuest === "light-on-the-hill"
@@ -940,7 +978,7 @@ export function useGame() {
       return job === "needle-groove" && time >= 600 && time < 1140;
     }
     if (action === "talkToWalter") return time >= 480 && time < 960;
-    if (action === "talkToMargaret") return time >= 660 && time < 900;
+    if (action === "talkToMargaret") return time >= 420 && time < 900;
     if (action === "talkToEarl") return time >= 480 && time < 1020;
     if (action === "talkToBigRoy") return time >= 420 && time < 900;
     if (action === "talkToRay") return time >= 540 && time < 1380;
@@ -993,7 +1031,9 @@ export function useGame() {
       );
     }
     if (action === "lookAtDinerBulletin") {
-      return isQuestActive(quests, "faded-poster") && !hasFlag("posterFound");
+      // Board is inspectable once the diner is in play; finding the poster
+      // can start Faded Poster even before Linda's coffee errand.
+      return momTalked && !hasFlag("posterFound");
     }
     if (action === "lookAtSanatoriumCigarette") {
       return isNightTime(time) && !hasFlag("sanatoriumCigaretteSeen");

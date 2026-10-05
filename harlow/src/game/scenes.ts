@@ -755,6 +755,7 @@ export const momConversation: Conversation = {
         ),
       ],
       storyFlag: "coffeeErrandHeard",
+      startsQuest: "faded-poster",
     },
 
     {
@@ -787,7 +788,6 @@ export const momConversation: Conversation = {
     {
       label: "Got your coffee.",
       requiresItem: "Coffee",
-      requiresStoryFlag: "posterShownToMom",
       excludesStoryFlag: "coffeeDelivered",
       response: [
         ethan("Got your coffee."),
@@ -858,10 +858,6 @@ export const momDeathConversation: Conversation = {
         npc(
           "Linda",
           "Me neither. She was alone in that house so much. Be careful. And let the sheriff handle it.",
-        ),
-        npc(
-          "Linda",
-          "We're out of coffee. Run down to Margaret's for me when you can. Put it on my tab.",
         ),
       ],
       completesMomQuest: true,
@@ -2687,7 +2683,7 @@ export const dinerInside: Scene = {
   id: "diner-inside",
   story: [
     narration("You step into the diner. Coffee and fried food."),
-    thought("Margaret's working the floor.", { from: 660, until: 900 }),
+    thought("Margaret's working the floor.", { from: 420, until: 900 }),
     thought("Dead in here, this hour."),
   ],
   location: "Diner",
@@ -2698,7 +2694,7 @@ export const dinerInside: Scene = {
   characters: [
     {
       name: "Margaret Sullivan",
-      from: 660,
+      from: 420,
       until: 900,
       image: "./images/locations/diner/maragetSullivanAtWork.png",
     },
@@ -2723,7 +2719,7 @@ export const dinerInside: Scene = {
       },
       setsFlags: ["posterFound"],
       itemToAdd: "Missing Poster",
-      questStep: "coffee",
+      questStep: "poster",
     },
     {
       label: "Go outside",

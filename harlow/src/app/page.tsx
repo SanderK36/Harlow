@@ -596,7 +596,6 @@ export default function Home() {
                                                               "goBackYard",
                                                               "goHome",
                                                               "enterGarage",
-                                                              "goElrodHouse",
                                                               "talkToRachel",
                                                               "lookAtSanatoriumHill",
                                                             ]
