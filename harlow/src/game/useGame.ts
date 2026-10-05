@@ -240,6 +240,15 @@ export function useGame() {
   // React applies setQuests after this handler returns. A second update in the
   // same click must read this list, not the quests from the last render.
   const questsRef = useRef(quests);
+  // advanceTime can show the hill line, then moveToScene runs before React
+  // paints. Cleared after this click so the next scene change can set its own line.
+  const hillThoughtShown = useRef(false);
+  function markHillThought() {
+    hillThoughtShown.current = true;
+    queueMicrotask(() => {
+      hillThoughtShown.current = false;
+    });
+  }
   function commitQuests(next: QuestProgress[]) {
     questsRef.current = next;
     setQuests(next);
@@ -459,11 +468,12 @@ export function useGame() {
     const hillNow = shouldNoticeHill(
       currentScene.id,
       nextGameState.time,
-      quests,
+      questsRef.current,
       storyFlags,
     );
     // The line lands first. openHillQuest adds the quest on this same update,
     // so the look action is not on screen before the sentence.
+    if (hillNow) markHillThought();
     setCurrentThought(
       hillNow
         ? HILL_THOUGHT
@@ -499,13 +509,17 @@ export function useGame() {
     setCurrentScene(nextScene);
     setCurrentEffects([]);
 
-    const hillNow = shouldNoticeHill(sceneId, time, quests, storyFlags);
+    const hillNow = shouldNoticeHill(sceneId, time, questsRef.current, storyFlags);
     // The look action stays hidden until this line has been said.
-    setCurrentThought(
-      hillNow
-        ? HILL_THOUGHT
-        : getSceneThought(nextScene.id, time, weather, day),
-    );
+    // A time change in this same click may already have shown it.
+    if (hillNow || !hillThoughtShown.current) {
+      if (hillNow) markHillThought();
+      setCurrentThought(
+        hillNow
+          ? HILL_THOUGHT
+          : getSceneThought(nextScene.id, time, weather, day),
+      );
+    }
     if (hillNow) openHillQuest();
 
     setGameState((previous) => ({
@@ -605,7 +619,7 @@ export function useGame() {
     // Light on the Hill stays playable through the 03:00 lock. A walk that
     // leaves after 02:00 arrives after 03:00, and by morning the cigarette is gone.
     if (
-      isQuestActive(quests, "light-on-the-hill")
+      isQuestActive(questsRef.current, "light-on-the-hill")
       && (
         SANATORIUM_SCENE_IDS.has(currentScene.id)
         || ("nextScene" in choice && SANATORIUM_SCENE_IDS.has(choice.nextScene))
