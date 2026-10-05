@@ -103,7 +103,7 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
     id: "what-walter-said",
     title: "What Walter Said",
     objectives: {
-      default: "Rachel's on the lawn. She wants answers.",
+      default: "Rachel will want to know.",
       /** Trusted (hood or file). */
       done: "Told her.",
       shut: "Shut her out.",
@@ -116,6 +116,7 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
     objectives: {
       default: "Mom wants coffee. Margaret's.",
       coffee: "Got the coffee.",
+      delivered: "Coffee's with Mom.",
       poster: "Emily. Missing. Show Mom.",
       both: "Coffee. And Emily. Go home.",
       done: "Showed Mom. She changed the subject.",
@@ -186,9 +187,12 @@ export function questObjective(
     const inventory = ctx.inventory ?? [];
     const hasCoffee = inventory.includes("Coffee");
     const hasPoster = hasFoundPoster(ctx);
+    const coffeeDelivered = Boolean(ctx.storyFlags?.coffeeDelivered);
     if (hasCoffee && hasPoster) return def.objectives.both;
     if (hasCoffee) return def.objectives.coffee;
     if (hasPoster) return def.objectives.poster;
+    // Handed Mom the coffee before finding the poster — don't re-ask for coffee.
+    if (coffeeDelivered) return def.objectives.delivered;
     return def.objectives.default;
   }
 
@@ -216,6 +220,7 @@ export function migrateQuestsFromLegacy(save: {
   job?: JobId | null;
   jobQuestTarget?: JobId | null;
   quests?: QuestProgress[];
+  storyFlags?: Partial<Record<StoryFlag, boolean>>;
 }): QuestProgress[] {
   let quests: QuestProgress[];
   if (save.quests && Array.isArray(save.quests)) {
@@ -238,17 +243,23 @@ export function migrateQuestsFromLegacy(save: {
     }
   }
 
-  // Old saves that already talked to Mom still need Chapter 1 quests.
+  // Old saves that already talked to Mom still need The Tape.
   const momDone =
     save.momTalked !== false
     || quests.some((quest) => quest.id === "talk-to-mom" && quest.status === "completed");
-  if (momDone) {
-    if (!quests.some((quest) => quest.id === "the-tape")) {
-      quests.push({ id: "the-tape", status: "active" });
-    }
-    if (!quests.some((quest) => quest.id === "faded-poster")) {
-      quests.push({ id: "faded-poster", status: "active" });
-    }
+  if (momDone && !quests.some((quest) => quest.id === "the-tape")) {
+    quests.push({ id: "the-tape", status: "active" });
+  }
+
+  // Coffee for Mom / Faded Poster: start if Ethan heard the errand OR already
+  // found the poster. Never strip an existing active/completed entry.
+  const heardCoffee = Boolean(save.storyFlags?.coffeeErrandHeard);
+  const foundPoster = Boolean(save.storyFlags?.posterFound);
+  if (
+    (heardCoffee || foundPoster)
+    && !quests.some((quest) => quest.id === "faded-poster")
+  ) {
+    quests.push({ id: "faded-poster", status: "active" });
   }
 
   return quests;
