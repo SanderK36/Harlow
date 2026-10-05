@@ -954,10 +954,13 @@ export default function Home() {
         )}
         {showQuestLog && (
           <QuestWindow
-          quests={quests}
-          job={job}
-          onClose={() => setShowQuestLog(false)}
-        />
+            quests={quests}
+            job={job}
+            dayOfWeek={gameState.dayOfWeek}
+            dayNumber={gameState.dayNumber}
+            currentMonth={gameState.currentMonth}
+            onClose={() => setShowQuestLog(false)}
+          />
         )}
         {showTravel && (
           <TravelWindow

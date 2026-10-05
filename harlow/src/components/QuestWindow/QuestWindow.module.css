@@ -1,98 +1,311 @@
+/* Notebook / case-file quest log. Matches inventory overlay chrome; paper
+   look is CSS so a later images/ui/questLogBackground.png can drop in. */
+
 .overlay {
   position: fixed;
   inset: 0;
-  z-index: 40;
-  display: grid;
-  place-items: center;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 20px;
-  background: rgba(8, 4, 5, 0.7);
+  background: rgba(8, 3, 4, 0.78);
+  backdrop-filter: blur(8px);
 }
 
 .window {
-  width: min(100%, 440px);
-  padding: 28px;
-  color: var(--text);
-  background: linear-gradient(145deg, #2b1719, #130c0d);
-  border: 1px solid var(--line-strong);
-  border-radius: 12px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(720px, calc(100vw - 40px), calc((100vh - 40px) * 1.35));
+  max-height: min(86vh, 780px);
+  overflow: hidden;
+  color: #2a1a12;
+  /* Fallback paper; swapped for a dedicated art file when present. */
+  background-color: #d8c4a0;
+  background-image:
+    linear-gradient(180deg, rgba(255, 248, 230, 0.55), rgba(196, 164, 118, 0.2)),
+    linear-gradient(125deg, rgba(90, 50, 20, 0.08) 0%, transparent 42%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 27px,
+      rgba(90, 60, 30, 0.07) 27px,
+      rgba(90, 60, 30, 0.07) 28px
+    ),
+    url("/images/ui/questLogBackground.png");
+  background-size: auto, auto, auto, 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: 1px solid rgba(70, 40, 18, 0.55);
+  border-radius: 10px;
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.7),
+    inset 0 0 0 1px rgba(255, 240, 210, 0.35),
+    inset 0 0 60px rgba(90, 50, 20, 0.12);
+  animation: modalEnter 0.22s ease-out;
 }
 
-.eyebrow {
-  margin: 0 0 6px;
-  color: #e69b66;
+/* If the optional background art is missing, browsers skip that layer. */
+@supports (background-image: image-set(url("/images/ui/questLogBackground.png") 1x)) {
+  /* no-op: keeps the url in the cascade for when art lands */
+}
+
+.header {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 22px 28px 14px;
+  border-bottom: 1px dashed rgba(90, 55, 25, 0.35);
+}
+
+.caseLabel {
+  margin: 0 0 4px;
+  color: #7a4a28;
+  font-family: var(--font-ui);
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.13em;
+  font-weight: 600;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-.window h2 {
-  margin: 0 0 16px;
+.title {
+  margin: 0 0 8px;
+  color: #24150e;
   font-family: var(--font-display);
-  font-size: 26px;
+  font-size: clamp(22px, 3.2vw, 30px);
   font-weight: 600;
-  letter-spacing: .06em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.window p:not(.eyebrow) {
-  margin: 0 0 16px;
+.date {
+  margin: 0;
+  color: #5c3a22;
   font-family: var(--font-body);
   font-size: 18px;
-  line-height: 1.5;
+  font-style: italic;
+  letter-spacing: 0.02em;
 }
 
-.benefit {
-  padding: 12px;
-  color: #ffe1b3;
-  background: rgba(230, 155, 102, 0.12);
-  border-left: 3px solid #e69b66;
+.pages {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 16px 28px 12px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.empty {
+  margin: 12px 0;
+  color: #6b4a32;
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-style: italic;
 }
 
 .section {
-  margin: 0 0 18px;
+  margin: 0 0 20px;
 }
 
 .sectionLabel {
-  margin: 0 0 8px !important;
-  color: #e69b66;
-  font-size: 11px !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  color: #8a3a28;
+  font-family: var(--font-ui);
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.13em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-.quest,
-.questDone {
+.pin {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  background: radial-gradient(circle at 35% 30%, #f0d080, #a85a28 55%, #5a2a10);
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry,
+.entryDone {
+  position: relative;
   margin: 0 0 12px;
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(230, 155, 102, 0.22);
-  border-radius: 8px;
+  padding: 12px 14px 12px 18px;
+  background: rgba(255, 248, 230, 0.45);
+  border: 1px solid rgba(90, 55, 25, 0.22);
+  border-left: 3px solid #a85a28;
+  border-radius: 2px 8px 8px 2px;
+  box-shadow: 1px 2px 0 rgba(90, 55, 25, 0.08);
 }
 
-.questDone {
-  opacity: 0.72;
-  border-color: rgba(255, 255, 255, 0.12);
+.tab {
+  position: absolute;
+  top: 10px;
+  right: -1px;
+  width: 10px;
+  height: 22px;
+  background: linear-gradient(180deg, #c45a48, #8a3020);
+  border-radius: 3px 0 0 3px;
+  box-shadow: -1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.quest h3,
-.questDone h3 {
+.entryTitle {
   margin: 0 0 6px;
+  color: #24150e;
   font-family: var(--font-display);
   font-size: 18px;
   font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.note {
+  margin: 0;
+  color: #3d2818;
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-style: italic;
+  line-height: 1.45;
+}
+
+.entryDone {
+  opacity: 0.62;
+  background: rgba(220, 200, 170, 0.35);
+  border-left-color: rgba(90, 55, 25, 0.35);
+}
+
+.entryDone .tab {
+  display: none;
+}
+
+.check {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  color: #5a6a40;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.entryTitleDone {
+  margin: 0 0 4px;
+  padding-right: 28px;
+  color: #4a3424;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
   letter-spacing: 0.04em;
+  text-decoration: line-through;
+  text-decoration-color: rgba(90, 50, 20, 0.55);
+  text-decoration-thickness: 1.5px;
 }
 
-.quest p,
-.questDone p {
-  margin: 0 !important;
-  font-size: 15px !important;
+.noteDone {
+  margin: 0;
+  color: #5a4330;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.4;
+  text-decoration: line-through;
+  text-decoration-color: rgba(90, 50, 20, 0.4);
 }
 
-.window {
-  width: min(100%, 520px);
-  max-height: min(86vh, 720px);
-  overflow: auto;
+.jobNote {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  color: #3d2818;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.4;
+  background: rgba(255, 248, 230, 0.35);
+  border: 1px dashed rgba(90, 55, 25, 0.3);
+  border-radius: 4px;
+}
+
+.jobNote strong {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.closeButton {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 22px 18px;
+  border-top: 1px dashed rgba(90, 55, 25, 0.28);
+}
+
+.closeButton button {
+  min-width: 110px;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 640px) {
+  .overlay {
+    padding: 12px;
+    align-items: flex-end;
+  }
+
+  .window {
+    width: 100%;
+    max-height: min(92vh, 820px);
+    border-radius: 12px 12px 8px 8px;
+  }
+
+  .header {
+    padding: 16px 16px 10px;
+  }
+
+  .title {
+    font-size: 22px;
+  }
+
+  .date {
+    font-size: 16px;
+  }
+
+  .pages {
+    padding: 12px 16px;
+  }
+
+  .entry,
+  .entryDone {
+    padding: 10px 12px;
+  }
+
+  .entryTitle {
+    font-size: 16px;
+  }
+
+  .note {
+    font-size: 15px;
+  }
+
+  .closeButton {
+    padding: 10px 16px 16px;
+  }
+
+  .closeButton button {
+    width: 100%;
+  }
 }
