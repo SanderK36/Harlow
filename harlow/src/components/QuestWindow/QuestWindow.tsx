@@ -54,7 +54,7 @@ export function formatQuestLogDate(
 }
 
 /**
- * Case-file / notebook quest log. Only quests already started or completed
+ * Ethan's notebook quest log. Only quests already started or completed
  * appear — nothing unstarted, so later locations stay unspoiled.
  */
 export default function QuestWindow({
@@ -80,9 +80,9 @@ export default function QuestWindow({
         onMouseDown={(event) => event.stopPropagation()}
       >
         <header className={styles.header}>
-          <p className={styles.caseLabel}>Harlow P.D. — field notes</p>
+          <p className={styles.caseLabel}>E. Parker</p>
           <h2 id="quest-log-title" className={styles.title}>
-            Case file
+            Notebook
           </h2>
           <p className={styles.date}>{dateLine}</p>
         </header>
@@ -114,7 +114,7 @@ export default function QuestWindow({
 
           {completed.length > 0 && (
             <div className={styles.section}>
-              <p className={styles.sectionLabel}>Closed</p>
+              <p className={styles.sectionLabel}>Done</p>
               <ul className={styles.list}>
                 {completed.map((quest) => (
                   <li key={quest.id} className={styles.entryDone}>
