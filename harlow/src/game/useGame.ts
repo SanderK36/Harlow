@@ -1359,6 +1359,9 @@ export function useGame() {
           hasAllFlags(choice.requiresStoryFlag) &&
           !hasAnyFlag(choice.excludesStoryFlag) &&
           (!choice.requiresChoice || usedConversationChoices.includes(choice.requiresChoice)) &&
+          (!choice.requiresAnyChoice || choice.requiresAnyChoice.some((label) => usedConversationChoices.includes(label))) &&
+          (!choice.requiresPriorChoice || usedConversationChoices.length > 0) &&
+          (!choice.excludesChoice || !usedConversationChoices.includes(choice.excludesChoice)) &&
           (!choice.excludesJob || choice.excludesJob !== job) &&
           (!choice.returningEmployee || openedAsEmployee) &&
           (!choice.requiresItem || playerState.inventory.includes(choice.requiresItem)) &&

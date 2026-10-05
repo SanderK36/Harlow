@@ -44,6 +44,15 @@ export type ConversationChoice = {
   /** Shows this response only once the choice with this label has been
    *  picked in the same conversation (to answer a question it raised). */
   requiresChoice?: string;
+  /** Shows this response once any one of these labels has been picked
+   *  in the same conversation. */
+  requiresAnyChoice?: string[];
+  /** Shows this response only after Ethan has already replied once in
+   *  this conversation. */
+  requiresPriorChoice?: boolean;
+  /** Hides this response once the choice with this label has been picked
+   *  in the same conversation. */
+  excludesChoice?: string;
   /** Applies a permanent job reward when this response is selected. */
   jobOffer?: import("./quests").JobId;
   /** Hide this choice after Ethan has accepted a job. */

@@ -25,6 +25,8 @@ type DialogueSceneProps = {
   active: boolean;
   /** Reply buttons; only shown once the latest line has been read. */
   choices?: ReactNode;
+  /** Stable identity for `choices`, so a new set can wait until the beat ends. */
+  choiceKey?: string;
   /** Set while a closing reply plays: called once its last line has been
    *  read and the player clicks on (or right after Ethan's own last line). */
   onFinish?: () => void;
@@ -75,6 +77,7 @@ export default function DialogueScene({
   entries,
   active,
   choices,
+  choiceKey = "",
   onFinish,
 }: DialogueSceneProps) {
   const lines = toDialogueLines(entries);
@@ -83,6 +86,8 @@ export default function DialogueScene({
   const [revealed, setRevealed] = useState(0);
   const [knownLineCount, setKnownLineCount] = useState(lines.length);
   const [showHistory, setShowHistory] = useState(false);
+  const [heldChoices, setHeldChoices] = useState(choices);
+  const [heldKey, setHeldKey] = useState(choiceKey);
   const choicesRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -110,6 +115,14 @@ export default function DialogueScene({
 
   const hasQueuedLines = lineIndex < lines.length - 1;
   const readyForChoices = active && lineComplete && !hasQueuedLines;
+  const choicesReady = readyForChoices && !!choices;
+  // Store the set only once its beat has finished, so the fade-out keeps the
+  // replies the player just saw instead of swapping mid-line.
+  if (choicesReady && choiceKey !== heldKey) {
+    setHeldKey(choiceKey);
+    setHeldChoices(choices);
+  }
+  const shownChoices = choicesReady ? choices : heldChoices;
   const speakerIsEthan = isEthan(line?.speaker ?? null);
   const canFinish = active && !!onFinish && lineComplete && !hasQueuedLines;
   const partner = lines.find((entry) => entry.speaker && !isEthan(entry.speaker))?.speaker ?? null;
@@ -335,15 +348,13 @@ export default function DialogueScene({
           {`${line.speaker ?? "Narration"}: ${line.text}`}
         </p>
 
-        {choices && (
-          <div
-            ref={choicesRef}
-            className={`${styles.choices} ${readyForChoices ? styles.choicesVisible : ""}`}
-            inert={!readyForChoices}
-          >
-            {choices}
-          </div>
-        )}
+        <div
+          ref={choicesRef}
+          className={`${styles.choices} ${choicesReady ? styles.choicesVisible : ""}`}
+          inert={!choicesReady}
+        >
+          <div className={styles.choicesInner}>{shownChoices}</div>
+        </div>
       </div>
 
       {showHistory && (

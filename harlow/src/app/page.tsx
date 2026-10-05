@@ -1004,6 +1004,7 @@ export default function Home() {
                     ? actionList
                     : null
                 }
+                choiceKey={choicesWithoutHotspotActions.map((choice) => choice.label).join("\n")}
               />
             </div>
           )}

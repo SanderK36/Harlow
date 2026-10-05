@@ -425,6 +425,7 @@ export const rachelElrodConversation: Conversation = {
       response: [
         ethan("You okay, Rach?"),
         npc("Rachel", "No. She gave us butterscotch every Halloween. Remember?"),
+        ethan("Yeah. Every Halloween."),
       ],
     },
     {
@@ -460,6 +461,7 @@ export const rachelElrodConversation: Conversation = {
           "Rachel",
           "Go see Walter. He knows something. And Ethan? Tell me what he says.",
         ),
+        ethan("I will."),
       ],
       endsConversation: true,
       storyFlag: "rachelMet",
@@ -495,6 +497,7 @@ export const rachelFrontYardConversation: Conversation = {
           "Rachel",
           "They stopped looking after a month. So why's he still keeping it in a drawer?",
         ),
+        ethan("I don't know. He shut it before I could."),
       ],
       storyFlag: ["rachelTrusted", "rachelKnowsFile"],
       completesQuest: "what-walter-said",
@@ -728,6 +731,8 @@ export const momConversation: Conversation = {
           "Linda",
           "We're out of coffee. Run down to Margaret's for me. Put it on my tab.",
         ),
+        ethan("I'll get it."),
+        npc("Linda", "Thanks, honey."),
       ],
       storyFlag: "coffeeErrandHeard",
       startsQuest: "faded-poster",
@@ -742,6 +747,7 @@ export const momConversation: Conversation = {
       response: [
         ethan("I found Emily's poster at the diner."),
         npc("Linda", "Put that away."),
+        ethan("Okay."),
       ],
       storyFlag: ["posterShownToMom", "coffeeDelivered"],
       completesQuest: "faded-poster",
@@ -756,6 +762,7 @@ export const momConversation: Conversation = {
       response: [
         ethan("I found Emily's poster at the diner."),
         npc("Linda", "Put that away."),
+        ethan("Okay."),
       ],
       storyFlag: "posterShownToMom",
       completesQuest: "faded-poster",
@@ -769,6 +776,8 @@ export const momConversation: Conversation = {
       response: [
         ethan("I found Emily's poster at the diner."),
         npc("Linda", "...Did you get the coffee?"),
+        ethan("Not yet. I'll get it."),
+        npc("Linda", "Alright, honey. Don't forget."),
       ],
       storyFlag: "posterShownToMom",
       completesQuest: "faded-poster",
@@ -782,6 +791,7 @@ export const momConversation: Conversation = {
       response: [
         ethan("I found Emily's poster at the diner."),
         npc("Linda", "Put that away."),
+        ethan("Okay."),
       ],
       storyFlag: "posterShownToMom",
       completesQuest: "faded-poster",
@@ -865,6 +875,7 @@ export const momDeathConversation: Conversation = {
     },
     {
       label: "Exit conversation",
+      requiresPriorChoice: true,
       response: [],
       endsConversation: true,
     },
@@ -914,6 +925,7 @@ export const johnnyConversation: Conversation = {
       response: [
         ethan("Thanks, Johnny. When do I start?"),
         npc("Johnny", "You just did. Grab a box."),
+        ethan("Got it."),
       ],
     },
     {
@@ -928,6 +940,7 @@ export const johnnyConversation: Conversation = {
     {
       label: "Heard anything interesting lately?",
       requiresJob: "needle-groove",
+      requiresAnyChoice: ["On it.", "I'm looking for work."],
       response: [
         ethan("Heard anything interesting lately?"),
         npc(
@@ -945,6 +958,7 @@ export const johnnyConversation: Conversation = {
     {
       label: "Catch you later.",
       requiresJob: "needle-groove",
+      requiresAnyChoice: ["On it.", "I'm looking for work."],
       response: [ethan("Catch you later."), npc("Johnny", "Don't be late.")],
       endsConversation: true,
     },
@@ -956,15 +970,18 @@ export const walterConversation: Conversation = {
   choices: [
     {
       label: "I'm looking for some information.",
+      excludesChoice: "I saw someone last night. End of the street. In a hood.",
       response: [
         ethan("I'm looking for some information."),
         npc("Walter", "Information about what?"),
         ethan("Emily."),
         npc("Walter", "That file's been closed ten years, Ethan. Leave it closed."),
+        ethan("Yeah."),
       ],
     },
     {
       label: "Anything new on Mrs. Elrod?",
+      excludesChoice: "I saw someone last night. End of the street. In a hood.",
       response: [
         ethan("Anything new on Mrs. Elrod?"),
         npc("Walter", "Nothing I can share."),
@@ -997,7 +1014,14 @@ export const walterConversation: Conversation = {
       },
     },
     {
+      label: "Alright. I'm going.",
+      requiresChoice: "I saw someone last night. End of the street. In a hood.",
+      response: [ethan("Alright. I'm going.")],
+      endsConversation: true,
+    },
+    {
       label: "Never mind.",
+      excludesChoice: "I saw someone last night. End of the street. In a hood.",
       response: [ethan("Never mind."), npc("Walter", "Then we're done.")],
       endsConversation: true,
     },

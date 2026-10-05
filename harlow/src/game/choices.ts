@@ -37,7 +37,7 @@ export type Choice = {
    * walking around outside or the travel map.
    */
   door?: boolean;
-  /** Disable the choice until these conditions are met. Extend this for new rules. */
+  /** Hide the choice until these conditions are met. Never render it disabled. */
   requirements?: {
     money?: number;
     /** Requires this inventory item. */

@@ -38,6 +38,9 @@ export default function ActionList({
   );
 
   function isDisabled(choice: GameChoice) {
+    // Dialogue replies are omitted entirely when they don't apply. A greyed
+    // button would give away a line the player isn't meant to see yet.
+    if ("response" in choice) return false;
     return (
       "requirements" in choice &&
       choice.requirements?.money !== undefined &&
