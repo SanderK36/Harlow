@@ -478,13 +478,22 @@
     transition: none;
   }
 
-  /* Fade only. The list still changes at the beat boundary, without the slide. */
+  /* Fade first. Height waits until that fade is done, so the speech box
+     does not jump while the replies are still disappearing. */
   .choices {
-    transition: opacity 200ms ease, visibility 0s linear 200ms;
+    transition:
+      opacity 200ms ease,
+      visibility 0s linear 200ms,
+      grid-template-rows 0s linear 200ms,
+      margin-top 0s linear 200ms;
   }
 
   .choicesVisible {
-    transition: opacity 200ms ease, visibility 0s linear;
+    transition:
+      opacity 200ms ease,
+      visibility 0s linear,
+      grid-template-rows 0s linear,
+      margin-top 0s linear;
   }
 
   .portraitIdle {
