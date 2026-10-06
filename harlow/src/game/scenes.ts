@@ -466,9 +466,9 @@ export const rachelElrodConversation: Conversation = {
       ],
     },
     {
-      label: "This feels like Emily.",
+      label: "This feels like Emily all over again.",
       response: [
-        ethan("This feels like Emily."),
+        ethan("This feels like Emily all over again."),
         npc("Rachel", "Your mom left the porch light on for a month."),
         thought("I'd forgotten about the porch light."),
       ],
@@ -582,6 +582,10 @@ export const elrodHouse: Scene = {
   image: {
     day: "./images/locations/ElrodHouse/ElrodHouseDay.png",
     night: "./images/locations/ElrodHouse/ElrodHouseNight.png",
+    weather: rainArt(
+      "./images/locations/ElrodHouse/ElrodHouseRainy.png",
+      "./images/locations/ElrodHouse/ElrodHouseThunder.png",
+    ),
   },
   characters: [
     {
@@ -635,6 +639,7 @@ export const lightPole: Scene = {
   image: {
     day: "./images/locations/home/lightPoleDay.png",
     night: "./images/locations/home/lightPoleNight.png",
+    weather: rainArt("./images/locations/home/lightPoleRainy.png"),
   },
   choices: [
     {
@@ -1413,9 +1418,8 @@ export const ethanRoom: Scene = {
   image: {
     day: "./images/locations/home/ethanRoomDay.png",
     night: "./images/locations/home/ethanRoomNight.png",
-    // ethanRoomRainy.png exists but is NOT wired: pennant says RIVERTON
-    // (must be Harlow) and is 1024×768 vs day art 1448×1086. Wire via rainArt
-    // once Sander replaces the asset.
+    weather: rainArt("./images/locations/home/ethanRoomRainy.png"),
+    weatherDayOnly: true,
   },
   choices: [
     {
@@ -2594,6 +2598,10 @@ export const busStop: Scene = {
   image: {
     day: "./images/Travel/busStop.png",
     night: "./images/Travel/busStopNight.png",
+    weather: rainArt(
+      "./images/Travel/busStopRain.png",
+      "./images/Travel/busStopThunder.png",
+    ),
   },
   choices: [
     {

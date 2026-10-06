@@ -553,7 +553,11 @@ export default function Home() {
     : walterRainy
       ? "./images/locations/police_station/WalterHarringtonOfficeRain.jpg"
     : elrodWithRachel
-      ? "./images/locations/ElrodHouse/ElrodHouseRachelOutsideDay.png"
+      ? gameState.weather === "Thunderstorm"
+        ? "./images/locations/ElrodHouse/ElrodHouseRachelOutsideThunder.png"
+        : RAIN_WEATHER.includes(gameState.weather)
+          ? "./images/locations/ElrodHouse/ElrodHouseRachelOutsideRainy.png"
+          : "./images/locations/ElrodHouse/ElrodHouseRachelOutsideDay.png"
     : ((isNightTime(gameState.time) && activeCharacter?.nightImage
         ? activeCharacter.nightImage
         : activeCharacter?.image) ?? emptySceneImage);
@@ -1134,6 +1138,7 @@ export default function Home() {
             location={travelingTo.location}
             method={travelingTo.method}
             isNight={travelingTo.isNight}
+            weather={gameState.weather}
           />
         )}
 
