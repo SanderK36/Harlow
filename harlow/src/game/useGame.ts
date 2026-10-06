@@ -694,6 +694,7 @@ export function useGame() {
     return lateNightChoiceAllowed(choice, {
       time: gameState.time,
       sceneId: currentScene.id,
+      lightOnTheHillActive: isQuestActive(questsRef.current, "light-on-the-hill"),
     });
   }
 
@@ -1159,7 +1160,11 @@ export function useGame() {
   function goToBusStop() {
     if (!lateNightChoiceAllowed(
       { action: "goToBusStop", nextScene: "bus-stop" },
-      { time: gameState.time, sceneId: currentScene.id },
+      {
+        time: gameState.time,
+        sceneId: currentScene.id,
+        lightOnTheHillActive: isQuestActive(questsRef.current, "light-on-the-hill"),
+      },
     )) {
       showLateNightActionThought();
       return;

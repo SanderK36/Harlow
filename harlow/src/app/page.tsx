@@ -581,7 +581,9 @@ export default function Home() {
     : walterRainy
       ? "./images/locations/police_station/WalterHarringtonOfficeRain.jpg"
     : elrodWithRachel
-      ? "./images/locations/ElrodHouse/ElrodHouseRachelOutsideDay.png"
+      ? RAIN_WEATHER.includes(gameState.weather)
+        ? "./images/locations/ElrodHouse/ElrodHouseRachelOutsideRainy.png"
+        : "./images/locations/ElrodHouse/ElrodHouseRachelOutsideDay.png"
     : ((isNightTime(gameState.time) && activeCharacter?.nightImage
         ? activeCharacter.nightImage
         : activeCharacter?.image) ?? emptySceneImage);

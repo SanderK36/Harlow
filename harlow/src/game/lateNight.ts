@@ -91,6 +91,16 @@ export function sceneDistance(sceneId: string) {
   return distance;
 }
 
+/** The hill path. Deeper rooms are farther from bed, so the distance rule would lock them. */
+const SANATORIUM_SCENE_IDS = new Set([
+  "sanatorium",
+  "sanatorium-entrance",
+  "sanatorium-main-floor",
+  "sanatorium-hallway",
+  "sanatorium-room-1",
+  "sanatorium-room-2",
+]);
+
 export function lateNightChoiceAllowed(
   choice: {
     action?: string;
@@ -98,7 +108,7 @@ export function lateNightChoiceAllowed(
     response?: unknown;
     endsConversation?: boolean;
   },
-  ctx: { time: number; sceneId: string },
+  ctx: { time: number; sceneId: string; lightOnTheHillActive?: boolean },
 ) {
   if (!isTiredWindow(ctx.time)) return true;
 
@@ -111,7 +121,24 @@ export function lateNightChoiceAllowed(
     return ctx.sceneId === "ethan-room";
   }
 
+  // The hill is only there after dark, including the hours Ethan is otherwise
+  // too tired to wander. Looking from his own yard does not count as going out.
+  if (choice.action === "lookAtSanatoriumHill") return true;
+
   const next = choice.nextScene;
+  // Light on the Hill stays playable through the 03:00 lock, and through the
+  // 03:30 waiting lock. A walk that leaves after 02:00 arrives after 03:00,
+  // and by morning the cigarette is gone.
+  if (
+    ctx.lightOnTheHillActive
+    && (
+      SANATORIUM_SCENE_IDS.has(ctx.sceneId)
+      || (next !== undefined && SANATORIUM_SCENE_IDS.has(next))
+    )
+  ) {
+    return true;
+  }
+
   if (!next || next === ctx.sceneId) return false;
   return sceneDistance(next) < sceneDistance(ctx.sceneId);
 }

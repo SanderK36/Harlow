@@ -18,11 +18,13 @@ import { isRainPlate, sceneWeatherPlate } from "./scenePlate.ts";
 import {
   createBusChoices,
   createWalkingChoices,
+  elrodHouse,
   ethanRoom,
   frontYard,
   hallway,
   isExteriorScene,
   kitchen,
+  lightPole,
   momDeathConversation,
   rachelFrontYardConversation,
   sanatorium,
@@ -31,7 +33,9 @@ import {
   sanatoriumRoom2,
   scenes,
   symmetricWalkMinutes,
+  getSceneThought,
 } from "./scenes.ts";
+import { storyEntryApplies } from "./story.ts";
 
 const THREE_FIFTEEN = 3 * 60 + 15;
 const THREE_FORTY_FIVE = 3 * 60 + 45;
@@ -93,6 +97,77 @@ describe("late night, both gates", () => {
     assert.ok(ash);
     assert.equal(lateNightChoiceAllowed(ash, { time: 179, sceneId: "sanatorium-room-2" }), true);
     assert.equal(lateNightChoiceAllowed(ash, { time: 420, sceneId: "sanatorium-room-2" }), true);
+  });
+
+  it("keeps the hill path open while Light on the Hill is active", () => {
+    assert.ok(ash && enter && approach);
+    const hill = frontYard.choices.find((choice) => choice.action === "lookAtSanatoriumHill");
+    assert.ok(hill);
+    assert.equal(hill.nextScene, "front-yard");
+    assert.equal(
+      lateNightChoiceAllowed(hill, { time: THREE_FIFTEEN, sceneId: "front-yard" }),
+      true,
+    );
+
+    function cigaretteFromFrontYard(time: number, lightOnTheHillActive: boolean) {
+      const seen = new Set<string>();
+      const queue = ["front-yard"];
+      while (queue.length) {
+        const id = queue.pop();
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        const scene = scenes[id as keyof typeof scenes];
+        const choices = [...scene.choices];
+        if (isExteriorScene(id)) {
+          choices.push(...createWalkingChoices(id, Object.keys(scenes).filter(isExteriorScene)));
+        }
+        for (const choice of choices) {
+          if (!lateNightChoiceAllowed(choice, { time, sceneId: id, lightOnTheHillActive })) continue;
+          if (choice.action === "lookAtSanatoriumCigarette") return choice;
+          if (choice.nextScene && choice.nextScene !== id) queue.push(choice.nextScene);
+        }
+      }
+      return undefined;
+    }
+
+    for (const time of [THREE_FIFTEEN, THREE_FORTY_FIVE]) {
+      const cigarette = cigaretteFromFrontYard(time, true);
+      assert.ok(cigarette, `cigarette reachable at ${time}`);
+      assert.equal(cigarette.closeup?.thought, "Still burning. Someone was just here.");
+      assert.ok(cigarette.setsFlags?.includes("chapter1Complete"));
+      assert.equal(cigarette.completesQuest, "light-on-the-hill");
+      assert.equal(
+        lateNightChoiceAllowed(ash, { time, sceneId: "sanatorium-room-2", lightOnTheHillActive: true }),
+        true,
+      );
+      assert.equal(
+        lateNightChoiceAllowed(enter, { time, sceneId: "sanatorium-hallway", lightOnTheHillActive: true }),
+        true,
+      );
+      assert.equal(
+        lateNightChoiceAllowed(approach, { time, sceneId: "sanatorium", lightOnTheHillActive: true }),
+        true,
+      );
+      assert.equal(cigaretteFromFrontYard(time, false), undefined);
+      assert.equal(
+        lateNightChoiceAllowed(ash, {
+          time,
+          sceneId: "sanatorium-room-2",
+          lightOnTheHillActive: false,
+        }),
+        false,
+      );
+    }
+
+    const wander = createWalkingChoices("front-yard", ["diner"])[0];
+    assert.equal(
+      lateNightChoiceAllowed(wander, {
+        time: THREE_FIFTEEN,
+        sceneId: "front-yard",
+        lightOnTheHillActive: true,
+      }),
+      false,
+    );
   });
 
   it("lets an open talk end, and blocks a new one", () => {
@@ -247,6 +322,65 @@ describe("walks and the rainy front yard", () => {
       }
     }
     assert.equal(createBusChoices(["diner"])[0].timeCost, 10);
+  });
+
+  it("uses the rainy day plates for the light pole and Ethan's room", () => {
+    const poleDay = sceneWeatherPlate(lightPole, 10 * 60 + 35, "Rainy");
+    const poleNight = sceneWeatherPlate(lightPole, 18 * 60 + 30, "Rainy");
+    assert.match(poleDay, /lightPoleRainy\.png$/);
+    assert.equal(isRainPlate(poleDay, lightPole, "Rainy"), true);
+    assert.match(poleNight, /lightPoleNight\.png$/);
+    assert.equal(isRainPlate(poleNight, lightPole, "Rainy"), false);
+
+    const roomDay = sceneWeatherPlate(ethanRoom, 10 * 60 + 35, "Rainy");
+    const roomNight = sceneWeatherPlate(ethanRoom, 22 * 60, "Rainy");
+    assert.match(roomDay, /ethanRoomRainy\.png$/);
+    assert.equal(isRainPlate(roomDay, ethanRoom, "Rainy"), true);
+    assert.match(roomNight, /ethanRoomNight\.png$/);
+    assert.equal(isRainPlate(roomNight, ethanRoom, "Rainy"), false);
+
+    assert.equal(
+      isRainPlate(
+        "/images/locations/ElrodHouse/ElrodHouseRachelOutsideRainy.png",
+        elrodHouse,
+        "Rainy",
+      ),
+      true,
+    );
+    const emptyHouse = sceneWeatherPlate(elrodHouse, 10 * 60 + 35, "Rainy");
+    assert.equal(isRainPlate(emptyHouse, elrodHouse, "Rainy"), false);
+  });
+
+  it("keeps the dry porch line off a wet evening", () => {
+    const off = elrodHouse.story.find(
+      (entry) => entry.type === "thought" && entry.text.startsWith("Her porch light's off"),
+    );
+    const on = elrodHouse.story.find(
+      (entry) => entry.type === "thought" && entry.text.startsWith("Her porch light's still on"),
+    );
+    assert.ok(off && on);
+    const evening = 18 * 60 + 30;
+    assert.equal(storyEntryApplies(off, evening, "Sunny"), true);
+    assert.equal(storyEntryApplies(off, evening, "Cloudy"), true);
+    assert.equal(storyEntryApplies(off, evening, "Rainy"), false);
+    assert.equal(storyEntryApplies(on, evening, "Rainy"), true);
+    assert.equal(storyEntryApplies(on, evening, "Heavy rain"), true);
+    assert.equal(storyEntryApplies(on, evening, "Thunderstorm"), true);
+    assert.equal(storyEntryApplies(on, evening, "Sunny"), false);
+    assert.equal(storyEntryApplies(on, 17 * 60 + 59, "Rainy"), false);
+    assert.equal(storyEntryApplies(on, 30, "Rainy"), false);
+    assert.equal(
+      getSceneThought("elrod-house", evening, "Rainy"),
+      "Her porch light's still on. Nobody's had the heart to turn it off.",
+    );
+    assert.equal(
+      getSceneThought("elrod-house", evening, "Sunny"),
+      "Her porch light's off. First time in twenty years.",
+    );
+    assert.equal(
+      getSceneThought("elrod-house", 8 * 60 + 16, "Rainy"),
+      "Rain's beating the tape flat. Washing the street clean.",
+    );
   });
 
   it("uses the day plate for a rainy front yard at 10:35", () => {

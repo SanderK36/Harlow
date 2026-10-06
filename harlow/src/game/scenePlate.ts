@@ -26,6 +26,7 @@ const CHARACTER_RAIN_PLATES = new Set([
   "/images/locations/scrapyard/bigRoyWorkingRainy.png",
   "/images/locations/gas_station/rayMercerGasStationRainy.png",
   "/images/locations/police_station/WalterHarringtonOfficeRain.jpg",
+  "/images/locations/ElrodHouse/ElrodHouseRachelOutsideRainy.png",
 ]);
 
 /**
