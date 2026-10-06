@@ -1,6 +1,22 @@
-import type { Scene } from "@/game/scenes";
+import { RAIN_WEATHER, type Scene } from "@/game/scenes";
 import type { Weather } from "@/game/types";
 import { isNightTime } from "@/game/utils";
+
+const ELROD_RACHEL_DAY = "./images/locations/ElrodHouse/ElrodHouseRachelOutsideDay.png";
+const ELROD_RACHEL_RAIN = "./images/locations/ElrodHouse/ElrodHouseRachelOutsideRainy.png";
+const ELROD_RACHEL_THUNDER = "./images/locations/ElrodHouse/ElrodHouseRachelOutsideThunder.png";
+
+/**
+ * Rachel is painted into the daytime Elrod plates until 19:00.
+ * Those plates are daylit, including the rain and thunder ones, so after
+ * dark the caller uses the empty house (the night plate).
+ */
+export function elrodRachelPlate(time: number, weather: Weather) {
+  if (isNightTime(time)) return null;
+  if (weather === "Thunderstorm") return ELROD_RACHEL_THUNDER;
+  if (RAIN_WEATHER.includes(weather)) return ELROD_RACHEL_RAIN;
+  return ELROD_RACHEL_DAY;
+}
 
 /** Public URL for a scene plate stored as `./images/...`. */
 export function plateUrl(path: string) {
@@ -27,6 +43,7 @@ const CHARACTER_RAIN_PLATES = new Set([
   "/images/locations/gas_station/rayMercerGasStationRainy.png",
   "/images/locations/police_station/WalterHarringtonOfficeRain.jpg",
   "/images/locations/ElrodHouse/ElrodHouseRachelOutsideRainy.png",
+  "/images/locations/ElrodHouse/ElrodHouseRachelOutsideThunder.png",
 ]);
 
 /**

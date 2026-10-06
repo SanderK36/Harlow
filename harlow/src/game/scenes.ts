@@ -614,6 +614,8 @@ export const elrodHouse: Scene = {
       from: 1080,
       weather: DRY,
     }),
+    // The rain and thunder plates are daytime, and their porch lights are off.
+    // From 18:00 those plates give way to the night plate, where the light is on.
     thought("Her porch light's still on. Nobody's had the heart to turn it off.", {
       from: 1080,
       weather: WET,
@@ -627,6 +629,12 @@ export const elrodHouse: Scene = {
   image: {
     day: "./images/locations/ElrodHouse/ElrodHouseDay.png",
     night: "./images/locations/ElrodHouse/ElrodHouseNight.png",
+    weather: rainArt(
+      "./images/locations/ElrodHouse/ElrodHouseRainy.png",
+      "./images/locations/ElrodHouse/ElrodHouseThunder.png",
+    ),
+    // Both weather plates are daytime. After dark the night plate wins.
+    weatherDayOnly: true,
   },
   characters: [
     {

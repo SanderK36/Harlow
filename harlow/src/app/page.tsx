@@ -33,7 +33,7 @@ import { isTiredWindow } from "@/game/lateNight";
 import { useGame } from "@/game/useGame";
 import { storyEntryApplies } from "@/game/story";
 import { DINER_BOARD_HINT, isExteriorScene, RAIN_WEATHER, sanatoriumNarration, scenes } from "@/game/scenes";
-import { isRainPlate } from "@/game/scenePlate";
+import { elrodRachelPlate, isRainPlate } from "@/game/scenePlate";
 import { clearSessionSave, readSessionSave } from "@/game/save";
 import { harlowAudio } from "@/game/audio";
 import Atmosphere from "@/components/Atmosphere/Atmosphere";
@@ -537,13 +537,17 @@ export default function Home() {
     || (!sceneIsNight && currentScene.image.weatherNightOnly)
       ? undefined
       : currentScene.image.weather?.[gameState.weather];
-  // Elrod: Rachel is painted into the day art until she's met. During her talk
-  // the empty house (day/night) is the backdrop so she isn't on screen twice.
+  // Elrod: Rachel is painted into the daytime art until she's met. Her rain
+  // and thunder plates are daylit too, so after dark the night plate shows.
+  // During her talk the empty house is the backdrop so she isn't on screen twice.
   const elrodWithRachel =
     currentScene.id === "elrod-house"
     && !storyFlags.rachelMet
     && gameState.time >= 420
     && gameState.time < 1140;
+  const elrodRachel = elrodWithRachel
+    ? elrodRachelPlate(gameState.time, gameState.weather)
+    : null;
   const sanatoriumCigaretteRoom =
     currentScene.id === "sanatorium-room-2"
     && isNightTime(gameState.time)
@@ -580,10 +584,8 @@ export default function Home() {
       ? "./images/locations/gas_station/rayMercerGasStationRainy.png"
     : walterRainy
       ? "./images/locations/police_station/WalterHarringtonOfficeRain.jpg"
-    : elrodWithRachel
-      ? RAIN_WEATHER.includes(gameState.weather)
-        ? "./images/locations/ElrodHouse/ElrodHouseRachelOutsideRainy.png"
-        : "./images/locations/ElrodHouse/ElrodHouseRachelOutsideDay.png"
+    : elrodRachel
+      ? elrodRachel
     : ((isNightTime(gameState.time) && activeCharacter?.nightImage
         ? activeCharacter.nightImage
         : activeCharacter?.image) ?? emptySceneImage);

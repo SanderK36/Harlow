@@ -120,10 +120,11 @@ describe("interim rain follows the plate", () => {
     assert.equal(isRainPlate(night, diner, "Rainy"), false);
   });
 
-  it("filters the bus stop and the Elrod house, which have no rain art", () => {
+  it("filters the bus stop, and uses the Elrod rain plate by day", () => {
     const stop = sceneWeatherPlate(busStop, 21 * 60, "Rainy");
     const house = sceneWeatherPlate(elrodHouse, 8 * 60 + 16, "Rainy");
     assert.equal(isRainPlate(stop, busStop, "Rainy"), false);
-    assert.equal(isRainPlate(house, elrodHouse, "Rainy"), false);
+    assert.match(house, /ElrodHouseRainy\.png$/);
+    assert.equal(isRainPlate(house, elrodHouse, "Rainy"), true);
   });
 });

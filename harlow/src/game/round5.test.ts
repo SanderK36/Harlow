@@ -14,7 +14,7 @@ import {
   questTitle,
   type QuestId,
 } from "./quests.ts";
-import { isRainPlate, sceneWeatherPlate } from "./scenePlate.ts";
+import { elrodRachelPlate, isRainPlate, sceneWeatherPlate } from "./scenePlate.ts";
 import {
   createBusChoices,
   createWalkingChoices,
@@ -339,16 +339,25 @@ describe("walks and the rainy front yard", () => {
     assert.match(roomNight, /ethanRoomNight\.png$/);
     assert.equal(isRainPlate(roomNight, ethanRoom, "Rainy"), false);
 
-    assert.equal(
-      isRainPlate(
-        "/images/locations/ElrodHouse/ElrodHouseRachelOutsideRainy.png",
-        elrodHouse,
-        "Rainy",
-      ),
-      true,
-    );
-    const emptyHouse = sceneWeatherPlate(elrodHouse, 10 * 60 + 35, "Rainy");
-    assert.equal(isRainPlate(emptyHouse, elrodHouse, "Rainy"), false);
+    const rachelRain = elrodRachelPlate(10 * 60 + 35, "Rainy");
+    const rachelStorm = elrodRachelPlate(10 * 60 + 35, "Thunderstorm");
+    assert.match(rachelRain ?? "", /ElrodHouseRachelOutsideRainy\.png$/);
+    assert.match(rachelStorm ?? "", /ElrodHouseRachelOutsideThunder\.png$/);
+    assert.match(elrodRachelPlate(10 * 60 + 35, "Heavy rain") ?? "", /ElrodHouseRachelOutsideRainy\.png$/);
+    assert.equal(elrodRachelPlate(18 * 60 + 30, "Rainy"), null);
+    assert.equal(elrodRachelPlate(18 * 60 + 30, "Thunderstorm"), null);
+    assert.equal(isRainPlate(rachelRain ?? "", elrodHouse, "Rainy"), true);
+    assert.equal(isRainPlate(rachelStorm ?? "", elrodHouse, "Thunderstorm"), true);
+
+    const emptyDay = sceneWeatherPlate(elrodHouse, 10 * 60 + 35, "Rainy");
+    const emptyStorm = sceneWeatherPlate(elrodHouse, 10 * 60 + 35, "Thunderstorm");
+    const emptyNight = sceneWeatherPlate(elrodHouse, 18 * 60 + 30, "Rainy");
+    assert.match(emptyDay, /ElrodHouseRainy\.png$/);
+    assert.equal(isRainPlate(emptyDay, elrodHouse, "Rainy"), true);
+    assert.match(emptyStorm, /ElrodHouseThunder\.png$/);
+    assert.equal(isRainPlate(emptyStorm, elrodHouse, "Thunderstorm"), true);
+    assert.match(emptyNight, /ElrodHouseNight\.png$/);
+    assert.equal(isRainPlate(emptyNight, elrodHouse, "Rainy"), false);
   });
 
   it("keeps the dry porch line off a wet evening", () => {
