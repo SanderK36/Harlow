@@ -6,6 +6,8 @@ import styles from "./CloseupOverlay.module.css";
 
 export type CloseupContent = {
   image: string;
+  /** Optional one-shot animation displayed directly in the scene art. */
+  video?: string;
   thought: string;
   /** Optional short label for screen readers. */
   label?: string;

@@ -928,6 +928,7 @@ export function useGame() {
       enqueueCloseup(
         {
           image: toUrl(choice.closeup.image),
+          video: choice.closeup.video ? toUrl(choice.closeup.video) : undefined,
           thought: choice.closeup.thought,
           label: choice.closeup.label,
         },

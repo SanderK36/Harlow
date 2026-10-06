@@ -50,6 +50,7 @@ export type Choice = {
   /** Show a closeup instead of (or before) moving scenes. */
   closeup?: {
     image: string;
+    video?: string;
     thought: string;
     label?: string;
     next?: { image: string; thought: string; label?: string };

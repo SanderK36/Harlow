@@ -995,6 +995,22 @@ export default function Home() {
           {/* The picture and its hotspots share one box, so percentage hotspot
               positions always map onto the art, wherever the panels sit. */}
           <div className="scene-art">
+            {closeup?.video && (
+              <video
+                key={closeup.video}
+                src={closeup.video}
+                className="scene-pickup-video"
+                onLoadedMetadata={(event) => {
+                  event.currentTarget.playbackRate = 1.25;
+                }}
+                autoPlay
+                muted
+                playsInline
+                aria-label={closeup.label ?? "Scene animation"}
+                onEnded={dismissCloseup}
+                onError={dismissCloseup}
+              />
+            )}
             {/* A soft, blurred spill of the art fills any space around the frame. */}
             <div
               className="scene-ambient"
@@ -1340,7 +1356,7 @@ export default function Home() {
         </div>
         )}
 
-        {closeup && (
+        {closeup && !closeup.video && (
           <CloseupOverlay
             closeup={closeup}
             onDismiss={dismissCloseup}

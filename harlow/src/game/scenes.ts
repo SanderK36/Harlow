@@ -1543,6 +1543,12 @@ export const ethanRoomDesk: Scene = {
       nextScene: "ethan-room-desk-empty",
       timeCost: 0,
       itemToAdd: "Cigarettes",
+      closeup: {
+        image: "./images/locations/home/ethanDeskDay.png",
+        video: "./images/animations/grabbingSmokePack.mp4",
+        thought: "",
+        label: "Picking up the cigarettes",
+      },
     },
     {
       label: "Step away from the desk",
