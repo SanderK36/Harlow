@@ -37,7 +37,7 @@ export type Choice = {
    * walking around outside or the travel map.
    */
   door?: boolean;
-  /** Disable the choice until these conditions are met. Extend this for new rules. */
+  /** Hide the choice until these conditions are met. Never render it disabled. */
   requirements?: {
     money?: number;
     /** Requires this inventory item. */
@@ -57,6 +57,11 @@ export type Choice = {
   /** Stat effects applied when this choice is taken (also on ChoiceEffects). */
   startsQuest?: import("./quests").QuestId;
   completesQuest?: import("./quests").QuestId;
+  /**
+   * Show the subtle new-lead marker until this quest exists.
+   * Only for a person asking something of Ethan, never a discovery.
+   */
+  leadQuest?: import("./quests").QuestId;
   questStep?: string;
   setsFlags?: import("./quests").StoryFlag[];
 };

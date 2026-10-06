@@ -285,6 +285,7 @@ export default function Home() {
     momTalked,
     questNotification,
     questNotificationLabel,
+    questNotificationKind,
     questNotificationExiting,
     buyItem,
     useInventoryItem,
@@ -692,6 +693,10 @@ export default function Home() {
       }
       choices={choicesWithoutHotspotActions}
       onChoice={handleChoice}
+      leadsQuest={(choice) =>
+        Boolean(choice.leadQuest)
+        && !quests.some((quest) => quest.id === choice.leadQuest)
+      }
       onWalk={() => {
         setTravelMode("walk");
         setShowTravel(true);
@@ -856,7 +861,16 @@ export default function Home() {
                         : undefined
                     }
                     aria-label={
-                      hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label
+                      `${hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label}${
+                        sceneHotspot.leadQuest
+                        && !quests.some((quest) => quest.id === sceneHotspot.leadQuest)
+                          ? ". Starts a new lead"
+                          : ""
+                      }`
+                    }
+                    leadsQuest={
+                      Boolean(sceneHotspot.leadQuest)
+                      && !quests.some((quest) => quest.id === sceneHotspot.leadQuest)
                     }
                     label={
                       hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label
@@ -920,7 +934,18 @@ export default function Home() {
                 </div>
               )}
             </div>
-            {questNotification && (
+            {questNotification && questNotificationKind === "lead" && (
+              <button
+                type="button"
+                className={`quest-lead${questNotificationExiting ? " quest-lead-exiting" : ""}`}
+                aria-live="polite"
+                onClick={() => setShowQuestLog(true)}
+              >
+                <span>New lead</span>
+                <p>{questNotification}</p>
+              </button>
+            )}
+            {questNotification && questNotificationKind !== "lead" && (
               <div
                 className={`quest-notification${questNotificationExiting ? " quest-notification-exiting" : ""}`}
                 role="status"
@@ -979,6 +1004,7 @@ export default function Home() {
                     ? actionList
                     : null
                 }
+                choiceKey={choicesWithoutHotspotActions.map((choice) => choice.label).join("\n")}
               />
             </div>
           )}

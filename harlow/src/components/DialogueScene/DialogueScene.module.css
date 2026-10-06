@@ -268,23 +268,37 @@
 
 /* ---------- Replies ---------- */
 
-/* Replies are laid out from the first line on (just invisible and inert
-   until the line has been read), so the box doesn't jump when they appear. */
+/* The next set waits until the beat is finished, then eases open. Collapsing
+   to zero height (instead of popping the buttons out) keeps the box from
+   jumping when a reply adds or removes lines. */
 .choices {
-  margin-top: 14px;
+  display: grid;
+  grid-template-rows: 0fr;
+  margin-top: 0;
   opacity: 0;
   visibility: hidden;
   transition:
-    opacity 220ms ease,
-    visibility 0s 220ms;
+    grid-template-rows 220ms ease,
+    margin-top 220ms ease,
+    opacity 200ms ease,
+    visibility 0s linear 220ms;
+}
+
+.choicesInner {
+  min-height: 0;
+  overflow: hidden;
 }
 
 .choicesVisible {
+  grid-template-rows: 1fr;
+  margin-top: 14px;
   opacity: 1;
   visibility: visible;
   transition:
-    opacity 220ms ease,
-    visibility 0s;
+    grid-template-rows 220ms ease,
+    margin-top 220ms ease,
+    opacity 200ms ease,
+    visibility 0s linear;
 }
 
 /* ---------- Conversation log ---------- */
@@ -432,12 +446,6 @@
     right: -14px;
   }
 
-  /* Stacked replies are tall; reserving them would leave a mostly empty box
-     on a phone, so they take no space until the line has been read. */
-  .choices:not(.choicesVisible) {
-    display: none;
-  }
-
   .history {
     min-height: 44px;
   }
@@ -466,9 +474,26 @@
 
   .portrait,
   .portrait::after,
-  .ethanPortrait,
-  .choices {
+  .ethanPortrait {
     transition: none;
+  }
+
+  /* Fade first. Height waits until that fade is done, so the speech box
+     does not jump while the replies are still disappearing. */
+  .choices {
+    transition:
+      opacity 200ms ease,
+      visibility 0s linear 200ms,
+      grid-template-rows 0s linear 200ms,
+      margin-top 0s linear 200ms;
+  }
+
+  .choicesVisible {
+    transition:
+      opacity 200ms ease,
+      visibility 0s linear,
+      grid-template-rows 0s linear,
+      margin-top 0s linear;
   }
 
   .portraitIdle {

@@ -425,6 +425,7 @@ export const rachelElrodConversation: Conversation = {
       response: [
         ethan("You okay, Rach?"),
         npc("Rachel", "No. She gave us butterscotch every Halloween. Remember?"),
+        ethan("Yeah. Every Halloween."),
       ],
     },
     {
@@ -460,12 +461,14 @@ export const rachelElrodConversation: Conversation = {
           "Rachel",
           "Go see Walter. He knows something. And Ethan? Tell me what he says.",
         ),
+        ethan("I will."),
       ],
       endsConversation: true,
       storyFlag: "rachelMet",
       completesQuest: "the-tape",
       questStep: "done",
       startsQuest: "down-to-the-station",
+      leadQuest: "down-to-the-station",
     },
   ],
 };
@@ -494,6 +497,7 @@ export const rachelFrontYardConversation: Conversation = {
           "Rachel",
           "They stopped looking after a month. So why's he still keeping it in a drawer?",
         ),
+        ethan("I don't know. He shut it before I could."),
       ],
       storyFlag: ["rachelTrusted", "rachelKnowsFile"],
       completesQuest: "what-walter-said",
@@ -706,7 +710,10 @@ export const momConversation: Conversation = {
     {
       label: "I'll find a way to help.",
       requiresStoryFlag: "momJobConcern",
+      excludesStoryFlag: "willHelpMom",
       requiresNoJob: true,
+      storyFlag: "willHelpMom",
+      startsQuest: "find-a-job",
       response: [
         ethan("I'll find a way to help."),
         npc(
@@ -725,9 +732,12 @@ export const momConversation: Conversation = {
           "Linda",
           "We're out of coffee. Run down to Margaret's for me. Put it on my tab.",
         ),
+        ethan("I'll get it."),
+        npc("Linda", "Thanks, honey."),
       ],
       storyFlag: "coffeeErrandHeard",
       startsQuest: "faded-poster",
+      leadQuest: "faded-poster",
     },
 
     {
@@ -738,6 +748,7 @@ export const momConversation: Conversation = {
       response: [
         ethan("I found Emily's poster at the diner."),
         npc("Linda", "Put that away."),
+        ethan("Okay."),
       ],
       storyFlag: ["posterShownToMom", "coffeeDelivered"],
       completesQuest: "faded-poster",
@@ -752,6 +763,7 @@ export const momConversation: Conversation = {
       response: [
         ethan("I found Emily's poster at the diner."),
         npc("Linda", "Put that away."),
+        ethan("Okay."),
       ],
       storyFlag: "posterShownToMom",
       completesQuest: "faded-poster",
@@ -765,6 +777,8 @@ export const momConversation: Conversation = {
       response: [
         ethan("I found Emily's poster at the diner."),
         npc("Linda", "...Did you get the coffee?"),
+        ethan("Not yet. I'll get it."),
+        npc("Linda", "Alright, honey. Don't forget."),
       ],
       storyFlag: "posterShownToMom",
       completesQuest: "faded-poster",
@@ -778,6 +792,7 @@ export const momConversation: Conversation = {
       response: [
         ethan("I found Emily's poster at the diner."),
         npc("Linda", "Put that away."),
+        ethan("Okay."),
       ],
       storyFlag: "posterShownToMom",
       completesQuest: "faded-poster",
@@ -823,7 +838,7 @@ export const momDeathConversation: Conversation = {
   ],
   choices: [
     {
-      label: "Yeah. It's true.",
+      label: "Yeah. It's true. Walter wouldn't tell me anything else.",
       response: [
         ethan("Yeah. It's true. Walter wouldn't tell me anything else."),
         npc("Linda", "He asked me when I last saw her. It's been a few days."),
@@ -858,10 +873,10 @@ export const momDeathConversation: Conversation = {
           "Me neither. She was alone in that house so much. Be careful. And let the sheriff handle it.",
         ),
       ],
-      completesMomQuest: true,
     },
     {
       label: "Exit conversation",
+      requiresPriorChoice: true,
       response: [],
       endsConversation: true,
     },
@@ -876,7 +891,7 @@ export const johnnyConversation: Conversation = {
   },
   choices: [
     {
-      label: "Just looking around.",
+      label: "Yeah. Just looking around.",
       excludesJob: "needle-groove",
       response: [
         ethan("Yeah. Just looking around."),
@@ -911,6 +926,7 @@ export const johnnyConversation: Conversation = {
       response: [
         ethan("Thanks, Johnny. When do I start?"),
         npc("Johnny", "You just did. Grab a box."),
+        ethan("Got it."),
       ],
     },
     {
@@ -923,8 +939,9 @@ export const johnnyConversation: Conversation = {
       ],
     },
     {
-      label: "Heard anything interesting?",
+      label: "Heard anything interesting lately?",
       requiresJob: "needle-groove",
+      requiresAnyChoice: ["On it.", "I'm looking for work."],
       response: [
         ethan("Heard anything interesting lately?"),
         npc(
@@ -942,6 +959,7 @@ export const johnnyConversation: Conversation = {
     {
       label: "Catch you later.",
       requiresJob: "needle-groove",
+      requiresAnyChoice: ["On it.", "I'm looking for work."],
       response: [ethan("Catch you later."), npc("Johnny", "Don't be late.")],
       endsConversation: true,
     },
@@ -953,15 +971,18 @@ export const walterConversation: Conversation = {
   choices: [
     {
       label: "I'm looking for some information.",
+      excludesChoice: "I saw someone last night. End of the street. In a hood.",
       response: [
         ethan("I'm looking for some information."),
         npc("Walter", "Information about what?"),
         ethan("Emily."),
         npc("Walter", "That file's been closed ten years, Ethan. Leave it closed."),
+        ethan("Yeah."),
       ],
     },
     {
       label: "Anything new on Mrs. Elrod?",
+      excludesChoice: "I saw someone last night. End of the street. In a hood.",
       response: [
         ethan("Anything new on Mrs. Elrod?"),
         npc("Walter", "Nothing I can share."),
@@ -981,6 +1002,7 @@ export const walterConversation: Conversation = {
       completesQuest: "down-to-the-station",
       questStep: "done",
       startsQuest: "what-walter-said",
+      leadQuest: "what-walter-said",
       closeup: {
         image: "./images/locations/police_station/filingCabinetOpen.png",
         thought: "PARKER, E. – 1972. Still open. Still there.",
@@ -993,7 +1015,14 @@ export const walterConversation: Conversation = {
       },
     },
     {
+      label: "Alright. I'm going.",
+      requiresChoice: "I saw someone last night. End of the street. In a hood.",
+      response: [ethan("Alright. I'm going.")],
+      endsConversation: true,
+    },
+    {
       label: "Never mind.",
+      excludesChoice: "I saw someone last night. End of the street. In a hood.",
       response: [ethan("Never mind."), npc("Walter", "Then we're done.")],
       endsConversation: true,
     },
@@ -1195,7 +1224,7 @@ export const margaretConversation: Conversation = {
       questStep: "coffee",
     },
     {
-      label: "Thanks. How's business?",
+      label: "Thanks. How's business today?",
       response: [
         ethan("Thanks. How's business today?"),
         npc(
@@ -1215,7 +1244,7 @@ export const margaretConversation: Conversation = {
       ],
     },
     {
-      label: "That poster on the board...",
+      label: "That poster on the board. Emily.",
       requiresStoryFlag: "posterFound",
       response: [
         ethan("That poster on the board. Emily."),
@@ -1223,16 +1252,11 @@ export const margaretConversation: Conversation = {
       ],
     },
     {
-      label: "Can't stay.",
+      label: "Can't stay. Catch you later.",
       response: [
         ethan("Can't stay. Catch you later."),
         npc("Margaret", "You take care now."),
       ],
-      endsConversation: true,
-    },
-    {
-      label: "Exit conversation",
-      response: [],
       endsConversation: true,
     },
   ],
@@ -1685,7 +1709,7 @@ export const rayConversation: Conversation = {
   },
   choices: [
     {
-      label: "None of that. I need work.",
+      label: "None of that. I'm looking for work.",
       requiresNoJob: true,
       requiresJobQuestTarget: "gas-station",
       jobOffer: "gas-station",
@@ -1708,7 +1732,7 @@ export const rayConversation: Conversation = {
     {
       label: "Thanks, Ray. I won't let you down.",
       requiresJob: "gas-station",
-      requiresChoice: "None of that. I need work.",
+      requiresChoice: "None of that. I'm looking for work.",
       response: [
         ethan("Thanks, Ray. I won't let you down."),
         npc("Ray", "Show up on time and we'll get along fine."),
@@ -1849,7 +1873,7 @@ export const tommyConversation: Conversation = {
   ],
   choices: [
     {
-      label: "Still playing guitar?",
+      label: "Still playing guitar, or just deafening everybody at work?",
       response: [
         ethan("Still playing guitar, or just deafening everybody at work?"),
         npc(
@@ -1859,7 +1883,7 @@ export const tommyConversation: Conversation = {
       ],
     },
     {
-      label: "Hell of a solo. When are you off?",
+      label: "Hell of a solo. When do you get off?",
       response: [
         ethan("Hell of a solo. When do you get off?"),
         npc(
@@ -1869,7 +1893,7 @@ export const tommyConversation: Conversation = {
       ],
     },
     {
-      label: "Things have been rough. I might need help.",
+      label: "Things have been rough. I might need your help.",
       response: [
         ethan("Things have been rough. I might need your help."),
         npc(
@@ -1963,7 +1987,7 @@ export const bigRoyConversation: Conversation = {
   },
   choices: [
     {
-      label: "I'll watch it. Busy day?",
+      label: "I'll watch my step. Busy day?",
       excludesJob: "scrapyard",
       response: [
         ethan("I'll watch my step. Busy day?"),
@@ -1985,7 +2009,7 @@ export const bigRoyConversation: Conversation = {
       ],
     },
     {
-      label: "I'll watch it. I need work.",
+      label: "I'll watch my step. I'm looking for work.",
       requiresNoJob: true,
       requiresJobQuestTarget: "scrapyard",
       jobOffer: "scrapyard",
@@ -2000,7 +2024,7 @@ export const bigRoyConversation: Conversation = {
     {
       label: "Thanks, Roy. I'll put it to good use.",
       requiresJob: "scrapyard",
-      requiresChoice: "I'll watch it. I need work.",
+      requiresChoice: "I'll watch my step. I'm looking for work.",
       response: [
         ethan("Thanks, Roy. I'll put it to good use."),
         npc("Big Roy", "Locks first. Skulls only if you have to."),
@@ -2016,7 +2040,7 @@ export const bigRoyConversation: Conversation = {
       ],
     },
     {
-      label: "Got it. I'll leave you to it.",
+      label: "Got it. I'll let you get back to it.",
       response: [
         ethan("Got it. I'll let you get back to it."),
         npc("Big Roy", "Appreciate it, kid. Keep your eyes open out there."),
@@ -2449,6 +2473,8 @@ export const earlConversation: Conversation = {
   choices: [
     {
       label: "Just looking.",
+      excludesStoryFlag: "earlLookElsewhere",
+      storyFlag: "earlLookElsewhere",
       response: [
         ethan("Just looking."),
         npc("Earl", "Then look somewhere else. I've got work."),
@@ -2464,7 +2490,7 @@ export const earlConversation: Conversation = {
       ],
     },
     {
-      label: "No room. I'll move.",
+      label: "No room. I'll get out of your way.",
       response: [ethan("No room. I'll get out of your way."), npc("Earl", "That's what I thought.")],
       endsConversation: true,
     },

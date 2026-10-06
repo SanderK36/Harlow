@@ -39,6 +39,8 @@ export type QuestProgress = {
 
 export type StoryFlag =
   | "momJobConcern"
+  /** Ethan said "I'll find a way to help." Find a Job starts here, not on Mom's concern. */
+  | "willHelpMom"
   | "rachelMet"
   | "walterStationTalk"
   | "fileDrawerSeen"
@@ -55,6 +57,8 @@ export type StoryFlag =
   | "sanatoriumEntranceFear"
   | "sanatoriumHallwayFear"
   | "tapeSeen"
+  /** Earl told Ethan to look somewhere else. Hides "Just looking." */
+  | "earlLookElsewhere"
   | "chapter1Complete";
 
 export type QuestDef = {
@@ -232,9 +236,23 @@ export function migrateQuestsFromLegacy(save: {
       quests.push({ id: "find-a-job", status: "completed", step: "working" });
     } else if (save.jobQuestTarget) {
       quests.push({ id: "find-a-job", status: "active", step: "flyer" });
-    } else if (save.momJobConcernHeard) {
+    } else if (save.storyFlags?.willHelpMom) {
+      // Legacy saves with only momJobConcernHeard have not committed yet.
       quests.push({ id: "find-a-job", status: "active" });
     }
+  }
+
+  // Saves that already have a quest list still pick up the pledge if the
+  // entry itself never got written.
+  if (
+    save.storyFlags?.willHelpMom
+    && !quests.some((quest) => quest.id === "find-a-job")
+  ) {
+    quests.push({
+      id: "find-a-job",
+      status: save.job ? "completed" : "active",
+      step: save.job ? "working" : save.jobQuestTarget ? "flyer" : undefined,
+    });
   }
 
   // Old saves that already talked to Mom still need The Tape.
