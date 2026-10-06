@@ -3,6 +3,7 @@
 import {
   useEffect,
   useEffectEvent,
+  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
@@ -27,10 +28,14 @@ import GameMenu from "@/components/GameMenu/GameMenu";
 import CharacterWindow from "@/components/CharacterWindow/CharacterWindow";
 import QuestWindow from "@/components/QuestWindow/QuestWindow";
 
+import { useReducedMotion } from "@/components/DialogueScene/typewriter";
 import { isNightTime } from "@/game/utils";
+import { isTiredWindow } from "@/game/lateNight";
+import { placeSceneChrome } from "@/game/captionPlace";
 import { useGame } from "@/game/useGame";
 import { storyEntryApplies } from "@/game/story";
-import { isExteriorScene, RAIN_WEATHER, scenes } from "@/game/scenes";
+import { DINER_BOARD_HINT, isExteriorScene, RAIN_WEATHER, SANATORIUM_ONE_WINDOW, sanatoriumNarration, sanatoriumShowsOneWindow, scenes } from "@/game/scenes";
+import { elrodRachelPlate, isRainPlate } from "@/game/scenePlate";
 import { clearSessionSave, readSessionSave } from "@/game/save";
 import { harlowAudio } from "@/game/audio";
 import Atmosphere from "@/components/Atmosphere/Atmosphere";
@@ -110,7 +115,7 @@ const hotspotLabels: Record<string, string> = {
   lookAtElrodTape: "Police tape",
   lookAtDinerBulletin: "Bulletin board",
   lookAtSanatoriumHill: "The hill",
-  lookAtSanatoriumCigarette: "Sill",
+  lookAtSanatoriumCigarette: "Look at the ash",
 };
 
 const sanatoriumHotspotActions: Record<string, string[]> = {
@@ -241,10 +246,14 @@ export default function Home() {
   const showOpeningThought = openingThoughtIndex !== null;
   const [showVinylThought, setShowVinylThought] = useState(false);
   const [showLateNightThought, setShowLateNightThought] = useState(false);
+  const [statToast, setStatToast] = useState<{ stat: string; amount: number } | null>(null);
+  const [statToastFading, setStatToastFading] = useState(false);
+  const chapterEndButtonRef = useRef<HTMLButtonElement>(null);
   const [tvNewsLine, setTvNewsLine] = useState<string | null>(null);
   const openingThoughtTimer = useRef<number | null>(null);
   const vinylThoughtTimer = useRef<number | null>(null);
   const lateNightThoughtTimer = useRef<number | null>(null);
+  const panelStack = useRef<Array<{ id: "inventory" | "quests"; opener: HTMLElement }>>([]);
   const {
     gameState,
     playerState,
@@ -257,6 +266,8 @@ export default function Home() {
     conversation,
     conversationActive,
     finishConversation,
+    onReplySettled,
+    showDinerBoardHint,
     activeChoices,
     activeCharacter,
     showStats,
@@ -265,8 +276,9 @@ export default function Home() {
     setShowInventory,
     handleChoice,
     doorTransition,
-    adminWait,
     adminTravel,
+    wait,
+    waitingLocked,
     travelingTo,
     showTravel,
     setShowTravel,
@@ -296,8 +308,6 @@ export default function Home() {
     notifyMomQuest,
   } = useGame();
   const [travelMode, setTravelMode] = useState<"walk" | "bus">("walk");
-  const [sceneImageEntering, setSceneImageEntering] = useState(false);
-  const sceneImageAnimationFrame = useRef<number | null>(null);
 
   function continueGame() {
     if (loadMostRecentGame()) setHasStarted(true);
@@ -389,9 +399,6 @@ export default function Home() {
       if (vinylThoughtTimer.current !== null) {
         window.clearTimeout(vinylThoughtTimer.current);
       }
-      if (sceneImageAnimationFrame.current !== null) {
-        window.cancelAnimationFrame(sceneImageAnimationFrame.current);
-      }
     },
     [],
   );
@@ -427,6 +434,35 @@ export default function Home() {
     return () => window.removeEventListener("keydown", swallow, true);
   }, [doorTransition]);
 
+  function rememberPanel(id: "inventory" | "quests", opener: HTMLElement) {
+    panelStack.current = [
+      ...panelStack.current.filter((entry) => entry.id !== id),
+      { id, opener },
+    ];
+  }
+
+  function forgetPanel(id: "inventory" | "quests") {
+    panelStack.current = panelStack.current.filter((entry) => entry.id !== id);
+  }
+
+  // Escape closes the topmost inventory or quest panel and returns focus
+  // to the button that opened it.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (closeup || showChapterEnd || doorTransition !== "idle") return;
+      const top = panelStack.current.at(-1);
+      if (!top) return;
+      event.preventDefault();
+      panelStack.current = panelStack.current.slice(0, -1);
+      if (top.id === "inventory") setShowInventory(false);
+      else setShowQuestLog(false);
+      top.opener.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [closeup, showChapterEnd, doorTransition, setShowInventory]);
+
   const inGame = Boolean(hasStarted ?? resumedSession);
   const sceneIsIndoor = !(
     isExteriorScene(currentScene.id) || OUTDOOR_SCENE_IDS.has(currentScene.id)
@@ -454,7 +490,7 @@ export default function Home() {
     return () => window.clearTimeout(dismissTimer);
   }, [newDayAnnouncement, dismissNewDayAnnouncement]);
 
-  const isLateNight = gameState.time >= 180 && gameState.time < 420;
+  const isLateNight = isTiredWindow(gameState.time);
 
   useEffect(() => {
     if (!isLateNight) {
@@ -478,20 +514,43 @@ export default function Home() {
     };
   }, [isLateNight]);
 
+  useEffect(() => {
+    const effect = currentEffects.find((entry) => entry.type === "effect");
+    if (!effect || effect.type !== "effect") {
+      const clearToast = window.setTimeout(() => {
+        setStatToast(null);
+        setStatToastFading(false);
+      }, 0);
+      return () => window.clearTimeout(clearToast);
+    }
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const showToast = window.setTimeout(() => {
+      setStatToastFading(false);
+      setStatToast({ stat: effect.stat, amount: effect.amount });
+    }, 0);
+    const fadeToast = window.setTimeout(() => {
+      if (reduced) setStatToast(null);
+      else setStatToastFading(true);
+    }, 3000);
+    const removeToast = window.setTimeout(() => {
+      setStatToast(null);
+      setStatToastFading(false);
+    }, reduced ? 3000 : 3300);
+    return () => {
+      window.clearTimeout(showToast);
+      window.clearTimeout(fadeToast);
+      window.clearTimeout(removeToast);
+    };
+  }, [currentEffects, currentScene.id]);
+
+  useEffect(() => {
+    if (!showChapterEnd) return;
+    chapterEndButtonRef.current?.focus();
+  }, [showChapterEnd]);
+
   function returnToMainMenu() {
     clearSessionSave();
     setHasStarted(false);
-  }
-
-  function replaySceneImageEnter() {
-    if (sceneImageAnimationFrame.current !== null) {
-      window.cancelAnimationFrame(sceneImageAnimationFrame.current);
-    }
-    setSceneImageEntering(false);
-    sceneImageAnimationFrame.current = window.requestAnimationFrame(() => {
-      setSceneImageEntering(true);
-      sceneImageAnimationFrame.current = null;
-    });
   }
 
   const hasConversationOverlay = conversation.length > 0;
@@ -505,17 +564,23 @@ export default function Home() {
       || (isWeekend && gameState.time >= 720 && gameState.time < 1140));
   // The scene as it looks without anyone painted into it.
   // Daylit weather art (weatherDayOnly) gives way to the night art after dark.
+  // Night weather art (weatherNightOnly) gives way to the day art before dark.
   const weatherImage =
-    isNightTime(gameState.time) && currentScene.image.weatherDayOnly
+    (sceneIsNight && currentScene.image.weatherDayOnly)
+    || (!sceneIsNight && currentScene.image.weatherNightOnly)
       ? undefined
       : currentScene.image.weather?.[gameState.weather];
-  // Elrod: Rachel is painted into the day art until she's met. During her talk
-  // the empty house (day/night) is the backdrop so she isn't on screen twice.
+  // Elrod: Rachel is painted into the daytime art until she's met. Her rain
+  // and thunder plates are daylit too, so after dark the night plate shows.
+  // During her talk the empty house is the backdrop so she isn't on screen twice.
   const elrodWithRachel =
     currentScene.id === "elrod-house"
     && !storyFlags.rachelMet
     && gameState.time >= 420
     && gameState.time < 1140;
+  const elrodRachel = elrodWithRachel
+    ? elrodRachelPlate(gameState.time, gameState.weather)
+    : null;
   const sanatoriumCigaretteRoom =
     currentScene.id === "sanatorium-room-2"
     && isNightTime(gameState.time)
@@ -535,9 +600,21 @@ export default function Home() {
     && activeCharacter?.name === "Walter Harrington"
     && RAIN_WEATHER.includes(gameState.weather)
     && !isNightTime(gameState.time);
+  const hillCompleted = quests.some(
+    (quest) => quest.id === "light-on-the-hill" && quest.status === "completed",
+  );
+  const sanatoriumOneWindow =
+    currentScene.id === "sanatorium"
+    && sanatoriumShowsOneWindow(gameState.time, hillCompleted);
+  const sanatoriumDark =
+    currentScene.id === "sanatorium"
+    && isNightTime(gameState.time)
+    && hillCompleted;
   const emptySceneImage =
     sanatoriumCigaretteRoom
       ? "./images/locations/sanatorium/sanatoriumRoom2NightCigarette.png"
+      : sanatoriumOneWindow
+        ? SANATORIUM_ONE_WINDOW
       : weatherImage ??
     (isNightTime(gameState.time)
       ? currentScene.image.night
@@ -552,8 +629,8 @@ export default function Home() {
       ? "./images/locations/gas_station/rayMercerGasStationRainy.png"
     : walterRainy
       ? "./images/locations/police_station/WalterHarringtonOfficeRain.jpg"
-    : elrodWithRachel
-      ? "./images/locations/ElrodHouse/ElrodHouseRachelOutsideDay.png"
+    : elrodRachel
+      ? elrodRachel
     : ((isNightTime(gameState.time) && activeCharacter?.nightImage
         ? activeCharacter.nightImage
         : activeCharacter?.image) ?? emptySceneImage);
@@ -565,6 +642,68 @@ export default function Home() {
     hasConversationOverlay && emptySceneImage && emptySceneImage !== sceneImage
       ? emptySceneImage
       : null;
+  // The filter follows the plate on screen, not the scene's weather map.
+  // A rainy day plate keeps the scene dry-looking once night art takes over.
+  const interimRain =
+    RAIN_WEATHER.includes(gameState.weather)
+    && !isRainPlate(sceneImage, currentScene, gameState.weather);
+  const interimRainNight = interimRain && isNightTime(gameState.time);
+  const syntheticNight = isNightTime(gameState.time) && Boolean(currentScene.image.noNightVariant);
+  const reducedMotion = useReducedMotion();
+  const [shownSceneImage, setShownSceneImage] = useState(sceneImage);
+  const [incomingSceneImage, setIncomingSceneImage] = useState<string | null>(null);
+  const [incomingSceneVisible, setIncomingSceneVisible] = useState(false);
+  // Reduced motion swaps the plate immediately. The held image stays behind
+  // only while a crossfade is allowed to run.
+  const displayedSceneImage = reducedMotion ? sceneImage : shownSceneImage;
+
+  useEffect(() => {
+    if (reducedMotion || sceneImage === shownSceneImage) return;
+
+    let cancelled = false;
+    const preloader = new window.Image();
+    preloader.onload = () => {
+      if (cancelled) return;
+      setIncomingSceneImage(sceneImage);
+      setIncomingSceneVisible(false);
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          if (!cancelled) setIncomingSceneVisible(true);
+        });
+      });
+    };
+    preloader.onerror = () => {
+      if (!cancelled) setShownSceneImage(sceneImage);
+    };
+    preloader.src = sceneImage;
+    return () => {
+      cancelled = true;
+    };
+  }, [sceneImage, shownSceneImage, reducedMotion]);
+
+  useEffect(() => {
+    if (!incomingSceneVisible || !incomingSceneImage) return;
+    const timer = window.setTimeout(() => {
+      setShownSceneImage(incomingSceneImage);
+      setIncomingSceneImage(null);
+      setIncomingSceneVisible(false);
+    }, 180);
+    return () => window.clearTimeout(timer);
+  }, [incomingSceneVisible, incomingSceneImage]);
+
+  const dinerPlateReady =
+    showDinerBoardHint
+    && currentScene.id === "diner-inside"
+    && (reducedMotion || shownSceneImage === sceneImage || incomingSceneVisible);
+  const [cueState, setCueState] = useState<"idle" | "on" | "done">("idle");
+  if (dinerPlateReady && cueState === "idle") setCueState("on");
+  if (!showDinerBoardHint && cueState !== "idle") setCueState("idle");
+  useEffect(() => {
+    if (cueState !== "on") return;
+    const timer = window.setTimeout(() => setCueState("done"), 1000);
+    return () => window.clearTimeout(timer);
+  }, [cueState]);
+  const boardCue = cueState === "on";
   const hotspotActions =
     sanatoriumHotspotActions[currentScene.id] ??
     (currentScene.id === "living-room"
@@ -676,11 +815,13 @@ export default function Home() {
       "action" in choice &&
       (hotspotActions.includes(choice.action) || !!choice.hotspots?.length),
   );
-  const choicesWithoutHotspotActions = visibleChoices.filter(
-    (choice) =>
-      "response" in choice ||
-      (!hotspotActions.includes(choice.action) && !choice.hotspots?.length),
-  );
+  const choicesWithoutHotspotActions = visibleChoices.filter((choice) => {
+    if ("response" in choice) return true;
+    // The diner board is a hotspot and a button. The button stays until
+    // posterFound (excludesStoryFlag on the choice).
+    if (choice.action === "lookAtDinerBulletin") return true;
+    return !hotspotActions.includes(choice.action) && !choice.hotspots?.length;
+  });
   const bottomThought =
     lateNightActionThought ??
     (showLateNightThought && isLateNight
@@ -712,6 +853,36 @@ export default function Home() {
       layout="overlay"
     />
   );
+
+  // Hold the previous plate, caption, and choices until the next image has
+  // loaded, then fade them in together. Text never arrives first.
+  const liveVisual = {
+    scene: currentScene,
+    thought: currentThought,
+    hotspots: sceneHotspots,
+    actionList,
+    interimRain,
+    interimRainNight,
+    syntheticNight,
+    weatherArt: Boolean(weatherImage && sceneImage === weatherImage),
+  };
+  const arrivalSignature = [
+    currentScene.id,
+    sceneImage,
+    currentThought ?? "",
+    interimRain ? "rain" : "",
+    interimRainNight ? "night" : "",
+    choicesWithoutHotspotActions.map((choice) => choice.label).join("|"),
+  ].join("~");
+  const [presented, setPresented] = useState({ signature: arrivalSignature, visual: liveVisual });
+  const arrivalReady = reducedMotion || incomingSceneVisible || shownSceneImage === sceneImage;
+  if (arrivalReady && presented.signature !== arrivalSignature) {
+    setPresented({ signature: arrivalSignature, visual: liveVisual });
+  }
+  const visual = arrivalReady ? liveVisual : presented.visual;
+  const visualOutdoors =
+    isExteriorScene(visual.scene.id) || OUTDOOR_SCENE_IDS.has(visual.scene.id);
+  const boardHint = showDinerBoardHint && visual.scene.id === "diner-inside";
 
   if (!(hasStarted ?? resumedSession)) {
     return (
@@ -801,12 +972,19 @@ export default function Home() {
           player={playerState}
           gameState={gameState}
           onStatsClick={() => setShowStats(true)}
-          onInventoryClick={() => setShowInventory(true)}
-          onQuestsClick={() => setShowQuestLog(true)}
+          onInventoryClick={(opener) => {
+            rememberPanel("inventory", opener);
+            setShowInventory(true);
+          }}
+          onQuestsClick={(opener) => {
+            rememberPanel("quests", opener);
+            setShowQuestLog(true);
+          }}
         />
 
         <div
-          className={`scene-image-frame scene-image-frame-${currentScene.id}${weatherImage && sceneImage === weatherImage ? " scene-image-frame-weather-art" : ""}${hasConversationOverlay ? " scene-image-frame-has-conversation" : ""}${conversationActive ? " scene-image-frame-conversation-active" : ""}`}
+          className={`scene-image-frame scene-image-frame-${visual.scene.id}${visual.weatherArt ? " scene-image-frame-weather-art" : ""}${visual.scene.captionPosition === "bottom" ? " scene-image-frame-caption-bottom" : ""}${visual.scene.captionPosition === "center" ? " scene-image-frame-caption-center" : ""}${conversationActive ? " scene-image-frame-has-conversation scene-image-frame-conversation-active" : ""}${visual.interimRain ? " scene-image-frame-interim-rain" : ""}${visual.interimRainNight ? " scene-image-frame-interim-rain-night" : ""}${visualOutdoors ? " scene-image-frame-exterior" : ""}${sanatoriumDark ? " scene-image-frame-sanatorium-dark" : ""}${visual.syntheticNight ? " scene-image-frame-synthetic-night" : ""}${incomingSceneVisible ? " scene-frame-arrive" : ""}`}
+          data-scene-id={visual.scene.id}
         >
           {/* The picture and its hotspots share one box, so percentage hotspot
               positions always map onto the art, wherever the panels sit. */}
@@ -816,15 +994,24 @@ export default function Home() {
               className="scene-ambient"
               aria-hidden="true"
               style={{
-                backgroundImage: `url("${conversationActive && conversationBackdrop ? conversationBackdrop : sceneImage}")`,
+                backgroundImage: `url("${conversationActive && conversationBackdrop ? conversationBackdrop : displayedSceneImage}")`,
               }}
             />
             <img
-              src={sceneImage}
+              src={displayedSceneImage}
               alt=""
-              className={`scene-image${sceneImageEntering ? " scene-image-enter" : ""}`}
-              onLoad={replaySceneImageEnter}
+              className="scene-image"
+              style={visual.scene.image.objectPosition ? { objectPosition: visual.scene.image.objectPosition } : undefined}
             />
+            {!reducedMotion && incomingSceneImage && (
+              <img
+                src={incomingSceneImage}
+                alt=""
+                className={`scene-image scene-image-crossfade${incomingSceneVisible ? " scene-image-crossfade-in" : ""}`}
+                style={visual.scene.image.objectPosition ? { objectPosition: visual.scene.image.objectPosition } : undefined}
+              />
+            )}
+            {visual.syntheticNight && <div className="scene-night-tint" aria-hidden="true" />}
             {conversationBackdrop && (
               <img
                 src={conversationBackdrop}
@@ -832,6 +1019,10 @@ export default function Home() {
                 aria-hidden="true"
                 className={`scene-image scene-image-backdrop${conversationActive ? " scene-image-backdrop-active" : ""}`}
               />
+            )}
+            {visual.interimRain && <div className="scene-rain-sky" aria-hidden="true" />}
+            {visual.interimRain && visualOutdoors && (
+              <div className="scene-rain-glass" aria-hidden="true" />
             )}
             <StormLightning
               weather={gameState.weather}
@@ -843,13 +1034,13 @@ export default function Home() {
               <div className="scene-spotlight-hole" />
             </div>
             {!(showOpeningThought || showVinylThought || tvNewsLine !== null) &&
-              sceneHotspots.flatMap((sceneHotspot) =>
+              visual.hotspots.flatMap((sceneHotspot) =>
                 (sceneHotspot.hotspots ?? [undefined]).map((region, index) => (
                   <SceneHotspot
                     key={`${sceneHotspot.action}-${index}`}
                     type="button"
                     data-kind={hotspotKind(sceneHotspot.action)}
-                    className={`scene-hotspot scene-hotspot-${sceneHotspot.action} scene-hotspot-${currentScene.id}-${sceneHotspot.action}`}
+                    className={`scene-hotspot scene-hotspot-${sceneHotspot.action} scene-hotspot-${visual.scene.id}-${sceneHotspot.action}${boardCue && sceneHotspot.action === "lookAtDinerBulletin" ? " scene-hotspot-cue" : ""}`}
                     style={
                       region
                         ? {
@@ -893,44 +1084,58 @@ export default function Home() {
           <div className="scene-info-stack">
             {/* The scene caption: a small glass card in the dialogue box's
                 language, keyed to the scene so it settles in on arrival. */}
-            <div className="scene-info-panel" key={currentScene.id}>
+            <div className="scene-info-panel" key={visual.scene.id}>
               <div className="scene-caption-plate-row">
                 <h2 className="scene-caption-plate">Scene</h2>
-                {currentScene.location && (
-                  <span className="scene-caption-place">{currentScene.location}</span>
+                {visual.scene.location && (
+                  <span className="scene-caption-place">{visual.scene.location}</span>
                 )}
               </div>
               <div className="scene-caption-narration">
                 <StoryLog
-                  entries={currentScene.story.filter(
-                    (entry) =>
-                      entry.type !== "thought" &&
-                      storyEntryApplies(
-                        entry,
-                        gameState.time,
-                        gameState.weather,
-                        gameState.dayOfWeek,
-                      ),
-                  )}
+                  entries={visual.scene.story
+                    .filter(
+                      (entry) =>
+                        entry.type !== "thought" &&
+                        storyEntryApplies(
+                          entry,
+                          gameState.time,
+                          gameState.weather,
+                          gameState.dayOfWeek,
+                        ),
+                    )
+                    .map((entry) => {
+                      if (
+                        visual.scene.id !== "sanatorium"
+                        || entry.type !== "narration"
+                        || !entry.text.startsWith("You reach the sanatorium.")
+                      ) {
+                        return entry;
+                      }
+                      return {
+                        ...entry,
+                        text: sanatoriumNarration(gameState.time, hillCompleted),
+                      };
+                    })}
                   variant="narration"
                   layout="combined"
                 />
               </div>
-              {currentThought && (
+              {(visual.thought || boardHint) && (
                 <div className="scene-caption-thought">
-                  <CharacterLine
-                    key={currentThought}
-                    text={currentThought}
-                    variant="inline"
-                    effect={
-                      currentEffects[0]?.type === "effect"
-                        ? {
-                            stat: currentEffects[0].stat,
-                            amount: currentEffects[0].amount,
-                          }
-                        : undefined
-                    }
-                  />
+                  {visual.thought && (
+                    <CharacterLine
+                      key={visual.thought}
+                      text={visual.thought}
+                      variant="inline"
+                    />
+                  )}
+                  {boardHint && (
+                    <CharacterLine
+                      text={DINER_BOARD_HINT}
+                      variant="inline"
+                    />
+                  )}
                 </div>
               )}
             </div>
@@ -939,7 +1144,10 @@ export default function Home() {
                 type="button"
                 className={`quest-lead${questNotificationExiting ? " quest-lead-exiting" : ""}`}
                 aria-live="polite"
-                onClick={() => setShowQuestLog(true)}
+                onClick={(event) => {
+                  rememberPanel("quests", event.currentTarget);
+                  setShowQuestLog(true);
+                }}
               >
                 <span>New lead</span>
                 <p>{questNotification}</p>
@@ -999,18 +1207,29 @@ export default function Home() {
                 entries={conversation}
                 active={conversationActive}
                 onFinish={finishConversation}
+                onSettled={onReplySettled}
                 choices={
                   conversationActive && choicesWithoutHotspotActions.length > 0
                     ? actionList
                     : null
                 }
-                choiceKey={choicesWithoutHotspotActions.map((choice) => choice.label).join("\n")}
+                choiceKey={[
+                  choicesWithoutHotspotActions.map((choice) => choice.label).join("\n"),
+                  storyFlags.rachelMet ? "rachelMet" : "",
+                  storyFlags.walterStationTalk ? "walterStationTalk" : "",
+                ].join("\n")}
               />
             </div>
           )}
-          {!hasConversationOverlay &&
+          {!conversationActive &&
             !(showOpeningThought || showVinylThought || tvNewsLine !== null) &&
-            actionList}
+            visual.actionList}
+          <CaptionPlacer
+            sceneId={visual.scene.id}
+            signature={arrivalSignature}
+            thought={bottomThought ?? ""}
+            lead={questNotification ?? ""}
+          />
         </div>
 
         {showStats && (
@@ -1023,7 +1242,10 @@ export default function Home() {
           <InventoryWindow
             inventory={playerState.inventory}
             onUseItem={useInventoryItem}
-            onClose={() => setShowInventory(false)}
+            onClose={() => {
+              forgetPanel("inventory");
+              setShowInventory(false);
+            }}
           />
         )}
 
@@ -1048,7 +1270,10 @@ export default function Home() {
             currentMonth={gameState.currentMonth}
             inventory={playerState.inventory}
             storyFlags={storyFlags}
-            onClose={() => setShowQuestLog(false)}
+            onClose={() => {
+              forgetPanel("quests");
+              setShowQuestLog(false);
+            }}
           />
         )}
         {showTravel && (
@@ -1066,15 +1291,15 @@ export default function Home() {
         {showPlaytestControls && (
         <div className="waitControls">
           <span>Pass time</span>
-          <ActionButton label="Wait 1 min" onClick={() => adminWait(1)} />
+          <ActionButton label="Wait 1 min" disabled={waitingLocked} onClick={() => wait(1)} />
 
-          <ActionButton label="Wait 5 min" onClick={() => adminWait(5)} />
+          <ActionButton label="Wait 5 min" disabled={waitingLocked} onClick={() => wait(5)} />
 
-          <ActionButton label="Wait 10 min" onClick={() => adminWait(10)} />
+          <ActionButton label="Wait 10 min" disabled={waitingLocked} onClick={() => wait(10)} />
 
-          <ActionButton label="Wait 30 min" onClick={() => adminWait(30)} />
+          <ActionButton label="Wait 30 min" disabled={waitingLocked} onClick={() => wait(30)} />
 
-          <ActionButton label="Wait 1 hour" onClick={() => adminWait(60)} />
+          <ActionButton label="Wait 1 hour" disabled={waitingLocked} onClick={() => wait(60)} />
         </div>
         )}
 
@@ -1110,21 +1335,47 @@ export default function Home() {
         )}
 
         {closeup && (
-          <CloseupOverlay closeup={closeup} onDismiss={dismissCloseup} />
+          <CloseupOverlay
+            closeup={closeup}
+            onDismiss={dismissCloseup}
+            rain={
+              RAIN_WEATHER.includes(gameState.weather)
+                ? sceneIsIndoor
+                  ? "interior"
+                  : "exterior"
+                : null
+            }
+            rainNight={isNightTime(gameState.time)}
+          />
+        )}
+
+        {statToast && (
+          <div
+            className={`stat-toast${statToastFading ? " stat-toast-fading" : ""}`}
+            role="status"
+          >
+            {statToast.amount >= 0 ? "+" : ""}
+            {statToast.amount} {statToast.stat.toUpperCase()}
+          </div>
         )}
 
         {showChapterEnd && (
           <div
-            className="new-day-screen"
+            className="chapter-end-screen"
             role="dialog"
             aria-modal="true"
             aria-labelledby="chapter-end-title"
-            onClick={dismissChapterEnd}
           >
-            <div className="new-day-screen-content">
+            <div className="chapter-end-screen-content">
               <p>Harlow</p>
               <h2 id="chapter-end-title">End of Chapter 1</h2>
-              <span>Click to continue</span>
+              <button
+                ref={chapterEndButtonRef}
+                type="button"
+                onClick={dismissChapterEnd}
+              >
+                Click to continue
+              </button>
             </div>
           </div>
         )}
@@ -1134,6 +1385,7 @@ export default function Home() {
             location={travelingTo.location}
             method={travelingTo.method}
             isNight={travelingTo.isNight}
+            rainy={travelingTo.rainy}
           />
         )}
 
@@ -1165,4 +1417,39 @@ export default function Home() {
       </div>
     </main>
   );
+}
+
+/** Moves the SCENE box after layout. Hotspot positions stay on the art. */
+function CaptionPlacer({
+  sceneId,
+  signature,
+  thought,
+  lead,
+}: {
+  sceneId: string;
+  signature: string;
+  thought: string;
+  lead: string;
+}) {
+  const marker = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const frame = marker.current?.closest<HTMLElement>(".scene-image-frame");
+    if (!frame) return;
+    const place = () => placeSceneChrome(frame);
+    place();
+    const raf = window.requestAnimationFrame(place);
+    const observer = new ResizeObserver(place);
+    const art = frame.querySelector(".scene-art");
+    if (art) observer.observe(art);
+    // A lead card grows the stack. Place again so it does not cover a hotspot.
+    const stack = frame.querySelector(".scene-info-stack");
+    const leads = new MutationObserver(place);
+    if (stack) leads.observe(stack, { childList: true });
+    return () => {
+      window.cancelAnimationFrame(raf);
+      observer.disconnect();
+      leads.disconnect();
+    };
+  }, [sceneId, signature, thought, lead]);
+  return <span ref={marker} hidden />;
 }

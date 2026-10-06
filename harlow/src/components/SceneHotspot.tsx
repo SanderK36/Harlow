@@ -69,9 +69,13 @@ export default function SceneHotspot({
     if (!button || !caption || !frame) return;
 
     const fit = () => {
+      // Measuring mid-transition reports a half-moved label, so the lift
+      // settles a few pixels into the choice heading.
+      caption.style.transition = "none";
       caption.style.fontSize = "";
       caption.style.setProperty("--caption-offset", "0px");
       caption.style.setProperty("--caption-lift", "0px");
+      void caption.offsetHeight;
       const bounds = button.getBoundingClientRect();
       const frameBounds = frame.getBoundingClientRect();
       const naturalWidth = caption.getBoundingClientRect().width;
@@ -86,14 +90,40 @@ export default function SceneHotspot({
       const center = bounds.left + bounds.width / 2;
       const left = Math.max(frameBounds.left + 8, Math.min(center - width / 2, frameBounds.right - width - 8));
       caption.style.setProperty("--caption-offset", `${left + width / 2 - center}px`);
-      // Keep a plate on the hotspot's bottom edge inside the picture.
-      const overflow = captionBounds.bottom - (frameBounds.bottom - 8);
-      if (overflow > 0) caption.style.setProperty("--caption-lift", `${-overflow}px`);
+      // Keep the plate inside the picture, and above the choice panel.
+      // The panel is a sibling of the art, so a label at the hotspot's
+      // bottom edge paints underneath "WHAT DO YOU WANT TO DO?".
+      const panel = frame.parentElement?.querySelector(".overlayActionList");
+      const thoughtBar = frame.parentElement?.querySelector(".opening-thought");
+      const obstacles = [
+        ...(panel
+          ? [panel.querySelector("h2"), panel.querySelector(".overlayActionButtons")]
+          : []),
+        thoughtBar,
+      ].filter((element): element is Element => element !== null);
+      const blockTop = obstacles.reduce((top, element) => {
+        return Math.min(top, element.getBoundingClientRect().top);
+      }, Number.POSITIVE_INFINITY);
+      const frameLimit = captionBounds.bottom - (frameBounds.bottom - 8);
+      const panelLimit = blockTop === Number.POSITIVE_INFINITY
+        ? 0
+        : captionBounds.bottom - (blockTop - 20);
+      const lift = Math.max(0, frameLimit, panelLimit);
+      const maxLift = Math.max(0, captionBounds.top - frameBounds.top - 8);
+      if (lift > 0) {
+        caption.style.setProperty("--caption-lift", `${-Math.min(lift, maxLift)}px`);
+      }
+      void caption.offsetHeight;
+      caption.style.transition = "";
     };
 
     const observer = new ResizeObserver(fit);
     observer.observe(button);
     observer.observe(frame);
+    const choicePanel = frame.parentElement?.querySelector(".overlayActionList");
+    if (choicePanel) observer.observe(choicePanel);
+    const thought = frame.parentElement?.querySelector(".opening-thought, .late-night-thought");
+    if (thought) observer.observe(thought);
     fit();
     void document.fonts.ready.then(() => {
       if (button.isConnected) fit();

@@ -54,6 +54,8 @@ export type Choice = {
     label?: string;
     next?: { image: string; thought: string; label?: string };
   };
+  /** Hidden once any listed story flag is set. */
+  excludesStoryFlag?: import("./quests").StoryFlag | import("./quests").StoryFlag[];
   /** Stat effects applied when this choice is taken (also on ChoiceEffects). */
   startsQuest?: import("./quests").QuestId;
   completesQuest?: import("./quests").QuestId;

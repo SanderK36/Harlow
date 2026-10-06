@@ -36,6 +36,8 @@ export default function ActionList({
   const isConversation = choices.some(
     (choice) => "response" in choice
   );
+  const hasButtons = localChoices.length > 0 || (!isConversation && canTravel);
+  if (!hasButtons) return null;
 
   function isDisabled(choice: GameChoice) {
     // Dialogue replies are omitted entirely when they don't apply. A greyed
@@ -52,7 +54,7 @@ export default function ActionList({
   return (
     <div
       className={`${styles.actionList} ${
-        layout === "overlay" ? styles.overlayActionList : ""
+        layout === "overlay" ? `${styles.overlayActionList} overlayActionList` : ""
       }`}
     >
       <h2>{title}</h2>
@@ -62,7 +64,7 @@ export default function ActionList({
           layout === "home"
             ? styles.homeActionButtons
             : layout === "overlay"
-              ? styles.overlayActionButtons
+              ? `${styles.overlayActionButtons} overlayActionButtons`
               : ""
         }`}
       >
