@@ -51,6 +51,12 @@
   }
 }
 
+/* While a conversation layer fades out, these choices sit above it. */
+:global(.scene-image-frame:not(.scene-image-frame-conversation-active))
+  > .overlayActionList {
+  z-index: 7;
+}
+
 /* Phones: scene actions sit below the art (see .scene-image-frame in
    globals.css) instead of over its lower half. */
 @media (max-width: 640px) {

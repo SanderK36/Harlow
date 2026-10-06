@@ -14,6 +14,7 @@ import {
   scenes,
 } from "@/game/scenes";
 import { harlowAudio } from "@/game/audio";
+import { hillCheckScene, HILL_THOUGHT, shouldNoticeHill } from "@/game/hill";
 import { advanceGameTime, withCanonWeekday } from "@/game/time";
 import { isNightTime } from "@/game/utils";
 import {
@@ -73,7 +74,6 @@ const TRAVEL_DURATION = 3000;
 const BEDTIME_START = 1320;
 const BEDTIME_END = 180;
 const EXHAUSTION_LOCK_TIME = 210;
-const HILL_THOUGHT = "There's a light up on the hill. Nobody goes up there.";
 /** Slide in, then hold, then fade. The hold is the time the card sits still. */
 const LEAD_ENTER_MS = 200;
 const LEAD_HOLD_MS = 2000;
@@ -93,25 +93,6 @@ type QuestNotice = {
   label: string;
   message: string;
 };
-
-/** Night thought + Light on the Hill, once both prerequisite quests are done. */
-function shouldNoticeHill(
-  sceneId: string,
-  time: number,
-  questList: QuestProgress[],
-  flags: Partial<Record<StoryFlag, boolean>>,
-) {
-  const night = time >= 1080 || time < 360;
-  return (
-    sceneId === "front-yard"
-    && night
-    && isQuestCompleted(questList, "what-walter-said")
-    && isQuestCompleted(questList, "faded-poster")
-    && !flags.sanatoriumSeenFromStreet
-    && !isQuestActive(questList, "light-on-the-hill")
-    && !isQuestCompleted(questList, "light-on-the-hill")
-  );
-}
 
 const HOME_SCENE_IDS = new Set([
   "ethan-room",
@@ -265,8 +246,9 @@ export function useGame() {
   // React applies setQuests after this handler returns. A second update in the
   // same click must read this list, not the quests from the last render.
   const questsRef = useRef(quests);
-  // advanceTime can show the hill line, then moveToScene runs before React
-  // paints. Cleared after this click so the next scene change can set its own line.
+  // advanceTime and moveToScene can both see the hill in one click. Cleared
+  // after the click so the next scene change can set its own line. A walk
+  // checks the destination, so leaving the yard does not set this.
   const hillThoughtShown = useRef(false);
   function markHillThought() {
     hillThoughtShown.current = true;
@@ -474,7 +456,12 @@ export function useGame() {
     if (readSessionSave()) writeSessionSave(currentSave());
   }, [currentSave]);
 
-  function advanceTime(minutes: number, completingMomQuest = false, bypassExhaustionLock = false) {
+  function advanceTime(
+    minutes: number,
+    completingMomQuest = false,
+    bypassExhaustionLock = false,
+    destinationSceneId: string | null = null,
+  ) {
     // Keep time changes in one place so thoughts and day/night images stay synced.
     const allowedMinutes = momTalked || completingMomQuest
       ? minutes
@@ -490,8 +477,10 @@ export function useGame() {
     const nextGameState = advanceGameTime(gameState, timeToAdvance);
 
     setGameState(nextGameState);
+    // A walk leaves the yard before the new time is "spent" there. Notice the
+    // hill on the scene Ethan arrives in, not the one he is walking out of.
     const hillNow = shouldNoticeHill(
-      currentScene.id,
+      hillCheckScene(currentScene.id, destinationSceneId),
       nextGameState.time,
       questsRef.current,
       storyFlags,
@@ -794,7 +783,7 @@ export function useGame() {
     });
 
     window.setTimeout(() => {
-      const nextGameState = advanceTime(choice.timeCost);
+      const nextGameState = advanceTime(choice.timeCost, false, false, choice.nextScene);
       moveToScene(choice.nextScene, nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek);
       applyChoiceEffects(choice);
       setTravelingTo(null);
@@ -994,14 +983,14 @@ export function useGame() {
       const minutesUntilSevenAm = gameState.time < BEDTIME_END
         ? 420 - gameState.time
         : 1440 - gameState.time + 420;
-      const nextGameState = advanceTime(minutesUntilSevenAm, false, true);
+      const nextGameState = advanceTime(minutesUntilSevenAm, false, true, "ethan-room");
       moveToScene("ethan-room", nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek);
       setNewDayAnnouncement(nextGameState);
       return;
     }
 
     if (choice.action === "leaveBusStop") {
-      const nextGameState = advanceTime(choice.timeCost);
+      const nextGameState = advanceTime(choice.timeCost, false, false, busStopReturnSceneId);
       moveToScene(busStopReturnSceneId, nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek);
       return;
     }
@@ -1010,8 +999,6 @@ export function useGame() {
       handleTravel(choice);
       return;
     }
-
-    const nextGameState = advanceTime(choice.timeCost, choice.action === "talkToMom");
 
     if (choice.action === "pickUpCigarettes") {
       setDeskCigarettesPickedUp(true);
@@ -1033,6 +1020,13 @@ export function useGame() {
           : choice.action === "lookAtGarageBench" && garageFlashlightPickedUp
             ? "garage-bench-empty"
             : choice.nextScene;
+
+    const nextGameState = advanceTime(
+      choice.timeCost,
+      choice.action === "talkToMom",
+      false,
+      nextSceneId,
+    );
 
     moveToScene(nextSceneId, nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek);
 
@@ -1097,7 +1091,7 @@ export function useGame() {
       return;
     }
     setBusStopReturnSceneId(currentScene.id);
-    const nextGameState = advanceTime(0);
+    const nextGameState = advanceTime(0, false, false, "bus-stop");
     moveToScene("bus-stop", nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek);
   }
 

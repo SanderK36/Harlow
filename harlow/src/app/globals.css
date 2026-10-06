@@ -674,11 +674,6 @@ button {
   background: transparent;
 }
 
-/* While a conversation layer fades out, the scene choices sit above it. */
-.scene-image-frame:not(.scene-image-frame-conversation-active) > .overlayActionList {
-  z-index: 7;
-}
-
 .new-day-screen {
   position: fixed;
   inset: 0;
