@@ -1,0 +1,117 @@
+/**
+ * One late-night check for both clocks.
+ *
+ * Tired (03:00–07:00, `isLateNight`) blocks new places, talks, and looking
+ * around. Waiting is only locked from 03:30–07:00, the same window
+ * `advanceTime` already uses. Exits, the way home, and Go to bed stay
+ * available for the whole tired window, including 03:15 and 03:45.
+ */
+
+export const TIRED_START = 180;
+export const TIRED_END = 420;
+export const WAITING_LOCK_START = 210;
+
+/** 03:00 until 07:00. This is the gate that stranded the playtester at 03:23. */
+export function isTiredWindow(time: number) {
+  return time >= TIRED_START && time < TIRED_END;
+}
+
+/** 03:30 until 07:00. Waiting is free again at morning, not locked until midnight. */
+export function isWaitingLocked(time: number) {
+  return time >= WAITING_LOCK_START && time < TIRED_END;
+}
+
+/**
+ * Steps from Ethan's bed. A late-night move is allowed only when it gets
+ * closer. Same-room looking and walking somewhere new are not.
+ */
+const SCENE_DISTANCE: Record<string, number> = {
+  "ethan-room": 0,
+  "ethan-room-desk": 1,
+  "ethan-room-desk-empty": 1,
+  "hallway-upstairs": 1,
+  "hallway-upstairs-attic-open": 1,
+  "mom-room": 2,
+  "emily-room": 2,
+  attic: 2,
+  hallway: 2,
+  kitchen: 3,
+  "living-room": 3,
+  bathroom: 3,
+  basement: 3,
+  garage: 3,
+  "front-yard": 3,
+  "living-room-relaxing": 4,
+  "made-coffee": 4,
+  fridge: 4,
+  "back-yard": 4,
+  "light-pole": 4,
+  "garage-bench": 4,
+  "garage-bench-empty": 4,
+  "elrod-house": 8,
+  "needle-and-groove": 8,
+  "gas-station": 8,
+  scrapyard: 8,
+  "police-station": 8,
+  cementary: 8,
+  hospital: 8,
+  "bus-stop": 8,
+  motel: 8,
+  diner: 8,
+  sanatorium: 8,
+  "diner-inside": 9,
+  "needle-and-groove-inside": 9,
+  "gas-station-inside": 9,
+  "gas-station-garage": 9,
+  "scrapyard-inside": 9,
+  "police-station-inside": 9,
+  "cementary-inside": 9,
+  "hospital-reception": 9,
+  "motel-inside": 9,
+  "sanatorium-entrance": 9,
+  "needle-and-groove-backroom": 10,
+  "scrapyard-desk": 10,
+  "scrapyard-desk-empty": 10,
+  "sheriff-office": 10,
+  "cementary-backside": 10,
+  "hospital-elevator": 10,
+  "motel-room-203": 10,
+  "sanatorium-main-floor": 10,
+  "hospital-room-312": 11,
+  "sanatorium-hallway": 11,
+  "sanatorium-room-1": 12,
+  "sanatorium-room-2": 12,
+};
+
+export function sceneDistance(sceneId: string) {
+  const distance = SCENE_DISTANCE[sceneId];
+  if (distance === undefined) {
+    throw new Error(`No late-night distance for ${sceneId}`);
+  }
+  return distance;
+}
+
+export function lateNightChoiceAllowed(
+  choice: {
+    action?: string;
+    nextScene?: string;
+    response?: unknown;
+    endsConversation?: boolean;
+  },
+  ctx: { time: number; sceneId: string },
+) {
+  if (!isTiredWindow(ctx.time)) return true;
+
+  // An open talk can be left. Starting or continuing one cannot.
+  if (choice.response !== undefined) {
+    return Boolean(choice.endsConversation);
+  }
+
+  if (choice.action === "goToSleep") {
+    return ctx.sceneId === "ethan-room";
+  }
+
+  const next = choice.nextScene;
+  if (!next || next === ctx.sceneId) return false;
+  return sceneDistance(next) < sceneDistance(ctx.sceneId);
+}

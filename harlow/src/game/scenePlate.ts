@@ -10,10 +10,11 @@ export function plateUrl(path: string) {
 /**
  * Day / night / weather plate, ignoring characters painted on top.
  * Daylit weather art (weatherDayOnly) gives way to the night plate after dark.
+ * Night weather art (weatherNightOnly) gives way to the day plate before dark.
  */
 export function sceneWeatherPlate(scene: Scene, time: number, weather: Weather) {
   const night = isNightTime(time);
-  const mapped = night && scene.image.weatherDayOnly
+  const mapped = (night && scene.image.weatherDayOnly) || (!night && scene.image.weatherNightOnly)
     ? undefined
     : scene.image.weather?.[weather];
   return plateUrl(mapped ?? (night ? scene.image.night : scene.image.day));

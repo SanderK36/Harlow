@@ -102,7 +102,7 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
     title: "Down to the Station",
     objectives: {
       default: "Walter's at the station.",
-      done: "That drawer was still open. PARKER, E.",
+      done: "That file was still in his drawer. PARKER, E.",
     },
   },
   "what-walter-said": {
@@ -122,7 +122,8 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
     objectives: {
       default: "Mom wants coffee. Margaret's.",
       coffee: "Got the coffee.",
-      delivered: "Coffee's with Mom.",
+      /** Coffee handed over before the poster. She asks about the board. */
+      delivered: "Coffee's with Mom. She asked about Margaret's board.",
       poster: "Emily. Missing. Show Mom.",
       both: "Coffee. And Emily. Go home.",
       done: "Showed Mom. She changed the subject.",
@@ -134,7 +135,7 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
     objectives: {
       default: "One light on the hill.",
       inside: "One light on the hill.",
-      done: "Warm cigarette. Someone was here.",
+      done: "Still burning. Someone was just here.",
     },
   },
 };
@@ -153,6 +154,13 @@ export function hasFoundPoster(
     inventory.includes("Missing Poster")
     || Boolean(ctx.storyFlags?.posterFound)
   );
+}
+
+/** Mom already sent Ethan for coffee, and he has not brought it back. */
+export function coffeeErrandOpen(
+  flags: Partial<Record<StoryFlag, boolean>> | undefined,
+) {
+  return Boolean(flags?.coffeeErrandHeard) && !flags?.coffeeDelivered;
 }
 
 /**
@@ -203,7 +211,7 @@ export function questObjective(
     && (progress.status === "completed" || progress.step === "done")
   ) {
     return ctx.storyFlags?.fileDrawerSeen
-      ? "That drawer was still open. PARKER, E."
+      ? "That file was still in his drawer. PARKER, E."
       : "Walter said go home. He knows something.";
   }
 

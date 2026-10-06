@@ -100,7 +100,7 @@ describe("Down to the Station note", () => {
         { id: "down-to-the-station", status: "completed", step: "done" },
         { storyFlags: { fileDrawerSeen: true } },
       ),
-      "That drawer was still open. PARKER, E.",
+      "That file was still in his drawer. PARKER, E.",
     );
     assert.equal(
       questObjective(

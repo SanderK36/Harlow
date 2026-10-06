@@ -18,6 +18,14 @@ import { conversationChoiceVisible } from "@/game/conversationChoices";
 import { sceneWeatherPlate } from "@/game/scenePlate";
 import { harlowAudio } from "@/game/audio";
 import { hillCheckScene, HILL_THOUGHT, shouldNoticeHill } from "@/game/hill";
+import {
+  isTiredWindow,
+  isWaitingLocked,
+  lateNightChoiceAllowed,
+  TIRED_END,
+  WAITING_LOCK_START,
+} from "@/game/lateNight";
+import { noticesAreHeld } from "@/game/notices";
 import { advanceGameTime, withCanonWeekday } from "@/game/time";
 import { isNightTime } from "@/game/utils";
 import {
@@ -42,6 +50,7 @@ import {
   type QuestProgress,
   type StoryFlag,
   questTitle,
+  coffeeErrandOpen,
 } from "@/game/quests";
 import type { GameState, Weather } from "@/game/types";
 import type { CloseupContent } from "@/components/CloseupOverlay/CloseupOverlay";
@@ -75,50 +84,16 @@ const CONVERSATION_ACTIONS = new Set([
 const NPC_REPLY_DELAY = 450;
 const TRAVEL_DURATION = 3000;
 const BEDTIME_START = 1320;
-const BEDTIME_END = 180;
-const EXHAUSTION_LOCK_TIME = 210;
 /** Slide in, then hold, then fade. The hold is the time the card sits still. */
 const LEAD_ENTER_MS = 200;
 const LEAD_HOLD_MS = 2000;
 const LEAD_EXIT_MS = 300;
-
-const SANATORIUM_SCENE_IDS = new Set([
-  "sanatorium",
-  "sanatorium-entrance",
-  "sanatorium-main-floor",
-  "sanatorium-hallway",
-  "sanatorium-room-1",
-  "sanatorium-room-2",
-]);
 
 type QuestNotice = {
   kind: "lead" | "notice";
   label: string;
   message: string;
 };
-
-const HOME_SCENE_IDS = new Set([
-  "ethan-room",
-  "ethan-room-desk",
-  "ethan-room-desk-empty",
-  "hallway",
-  "hallway-upstairs",
-  "hallway-upstairs-attic-open",
-  "living-room",
-  "living-room-relaxing",
-  "kitchen",
-  "fridge",
-  "back-yard",
-  "garage",
-  "garage-bench",
-  "garage-bench-empty",
-  "basement",
-  "attic",
-  "mom-room",
-  "emily-room",
-  "bathroom",
-  "front-yard",
-]);
 
 type ShopId = "gas-station" | "needle-groove";
 
@@ -283,6 +258,10 @@ export function useGame() {
     flags?: StoryFlag | StoryFlag[];
   } | null>(null);
   const pumpNoticesRef = useRef<() => void>(() => {});
+  const closeupRef = useRef<CloseupContent | null>(null);
+  const chapterEndRef = useRef(false);
+  const pendingChapterEnd = useRef(false);
+  const showingNotice = useRef<QuestNotice | null>(null);
   const [showChapterEnd, setShowChapterEnd] = useState(false);
   const [questNotification, setQuestNotification] = useState<string | null>(null);
   const [questNotificationLabel, setQuestNotificationLabel] = useState("NEW LEAD");
@@ -296,6 +275,7 @@ export function useGame() {
     locationDiscoveryTimer.current = null;
     noticeQueue.current = [];
     noticeShowing.current = false;
+    showingNotice.current = null;
     announcedNotices.current = new Set();
     setQuestNotification(null);
     setQuestNotificationLabel("NEW LEAD");
@@ -303,11 +283,20 @@ export function useGame() {
     setQuestNotificationExiting(false);
   }
 
+  function overlayHoldsNotices() {
+    return noticesAreHeld({
+      closeupOpen: closeupRef.current !== null,
+      conversationActive: conversationActiveRef.current,
+      chapterEndOpen: chapterEndRef.current,
+    });
+  }
+
   function pumpNotices() {
-    if (noticeShowing.current || conversationActiveRef.current) return;
+    if (noticeShowing.current || overlayHoldsNotices()) return;
     const next = noticeQueue.current.shift();
     if (!next) return;
     noticeShowing.current = true;
+    showingNotice.current = next;
     setQuestNotification(next.message);
     setQuestNotificationLabel(next.label);
     setQuestNotificationKind(next.kind);
@@ -316,6 +305,7 @@ export function useGame() {
       setQuestNotificationExiting(true);
       questNotificationTimer.current = window.setTimeout(() => {
         noticeShowing.current = false;
+        showingNotice.current = null;
         setQuestNotification(null);
         setQuestNotificationLabel("NEW LEAD");
         setQuestNotificationKind("lead");
@@ -324,6 +314,36 @@ export function useGame() {
         pumpNotices();
       }, LEAD_EXIT_MS);
     }, LEAD_ENTER_MS + LEAD_HOLD_MS);
+  }
+
+  /** Put a card that is already on screen back in the queue. Its timer stops. */
+  function pauseNoticesForOverlay() {
+    if (questNotificationTimer.current !== null) {
+      window.clearTimeout(questNotificationTimer.current);
+      questNotificationTimer.current = null;
+    }
+    if (showingNotice.current) {
+      noticeQueue.current.unshift(showingNotice.current);
+      showingNotice.current = null;
+    }
+    noticeShowing.current = false;
+    setQuestNotification(null);
+    setQuestNotificationLabel("NEW LEAD");
+    setQuestNotificationKind("lead");
+    setQuestNotificationExiting(false);
+  }
+
+  function showChapterEndScreen() {
+    chapterEndRef.current = true;
+    pauseNoticesForOverlay();
+    setShowChapterEnd(true);
+  }
+
+  function dismissChapterEndScreen() {
+    chapterEndRef.current = false;
+    pendingChapterEnd.current = false;
+    setShowChapterEnd(false);
+    pumpNotices();
   }
 
   pumpNoticesRef.current = pumpNotices;
@@ -336,10 +356,12 @@ export function useGame() {
     pumpNotices();
   }
 
-  function enqueueLead(id: QuestId, title?: string) {
-    const message = title ?? questTitle(
+  function enqueueLead(id: QuestId) {
+    // Titles always come from questTitle(), including flags set earlier in
+    // this click. A hardcoded title turned Coffee for Mom into "Faded Poster".
+    const message = questTitle(
       { id, status: "active" },
-      { inventory: playerState.inventory, storyFlags },
+      { inventory: playerState.inventory, storyFlags: storyFlagsRef.current },
     );
     enqueueNotice({ kind: "lead", label: "NEW LEAD", message }, `lead:${id}`);
   }
@@ -353,7 +375,7 @@ export function useGame() {
       return;
     }
     commitQuests(startQuest(current, "light-on-the-hill"));
-    enqueueLead("light-on-the-hill", "Light on the Hill");
+    enqueueLead("light-on-the-hill");
   }
 
   function hasFlag(flag: StoryFlag) {
@@ -385,6 +407,8 @@ export function useGame() {
 
   function enqueueCloseup(first: CloseupContent, next?: CloseupContent) {
     closeupQueue.current = next ? [next] : [];
+    closeupRef.current = first;
+    pauseNoticesForOverlay();
     setCloseup(first);
   }
 
@@ -400,10 +424,17 @@ export function useGame() {
   function dismissCloseup() {
     const queued = closeupQueue.current.shift();
     if (queued) {
+      closeupRef.current = queued;
       setCloseup(queued);
       return;
     }
+    closeupRef.current = null;
     setCloseup(null);
+    if (pendingChapterEnd.current) {
+      pendingChapterEnd.current = false;
+      showChapterEndScreen();
+    }
+    pumpNotices();
   }
 
   function applyQuestHooks(options: {
@@ -411,7 +442,6 @@ export function useGame() {
     completesQuest?: QuestId;
     /** Applied only to completesQuest (never to a quest started by the same choice). */
     questStep?: string;
-    notifyStart?: string;
     notifyComplete?: string;
   }) {
     // Read the list committed earlier in this same click, then notify from
@@ -427,7 +457,7 @@ export function useGame() {
         completedTitle = options.notifyComplete
           ?? questTitle(
             { id: options.completesQuest, status: "completed" },
-            { inventory: playerState.inventory, storyFlags },
+            { inventory: playerState.inventory, storyFlags: storyFlagsRef.current },
           );
       }
     }
@@ -446,10 +476,10 @@ export function useGame() {
     if (completedTitle) {
       enqueueNotice({ kind: "notice", label: "Quest complete", message: completedTitle });
     }
-    if (started) enqueueLead(started, options.notifyStart);
+    if (started) enqueueLead(started);
     if (startedHill) {
       setCurrentThought(HILL_THOUGHT);
-      enqueueLead("light-on-the-hill", "Light on the Hill");
+      enqueueLead("light-on-the-hill");
     }
   }
 
@@ -499,11 +529,11 @@ export function useGame() {
     const allowedMinutes = momTalked || completingMomQuest
       ? minutes
       : Math.min(minutes, Math.max(0, 539 - gameState.time));
-    const minutesUntilExhaustionLock = gameState.time >= EXHAUSTION_LOCK_TIME && gameState.time < 420
+    const minutesUntilExhaustionLock = isWaitingLocked(gameState.time)
       ? 0
-      : gameState.time < EXHAUSTION_LOCK_TIME
-        ? EXHAUSTION_LOCK_TIME - gameState.time
-        : 1440 - gameState.time + EXHAUSTION_LOCK_TIME;
+      : gameState.time < WAITING_LOCK_START
+        ? WAITING_LOCK_START - gameState.time
+        : 1440 - gameState.time + WAITING_LOCK_START;
     const timeToAdvance = bypassExhaustionLock
       ? allowedMinutes
       : Math.min(allowedMinutes, minutesUntilExhaustionLock);
@@ -632,7 +662,7 @@ export function useGame() {
   }
 
   function notifyMomQuest() {
-    enqueueLead("talk-to-mom", "Talk to Mom");
+    enqueueLead("talk-to-mom");
   }
 
   function applyChoiceEffects(choice: Choice) {
@@ -657,43 +687,14 @@ export function useGame() {
   }
 
   function isLateNight() {
-    return gameState.time >= BEDTIME_END && gameState.time < 420;
+    return isTiredWindow(gameState.time);
   }
 
   function canTakeLateNightAction(choice: GameChoice) {
-    if (!isLateNight()) {
-      return true;
-    }
-    if (!("action" in choice)) {
-      return false;
-    }
-
-    if (choice.action === "goToSleep" && currentScene.id === "ethan-room") {
-      return true;
-    }
-    // The hill is only there after dark, including the hours Ethan is otherwise
-    // too tired to wander. Looking from his own yard does not count as going out.
-    if (choice.action === "lookAtSanatoriumHill") {
-      return true;
-    }
-    // Light on the Hill stays playable through the 03:00 lock. A walk that
-    // leaves after 02:00 arrives after 03:00, and by morning the cigarette is gone.
-    if (
-      isQuestActive(questsRef.current, "light-on-the-hill")
-      && (
-        SANATORIUM_SCENE_IDS.has(currentScene.id)
-        || ("nextScene" in choice && SANATORIUM_SCENE_IDS.has(choice.nextScene))
-      )
-    ) {
-      return true;
-    }
-
-    // At night, Ethan can only travel home, then follow the route through the
-    // house to his bedroom. Everything else waits until morning.
-    if (!HOME_SCENE_IDS.has(currentScene.id)) {
-      return choice.nextScene === "front-yard" || choice.action === "goHome";
-    }
-    return choice.nextScene === "hallway" || choice.nextScene === "hallway-upstairs" || choice.action === "goEthanRoom";
+    return lateNightChoiceAllowed(choice, {
+      time: gameState.time,
+      sceneId: currentScene.id,
+    });
   }
 
   function handleConversationChoice(choice: Extract<GameChoice, { response: StoryEntry[] }>) {
@@ -808,7 +809,7 @@ export function useGame() {
         setMomTalked(true);
         commitQuests(startQuest(completeQuest(questsRef.current, "talk-to-mom"), "the-tape"));
         enqueueNotice({ kind: "notice", label: "Quest complete", message: "Talk to Mom" });
-        enqueueLead("the-tape", "The Tape");
+        enqueueLead("the-tape");
       }
       if (choice.response.length === 0) closeConversation();
       else setConversationEnding(true);
@@ -931,12 +932,14 @@ export function useGame() {
     }
     if (choice.setsFlags) applyFlags(choice.setsFlags);
 
-    // Poster found before Linda's coffee errand: start as Faded Poster.
+    // Poster found before the coffee errand starts the quest. The card title
+    // is questTitle() (Faded Poster, because posterFound is already set).
+    // Finding it mid-quest only renames the notebook entry — no second card.
     if (choice.action === "lookAtDinerBulletin") {
       if (!isQuestCompleted(questsRef.current, "faded-poster")) {
         if (!isQuestActive(questsRef.current, "faded-poster")) {
           commitQuests(startQuest(questsRef.current, "faded-poster", "poster"));
-          enqueueLead("faded-poster", "Faded Poster");
+          enqueueLead("faded-poster");
         } else {
           commitQuests(setQuestStep(questsRef.current, "faded-poster", "poster"));
         }
@@ -967,7 +970,11 @@ export function useGame() {
       || (choice.setsFlags && choice.setsFlags.includes("chapter1Complete"))
     ) {
       setChapter(2);
-      setShowChapterEnd(true);
+      if (choice.closeup || closeupRef.current) {
+        pendingChapterEnd.current = true;
+      } else {
+        showChapterEndScreen();
+      }
     }
 
     if (choice.action === "enterSanatorium") {
@@ -1040,9 +1047,9 @@ export function useGame() {
     }
 
     if (choice.action === "goToSleep") {
-      const minutesUntilSevenAm = gameState.time < BEDTIME_END
-        ? 420 - gameState.time
-        : 1440 - gameState.time + 420;
+      const minutesUntilSevenAm = gameState.time < TIRED_END
+        ? TIRED_END - gameState.time
+        : 1440 - gameState.time + TIRED_END;
       const nextGameState = advanceTime(minutesUntilSevenAm, false, true, "ethan-room");
       moveToScene("ethan-room", nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek);
       setNewDayAnnouncement(nextGameState);
@@ -1141,12 +1148,19 @@ export function useGame() {
       latestHandleChoice.current(choice, true);
       setDoorTransition("black");
     }, DOOR_FADE_IN);
-    later(() => setDoorTransition("opening"), DOOR_FADE_IN + DOOR_HOLD);
+    later(() => {
+      // The scene is back. Clicks land while the black fades out.
+      doorBusy.current = false;
+      setDoorTransition("opening");
+    }, DOOR_FADE_IN + DOOR_HOLD);
     later(done, DOOR_FADE_IN + DOOR_HOLD + DOOR_FADE_OUT);
   }
 
   function goToBusStop() {
-    if (isLateNight()) {
+    if (!lateNightChoiceAllowed(
+      { action: "goToBusStop", nextScene: "bus-stop" },
+      { time: gameState.time, sceneId: currentScene.id },
+    )) {
       showLateNightActionThought();
       return;
     }
@@ -1177,12 +1191,15 @@ export function useGame() {
     const { action } = choice;
     const { time } = gameState;
 
+    if (choice.excludesStoryFlag && hasAnyFlag(choice.excludesStoryFlag)) return false;
+    if (action === "makeCoffee" && coffeeErrandOpen(storyFlags)) return false;
+
     if (!momTalked && (choice.travel || ["front-yard", "back-yard", "light-pole"].includes(choice.nextScene))) {
       return false;
     }
     if (!momTalked && action === "relaxOnCouch") return false;
     if (action === "goToSleep") {
-      return currentScene.id === "ethan-room" && (time >= BEDTIME_START || time < 420);
+      return currentScene.id === "ethan-room" && (time >= BEDTIME_START || time < TIRED_END);
     }
     if (action === "watchTv") {
       return currentScene.id === "living-room" && !momTalked;
@@ -1337,11 +1354,14 @@ export function useGame() {
     storyFlagsRef.current = restoredFlags;
     setStoryFlags(restoredFlags);
     setChapter(save.chapter ?? 1);
+    closeupRef.current = null;
     setCloseup(null);
     closeupQueue.current = [];
+    pendingChapterEnd.current = false;
+    chapterEndRef.current = false;
     setShowChapterEnd(false);
     clearQuestNotification();
-    if (restoredHill) enqueueLead("light-on-the-hill", "Light on the Hill");
+    if (restoredHill) enqueueLead("light-on-the-hill");
 
     // Modal and transition state is not saved, so always resume at the scene.
     setShowStats(false);
@@ -1396,8 +1416,11 @@ export function useGame() {
     storyFlagsRef.current = {};
     setStoryFlags({});
     setChapter(1);
+    closeupRef.current = null;
     setCloseup(null);
     closeupQueue.current = [];
+    pendingChapterEnd.current = false;
+    chapterEndRef.current = false;
     setShowChapterEnd(false);
     clearQuestNotification();
     setShowStats(false);
@@ -1535,7 +1558,7 @@ export function useGame() {
     closeup,
     dismissCloseup,
     showChapterEnd,
-    dismissChapterEnd: () => setShowChapterEnd(false),
+    dismissChapterEnd: dismissChapterEndScreen,
     momTalked,
     momJobConcernHeard,
     questNotification,
@@ -1555,7 +1578,7 @@ export function useGame() {
     // the gameplay-only 03:30 exhaustion cap.
     adminWait: (minutes: number) => advanceTime(minutes, false, true),
     wait: (minutes: number) => {
-      if (gameState.time >= EXHAUSTION_LOCK_TIME) {
+      if (isWaitingLocked(gameState.time)) {
         showLateNightActionThought();
         return;
       }

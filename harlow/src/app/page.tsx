@@ -29,9 +29,10 @@ import QuestWindow from "@/components/QuestWindow/QuestWindow";
 
 import { useReducedMotion } from "@/components/DialogueScene/typewriter";
 import { isNightTime } from "@/game/utils";
+import { isTiredWindow } from "@/game/lateNight";
 import { useGame } from "@/game/useGame";
 import { storyEntryApplies } from "@/game/story";
-import { DINER_BOARD_HINT, isExteriorScene, RAIN_WEATHER, scenes } from "@/game/scenes";
+import { DINER_BOARD_HINT, isExteriorScene, RAIN_WEATHER, sanatoriumNarration, scenes } from "@/game/scenes";
 import { isRainPlate } from "@/game/scenePlate";
 import { clearSessionSave, readSessionSave } from "@/game/save";
 import { harlowAudio } from "@/game/audio";
@@ -112,7 +113,7 @@ const hotspotLabels: Record<string, string> = {
   lookAtElrodTape: "Police tape",
   lookAtDinerBulletin: "Bulletin board",
   lookAtSanatoriumHill: "The hill",
-  lookAtSanatoriumCigarette: "Sill",
+  lookAtSanatoriumCigarette: "Look at the ash",
 };
 
 const sanatoriumHotspotActions: Record<string, string[]> = {
@@ -243,6 +244,9 @@ export default function Home() {
   const showOpeningThought = openingThoughtIndex !== null;
   const [showVinylThought, setShowVinylThought] = useState(false);
   const [showLateNightThought, setShowLateNightThought] = useState(false);
+  const [statToast, setStatToast] = useState<{ stat: string; amount: number } | null>(null);
+  const [statToastFading, setStatToastFading] = useState(false);
+  const chapterEndButtonRef = useRef<HTMLButtonElement>(null);
   const [tvNewsLine, setTvNewsLine] = useState<string | null>(null);
   const openingThoughtTimer = useRef<number | null>(null);
   const vinylThoughtTimer = useRef<number | null>(null);
@@ -453,7 +457,7 @@ export default function Home() {
     return () => window.clearTimeout(dismissTimer);
   }, [newDayAnnouncement, dismissNewDayAnnouncement]);
 
-  const isLateNight = gameState.time >= 180 && gameState.time < 420;
+  const isLateNight = isTiredWindow(gameState.time);
 
   useEffect(() => {
     if (!isLateNight) {
@@ -477,6 +481,40 @@ export default function Home() {
     };
   }, [isLateNight]);
 
+  useEffect(() => {
+    const effect = currentEffects.find((entry) => entry.type === "effect");
+    if (!effect || effect.type !== "effect") {
+      const clearToast = window.setTimeout(() => {
+        setStatToast(null);
+        setStatToastFading(false);
+      }, 0);
+      return () => window.clearTimeout(clearToast);
+    }
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const showToast = window.setTimeout(() => {
+      setStatToastFading(false);
+      setStatToast({ stat: effect.stat, amount: effect.amount });
+    }, 0);
+    const fadeToast = window.setTimeout(() => {
+      if (reduced) setStatToast(null);
+      else setStatToastFading(true);
+    }, 3000);
+    const removeToast = window.setTimeout(() => {
+      setStatToast(null);
+      setStatToastFading(false);
+    }, reduced ? 3000 : 3300);
+    return () => {
+      window.clearTimeout(showToast);
+      window.clearTimeout(fadeToast);
+      window.clearTimeout(removeToast);
+    };
+  }, [currentEffects, currentScene.id]);
+
+  useEffect(() => {
+    if (!showChapterEnd) return;
+    chapterEndButtonRef.current?.focus();
+  }, [showChapterEnd]);
+
   function returnToMainMenu() {
     clearSessionSave();
     setHasStarted(false);
@@ -493,8 +531,10 @@ export default function Home() {
       || (isWeekend && gameState.time >= 720 && gameState.time < 1140));
   // The scene as it looks without anyone painted into it.
   // Daylit weather art (weatherDayOnly) gives way to the night art after dark.
+  // Night weather art (weatherNightOnly) gives way to the day art before dark.
   const weatherImage =
-    isNightTime(gameState.time) && currentScene.image.weatherDayOnly
+    (sceneIsNight && currentScene.image.weatherDayOnly)
+    || (!sceneIsNight && currentScene.image.weatherNightOnly)
       ? undefined
       : currentScene.image.weather?.[gameState.weather];
   // Elrod: Rachel is painted into the day art until she's met. During her talk
@@ -726,11 +766,13 @@ export default function Home() {
       "action" in choice &&
       (hotspotActions.includes(choice.action) || !!choice.hotspots?.length),
   );
-  const choicesWithoutHotspotActions = visibleChoices.filter(
-    (choice) =>
-      "response" in choice ||
-      (!hotspotActions.includes(choice.action) && !choice.hotspots?.length),
-  );
+  const choicesWithoutHotspotActions = visibleChoices.filter((choice) => {
+    if ("response" in choice) return true;
+    // The diner board is a hotspot and a button. The button stays until
+    // posterFound (excludesStoryFlag on the choice).
+    if (choice.action === "lookAtDinerBulletin") return true;
+    return !hotspotActions.includes(choice.action) && !choice.hotspots?.length;
+  });
   const bottomThought =
     lateNightActionThought ??
     (showLateNightThought && isLateNight
@@ -768,7 +810,6 @@ export default function Home() {
   const liveVisual = {
     scene: currentScene,
     thought: currentThought,
-    effects: currentEffects,
     hotspots: sceneHotspots,
     actionList,
     interimRain,
@@ -790,6 +831,8 @@ export default function Home() {
     setPresented({ signature: arrivalSignature, visual: liveVisual });
   }
   const visual = arrivalReady ? liveVisual : presented.visual;
+  const visualOutdoors =
+    isExteriorScene(visual.scene.id) || OUTDOOR_SCENE_IDS.has(visual.scene.id);
   const boardHint = showDinerBoardHint && visual.scene.id === "diner-inside";
 
   if (!(hasStarted ?? resumedSession)) {
@@ -885,7 +928,7 @@ export default function Home() {
         />
 
         <div
-          className={`scene-image-frame scene-image-frame-${visual.scene.id}${visual.weatherArt ? " scene-image-frame-weather-art" : ""}${visual.scene.captionPosition === "bottom" ? " scene-image-frame-caption-bottom" : ""}${conversationActive ? " scene-image-frame-has-conversation scene-image-frame-conversation-active" : ""}${visual.interimRain ? " scene-image-frame-interim-rain" : ""}${visual.interimRainNight ? " scene-image-frame-interim-rain-night" : ""}${visual.syntheticNight ? " scene-image-frame-synthetic-night" : ""}${incomingSceneVisible ? " scene-frame-arrive" : ""}`}
+          className={`scene-image-frame scene-image-frame-${visual.scene.id}${visual.weatherArt ? " scene-image-frame-weather-art" : ""}${visual.scene.captionPosition === "bottom" ? " scene-image-frame-caption-bottom" : ""}${visual.scene.captionPosition === "center" ? " scene-image-frame-caption-center" : ""}${conversationActive ? " scene-image-frame-has-conversation scene-image-frame-conversation-active" : ""}${visual.interimRain ? " scene-image-frame-interim-rain" : ""}${visual.interimRainNight ? " scene-image-frame-interim-rain-night" : ""}${visual.syntheticNight ? " scene-image-frame-synthetic-night" : ""}${incomingSceneVisible ? " scene-frame-arrive" : ""}`}
         >
           {/* The picture and its hotspots share one box, so percentage hotspot
               positions always map onto the art, wherever the panels sit. */}
@@ -922,7 +965,9 @@ export default function Home() {
               />
             )}
             {visual.interimRain && <div className="scene-rain-sky" aria-hidden="true" />}
-            {visual.interimRain && <div className="scene-rain-glass" aria-hidden="true" />}
+            {visual.interimRain && visualOutdoors && (
+              <div className="scene-rain-glass" aria-hidden="true" />
+            )}
             <StormLightning
               weather={gameState.weather}
               indoor={sceneIsIndoor}
@@ -992,16 +1037,33 @@ export default function Home() {
               </div>
               <div className="scene-caption-narration">
                 <StoryLog
-                  entries={visual.scene.story.filter(
-                    (entry) =>
-                      entry.type !== "thought" &&
-                      storyEntryApplies(
-                        entry,
-                        gameState.time,
-                        gameState.weather,
-                        gameState.dayOfWeek,
-                      ),
-                  )}
+                  entries={visual.scene.story
+                    .filter(
+                      (entry) =>
+                        entry.type !== "thought" &&
+                        storyEntryApplies(
+                          entry,
+                          gameState.time,
+                          gameState.weather,
+                          gameState.dayOfWeek,
+                        ),
+                    )
+                    .map((entry) => {
+                      if (
+                        visual.scene.id !== "sanatorium"
+                        || entry.type !== "narration"
+                        || !entry.text.startsWith("You reach the sanatorium.")
+                      ) {
+                        return entry;
+                      }
+                      const hillDone = quests.some(
+                        (quest) => quest.id === "light-on-the-hill" && quest.status === "completed",
+                      );
+                      return {
+                        ...entry,
+                        text: sanatoriumNarration(gameState.time, hillDone),
+                      };
+                    })}
                   variant="narration"
                   layout="combined"
                 />
@@ -1013,14 +1075,6 @@ export default function Home() {
                       key={visual.thought}
                       text={visual.thought}
                       variant="inline"
-                      effect={
-                        visual.effects[0]?.type === "effect"
-                          ? {
-                              stat: visual.effects[0].stat,
-                              amount: visual.effects[0].amount,
-                            }
-                          : undefined
-                      }
                     />
                   )}
                   {boardHint && (
@@ -1213,21 +1267,47 @@ export default function Home() {
         )}
 
         {closeup && (
-          <CloseupOverlay closeup={closeup} onDismiss={dismissCloseup} />
+          <CloseupOverlay
+            closeup={closeup}
+            onDismiss={dismissCloseup}
+            rain={
+              RAIN_WEATHER.includes(gameState.weather)
+                ? sceneIsIndoor
+                  ? "interior"
+                  : "exterior"
+                : null
+            }
+            rainNight={isNightTime(gameState.time)}
+          />
+        )}
+
+        {statToast && (
+          <div
+            className={`stat-toast${statToastFading ? " stat-toast-fading" : ""}`}
+            role="status"
+          >
+            {statToast.amount >= 0 ? "+" : ""}
+            {statToast.amount} {statToast.stat.toUpperCase()}
+          </div>
         )}
 
         {showChapterEnd && (
           <div
-            className="new-day-screen"
+            className="chapter-end-screen"
             role="dialog"
             aria-modal="true"
             aria-labelledby="chapter-end-title"
-            onClick={dismissChapterEnd}
           >
-            <div className="new-day-screen-content">
+            <div className="chapter-end-screen-content">
               <p>Harlow</p>
               <h2 id="chapter-end-title">End of Chapter 1</h2>
-              <span>Click to continue</span>
+              <button
+                ref={chapterEndButtonRef}
+                type="button"
+                onClick={dismissChapterEnd}
+              >
+                Click to continue
+              </button>
             </div>
           </div>
         )}

@@ -534,7 +534,6 @@ button {
   -webkit-backdrop-filter: blur(10px) saturate(1.1);
   backdrop-filter: blur(10px) saturate(1.1);
   pointer-events: auto;
-  animation: sceneCaptionEnter 520ms cubic-bezier(0.2, 0.7, 0.2, 1) 120ms backwards;
   transition:
     opacity 240ms ease,
     transform 280ms ease;
@@ -555,6 +554,7 @@ button {
   top: 0;
   left: 16px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   max-width: calc(100% - 32px);
@@ -582,16 +582,20 @@ button {
 }
 
 .scene-caption-place {
-  overflow: hidden;
+  min-width: 0;
+  /* Wide enough for "POLICE STATION" and not the whole "POLICE STATION INSIDE",
+     so the long name wraps to two lines instead of ellipsizing. */
+  max-width: 11.5em;
+  overflow: visible;
   padding: 3px 8px 2px;
   color: rgba(245, 225, 215, 0.9);
   font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.24em;
-  text-overflow: ellipsis;
+  letter-spacing: 0.16em;
+  line-height: 1.35;
   text-transform: uppercase;
-  white-space: nowrap;
+  white-space: normal;
   background: rgba(9, 5, 6, 0.8);
   border-radius: 3px;
 }
@@ -647,20 +651,9 @@ button {
   }
 }
 
-@keyframes sceneCaptionEnter {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
 /* Image, caption, and choices arrive together. The previous plate stays
-   underneath so the frame is never blank. */
+   underneath so the frame is never blank. A second enter animation on the
+   caption restarted after this one and left the box half faded. */
 .scene-frame-arrive .scene-info-panel,
 .scene-frame-arrive .overlayActionList {
   animation: sceneArriveIn 150ms ease;
@@ -693,11 +686,12 @@ button {
   z-index: 5;
 }
 
-/* Keep the late-night route-home actions above the persistent thought panel. */
-.scene-image-frame:has(.late-night-thought) .overlayActionList {
-  z-index: 6;
-  padding-bottom: clamp(128px, 15vw, 170px);
-  background: transparent;
+/* The tired line sits under the choice heading if they share the bottom edge.
+   Lift the choices and leave the thought in the strip beneath them. */
+@media (min-width: 641px) {
+  .scene-image-frame:has(.late-night-thought) .overlayActionList {
+    bottom: 132px;
+  }
 }
 
 .new-day-screen {
@@ -710,7 +704,117 @@ button {
   background:
     radial-gradient(circle at 50% 35%, rgba(150, 96, 60, 0.2), transparent 42%),
     rgba(8, 4, 5, 0.94);
+  pointer-events: none;
   animation: newDayScreenFade 3.4s ease-in-out forwards;
+}
+
+/* Chapter end fades in and stays. The morning card uses new-day-screen,
+   which fades back out; that animation left an invisible click blocker. */
+.chapter-end-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(150, 96, 60, 0.2), transparent 42%),
+    rgba(8, 4, 5, 0.94);
+  pointer-events: auto;
+  animation: chapterEndFadeIn 450ms ease forwards;
+}
+
+.chapter-end-screen-content {
+  width: min(680px, 100%);
+  padding: clamp(48px, 8vw, 82px);
+  text-align: center;
+  color: #fff4f4;
+  border: 1px solid rgba(237, 85, 98, 0.38);
+  border-radius: 12px;
+  background: rgba(29, 18, 18, 0.92);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.48), inset 3px 0 0 var(--accent);
+  animation: chapterEndContentIn 450ms ease forwards;
+}
+
+.chapter-end-screen-content p {
+  display: block;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+
+.chapter-end-screen-content h2 {
+  margin: 12px 0 18px;
+  font-family: var(--font-display);
+  font-size: clamp(44px, 8.4vw, 76px);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.chapter-end-screen-content button {
+  padding: 12px 22px;
+  color: rgba(255, 255, 255, 0.86);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgba(237, 85, 98, 0.45);
+  border-radius: 6px;
+}
+
+.chapter-end-screen-content button:focus-visible {
+  outline: 2px solid #f2e4c9;
+  outline-offset: 3px;
+}
+
+.stat-toast {
+  position: fixed;
+  top: 88px;
+  right: 28px;
+  z-index: 900;
+  padding: 8px 12px;
+  color: #f2e4c9;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  background: rgba(29, 18, 18, 0.92);
+  border: 1px solid rgba(237, 85, 98, 0.4);
+  border-radius: 6px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+.stat-toast-fading {
+  animation: statToastOut 300ms ease forwards;
+}
+
+@keyframes chapterEndFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes chapterEndContentIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes statToastOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 .new-day-screen-content {
@@ -957,7 +1061,10 @@ button {
     border-color: rgba(255, 196, 178, 0.26);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
     opacity: 1;
-    transform: translate(calc(-50% + var(--caption-offset, 0px)), -50%);
+    transform: translate(
+      calc(-50% + var(--caption-offset, 0px)),
+      calc(-50% + var(--caption-lift, 0px))
+    );
   }
 
   .scene-hotspot:active::before {
@@ -1727,16 +1834,119 @@ button {
   }
 
   /* Close-ups whose subject is the top of the frame (the light-pole flyers).
-     The card sits on the open corner, above the choice row. */
+     Caption and lead card stack on the open corner, above the choice row.
+     A row with space-between pulled the caption onto the subject. */
   .scene-image-frame-caption-bottom .scene-info-stack {
     top: auto;
     bottom: 96px;
+    flex-direction: column;
     align-items: flex-end;
+    justify-content: flex-end;
   }
 
   .scene-image-frame-caption-bottom .scene-info-panel {
     align-self: flex-end;
     margin: 0 clamp(14px, 1.8vw, 22px) 0 auto;
+  }
+
+  /* Both side doors run the full height, and the bathroom occupies the
+     upper middle. Stack the caption and the lead card in the column
+     between the living-room door (ends 23.5%) and the bathroom (starts 46%). */
+  .scene-image-frame-caption-center .scene-info-stack {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  .scene-image-frame-caption-center .scene-info-panel,
+  .scene-image-frame-caption-center .quest-lead,
+  .scene-image-frame-caption-center .quest-notification {
+    align-self: flex-start;
+    width: auto;
+    min-width: 0;
+    max-width: 16%;
+    margin: 22px 0 0 25%;
+  }
+
+  /* Mom stands left of center. The caption stays left of her; the card
+     stays to her right. min-width: 0 lets max-width win over the 260px floor. */
+  .scene-image-frame-living-room .scene-info-panel {
+    min-width: 0;
+    max-width: 28%;
+  }
+
+  .scene-image-frame-living-room .quest-lead,
+  .scene-image-frame-living-room .quest-notification {
+    width: auto;
+    min-width: 0;
+    max-width: 28%;
+    margin-right: 2%;
+    margin-left: auto;
+  }
+
+  /* A strip between the backyard door (ends 10%) and Mom (starts 36%). */
+  .scene-image-frame-kitchen .scene-info-stack {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .scene-image-frame-kitchen .scene-info-panel,
+  .scene-image-frame-kitchen .quest-lead,
+  .scene-image-frame-kitchen .quest-notification {
+    width: auto;
+    min-width: 0;
+    max-width: 20%;
+    margin-right: auto;
+    margin-left: 12%;
+  }
+
+  /* Mom's door starts at 44% once the attic ladder is down. */
+  .scene-image-frame-hallway-upstairs-attic-open .scene-info-stack {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .scene-image-frame-hallway-upstairs-attic-open .scene-info-panel,
+  .scene-image-frame-hallway-upstairs-attic-open .quest-lead,
+  .scene-image-frame-hallway-upstairs-attic-open .quest-notification {
+    width: auto;
+    min-width: 0;
+    max-width: 36%;
+    margin-right: auto;
+    margin-left: clamp(14px, 1.8vw, 22px);
+  }
+
+  /* Between the first door (ends 20%) and the way out (starts 42%). */
+  .scene-image-frame-sanatorium-hallway .scene-info-stack {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .scene-image-frame-sanatorium-hallway .scene-info-panel,
+  .scene-image-frame-sanatorium-hallway .quest-lead,
+  .scene-image-frame-sanatorium-hallway .quest-notification {
+    width: auto;
+    min-width: 0;
+    max-width: 15%;
+    margin-right: auto;
+    margin-left: 23%;
+  }
+
+  /* The bench, Roy, and the yard door cover the left and middle. The clear
+     strip is the right edge, past the door (which ends at 82%). */
+  .scene-image-frame-scrapyard-inside .scene-info-stack {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .scene-image-frame-scrapyard-inside .scene-info-panel,
+  .scene-image-frame-scrapyard-inside .quest-lead,
+  .scene-image-frame-scrapyard-inside .quest-notification {
+    width: auto;
+    min-width: 0;
+    max-width: 15%;
+    margin-right: 2%;
+    margin-left: auto;
   }
 }
 
@@ -2022,6 +2232,7 @@ button {
 
 .door-transition-opening {
   animation: doorFadeOut 300ms ease-out forwards;
+  pointer-events: none;
 }
 
 @keyframes doorFadeIn {
@@ -2102,4 +2313,23 @@ button {
   left: 40%;
   width: 18%;
   height: 20%;
+}
+
+/* These animations are declared after the main reduced-motion block, so a
+   rule here is what actually wins. The door classes are also skipped in JS. */
+@media (prefers-reduced-motion: reduce) {
+  .door-transition-closing,
+  .door-transition-opening,
+  .scene-hotspot-cue::before,
+  .chapter-end-screen,
+  .chapter-end-screen-content,
+  .stat-toast,
+  .stat-toast-fading {
+    animation: none;
+  }
+
+  .chapter-end-screen,
+  .chapter-end-screen-content {
+    opacity: 1;
+  }
 }

@@ -1,4 +1,5 @@
 import type { DayOfWeek, Location, Weather } from "./types";
+import { isNightTime } from "./utils";
 import type { Choice } from "./choices";
 
 import {
@@ -43,6 +44,12 @@ export type Scene = {
     /** The weather art is daylit: at night the night art wins. */
     weatherDayOnly?: boolean;
     /**
+     * The weather art is a night plate. By day the day art wins and the
+     * interim rain filter greys it. A dark rainy plate would read as night
+     * at 10:35.
+     */
+    weatherNightOnly?: boolean;
+    /**
      * No night art yet: `night` is the day plate. After dark the scene is
      * dimmed and cooled instead of showing daylight. Set this on any scene
      * that still shares its day image at night.
@@ -58,7 +65,7 @@ export type Scene = {
    * Where the scene caption sits over the art on a wide screen.
    * Phones already place it above the picture.
    */
-  captionPosition?: "top" | "bottom";
+  captionPosition?: "top" | "bottom" | "center";
   choices: Choice[];
   conversation?: Conversation;
   characters?: SceneCharacter[];
@@ -105,6 +112,15 @@ export function isExteriorScene(sceneId: string): boolean {
   );
 }
 
+function listedWalkMinutes(sceneId: string) {
+  return exteriorDestinations.find((destination) => destination.id === sceneId)?.walkMinutes ?? 0;
+}
+
+/** Each pair uses the longer of the two listed times, so the walk back matches. */
+export function symmetricWalkMinutes(originId: string, destinationId: string) {
+  return Math.max(listedWalkMinutes(originId), listedWalkMinutes(destinationId));
+}
+
 export function createWalkingChoices(
   originId: string,
   availableDestinationIds: readonly string[],
@@ -116,13 +132,16 @@ export function createWalkingChoices(
         destination.id !== originId &&
         availableDestinationIds.includes(destination.id),
     )
-    .map((destination) => ({
-      label: `Walk to ${destination.label} (${destination.walkMinutes} min)`,
-      action: `walkTo${destination.id}`,
-      nextScene: destination.id,
-      timeCost: destination.walkMinutes,
-      travel: true,
-    }));
+    .map((destination) => {
+      const minutes = symmetricWalkMinutes(originId, destination.id);
+      return {
+        label: `Walk to ${destination.label} (${minutes} min)`,
+        action: `walkTo${destination.id}`,
+        nextScene: destination.id,
+        timeCost: minutes,
+        travel: true,
+      };
+    });
 }
 
 export function createBusChoices(
@@ -150,6 +169,7 @@ export const hallway: Scene = {
   // Scene objects are data first: narration, art, available choices, and optional
   // conversations/NPCs. Copy this shape when creating a new location.
   id: "hallway",
+  captionPosition: "center",
 
   story: [
     narration("Rain ticks against the windows.", { weather: WET }),
@@ -366,6 +386,9 @@ export const frontYard: Scene = {
       "Heavy rain": "./images/locations/home/homeOutsideRainy.png",
       Thunderstorm: "./images/locations/home/homeThunderstorm.png",
     },
+    // Those rainy plates are night shots. Daytime rain uses the day plate
+    // plus the interim filter, or 10:35 looks like night.
+    weatherNightOnly: true,
   },
 
   choices: [
@@ -505,11 +528,11 @@ export const rachelFrontYardConversation: Conversation = {
       endsConversation: true,
     },
     {
-      label: "There was a file. PARKER, E. Still open.",
+      label: "There was a file. PARKER, E. Still in his drawer.",
       requiresStoryFlag: "fileDrawerSeen",
       excludesStoryFlag: "rachelShutOut",
       response: [
-        ethan("There was a file. PARKER, E. Still open."),
+        ethan("There was a file. PARKER, E. Still in his drawer."),
         npc(
           "Rachel",
           "They stopped looking after a month. So why's he still keeping it in a drawer?",
@@ -823,10 +846,24 @@ export const momConversation: Conversation = {
     {
       label: "Got your coffee.",
       requiresItem: "Coffee",
+      requiresStoryFlag: "posterFound",
       excludesStoryFlag: "coffeeDelivered",
       response: [
         ethan("Got your coffee."),
         npc("Linda", "Thanks, honey."),
+      ],
+      storyFlag: "coffeeDelivered",
+      removesItem: "Coffee",
+    },
+    {
+      label: "Got your coffee.",
+      requiresItem: "Coffee",
+      excludesStoryFlag: ["coffeeDelivered", "posterFound"],
+      response: [
+        ethan("Got your coffee."),
+        npc("Linda", "Thanks, honey. Did Margaret ever take that old board down?"),
+        ethan("Don't think so."),
+        npc("Linda", "No. She wouldn't."),
       ],
       storyFlag: "coffeeDelivered",
       removesItem: "Coffee",
@@ -860,16 +897,16 @@ export const momDeathConversation: Conversation = {
   ],
   choices: [
     {
-      label: "Yeah. It's true. Walter wouldn't tell me anything else.",
+      label: "It's true. Walter wouldn't tell me anything else.",
       response: [
-        ethan("Yeah. It's true. Walter wouldn't tell me anything else."),
+        ethan("It's true. Walter wouldn't tell me anything else."),
         npc("Linda", "He asked me when I last saw her. It's been a few days."),
       ],
     },
     {
-      label: "Yeah. Did you know her well?",
+      label: "Did you know her well?",
       response: [
-        ethan("Yeah. Did you know her well?"),
+        ethan("Did you know her well?"),
         npc(
           "Linda",
           "Not really. A word or two when she got the mail.",
@@ -877,9 +914,9 @@ export const momDeathConversation: Conversation = {
       ],
     },
     {
-      label: "Yeah. Do they know who did it?",
+      label: "Do they know who did it?",
       response: [
-        ethan("Yeah. Do they know who did it?"),
+        ethan("Do they know who did it?"),
         npc(
           "Linda",
           "No. They're still putting it together. I'm not going to guess.",
@@ -887,9 +924,9 @@ export const momDeathConversation: Conversation = {
       ],
     },
     {
-      label: "Yeah. I can't believe it.",
+      label: "I can't believe it.",
       response: [
-        ethan("Yeah. I can't believe it."),
+        ethan("I can't believe it."),
         npc(
           "Linda",
           "Me neither. She was alone in that house so much. Be careful. And let the sheriff handle it.",
@@ -1046,7 +1083,7 @@ export const walterConversation: Conversation = {
       leadQuest: "what-walter-said",
       closeup: {
         image: "./images/locations/police_station/filingCabinetOpen.png",
-        thought: "PARKER, E. – 1972. Still open. Still there.",
+        thought: "PARKER, E. – 1972. Closed ten years. Still in his drawer.",
         label: "Open filing drawer",
         setsFlags: ["fileDrawerSeen"],
         next: {
@@ -1534,6 +1571,7 @@ export const attic: Scene = {
 
 export const basement: Scene = {
   id: "basement",
+  captionPosition: "bottom",
   story: [
     narration("You go down into the basement."),
     thought("Water's seeping in by the wall. Again.", { weather: HEAVY }),
@@ -1551,6 +1589,7 @@ export const basement: Scene = {
 
 export const garage: Scene = {
   id: "garage",
+  captionPosition: "bottom",
   story: [
     narration("You step into the garage."),
     thought("Oil and old wood."),
@@ -1656,6 +1695,7 @@ export const needleAndGroove: Scene = {
 
 export const needleAndGrooveInside: Scene = {
   id: "needle-and-groove-inside",
+  captionPosition: "bottom",
   story: [
     narration("You step inside Needle & Groove."),
     thought("Old cardboard and vinyl. I could stay in here."),
@@ -2254,6 +2294,7 @@ export const policeStation: Scene = {
 
 export const policeStationInside: Scene = {
   id: "police-station-inside",
+  captionPosition: "bottom",
   story: [
     narration("You step inside the police station."),
     thought("Quieter than I figured a station would be."),
@@ -2660,6 +2701,7 @@ export const motel: Scene = {
 
 export const motelInside: Scene = {
   id: "motel-inside",
+  captionPosition: "bottom",
   story: [
     narration("You step into the motel office."),
     thought("Earl's on the desk.", { from: 480, until: 1020 }),
@@ -2765,6 +2807,8 @@ export const dinerInside: Scene = {
     thought("Dead in here, this hour."),
   ],
   location: "Diner",
+  /** The bulletin board fills the top-left. Keep the caption off that hotspot. */
+  captionPosition: "bottom",
   image: {
     day: "./images/locations/diner/dinerInsideDay.png",
     night: "./images/locations/diner/dinerInsideNight.png",
@@ -2789,6 +2833,7 @@ export const dinerInside: Scene = {
       action: "lookAtDinerBulletin",
       nextScene: "diner-inside",
       timeCost: 0,
+      excludesStoryFlag: "posterFound",
       hotspots: [{ left: 8, top: 18, width: 14, height: 42 }],
       closeup: {
         image: "./images/misc/EmilyMissingPoster.png",
@@ -2814,10 +2859,21 @@ export const dinerInside: Scene = {
 // SANATORIUM
 // ----------------------------------------
 
+export const SANATORIUM_ARRIVAL =
+  "You reach the sanatorium. The building sits there, windows dark.";
+export const SANATORIUM_NIGHT_ARRIVAL =
+  "You reach the sanatorium. One window still lit. The rest are dark.";
+
+/** Night, until Light on the Hill is completed — including before it starts. */
+export function sanatoriumNarration(time: number, hillCompleted: boolean) {
+  if (isNightTime(time) && !hillCompleted) return SANATORIUM_NIGHT_ARRIVAL;
+  return SANATORIUM_ARRIVAL;
+}
+
 export const sanatorium: Scene = {
   id: "sanatorium",
   story: [
-    narration("You reach the sanatorium. The building sits there, windows dark."),
+    narration(SANATORIUM_ARRIVAL),
     thought("I don't want to go in."),
   ],
   location: "Sanatorium",
@@ -2959,7 +3015,7 @@ export const sanatoriumRoom2: Scene = {
   id: "sanatorium-room-2",
   story: [
     narration("You step into the second room and listen past the door."),
-    thought("Ash on the sill."),
+    thought("Ash on the floor tiles."),
     thought("Just my footsteps. I think."),
   ],
   location: "Sanatorium",
@@ -2969,13 +3025,13 @@ export const sanatoriumRoom2: Scene = {
   },
   choices: [
     {
-      label: "Look at the sill",
+      label: "Look at the ash",
       action: "lookAtSanatoriumCigarette",
       nextScene: "sanatorium-room-2",
       timeCost: 0,
       closeup: {
         image: "./images/locations/sanatorium/sanatoriumRoom2NightCigarette.png",
-        thought: "Still warm. Someone was just here.",
+        thought: "Still burning. Someone was just here.",
         label: "Cigarette",
       },
       setsFlags: ["sanatoriumCigaretteSeen", "chapter1Complete"],
