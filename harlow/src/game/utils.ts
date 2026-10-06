@@ -101,3 +101,9 @@ export function getNextMonth(month: Month) {
 export function isNightTime(minutes: number) {
   return minutes >= 1080 || minutes < 360;
 }
+
+/** The status line. Stored weather stays Sunny; after dark that word is Clear. */
+export function weatherStatusLabel(weather: string, time: number) {
+  if (weather === "Sunny" && isNightTime(time)) return "Clear";
+  return weather;
+}

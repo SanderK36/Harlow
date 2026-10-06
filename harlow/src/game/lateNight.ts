@@ -2,9 +2,9 @@
  * One late-night check for both clocks.
  *
  * Tired (03:00–07:00, `isLateNight`) blocks new places, talks, and looking
- * around. Waiting is only locked from 03:30–07:00, the same window
- * `advanceTime` already uses. Exits, the way home, and Go to bed stay
- * available for the whole tired window, including 03:15 and 03:45.
+ * around. Waiting is only locked from 03:30–07:00. Walks and other allowed
+ * actions still spend their full time. Exits, the way home, and Go to sleep
+ * stay available for the whole tired window, including 03:15 and 03:45.
  */
 
 export const TIRED_START = 180;
@@ -19,6 +19,32 @@ export function isTiredWindow(time: number) {
 /** 03:30 until 07:00. Waiting is free again at morning, not locked until midnight. */
 export function isWaitingLocked(time: number) {
   return time >= WAITING_LOCK_START && time < TIRED_END;
+}
+
+/**
+ * Minutes an allowed action spends. The 03:30 lock does not shorten a walk.
+ * Before Mom is talked to, time still stops at 08:59.
+ */
+export function actionMinutes(
+  time: number,
+  requested: number,
+  momTalked: boolean,
+  completingMomQuest = false,
+) {
+  if (momTalked || completingMomQuest) return requested;
+  return Math.min(requested, Math.max(0, 539 - time));
+}
+
+/**
+ * Waiting cannot step into the 03:30 lock. A wait at 03:20 stops at 03:30.
+ * After 07:00 the next lock is 03:30 the next morning.
+ */
+export function waitingMinutesAllowed(time: number, requested: number) {
+  if (requested <= 0 || isWaitingLocked(time)) return 0;
+  const untilLock = time < WAITING_LOCK_START
+    ? WAITING_LOCK_START - time
+    : 1440 - time + WAITING_LOCK_START;
+  return Math.min(requested, untilLock);
 }
 
 /**

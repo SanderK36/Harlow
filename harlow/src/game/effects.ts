@@ -34,6 +34,15 @@ export function applyEffects(
   };
 }
 
+/** A night's sleep fills stamina and health. Other stats stay as they were. */
+export function restAfterSleep(player: Player): Player {
+  return {
+    ...player,
+    health: player.maxHealth,
+    stamina: player.maxStamina,
+  };
+}
+
 export function effectsToStory(effects: ChoiceEffects): StoryEntry[] {
   return Object.entries(effects).map(
     ([stat, amount]) => ({

@@ -2917,6 +2917,14 @@ export function sanatoriumNarration(time: number, hillCompleted: boolean) {
   return SANATORIUM_ARRIVAL;
 }
 
+/** The hill close-up: one lit window. Used as the sanatorium plate until the quest is done. */
+export const SANATORIUM_ONE_WINDOW =
+  "./images/locations/sanatorium/sanatoriumFromTheStreetsNight.png";
+
+export function sanatoriumShowsOneWindow(time: number, hillCompleted: boolean) {
+  return isNightTime(time) && !hillCompleted;
+}
+
 export const sanatorium: Scene = {
   id: "sanatorium",
   story: [

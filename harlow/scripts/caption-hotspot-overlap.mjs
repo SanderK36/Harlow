@@ -143,6 +143,20 @@ async function measure(page) {
         bottom: rect.bottom,
       };
     };
+    const viewport = window.innerWidth;
+    const panelRect = panel.getBoundingClientRect();
+    if (viewport > 640) {
+      if (panelRect.width < 279) hit("width", "caption", `${Math.round(panelRect.width)}<280`);
+      if (panelRect.width > 441) hit("width", "caption", `${Math.round(panelRect.width)}>440`);
+    } else if (Math.abs(panelRect.width - (viewport - 32)) > 4) {
+      hit("width", "caption", `${Math.round(panelRect.width)}!=${viewport - 32}`);
+    }
+    const buttonList = document.querySelector(".overlayActionButtons");
+    const thoughtBar = document.querySelector(".opening-thought, .late-night-thought");
+    const panelCovers = [buttonList, thoughtBar].filter(Boolean).map((element) =>
+      boxOf(element, element === buttonList ? "choice-panel" : "thought-bar"),
+    );
+    compareCovers(panelCovers);
     compareCovers([boxOf(panel, "caption")]);
     const fake = document.createElement("button");
     fake.className = "quest-lead";

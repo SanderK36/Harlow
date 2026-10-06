@@ -94,11 +94,13 @@ export default function SceneHotspot({
       // The panel is a sibling of the art, so a label at the hotspot's
       // bottom edge paints underneath "WHAT DO YOU WANT TO DO?".
       const panel = frame.parentElement?.querySelector(".overlayActionList");
-      const obstacles = panel
-        ? [panel.querySelector("h2"), panel.querySelector(".overlayActionButtons")].filter(
-            (element): element is Element => element !== null,
-          )
-        : [];
+      const thoughtBar = frame.parentElement?.querySelector(".opening-thought");
+      const obstacles = [
+        ...(panel
+          ? [panel.querySelector("h2"), panel.querySelector(".overlayActionButtons")]
+          : []),
+        thoughtBar,
+      ].filter((element): element is Element => element !== null);
       const blockTop = obstacles.reduce((top, element) => {
         return Math.min(top, element.getBoundingClientRect().top);
       }, Number.POSITIVE_INFINITY);

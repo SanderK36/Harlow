@@ -46,6 +46,19 @@
   filter: saturate(0.4) brightness(0.95);
 }
 
+/* A wet night exterior should not read as a clear moon or a dry dusk. */
+.imageRainNightExterior {
+  filter: saturate(0.25) brightness(0.5);
+}
+
+.overcast {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(42, 48, 56, 0.88), rgba(42, 48, 56, 0.45) 70%);
+  mix-blend-mode: multiply;
+}
+
 .rainGlass {
   position: absolute;
   inset: 0;

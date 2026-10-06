@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { applyEffects, effectsToStory } from "@/game/effects";
+import { applyEffects, effectsToStory, restAfterSleep } from "@/game/effects";
 import initialGameState from "@/game/gameState";
 import player from "@/game/player";
 import {
@@ -19,13 +19,22 @@ import { sceneWeatherPlate } from "@/game/scenePlate";
 import { harlowAudio } from "@/game/audio";
 import { hillCheckScene, HILL_THOUGHT, shouldNoticeHill } from "@/game/hill";
 import {
+  actionMinutes,
   isTiredWindow,
   isWaitingLocked,
   lateNightChoiceAllowed,
   TIRED_END,
-  WAITING_LOCK_START,
+  waitingMinutesAllowed,
 } from "@/game/lateNight";
-import { noticesAreHeld } from "@/game/notices";
+import {
+  emptyNoticeQueue,
+  enqueueNoticeCard,
+  finishShowingNotice,
+  noticesAreHeld,
+  pauseNoticeQueue,
+  pumpNoticeQueue,
+  type NoticeCard,
+} from "@/game/notices";
 import { advanceGameTime, withCanonWeekday } from "@/game/time";
 import { isNightTime } from "@/game/utils";
 import {
@@ -167,9 +176,7 @@ export function useGame() {
   const replyTimer = useRef<number | null>(null);
   const questNotificationTimer = useRef<number | null>(null);
   const locationDiscoveryTimer = useRef<number | null>(null);
-  const noticeQueue = useRef<QuestNotice[]>([]);
-  const noticeShowing = useRef(false);
-  const announcedNotices = useRef<Set<string>>(new Set());
+  const noticesRef = useRef(emptyNoticeQueue());
   // True while dialogue is on screen. Leads wait so the card is not hidden
   // under the conversation (or display:none on a phone).
   const conversationActiveRef = useRef(false);
@@ -261,7 +268,6 @@ export function useGame() {
   const closeupRef = useRef<CloseupContent | null>(null);
   const chapterEndRef = useRef(false);
   const pendingChapterEnd = useRef(false);
-  const showingNotice = useRef<QuestNotice | null>(null);
   const [showChapterEnd, setShowChapterEnd] = useState(false);
   const [questNotification, setQuestNotification] = useState<string | null>(null);
   const [questNotificationLabel, setQuestNotificationLabel] = useState("NEW LEAD");
@@ -273,10 +279,7 @@ export function useGame() {
     if (locationDiscoveryTimer.current !== null) window.clearTimeout(locationDiscoveryTimer.current);
     questNotificationTimer.current = null;
     locationDiscoveryTimer.current = null;
-    noticeQueue.current = [];
-    noticeShowing.current = false;
-    showingNotice.current = null;
-    announcedNotices.current = new Set();
+    noticesRef.current = emptyNoticeQueue();
     setQuestNotification(null);
     setQuestNotificationLabel("NEW LEAD");
     setQuestNotificationKind("lead");
@@ -291,29 +294,35 @@ export function useGame() {
     });
   }
 
-  function pumpNotices() {
-    if (noticeShowing.current || overlayHoldsNotices()) return;
-    const next = noticeQueue.current.shift();
-    if (!next) return;
-    noticeShowing.current = true;
-    showingNotice.current = next;
-    setQuestNotification(next.message);
-    setQuestNotificationLabel(next.label);
-    setQuestNotificationKind(next.kind);
+  function showNoticeCard(card: NoticeCard) {
+    setQuestNotification(card.message);
+    setQuestNotificationLabel(card.label);
+    setQuestNotificationKind(card.kind);
     setQuestNotificationExiting(false);
+    if (questNotificationTimer.current !== null) window.clearTimeout(questNotificationTimer.current);
     questNotificationTimer.current = window.setTimeout(() => {
       setQuestNotificationExiting(true);
       questNotificationTimer.current = window.setTimeout(() => {
-        noticeShowing.current = false;
-        showingNotice.current = null;
-        setQuestNotification(null);
-        setQuestNotificationLabel("NEW LEAD");
-        setQuestNotificationKind("lead");
-        setQuestNotificationExiting(false);
         questNotificationTimer.current = null;
-        pumpNotices();
+        const next = finishShowingNotice(noticesRef.current, overlayHoldsNotices());
+        noticesRef.current = next;
+        if (next.showing) showNoticeCard(next.showing);
+        else {
+          setQuestNotification(null);
+          setQuestNotificationLabel("NEW LEAD");
+          setQuestNotificationKind("lead");
+          setQuestNotificationExiting(false);
+        }
       }, LEAD_EXIT_MS);
     }, LEAD_ENTER_MS + LEAD_HOLD_MS);
+  }
+
+  function pumpNotices() {
+    const next = pumpNoticeQueue(noticesRef.current, overlayHoldsNotices());
+    if (next === noticesRef.current) return;
+    const started = !noticesRef.current.showing && next.showing;
+    noticesRef.current = next;
+    if (started && next.showing) showNoticeCard(next.showing);
   }
 
   /** Put a card that is already on screen back in the queue. Its timer stops. */
@@ -322,11 +331,7 @@ export function useGame() {
       window.clearTimeout(questNotificationTimer.current);
       questNotificationTimer.current = null;
     }
-    if (showingNotice.current) {
-      noticeQueue.current.unshift(showingNotice.current);
-      showingNotice.current = null;
-    }
-    noticeShowing.current = false;
+    noticesRef.current = pauseNoticeQueue(noticesRef.current);
     setQuestNotification(null);
     setQuestNotificationLabel("NEW LEAD");
     setQuestNotificationKind("lead");
@@ -349,11 +354,17 @@ export function useGame() {
   pumpNoticesRef.current = pumpNotices;
 
   function enqueueNotice(notice: QuestNotice, key?: string) {
-    const dedupeKey = key ?? `${notice.kind}:${notice.label}:${notice.message}`;
-    if (announcedNotices.current.has(dedupeKey)) return;
-    announcedNotices.current.add(dedupeKey);
-    noticeQueue.current.push(notice);
-    pumpNotices();
+    const card: NoticeCard = {
+      key: key ?? `${notice.kind}:${notice.label}:${notice.message}`,
+      kind: notice.kind,
+      label: notice.label,
+      message: notice.message,
+    };
+    const next = enqueueNoticeCard(noticesRef.current, card, overlayHoldsNotices());
+    if (next === noticesRef.current) return;
+    const started = !noticesRef.current.showing && next.showing;
+    noticesRef.current = next;
+    if (started && next.showing) showNoticeCard(next.showing);
   }
 
   function enqueueLead(id: QuestId) {
@@ -526,17 +537,15 @@ export function useGame() {
     destinationSceneId: string | null = null,
   ) {
     // Keep time changes in one place so thoughts and day/night images stay synced.
-    const allowedMinutes = momTalked || completingMomQuest
-      ? minutes
-      : Math.min(minutes, Math.max(0, 539 - gameState.time));
-    const minutesUntilExhaustionLock = isWaitingLocked(gameState.time)
-      ? 0
-      : gameState.time < WAITING_LOCK_START
-        ? WAITING_LOCK_START - gameState.time
-        : 1440 - gameState.time + WAITING_LOCK_START;
-    const timeToAdvance = bypassExhaustionLock
-      ? allowedMinutes
-      : Math.min(allowedMinutes, minutesUntilExhaustionLock);
+    // Waiting is the only action capped at 03:30. A walk spends its full cost,
+    // including the 40 minutes home from the sanatorium.
+    void bypassExhaustionLock;
+    const timeToAdvance = actionMinutes(
+      gameState.time,
+      minutes,
+      momTalked,
+      completingMomQuest,
+    );
     const nextGameState = advanceGameTime(gameState, timeToAdvance);
 
     setGameState(nextGameState);
@@ -1053,6 +1062,7 @@ export function useGame() {
         : 1440 - gameState.time + TIRED_END;
       const nextGameState = advanceTime(minutesUntilSevenAm, false, true, "ethan-room");
       moveToScene("ethan-room", nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek);
+      setPlayerState((previous) => restAfterSleep(previous));
       setNewDayAnnouncement(nextGameState);
       return;
     }
@@ -1579,15 +1589,15 @@ export function useGame() {
     doorTransition,
     goToBusStop,
     adminTravel,
-    // The pass-time controls are developer tools, so they intentionally ignore
-    // the gameplay-only 03:30 exhaustion cap.
+    waitingLocked: isWaitingLocked(gameState.time),
+    // Same lock as the on-screen Wait buttons. Sleep still jumps to 07:00.
     adminWait: (minutes: number) => advanceTime(minutes, false, true),
     wait: (minutes: number) => {
       if (isWaitingLocked(gameState.time)) {
         showLateNightActionThought();
         return;
       }
-      advanceTime(minutes);
+      advanceTime(waitingMinutesAllowed(gameState.time, minutes));
     },
     useInventoryItem: (item: string) => {
       const fearReduction = item === "Beer" ? 10 : item === "Cigarettes" ? 5 : 0;

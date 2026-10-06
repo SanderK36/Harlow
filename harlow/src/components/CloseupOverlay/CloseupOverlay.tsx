@@ -54,9 +54,20 @@ export default function CloseupOverlay({ closeup, onDismiss, rain = null, rainNi
           <img
             src={closeup.image}
             alt=""
-            className={`${styles.image}${rain ? ` ${rainNight ? styles.imageRainNight : styles.imageRain}` : ""}`}
+            className={`${styles.image}${
+              rain
+                ? ` ${
+                  rainNight
+                    ? rain === "exterior"
+                      ? styles.imageRainNightExterior
+                      : styles.imageRainNight
+                    : styles.imageRain
+                }`
+                : ""
+            }`}
             onClick={onDismiss}
           />
+          {rain === "exterior" && <div className={styles.overcast} aria-hidden="true" />}
           {rain === "exterior" && <div className={styles.rainGlass} aria-hidden="true" />}
         </div>
         <p className={styles.thought}>{closeup.thought}</p>

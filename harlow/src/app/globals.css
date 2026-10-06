@@ -375,6 +375,23 @@ button {
   background: linear-gradient(to bottom, rgba(88, 96, 106, 0.28), transparent 42%);
 }
 
+/* Wet exteriors at night: the mild night wash left a full moon and dusk light. */
+.scene-image-frame-exterior.scene-image-frame-interim-rain-night .scene-image {
+  filter: saturate(0.32) brightness(0.72);
+}
+
+.scene-image-frame-exterior.scene-image-frame-interim-rain-night .scene-rain-sky {
+  background: linear-gradient(to bottom, rgba(72, 80, 90, 0.72), transparent 62%);
+}
+
+/* No all-dark sanatorium plate yet. After Light on the Hill, crush the
+   night plate so the painted lamps and windows do not read as still lit. */
+.scene-image-frame-sanatorium-dark .scene-image,
+.scene-image-frame-sanatorium-dark.scene-image-frame-interim-rain .scene-image,
+.scene-image-frame-sanatorium-dark.scene-image-frame-interim-rain-night .scene-image {
+  filter: brightness(0.28) saturate(0.35);
+}
+
 /* Day art used after dark (image.noNightVariant). Darker and cooler than
    the rain filter; when both apply, this later rule wins. */
 .scene-image-frame-synthetic-night .scene-image {
@@ -533,7 +550,8 @@ button {
     inset 0 1px 0 rgba(255, 220, 205, 0.07);
   -webkit-backdrop-filter: blur(10px) saturate(1.1);
   backdrop-filter: blur(10px) saturate(1.1);
-  pointer-events: auto;
+  pointer-events: none;
+  overflow: visible;
   transition:
     opacity 240ms ease,
     transform 280ms ease;
@@ -643,11 +661,20 @@ button {
   line-height: 1.4;
 }
 
-/* The Needle & Groove sign starts about a third of the way in. */
+/* The SCENE box never shrinks to dodge a hotspot. It moves, or it drops
+   below the art. Narration grows in height; it is not clipped. */
 @media (min-width: 641px) {
-  .scene-image-frame-needle-and-groove-inside .scene-info-panel {
-    min-width: 0;
-    max-width: 31%;
+  .scene-info-panel {
+    width: min(440px, calc(100% - 32px));
+    min-width: 280px;
+    max-width: 440px;
+    overflow: visible;
+  }
+
+  .scene-info-panel .scene-caption-narration,
+  .scene-info-panel .scene-caption-thought {
+    overflow: visible;
+    max-height: none;
   }
 }
 
@@ -683,7 +710,7 @@ button {
   right: clamp(12px, 2.4vw, 28px);
   bottom: clamp(12px, 2.4vw, 28px);
   left: clamp(12px, 2.4vw, 28px);
-  z-index: 5;
+  z-index: 8;
 }
 
 /* The tired line sits under the choice heading if they share the bottom edge.
@@ -755,6 +782,7 @@ button {
 }
 
 .chapter-end-screen-content button {
+  min-height: 44px;
   padding: 12px 22px;
   color: rgba(255, 255, 255, 0.86);
   font: inherit;
@@ -1728,13 +1756,13 @@ button {
     display: none;
   }
 
-  /* Above the art the card spans the column; the plate still overhangs. */
+  /* 16px margin on each side of the viewport. The box does not shrink. */
   .scene-info-panel {
-    align-self: stretch;
-    width: auto;
+    align-self: center;
+    width: calc(100vw - 32px);
     min-width: 0;
-    max-width: none;
-    margin: 12px 0 0;
+    max-width: calc(100vw - 32px);
+    margin: 12px auto 0;
     padding: 22px 16px 13px;
   }
 
@@ -1743,9 +1771,10 @@ button {
   }
 
   .scene-info-stack .quest-notification {
-    align-self: stretch;
-    width: auto;
-    margin: 22px 0 0;
+    align-self: center;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    margin: 22px auto 0;
   }
 
   .scene-info-stack .quest-lead {
@@ -1825,128 +1854,65 @@ button {
   }
 }
 
-/* Side by side over the art: the caption top-left, notices top-right. */
+/* Desktop: a 280–440px column. JS moves it to the first clear corner.
+   If no corner fits, or the choices and thought cover a hotspot, they
+   sit in a band under the picture. Hotspots are not moved. */
 @media (min-width: 641px) {
   .scene-info-stack {
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: stretch;
+    width: min(440px, calc(100% - 32px));
+    left: 16px;
+    right: auto;
   }
 
-  /* Close-ups whose subject is the top of the frame (the light-pole flyers).
-     Caption and lead card stack on the open corner, above the choice row.
-     A row with space-between pulled the caption onto the subject. */
-  .scene-image-frame-caption-bottom .scene-info-stack {
+  .scene-image-frame[data-caption="below"],
+  .scene-image-frame[data-choices="below"],
+  .scene-image-frame[data-thought="below"] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .scene-image-frame[data-caption="below"] > .scene-art,
+  .scene-image-frame[data-choices="below"] > .scene-art,
+  .scene-image-frame[data-thought="below"] > .scene-art {
+    order: 1;
+  }
+
+  .scene-image-frame[data-caption="below"] > .scene-info-stack {
+    position: relative;
+    order: 2;
     top: auto;
-    bottom: 96px;
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: flex-end;
+    right: auto;
+    left: auto;
+    width: min(440px, calc(100% - 32px));
+    min-width: 280px;
+    margin: 12px 0 0;
   }
 
-  .scene-image-frame-caption-bottom .scene-info-panel {
-    align-self: flex-end;
-    margin: 0 clamp(14px, 1.8vw, 22px) 0 auto;
+  .scene-image-frame[data-caption="below"] .scene-info-panel {
+    width: 100%;
+    min-width: 280px;
+    max-width: 440px;
   }
 
-  /* Both side doors run the full height, and the bathroom occupies the
-     upper middle. Stack the caption and the lead card in the column
-     between the living-room door (ends 23.5%) and the bathroom (starts 46%). */
-  .scene-image-frame-caption-center .scene-info-stack {
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
+  .scene-image-frame[data-thought="below"] > .opening-thought {
+    position: relative;
+    order: 3;
+    inset: auto;
+    margin: 12px 0 0;
   }
 
-  .scene-image-frame-caption-center .scene-info-panel,
-  .scene-image-frame-caption-center .quest-lead,
-  .scene-image-frame-caption-center .quest-notification {
-    align-self: flex-start;
-    width: auto;
-    min-width: 0;
-    max-width: 16%;
-    margin: 22px 0 0 25%;
-  }
-
-  /* Mom stands left of center. The caption stays left of her; the card
-     stays to her right. min-width: 0 lets max-width win over the 260px floor. */
-  .scene-image-frame-living-room .scene-info-panel {
-    min-width: 0;
-    max-width: 28%;
-  }
-
-  .scene-image-frame-living-room .quest-lead,
-  .scene-image-frame-living-room .quest-notification {
-    width: auto;
-    min-width: 0;
-    max-width: 28%;
-    margin-right: 2%;
-    margin-left: auto;
-  }
-
-  /* A strip between the backyard door (ends 10%) and Mom (starts 36%). */
-  .scene-image-frame-kitchen .scene-info-stack {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .scene-image-frame-kitchen .scene-info-panel,
-  .scene-image-frame-kitchen .quest-lead,
-  .scene-image-frame-kitchen .quest-notification {
-    width: auto;
-    min-width: 0;
-    max-width: 20%;
-    margin-right: auto;
-    margin-left: 12%;
-  }
-
-  /* Mom's door starts at 44% once the attic ladder is down. */
-  .scene-image-frame-hallway-upstairs-attic-open .scene-info-stack {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .scene-image-frame-hallway-upstairs-attic-open .scene-info-panel,
-  .scene-image-frame-hallway-upstairs-attic-open .quest-lead,
-  .scene-image-frame-hallway-upstairs-attic-open .quest-notification {
-    width: auto;
-    min-width: 0;
-    max-width: 36%;
-    margin-right: auto;
-    margin-left: clamp(14px, 1.8vw, 22px);
-  }
-
-  /* Between the first door (ends 20%) and the way out (starts 42%). */
-  .scene-image-frame-sanatorium-hallway .scene-info-stack {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .scene-image-frame-sanatorium-hallway .scene-info-panel,
-  .scene-image-frame-sanatorium-hallway .quest-lead,
-  .scene-image-frame-sanatorium-hallway .quest-notification {
-    width: auto;
-    min-width: 0;
-    max-width: 15%;
-    margin-right: auto;
-    margin-left: 23%;
-  }
-
-  /* The bench, Roy, and the yard door cover the left and middle. The clear
-     strip is the right edge, past the door (which ends at 82%). */
-  .scene-image-frame-scrapyard-inside .scene-info-stack {
-    flex-direction: column;
-    align-items: flex-end;
-  }
-
-  .scene-image-frame-scrapyard-inside .scene-info-panel,
-  .scene-image-frame-scrapyard-inside .quest-lead,
-  .scene-image-frame-scrapyard-inside .quest-notification {
-    width: auto;
-    min-width: 0;
-    max-width: 15%;
-    margin-right: 2%;
-    margin-left: auto;
+  .scene-image-frame[data-choices="below"] > .overlayActionList,
+  .scene-image-frame[data-choices="below"]:has(.late-night-thought) > .overlayActionList {
+    position: relative;
+    order: 4;
+    inset: auto;
+    bottom: auto;
+    max-height: none;
+    padding: 12px 0 0;
+    overflow: visible;
+    background: none;
   }
 }
 
@@ -1960,8 +1926,11 @@ button {
    top edge, at the top-right of the scene. */
 .quest-notification {
   position: relative;
-  width: min(360px, calc(100% - 28px));
+  width: max-content;
+  max-width: calc(100vw - 32px);
   margin: 22px 16px 0;
+  pointer-events: auto;
+  white-space: nowrap;
   padding: 22px 18px 13px;
   color: #f4e9e2;
   background:
@@ -2003,6 +1972,7 @@ button {
 
 .quest-notification p {
   margin: 0;
+  white-space: nowrap;
   font-family: var(--font-body);
   font-size: 17px;
   line-height: 1.38;
@@ -2035,6 +2005,7 @@ button {
 .quest-lead {
   position: relative;
   width: min(280px, calc(100% - 28px));
+  pointer-events: auto;
   min-height: 44px;
   margin: 18px 16px 0 auto;
   padding: 12px 16px 13px;
@@ -2324,7 +2295,9 @@ button {
   .chapter-end-screen,
   .chapter-end-screen-content,
   .stat-toast,
-  .stat-toast-fading {
+  .stat-toast-fading,
+  .scene-frame-arrive .scene-info-panel,
+  .scene-frame-arrive .overlayActionList {
     animation: none;
   }
 

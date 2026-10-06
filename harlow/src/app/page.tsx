@@ -3,6 +3,7 @@
 import {
   useEffect,
   useEffectEvent,
+  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
@@ -30,9 +31,10 @@ import QuestWindow from "@/components/QuestWindow/QuestWindow";
 import { useReducedMotion } from "@/components/DialogueScene/typewriter";
 import { isNightTime } from "@/game/utils";
 import { isTiredWindow } from "@/game/lateNight";
+import { placeSceneChrome } from "@/game/captionPlace";
 import { useGame } from "@/game/useGame";
 import { storyEntryApplies } from "@/game/story";
-import { DINER_BOARD_HINT, isExteriorScene, RAIN_WEATHER, sanatoriumNarration, scenes } from "@/game/scenes";
+import { DINER_BOARD_HINT, isExteriorScene, RAIN_WEATHER, SANATORIUM_ONE_WINDOW, sanatoriumNarration, sanatoriumShowsOneWindow, scenes } from "@/game/scenes";
 import { elrodRachelPlate, isRainPlate } from "@/game/scenePlate";
 import { clearSessionSave, readSessionSave } from "@/game/save";
 import { harlowAudio } from "@/game/audio";
@@ -251,6 +253,7 @@ export default function Home() {
   const openingThoughtTimer = useRef<number | null>(null);
   const vinylThoughtTimer = useRef<number | null>(null);
   const lateNightThoughtTimer = useRef<number | null>(null);
+  const panelStack = useRef<Array<{ id: "inventory" | "quests"; opener: HTMLElement }>>([]);
   const {
     gameState,
     playerState,
@@ -273,8 +276,9 @@ export default function Home() {
     setShowInventory,
     handleChoice,
     doorTransition,
-    adminWait,
     adminTravel,
+    wait,
+    waitingLocked,
     travelingTo,
     showTravel,
     setShowTravel,
@@ -430,6 +434,35 @@ export default function Home() {
     return () => window.removeEventListener("keydown", swallow, true);
   }, [doorTransition]);
 
+  function rememberPanel(id: "inventory" | "quests", opener: HTMLElement) {
+    panelStack.current = [
+      ...panelStack.current.filter((entry) => entry.id !== id),
+      { id, opener },
+    ];
+  }
+
+  function forgetPanel(id: "inventory" | "quests") {
+    panelStack.current = panelStack.current.filter((entry) => entry.id !== id);
+  }
+
+  // Escape closes the topmost inventory or quest panel and returns focus
+  // to the button that opened it.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (closeup || showChapterEnd || doorTransition !== "idle") return;
+      const top = panelStack.current.at(-1);
+      if (!top) return;
+      event.preventDefault();
+      panelStack.current = panelStack.current.slice(0, -1);
+      if (top.id === "inventory") setShowInventory(false);
+      else setShowQuestLog(false);
+      top.opener.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [closeup, showChapterEnd, doorTransition, setShowInventory]);
+
   const inGame = Boolean(hasStarted ?? resumedSession);
   const sceneIsIndoor = !(
     isExteriorScene(currentScene.id) || OUTDOOR_SCENE_IDS.has(currentScene.id)
@@ -567,9 +600,21 @@ export default function Home() {
     && activeCharacter?.name === "Walter Harrington"
     && RAIN_WEATHER.includes(gameState.weather)
     && !isNightTime(gameState.time);
+  const hillCompleted = quests.some(
+    (quest) => quest.id === "light-on-the-hill" && quest.status === "completed",
+  );
+  const sanatoriumOneWindow =
+    currentScene.id === "sanatorium"
+    && sanatoriumShowsOneWindow(gameState.time, hillCompleted);
+  const sanatoriumDark =
+    currentScene.id === "sanatorium"
+    && isNightTime(gameState.time)
+    && hillCompleted;
   const emptySceneImage =
     sanatoriumCigaretteRoom
       ? "./images/locations/sanatorium/sanatoriumRoom2NightCigarette.png"
+      : sanatoriumOneWindow
+        ? SANATORIUM_ONE_WINDOW
       : weatherImage ??
     (isNightTime(gameState.time)
       ? currentScene.image.night
@@ -927,12 +972,19 @@ export default function Home() {
           player={playerState}
           gameState={gameState}
           onStatsClick={() => setShowStats(true)}
-          onInventoryClick={() => setShowInventory(true)}
-          onQuestsClick={() => setShowQuestLog(true)}
+          onInventoryClick={(opener) => {
+            rememberPanel("inventory", opener);
+            setShowInventory(true);
+          }}
+          onQuestsClick={(opener) => {
+            rememberPanel("quests", opener);
+            setShowQuestLog(true);
+          }}
         />
 
         <div
-          className={`scene-image-frame scene-image-frame-${visual.scene.id}${visual.weatherArt ? " scene-image-frame-weather-art" : ""}${visual.scene.captionPosition === "bottom" ? " scene-image-frame-caption-bottom" : ""}${visual.scene.captionPosition === "center" ? " scene-image-frame-caption-center" : ""}${conversationActive ? " scene-image-frame-has-conversation scene-image-frame-conversation-active" : ""}${visual.interimRain ? " scene-image-frame-interim-rain" : ""}${visual.interimRainNight ? " scene-image-frame-interim-rain-night" : ""}${visual.syntheticNight ? " scene-image-frame-synthetic-night" : ""}${incomingSceneVisible ? " scene-frame-arrive" : ""}`}
+          className={`scene-image-frame scene-image-frame-${visual.scene.id}${visual.weatherArt ? " scene-image-frame-weather-art" : ""}${visual.scene.captionPosition === "bottom" ? " scene-image-frame-caption-bottom" : ""}${visual.scene.captionPosition === "center" ? " scene-image-frame-caption-center" : ""}${conversationActive ? " scene-image-frame-has-conversation scene-image-frame-conversation-active" : ""}${visual.interimRain ? " scene-image-frame-interim-rain" : ""}${visual.interimRainNight ? " scene-image-frame-interim-rain-night" : ""}${visualOutdoors ? " scene-image-frame-exterior" : ""}${sanatoriumDark ? " scene-image-frame-sanatorium-dark" : ""}${visual.syntheticNight ? " scene-image-frame-synthetic-night" : ""}${incomingSceneVisible ? " scene-frame-arrive" : ""}`}
+          data-scene-id={visual.scene.id}
         >
           {/* The picture and its hotspots share one box, so percentage hotspot
               positions always map onto the art, wherever the panels sit. */}
@@ -1060,12 +1112,9 @@ export default function Home() {
                       ) {
                         return entry;
                       }
-                      const hillDone = quests.some(
-                        (quest) => quest.id === "light-on-the-hill" && quest.status === "completed",
-                      );
                       return {
                         ...entry,
-                        text: sanatoriumNarration(gameState.time, hillDone),
+                        text: sanatoriumNarration(gameState.time, hillCompleted),
                       };
                     })}
                   variant="narration"
@@ -1095,7 +1144,10 @@ export default function Home() {
                 type="button"
                 className={`quest-lead${questNotificationExiting ? " quest-lead-exiting" : ""}`}
                 aria-live="polite"
-                onClick={() => setShowQuestLog(true)}
+                onClick={(event) => {
+                  rememberPanel("quests", event.currentTarget);
+                  setShowQuestLog(true);
+                }}
               >
                 <span>New lead</span>
                 <p>{questNotification}</p>
@@ -1172,6 +1224,12 @@ export default function Home() {
           {!conversationActive &&
             !(showOpeningThought || showVinylThought || tvNewsLine !== null) &&
             visual.actionList}
+          <CaptionPlacer
+            sceneId={visual.scene.id}
+            signature={arrivalSignature}
+            thought={bottomThought ?? ""}
+            lead={questNotification ?? ""}
+          />
         </div>
 
         {showStats && (
@@ -1184,7 +1242,10 @@ export default function Home() {
           <InventoryWindow
             inventory={playerState.inventory}
             onUseItem={useInventoryItem}
-            onClose={() => setShowInventory(false)}
+            onClose={() => {
+              forgetPanel("inventory");
+              setShowInventory(false);
+            }}
           />
         )}
 
@@ -1209,7 +1270,10 @@ export default function Home() {
             currentMonth={gameState.currentMonth}
             inventory={playerState.inventory}
             storyFlags={storyFlags}
-            onClose={() => setShowQuestLog(false)}
+            onClose={() => {
+              forgetPanel("quests");
+              setShowQuestLog(false);
+            }}
           />
         )}
         {showTravel && (
@@ -1227,15 +1291,15 @@ export default function Home() {
         {showPlaytestControls && (
         <div className="waitControls">
           <span>Pass time</span>
-          <ActionButton label="Wait 1 min" onClick={() => adminWait(1)} />
+          <ActionButton label="Wait 1 min" disabled={waitingLocked} onClick={() => wait(1)} />
 
-          <ActionButton label="Wait 5 min" onClick={() => adminWait(5)} />
+          <ActionButton label="Wait 5 min" disabled={waitingLocked} onClick={() => wait(5)} />
 
-          <ActionButton label="Wait 10 min" onClick={() => adminWait(10)} />
+          <ActionButton label="Wait 10 min" disabled={waitingLocked} onClick={() => wait(10)} />
 
-          <ActionButton label="Wait 30 min" onClick={() => adminWait(30)} />
+          <ActionButton label="Wait 30 min" disabled={waitingLocked} onClick={() => wait(30)} />
 
-          <ActionButton label="Wait 1 hour" onClick={() => adminWait(60)} />
+          <ActionButton label="Wait 1 hour" disabled={waitingLocked} onClick={() => wait(60)} />
         </div>
         )}
 
@@ -1353,4 +1417,34 @@ export default function Home() {
       </div>
     </main>
   );
+}
+
+/** Moves the SCENE box after layout. Hotspot positions stay on the art. */
+function CaptionPlacer({
+  sceneId,
+  signature,
+  thought,
+  lead,
+}: {
+  sceneId: string;
+  signature: string;
+  thought: string;
+  lead: string;
+}) {
+  const marker = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const frame = marker.current?.closest<HTMLElement>(".scene-image-frame");
+    if (!frame) return;
+    const place = () => placeSceneChrome(frame);
+    place();
+    const raf = window.requestAnimationFrame(place);
+    const observer = new ResizeObserver(place);
+    const art = frame.querySelector(".scene-art");
+    if (art) observer.observe(art);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
+  }, [sceneId, signature, thought, lead]);
+  return <span ref={marker} hidden />;
 }

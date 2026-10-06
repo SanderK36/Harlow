@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --import ./scripts/strip-ts-extensions.mjs --test src/game/hill.test.ts src/game/round3.test.ts src/game/round4.test.ts src/game/round5.test.ts"
+    "test": "node --experimental-strip-types --import ./scripts/strip-ts-extensions.mjs --test src/game/hill.test.ts src/game/round3.test.ts src/game/round4.test.ts src/game/round5.test.ts src/game/round6.test.ts"
   },
   "dependencies": {
     "next": "16.3.4",
