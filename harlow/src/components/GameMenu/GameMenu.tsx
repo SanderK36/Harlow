@@ -12,9 +12,11 @@ type GameMenuProps = {
   onMainMenu: () => void;
   onSave: (slotNumber: number) => boolean;
   onLoad: (slotNumber: number) => boolean;
+  /** Optional. Opening the menu does not dismiss thoughts; the menu paints above them. */
+  onOpen?: () => void;
 };
 
-export default function GameMenu({ onOpenCharacters, onMainMenu, onSave, onLoad }: GameMenuProps) {
+export default function GameMenu({ onOpenCharacters, onMainMenu, onSave, onLoad, onOpen }: GameMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [saveMode, setSaveMode] = useState<"save" | "load" | null>(null);
   const [slots, setSlots] = useState(() => readSaveSlots());
@@ -58,7 +60,10 @@ export default function GameMenu({ onOpenCharacters, onMainMenu, onSave, onLoad 
         aria-label="Open game menu"
         aria-expanded={isOpen}
         aria-controls="game-menu-actions"
-        onClick={() => setIsOpen((previous) => !previous)}
+        onClick={() => {
+          if (!isOpen) onOpen?.();
+          setIsOpen((previous) => !previous);
+        }}
       >
         <span />
         <span />

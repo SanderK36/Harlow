@@ -3,6 +3,7 @@ import {
   getNextDay,
   getDaysInMonth,
   getNextMonth,
+  weekdayFor1982,
 } from "./utils";
 
 const weatherChances: Array<{
@@ -29,6 +30,13 @@ export function rollDailyWeather(): GameState["weather"] {
   }
 
   return "Sunny";
+}
+
+/** Correct a save whose weekday does not match the 1982 calendar. */
+export function withCanonWeekday(gameState: GameState): GameState {
+  const dayOfWeek = weekdayFor1982(gameState.currentMonth, gameState.dayNumber);
+  if (!dayOfWeek || dayOfWeek === gameState.dayOfWeek) return gameState;
+  return { ...gameState, dayOfWeek };
 }
 
 export function advanceTime(

@@ -42,7 +42,23 @@ export type Scene = {
     weather?: Partial<Record<Weather, string>>;
     /** The weather art is daylit: at night the night art wins. */
     weatherDayOnly?: boolean;
+    /**
+     * No night art yet: `night` is the day plate. After dark the scene is
+     * dimmed and cooled instead of showing daylight. Set this on any scene
+     * that still shares its day image at night.
+     */
+    noNightVariant?: boolean;
+    /**
+     * CSS object-position when the plate is cropped (object-fit). Full-bleed
+     * plates ignore it; use captionPosition when a corner covers the subject.
+     */
+    objectPosition?: string;
   };
+  /**
+   * Where the scene caption sits over the art on a wide screen.
+   * Phones already place it above the picture.
+   */
+  captionPosition?: "top" | "bottom";
   choices: Choice[];
   conversation?: Conversation;
   characters?: SceneCharacter[];
@@ -439,7 +455,7 @@ export const rachelElrodConversation: Conversation = {
       label: "This feels like Emily.",
       response: [
         ethan("This feels like Emily."),
-        npc("Rachel", "Your mom left the porch light on for a month."),
+        npc("Rachel", "I know. Your mom kept the porch light on for a month after."),
         thought("I'd forgotten about the porch light."),
       ],
     },
@@ -448,15 +464,15 @@ export const rachelElrodConversation: Conversation = {
       excludesStoryFlag: "tapeSeen",
       response: [
         ethan("Hang on. Let me look at the tape."),
-        npc("Rachel", "Yeah. Look at it. Then tell me you're leaving."),
+        npc("Rachel", "Go on. Look. I'll be right here."),
       ],
       endsConversation: true,
     },
     {
-      label: "I gotta go.",
+      label: "I saw it. I gotta go.",
       requiresStoryFlag: "tapeSeen",
       response: [
-        ethan("I gotta go."),
+        ethan("I saw it. I gotta go."),
         npc(
           "Rachel",
           "Go see Walter. He knows something. And Ethan? Tell me what he says.",
@@ -490,6 +506,7 @@ export const rachelFrontYardConversation: Conversation = {
     },
     {
       label: "There was a file. PARKER, E. Still open.",
+      requiresStoryFlag: "fileDrawerSeen",
       excludesStoryFlag: "rachelShutOut",
       response: [
         ethan("There was a file. PARKER, E. Still open."),
@@ -588,6 +605,9 @@ export const elrodHouse: Scene = {
   ],
 };
 
+export const DINER_BOARD_HINT =
+  "Same old board by the door. Nobody ever takes anything down.";
+
 export const lightPole: Scene = {
   id: "light-pole",
   story: [
@@ -595,6 +615,8 @@ export const lightPole: Scene = {
     thought("Mom's covering everything. I need a job."),
   ],
   location: "Home front yard",
+  /** The top flyer sits under a top-left caption. Keep the card on the grass. */
+  captionPosition: "bottom",
   image: {
     day: "./images/locations/home/lightPoleDay.png",
     night: "./images/locations/home/lightPoleNight.png",
@@ -975,10 +997,29 @@ export const walterConversation: Conversation = {
       response: [
         ethan("I'm looking for some information."),
         npc("Walter", "Information about what?"),
+      ],
+    },
+    {
+      label: "Emily.",
+      requiresChoice: "I'm looking for some information.",
+      excludesChoice: "I saw someone last night. End of the street. In a hood.",
+      response: [
         ethan("Emily."),
         npc("Walter", "That file's been closed ten years, Ethan. Leave it closed."),
-        ethan("Yeah."),
       ],
+    },
+    {
+      label: "Forget it.",
+      requiresChoice: "I'm looking for some information.",
+      excludesAnyChoice: [
+        "I saw someone last night. End of the street. In a hood.",
+        "Emily.",
+      ],
+      response: [
+        ethan("Forget it."),
+        npc("Walter", "Then we're done."),
+      ],
+      endsConversation: true,
     },
     {
       label: "Anything new on Mrs. Elrod?",
@@ -998,7 +1039,7 @@ export const walterConversation: Conversation = {
         ethan("No."),
         npc("Walter", "Keep it that way. Go home, Ethan."),
       ],
-      storyFlag: ["walterStationTalk", "fileDrawerSeen"],
+      storyFlag: "walterStationTalk",
       completesQuest: "down-to-the-station",
       questStep: "done",
       startsQuest: "what-walter-said",
@@ -1007,6 +1048,7 @@ export const walterConversation: Conversation = {
         image: "./images/locations/police_station/filingCabinetOpen.png",
         thought: "PARKER, E. – 1972. Still open. Still there.",
         label: "Open filing drawer",
+        setsFlags: ["fileDrawerSeen"],
         next: {
           image: "./images/locations/police_station/filingCabinetClosed.png",
           thought: "He shut it with his boot. Like it was nothing.",
@@ -1380,9 +1422,9 @@ export const ethanRoom: Scene = {
   image: {
     day: "./images/locations/home/ethanRoomDay.png",
     night: "./images/locations/home/ethanRoomNight.png",
-    // ethanRoomRainy.png exists but is NOT wired: pennant says RIVERTON
-    // (must be Harlow) and is 1024×768 vs day art 1448×1086. Wire via rainArt
-    // once Sander replaces the asset.
+    // ethanRoomRainy.png is not wired: the pennant says RIVERTON (it has to
+    // say Harlow) and the cassette labels are anachronistic. Rainy weather
+    // uses the interim rain filter on this room until that art is replaced.
   },
   choices: [
     {
@@ -2670,6 +2712,7 @@ export const motelRoom203: Scene = {
   image: {
     day: "./images/locations/motel/motelRoom203.png",
     night: "./images/locations/motel/motelRoom203.png",
+    noNightVariant: true,
   },
   choices: [
     {

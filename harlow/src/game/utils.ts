@@ -41,6 +41,34 @@ export function getNextDay(day: DayOfWeek) {
   return days[nextIndex];
 }
 
+/**
+ * Weekday of a 1982 calendar date. Chapter 1 anchors on Saturday 2 October
+ * (3 October 1982 is a Sunday). Returns null when the day is not in that month.
+ */
+export function weekdayFor1982(month: Month, dayNumber: number): DayOfWeek | null {
+  const monthIndex = months.indexOf(month);
+  if (monthIndex < 0) return null;
+  if (!Number.isInteger(dayNumber) || dayNumber < 1 || dayNumber > getDaysInMonth(month)) {
+    return null;
+  }
+
+  let dayOfYear = dayNumber;
+  for (let index = 0; index < monthIndex; index += 1) {
+    dayOfYear += getDaysInMonth(months[index]);
+  }
+
+  // Day-of-year of 2 October 1982, a Saturday.
+  let octoberSecond = 2;
+  const octoberIndex = months.indexOf("October");
+  for (let index = 0; index < octoberIndex; index += 1) {
+    octoberSecond += getDaysInMonth(months[index]);
+  }
+
+  const saturdayIndex = days.indexOf("Saturday");
+  const shifted = (saturdayIndex + (dayOfYear - octoberSecond)) % days.length;
+  return days[(shifted + days.length) % days.length];
+}
+
 export function getDaysInMonth(month: Month) {
   switch (month) {
     case "January":

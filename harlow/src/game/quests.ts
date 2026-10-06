@@ -49,6 +49,8 @@ export type StoryFlag =
   | "rachelKnowsFile"
   | "rachelShutOut"
   | "posterFound"
+  /** First visit to the diner interior, before the missing poster is found. */
+  | "dinerBoardHintSeen"
   | "posterShownToMom"
   | "coffeeErrandHeard"
   | "coffeeDelivered"
@@ -194,6 +196,17 @@ export function questObjective(
     return def.objectives.default;
   }
 
+  // The drawer close-up is what the player actually saw. Completing the
+  // station talk without it is Walter sending Ethan home, not the file.
+  if (
+    progress.id === "down-to-the-station"
+    && (progress.status === "completed" || progress.step === "done")
+  ) {
+    return ctx.storyFlags?.fileDrawerSeen
+      ? "That drawer was still open. PARKER, E."
+      : "Walter said go home. He knows something.";
+  }
+
   const step = progress.step;
   if (step && def.objectives[step]) return def.objectives[step];
   return def.objectives.default;
@@ -205,6 +218,17 @@ export function isQuestActive(quests: QuestProgress[], id: QuestId) {
 
 export function isQuestCompleted(quests: QuestProgress[], id: QuestId) {
   return quests.some((quest) => quest.id === id && quest.status === "completed");
+}
+
+/**
+ * Diner travel and other "Mom has been talked to" gates. True when the
+ * migrated quest list has Talk to Mom completed, so a save that finished
+ * the talk cannot come back without the Diner.
+ */
+export function resolveMomTalked(
+  quests: QuestProgress[],
+): boolean {
+  return isQuestCompleted(quests, "talk-to-mom");
 }
 
 export function getQuest(quests: QuestProgress[], id: QuestId) {
@@ -255,10 +279,25 @@ export function migrateQuestsFromLegacy(save: {
     });
   }
 
-  // Old saves that already talked to Mom still need The Tape.
-  const momDone =
+  // Talk to Mom done (quest entry or the legacy flag) always carries The Tape.
+  // A list that still has the talk marked active is left alone when the flag
+  // is missing — only an explicit `momTalked: true` completes it.
+  if (save.momTalked === true) {
+    if (!quests.some((quest) => quest.id === "talk-to-mom")) {
+      quests.push({ id: "talk-to-mom", status: "completed" });
+    } else {
+      quests = completeQuest(quests, "talk-to-mom");
+    }
+  } else if (
     save.momTalked !== false
-    || quests.some((quest) => quest.id === "talk-to-mom" && quest.status === "completed");
+    && !quests.some((quest) => quest.id === "talk-to-mom")
+  ) {
+    quests.push({ id: "talk-to-mom", status: "completed" });
+  }
+
+  const momDone = quests.some(
+    (quest) => quest.id === "talk-to-mom" && quest.status === "completed",
+  );
   if (momDone && !quests.some((quest) => quest.id === "the-tape")) {
     quests.push({ id: "the-tape", status: "active" });
   }
