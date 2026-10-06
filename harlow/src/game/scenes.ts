@@ -1002,6 +1002,7 @@ export const walterConversation: Conversation = {
     {
       label: "Emily.",
       requiresChoice: "I'm looking for some information.",
+      excludesChoice: "I saw someone last night. End of the street. In a hood.",
       response: [
         ethan("Emily."),
         npc("Walter", "That file's been closed ten years, Ethan. Leave it closed."),
@@ -1010,6 +1011,10 @@ export const walterConversation: Conversation = {
     {
       label: "Forget it.",
       requiresChoice: "I'm looking for some information.",
+      excludesAnyChoice: [
+        "I saw someone last night. End of the street. In a hood.",
+        "Emily.",
+      ],
       response: [
         ethan("Forget it."),
         npc("Walter", "Then we're done."),

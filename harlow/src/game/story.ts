@@ -53,6 +53,9 @@ export type ConversationChoice = {
   /** Hides this response once the choice with this label has been picked
    *  in the same conversation. */
   excludesChoice?: string;
+  /** Hides this response once any one of these labels has been picked
+   *  in the same conversation. */
+  excludesAnyChoice?: string[];
   /** Applies a permanent job reward when this response is selected. */
   jobOffer?: import("./quests").JobId;
   /** Hide this choice after Ethan has accepted a job. */

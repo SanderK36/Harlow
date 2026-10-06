@@ -70,6 +70,7 @@ export function conversationChoiceVisible(
     && (!choice.requiresAnyChoice || choice.requiresAnyChoice.some((label) => ctx.usedLabels.includes(label)))
     && (!choice.requiresPriorChoice || ctx.usedLabels.length > 0)
     && (!choice.excludesChoice || !ctx.usedLabels.includes(choice.excludesChoice))
+    && (!choice.excludesAnyChoice || !choice.excludesAnyChoice.some((label) => ctx.usedLabels.includes(label)))
     && (!choice.excludesJob || choice.excludesJob !== ctx.job)
     && (!choice.returningEmployee || ctx.openedAsEmployee)
     && (!choice.requiresItem || ctx.inventory.includes(choice.requiresItem))

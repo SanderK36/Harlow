@@ -9,19 +9,31 @@ import { isRainPlate, sceneWeatherPlate } from "./scenePlate.ts";
 
 const hoodLabel = "I saw someone last night. End of the street. In a hood.";
 
-function walterChoices(flags: { rachelMet?: boolean }, quests: { id: "the-tape" | "down-to-the-station"; status: "active" | "completed" }[]) {
+function walterChoices(
+  flags: { rachelMet?: boolean },
+  quests: { id: "the-tape" | "down-to-the-station"; status: "active" | "completed" }[],
+  usedLabels: string[] = [],
+) {
   return walterConversation.choices.filter((choice) =>
     conversationChoiceVisible(choice, {
       storyFlags: flags,
       quests,
       job: null,
       jobQuestTarget: null,
-      usedLabels: [],
+      usedLabels,
       openedAsEmployee: false,
       inventory: [],
     }),
   ).map((choice) => choice.label);
 }
+
+const asking = "I'm looking for some information.";
+const emily = "Emily.";
+const forget = "Forget it.";
+const walterQuests = [
+  { id: "the-tape" as const, status: "completed" as const },
+  { id: "down-to-the-station" as const, status: "active" as const },
+];
 
 describe("Walter's first talk", () => {
   it("offers the hood line once rachelMet is set", () => {
@@ -43,6 +55,41 @@ describe("Walter's first talk", () => {
   it("hides the hood line before Rachel's goodbye", () => {
     const labels = walterChoices({}, [{ id: "the-tape", status: "active" }]);
     assert.equal(labels.includes(hoodLabel), false);
+  });
+
+  it("lists the opening replies before Ethan has asked anything", () => {
+    const labels = walterChoices({ rachelMet: true }, walterQuests);
+    assert.deepEqual(labels, [
+      asking,
+      "Anything new on Mrs. Elrod?",
+      hoodLabel,
+      "Never mind.",
+    ]);
+  });
+
+  it("offers Emily and Forget it after he asks for information", () => {
+    const labels = walterChoices({ rachelMet: true }, walterQuests, [asking]);
+    assert.deepEqual(labels, [
+      emily,
+      forget,
+      "Anything new on Mrs. Elrod?",
+      hoodLabel,
+      "Never mind.",
+    ]);
+  });
+
+  it("drops Forget it once Emily has been said", () => {
+    const labels = walterChoices({ rachelMet: true }, walterQuests, [asking, emily]);
+    assert.equal(labels.includes(emily), false);
+    assert.equal(labels.includes(forget), false);
+    assert.ok(labels.includes(hoodLabel));
+  });
+
+  it("drops Emily and Forget it once the hood choice has been used", () => {
+    const labels = walterChoices({ rachelMet: true }, walterQuests, [asking, hoodLabel]);
+    assert.equal(labels.includes(emily), false);
+    assert.equal(labels.includes(forget), false);
+    assert.deepEqual(labels, ["Alright. I'm going."]);
   });
 });
 
