@@ -49,6 +49,8 @@ export type StoryFlag =
   | "rachelKnowsFile"
   | "rachelShutOut"
   | "posterFound"
+  /** First visit to the diner interior, before the missing poster is found. */
+  | "dinerBoardHintSeen"
   | "posterShownToMom"
   | "coffeeErrandHeard"
   | "coffeeDelivered"
@@ -192,6 +194,17 @@ export function questObjective(
     // Handed Mom the coffee before finding the poster — don't re-ask for coffee.
     if (coffeeDelivered) return def.objectives.delivered;
     return def.objectives.default;
+  }
+
+  // The drawer close-up is what the player actually saw. Completing the
+  // station talk without it is Walter sending Ethan home, not the file.
+  if (
+    progress.id === "down-to-the-station"
+    && (progress.status === "completed" || progress.step === "done")
+  ) {
+    return ctx.storyFlags?.fileDrawerSeen
+      ? "That drawer was still open. PARKER, E."
+      : "Walter said go home. He knows something.";
   }
 
   const step = progress.step;

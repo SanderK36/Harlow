@@ -31,7 +31,8 @@ import { useReducedMotion } from "@/components/DialogueScene/typewriter";
 import { isNightTime } from "@/game/utils";
 import { useGame } from "@/game/useGame";
 import { storyEntryApplies } from "@/game/story";
-import { isExteriorScene, RAIN_WEATHER, scenes } from "@/game/scenes";
+import { DINER_BOARD_HINT, isExteriorScene, RAIN_WEATHER, scenes } from "@/game/scenes";
+import { isRainPlate } from "@/game/scenePlate";
 import { clearSessionSave, readSessionSave } from "@/game/save";
 import { harlowAudio } from "@/game/audio";
 import Atmosphere from "@/components/Atmosphere/Atmosphere";
@@ -258,6 +259,8 @@ export default function Home() {
     conversation,
     conversationActive,
     finishConversation,
+    onReplySettled,
+    showDinerBoardHint,
     activeChoices,
     activeCharacter,
     showStats,
@@ -550,9 +553,12 @@ export default function Home() {
     hasConversationOverlay && emptySceneImage && emptySceneImage !== sceneImage
       ? emptySceneImage
       : null;
+  // The filter follows the plate on screen, not the scene's weather map.
+  // A rainy day plate keeps the scene dry-looking once night art takes over.
   const interimRain =
     RAIN_WEATHER.includes(gameState.weather)
-    && !currentScene.image.weather?.[gameState.weather];
+    && !isRainPlate(sceneImage, currentScene, gameState.weather);
+  const interimRainNight = interimRain && isNightTime(gameState.time);
   const syntheticNight = isNightTime(gameState.time) && Boolean(currentScene.image.noNightVariant);
   const reducedMotion = useReducedMotion();
   const [shownSceneImage, setShownSceneImage] = useState(sceneImage);
@@ -595,6 +601,20 @@ export default function Home() {
     }, 180);
     return () => window.clearTimeout(timer);
   }, [incomingSceneVisible, incomingSceneImage]);
+
+  const dinerPlateReady =
+    showDinerBoardHint
+    && currentScene.id === "diner-inside"
+    && (reducedMotion || shownSceneImage === sceneImage || incomingSceneVisible);
+  const [cueState, setCueState] = useState<"idle" | "on" | "done">("idle");
+  if (dinerPlateReady && cueState === "idle") setCueState("on");
+  if (!showDinerBoardHint && cueState !== "idle") setCueState("idle");
+  useEffect(() => {
+    if (cueState !== "on") return;
+    const timer = window.setTimeout(() => setCueState("done"), 1000);
+    return () => window.clearTimeout(timer);
+  }, [cueState]);
+  const boardCue = cueState === "on";
   const hotspotActions =
     sanatoriumHotspotActions[currentScene.id] ??
     (currentScene.id === "living-room"
@@ -743,6 +763,35 @@ export default function Home() {
     />
   );
 
+  // Hold the previous plate, caption, and choices until the next image has
+  // loaded, then fade them in together. Text never arrives first.
+  const liveVisual = {
+    scene: currentScene,
+    thought: currentThought,
+    effects: currentEffects,
+    hotspots: sceneHotspots,
+    actionList,
+    interimRain,
+    interimRainNight,
+    syntheticNight,
+    weatherArt: Boolean(weatherImage && sceneImage === weatherImage),
+  };
+  const arrivalSignature = [
+    currentScene.id,
+    sceneImage,
+    currentThought ?? "",
+    interimRain ? "rain" : "",
+    interimRainNight ? "night" : "",
+    choicesWithoutHotspotActions.map((choice) => choice.label).join("|"),
+  ].join("~");
+  const [presented, setPresented] = useState({ signature: arrivalSignature, visual: liveVisual });
+  const arrivalReady = reducedMotion || incomingSceneVisible || shownSceneImage === sceneImage;
+  if (arrivalReady && presented.signature !== arrivalSignature) {
+    setPresented({ signature: arrivalSignature, visual: liveVisual });
+  }
+  const visual = arrivalReady ? liveVisual : presented.visual;
+  const boardHint = showDinerBoardHint && visual.scene.id === "diner-inside";
+
   if (!(hasStarted ?? resumedSession)) {
     return (
       <main className="mainMenu">
@@ -825,19 +874,6 @@ export default function Home() {
           onMainMenu={returnToMainMenu}
           onSave={saveGame}
           onLoad={loadGame}
-          onOpen={() => {
-            setShowVinylThought(false);
-            setShowLateNightThought(false);
-            setTvNewsLine(null);
-            if (vinylThoughtTimer.current !== null) {
-              window.clearTimeout(vinylThoughtTimer.current);
-              vinylThoughtTimer.current = null;
-            }
-            if (lateNightThoughtTimer.current !== null) {
-              window.clearTimeout(lateNightThoughtTimer.current);
-              lateNightThoughtTimer.current = null;
-            }
-          }}
         />
 
         <GameStatus
@@ -849,7 +885,7 @@ export default function Home() {
         />
 
         <div
-          className={`scene-image-frame scene-image-frame-${currentScene.id}${weatherImage && sceneImage === weatherImage ? " scene-image-frame-weather-art" : ""}${conversationActive ? " scene-image-frame-has-conversation scene-image-frame-conversation-active" : ""}${interimRain ? " scene-image-frame-interim-rain" : ""}${syntheticNight ? " scene-image-frame-synthetic-night" : ""}`}
+          className={`scene-image-frame scene-image-frame-${visual.scene.id}${visual.weatherArt ? " scene-image-frame-weather-art" : ""}${visual.scene.captionPosition === "bottom" ? " scene-image-frame-caption-bottom" : ""}${conversationActive ? " scene-image-frame-has-conversation scene-image-frame-conversation-active" : ""}${visual.interimRain ? " scene-image-frame-interim-rain" : ""}${visual.interimRainNight ? " scene-image-frame-interim-rain-night" : ""}${visual.syntheticNight ? " scene-image-frame-synthetic-night" : ""}${incomingSceneVisible ? " scene-frame-arrive" : ""}`}
         >
           {/* The picture and its hotspots share one box, so percentage hotspot
               positions always map onto the art, wherever the panels sit. */}
@@ -866,16 +902,17 @@ export default function Home() {
               src={displayedSceneImage}
               alt=""
               className="scene-image"
+              style={visual.scene.image.objectPosition ? { objectPosition: visual.scene.image.objectPosition } : undefined}
             />
             {!reducedMotion && incomingSceneImage && (
               <img
                 src={incomingSceneImage}
                 alt=""
                 className={`scene-image scene-image-crossfade${incomingSceneVisible ? " scene-image-crossfade-in" : ""}`}
+                style={visual.scene.image.objectPosition ? { objectPosition: visual.scene.image.objectPosition } : undefined}
               />
             )}
-            {syntheticNight && <div className="scene-night-tint" aria-hidden="true" />}
-            {interimRain && <div className="scene-rain-glass" aria-hidden="true" />}
+            {visual.syntheticNight && <div className="scene-night-tint" aria-hidden="true" />}
             {conversationBackdrop && (
               <img
                 src={conversationBackdrop}
@@ -884,6 +921,8 @@ export default function Home() {
                 className={`scene-image scene-image-backdrop${conversationActive ? " scene-image-backdrop-active" : ""}`}
               />
             )}
+            {visual.interimRain && <div className="scene-rain-sky" aria-hidden="true" />}
+            {visual.interimRain && <div className="scene-rain-glass" aria-hidden="true" />}
             <StormLightning
               weather={gameState.weather}
               indoor={sceneIsIndoor}
@@ -894,13 +933,13 @@ export default function Home() {
               <div className="scene-spotlight-hole" />
             </div>
             {!(showOpeningThought || showVinylThought || tvNewsLine !== null) &&
-              sceneHotspots.flatMap((sceneHotspot) =>
+              visual.hotspots.flatMap((sceneHotspot) =>
                 (sceneHotspot.hotspots ?? [undefined]).map((region, index) => (
                   <SceneHotspot
                     key={`${sceneHotspot.action}-${index}`}
                     type="button"
                     data-kind={hotspotKind(sceneHotspot.action)}
-                    className={`scene-hotspot scene-hotspot-${sceneHotspot.action} scene-hotspot-${currentScene.id}-${sceneHotspot.action}`}
+                    className={`scene-hotspot scene-hotspot-${sceneHotspot.action} scene-hotspot-${visual.scene.id}-${sceneHotspot.action}${boardCue && sceneHotspot.action === "lookAtDinerBulletin" ? " scene-hotspot-cue" : ""}`}
                     style={
                       region
                         ? {
@@ -944,16 +983,16 @@ export default function Home() {
           <div className="scene-info-stack">
             {/* The scene caption: a small glass card in the dialogue box's
                 language, keyed to the scene so it settles in on arrival. */}
-            <div className="scene-info-panel" key={currentScene.id}>
+            <div className="scene-info-panel" key={visual.scene.id}>
               <div className="scene-caption-plate-row">
                 <h2 className="scene-caption-plate">Scene</h2>
-                {currentScene.location && (
-                  <span className="scene-caption-place">{currentScene.location}</span>
+                {visual.scene.location && (
+                  <span className="scene-caption-place">{visual.scene.location}</span>
                 )}
               </div>
               <div className="scene-caption-narration">
                 <StoryLog
-                  entries={currentScene.story.filter(
+                  entries={visual.scene.story.filter(
                     (entry) =>
                       entry.type !== "thought" &&
                       storyEntryApplies(
@@ -967,21 +1006,29 @@ export default function Home() {
                   layout="combined"
                 />
               </div>
-              {currentThought && (
+              {(visual.thought || boardHint) && (
                 <div className="scene-caption-thought">
-                  <CharacterLine
-                    key={currentThought}
-                    text={currentThought}
-                    variant="inline"
-                    effect={
-                      currentEffects[0]?.type === "effect"
-                        ? {
-                            stat: currentEffects[0].stat,
-                            amount: currentEffects[0].amount,
-                          }
-                        : undefined
-                    }
-                  />
+                  {visual.thought && (
+                    <CharacterLine
+                      key={visual.thought}
+                      text={visual.thought}
+                      variant="inline"
+                      effect={
+                        visual.effects[0]?.type === "effect"
+                          ? {
+                              stat: visual.effects[0].stat,
+                              amount: visual.effects[0].amount,
+                            }
+                          : undefined
+                      }
+                    />
+                  )}
+                  {boardHint && (
+                    <CharacterLine
+                      text={DINER_BOARD_HINT}
+                      variant="inline"
+                    />
+                  )}
                 </div>
               )}
             </div>
@@ -1050,18 +1097,23 @@ export default function Home() {
                 entries={conversation}
                 active={conversationActive}
                 onFinish={finishConversation}
+                onSettled={onReplySettled}
                 choices={
                   conversationActive && choicesWithoutHotspotActions.length > 0
                     ? actionList
                     : null
                 }
-                choiceKey={choicesWithoutHotspotActions.map((choice) => choice.label).join("\n")}
+                choiceKey={[
+                  choicesWithoutHotspotActions.map((choice) => choice.label).join("\n"),
+                  storyFlags.rachelMet ? "rachelMet" : "",
+                  storyFlags.walterStationTalk ? "walterStationTalk" : "",
+                ].join("\n")}
               />
             </div>
           )}
           {!conversationActive &&
             !(showOpeningThought || showVinylThought || tvNewsLine !== null) &&
-            actionList}
+            visual.actionList}
         </div>
 
         {showStats && (
@@ -1185,6 +1237,7 @@ export default function Home() {
             location={travelingTo.location}
             method={travelingTo.method}
             isNight={travelingTo.isNight}
+            rainy={travelingTo.rainy}
           />
         )}
 

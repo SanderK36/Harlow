@@ -349,10 +349,30 @@ button {
   opacity: 1;
 }
 
-/* Rainy weather on a scene that has no rain art yet: dull the daylight
-   plate and lay a faint rain-on-glass pass over it. */
+/* Rainy weather while the plate on screen is not rain art. Day plates
+   lose the blue sky; night plates only dim, so a moon or sunset stays. */
 .scene-image-frame-interim-rain .scene-image {
-  filter: saturate(0.65) brightness(0.88);
+  filter: saturate(0.4) brightness(0.85);
+}
+
+.scene-image-frame-interim-rain-night .scene-image {
+  filter: saturate(0.4) brightness(0.95);
+}
+
+/* Grey only the sky half of the picture. mix-blend-mode: color recolors
+   the plate and leaves the rain streaks, portraits, and UI alone. */
+.scene-rain-sky {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 14px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(88, 96, 106, 0.6), transparent 55%);
+  mix-blend-mode: color;
+}
+
+.scene-image-frame-interim-rain-night .scene-rain-sky {
+  background: linear-gradient(to bottom, rgba(88, 96, 106, 0.28), transparent 42%);
 }
 
 /* Day art used after dark (image.noNightVariant). Darker and cooler than
@@ -639,14 +659,20 @@ button {
   }
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .scene-image-frame:not(.scene-image-frame-has-conversation):has(
-      > .scene-art > .scene-hotspot:hover
-    )
-    > .scene-info-stack
-    > .scene-info-panel {
+/* Image, caption, and choices arrive together. The previous plate stays
+   underneath so the frame is never blank. */
+.scene-frame-arrive .scene-info-panel,
+.scene-frame-arrive .overlayActionList {
+  animation: sceneArriveIn 150ms ease;
+}
+
+@keyframes sceneArriveIn {
+  from {
     opacity: 0;
-    transform: translateY(-24px);
+  }
+
+  to {
+    opacity: 1;
   }
 }
 
@@ -1676,6 +1702,7 @@ button {
   }
 
   .scene-rain-glass,
+  .scene-rain-sky,
   .scene-night-tint {
     border-radius: 10px;
   }
@@ -1698,6 +1725,25 @@ button {
     align-items: flex-start;
     justify-content: space-between;
   }
+
+  /* Close-ups whose subject is the top of the frame (the light-pole flyers).
+     The card sits on the open corner, above the choice row. */
+  .scene-image-frame-caption-bottom .scene-info-stack {
+    top: auto;
+    bottom: 96px;
+    align-items: flex-end;
+  }
+
+  .scene-image-frame-caption-bottom .scene-info-panel {
+    align-self: flex-end;
+    margin: 0 clamp(14px, 1.8vw, 22px) 0 auto;
+  }
+}
+
+/* A quest card has to paint over the fading conversation, still under the menu. */
+.scene-info-stack:has(.quest-lead),
+.scene-info-stack:has(.quest-notification) {
+  z-index: 8;
 }
 
 /* Quest notice: the dialogue box's glass with an amber "quest" plate on its
@@ -1897,12 +1943,6 @@ button {
     animation: questLeadFadeOut 300ms ease-in forwards;
   }
 
-  .scene-image-frame:has(> .scene-art > .scene-hotspot:hover)
-    > .scene-info-stack
-    > .scene-info-panel {
-    transform: none;
-  }
-
   *,
   *::before,
   *::after {
@@ -1927,7 +1967,8 @@ button {
     transition: none;
   }
 
-  .scene-rain-glass {
+  .scene-rain-glass,
+  .scene-hotspot-cue::before {
     animation: none;
   }
 
@@ -2033,6 +2074,27 @@ button {
   left: 8%;
   width: 14%;
   height: 42%;
+}
+
+/* One-shot: the brackets brighten so the board reads as something to look at. */
+.scene-hotspot-cue {
+  --bracket: #fff6ee;
+  z-index: 3;
+}
+
+.scene-hotspot-cue::before {
+  animation: hotspotCue 1s ease;
+}
+
+@keyframes hotspotCue {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  45% {
+    opacity: 0.35;
+  }
 }
 
 .scene-hotspot-lookAtSanatoriumCigarette {

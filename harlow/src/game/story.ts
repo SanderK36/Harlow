@@ -94,6 +94,8 @@ export type ConversationChoice = {
     label?: string;
     /** Optional follow-up closeup (e.g. drawer shut). */
     next?: { image: string; thought: string; label?: string };
+    /** Set when the close-up is actually shown, not when the line is chosen. */
+    setsFlags?: import("./quests").StoryFlag | import("./quests").StoryFlag[];
   };
 };
 

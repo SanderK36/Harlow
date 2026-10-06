@@ -193,7 +193,8 @@
     grid-template-columns: 1fr;
   }
 
-  :global(.conversation-overlay) .overlayActionButtons button {
+  :global(.conversation-overlay) .overlayActionButtons button,
+  :global(.scene-image-frame-hallway) .overlayActionButtons button {
     min-height: 44px;
     font-size: 17px;
   }

@@ -9,10 +9,13 @@ import {
   ethanRoom,
   getSceneThought,
   momDeathConversation,
+  RAIN_WEATHER,
   rachelElrodConversation,
   rachelFrontYardConversation,
   scenes,
 } from "@/game/scenes";
+import { conversationChoiceVisible } from "@/game/conversationChoices";
+import { sceneWeatherPlate } from "@/game/scenePlate";
 import { harlowAudio } from "@/game/audio";
 import { hillCheckScene, HILL_THOUGHT, shouldNoticeHill } from "@/game/hill";
 import { advanceGameTime, withCanonWeekday } from "@/game/time";
@@ -218,6 +221,7 @@ export function useGame() {
     location: string;
     method: "walk" | "bus" | "work";
     isNight: boolean;
+    rainy: boolean;
   } | null>(null);
   // Small pieces of story progress that currently need custom logic. For more
   // flags, consider grouping them into a future `storyFlags` object.
@@ -266,9 +270,19 @@ export function useGame() {
       sessionSave?.momJobConcernHeard ? { momJobConcern: true } : {}
     ),
   );
+  // Updated in the same turn as setStoryFlags so a choice list built later
+  // in that turn still sees rachelMet and the other flags.
+  const storyFlagsRef = useRef(storyFlags);
+  const [showDinerBoardHint, setShowDinerBoardHint] = useState(false);
   const [chapter, setChapter] = useState(sessionSave?.chapter ?? 1);
   const [closeup, setCloseup] = useState<CloseupContent | null>(null);
   const closeupQueue = useRef<CloseupContent[]>([]);
+  const pendingCloseup = useRef<{
+    first: CloseupContent;
+    next?: CloseupContent;
+    flags?: StoryFlag | StoryFlag[];
+  } | null>(null);
+  const pumpNoticesRef = useRef<() => void>(() => {});
   const [showChapterEnd, setShowChapterEnd] = useState(false);
   const [questNotification, setQuestNotification] = useState<string | null>(null);
   const [questNotificationLabel, setQuestNotificationLabel] = useState("NEW LEAD");
@@ -311,6 +325,8 @@ export function useGame() {
       }, LEAD_EXIT_MS);
     }, LEAD_ENTER_MS + LEAD_HOLD_MS);
   }
+
+  pumpNoticesRef.current = pumpNotices;
 
   function enqueueNotice(notice: QuestNotice, key?: string) {
     const dedupeKey = key ?? `${notice.kind}:${notice.label}:${notice.message}`;
@@ -359,11 +375,10 @@ export function useGame() {
   function applyFlags(flags: StoryFlag[] | StoryFlag | undefined) {
     if (!flags) return;
     const list = Array.isArray(flags) ? flags : [flags];
-    setStoryFlags((previous) => {
-      const next = { ...previous };
-      for (const flag of list) next[flag] = true;
-      return next;
-    });
+    const next = { ...storyFlagsRef.current };
+    for (const flag of list) next[flag] = true;
+    storyFlagsRef.current = next;
+    setStoryFlags(next);
     // Keep legacy mirror in sync.
     if (list.includes("momJobConcern")) setMomJobConcernHeard(true);
   }
@@ -371,6 +386,15 @@ export function useGame() {
   function enqueueCloseup(first: CloseupContent, next?: CloseupContent) {
     closeupQueue.current = next ? [next] : [];
     setCloseup(first);
+  }
+
+  /** The filing-drawer pair waits until Walter's last line is actually up. */
+  function revealPendingCloseup() {
+    const pending = pendingCloseup.current;
+    if (!pending) return;
+    pendingCloseup.current = null;
+    enqueueCloseup(pending.first, pending.next);
+    if (pending.flags) applyFlags(pending.flags);
   }
 
   function dismissCloseup() {
@@ -456,6 +480,15 @@ export function useGame() {
     if (readSessionSave()) writeSessionSave(currentSave());
   }, [currentSave]);
 
+  // Leads queued during a conversation wait until the dialogue layer is gone.
+  // Pumping from the close itself is not enough: that timeout can be skipped
+  // while the card is still marked announced.
+  useEffect(() => {
+    if (conversationActive) return;
+    const timer = window.setTimeout(() => pumpNoticesRef.current(), 320);
+    return () => window.clearTimeout(timer);
+  }, [conversationActive]);
+
   function advanceTime(
     minutes: number,
     completingMomQuest = false,
@@ -535,6 +568,17 @@ export function useGame() {
       );
     }
     if (hillNow) openHillQuest();
+
+    if (
+      sceneId === "diner-inside"
+      && !storyFlagsRef.current.posterFound
+      && !storyFlagsRef.current.dinerBoardHintSeen
+    ) {
+      applyFlags("dinerBoardHintSeen");
+      setShowDinerBoardHint(true);
+    } else if (sceneId !== "diner-inside") {
+      setShowDinerBoardHint(false);
+    }
 
     setGameState((previous) => ({
       ...previous,
@@ -731,20 +775,22 @@ export function useGame() {
     }
 
     if (choice.closeup) {
-      enqueueCloseup(
-        {
-          image: choice.closeup.image.replace(/^\.\//, "/"),
+      const toUrl = (path: string) => path.replace(/^\.\//, "/");
+      pendingCloseup.current = {
+        first: {
+          image: toUrl(choice.closeup.image),
           thought: choice.closeup.thought,
           label: choice.closeup.label,
         },
-        choice.closeup.next
+        next: choice.closeup.next
           ? {
-              image: choice.closeup.next.image.replace(/^\.\//, "/"),
+              image: toUrl(choice.closeup.next.image),
               thought: choice.closeup.next.thought,
               label: choice.closeup.next.label,
             }
           : undefined,
-      );
+        flags: choice.closeup.setsFlags,
+      };
     }
 
     if (choice.endsConversation) {
@@ -775,11 +821,24 @@ export function useGame() {
   function handleTravel(choice: Choice) {
     // Travel waits for the overlay before applying its time cost and effects.
     const destination = scenes[choice.nextScene as keyof typeof scenes]?.location ?? "Unknown";
+    const destinationScene = scenes[choice.nextScene as keyof typeof scenes];
+    // The walk plate should already be decoded when the overlay ends, so the
+    // diner caption is not sitting on the front yard for a second.
+    if (destinationScene) {
+      const arrival = gameState.time + choice.timeCost;
+      const preloader = new window.Image();
+      preloader.src = sceneWeatherPlate(
+        destinationScene,
+        arrival >= 1440 ? arrival - 1440 : arrival,
+        gameState.weather,
+      );
+    }
 
     setTravelingTo({
       location: destination,
       method: choice.action.toLowerCase().includes("bus") ? "bus" : "walk",
       isNight: isNightTime(gameState.time),
+      rainy: RAIN_WEATHER.includes(gameState.weather),
     });
 
     window.setTimeout(() => {
@@ -799,6 +858,7 @@ export function useGame() {
       location: "Needle & Groove",
       method: "work",
       isNight: isNightTime(gameState.time),
+      rainy: RAIN_WEATHER.includes(gameState.weather),
     });
 
     window.setTimeout(() => {
@@ -1274,6 +1334,7 @@ export function useGame() {
     setJob(save.job ?? null);
     setJobQuestTarget(save.jobQuestTarget ?? null);
     commitQuests(restoredQuests);
+    storyFlagsRef.current = restoredFlags;
     setStoryFlags(restoredFlags);
     setChapter(save.chapter ?? 1);
     setCloseup(null);
@@ -1332,6 +1393,7 @@ export function useGame() {
     setJob(null);
     setJobQuestTarget(null);
     commitQuests([{ id: "talk-to-mom", status: "active" }]);
+    storyFlagsRef.current = {};
     setStoryFlags({});
     setChapter(1);
     setCloseup(null);
@@ -1391,23 +1453,18 @@ export function useGame() {
   });
 
   const activeChoices = replyPending || conversationEnding ? [] : conversationActive
-    ? (activeConversation?.choices ?? []).filter(
-        (choice) =>
-          (!choice.requiresNoJob || !job) &&
-          (!choice.requiresJob || choice.requiresJob === job) &&
-          (!choice.requiresJobQuestTarget || choice.requiresJobQuestTarget === jobQuestTarget) &&
-          hasAllFlags(choice.requiresStoryFlag) &&
-          !hasAnyFlag(choice.excludesStoryFlag) &&
-          (!choice.requiresChoice || usedConversationChoices.includes(choice.requiresChoice)) &&
-          (!choice.requiresAnyChoice || choice.requiresAnyChoice.some((label) => usedConversationChoices.includes(label))) &&
-          (!choice.requiresPriorChoice || usedConversationChoices.length > 0) &&
-          (!choice.excludesChoice || !usedConversationChoices.includes(choice.excludesChoice)) &&
-          (!choice.excludesJob || choice.excludesJob !== job) &&
-          (!choice.returningEmployee || openedAsEmployee) &&
-          (!choice.requiresItem || playerState.inventory.includes(choice.requiresItem)) &&
-          (!choice.excludesItem || !playerState.inventory.includes(choice.excludesItem)) &&
-          (!choice.requiresQuestActive || isQuestActive(quests, choice.requiresQuestActive)) &&
-          (choice.endsConversation || !usedConversationChoices.includes(choice.label))
+    ? (activeConversation?.choices ?? []).filter((choice) =>
+        conversationChoiceVisible(choice, {
+          // The ref wins if this turn already set a flag the state snapshot
+          // has not rendered yet (goodbye, then the choice list rebuilds).
+          storyFlags,
+          quests,
+          job,
+          jobQuestTarget,
+          usedLabels: usedConversationChoices,
+          openedAsEmployee,
+          inventory: playerState.inventory,
+        }),
       )
     : currentScene.choices.filter(isChoiceAvailable);
   const availableTravelDestinations = [
@@ -1455,6 +1512,8 @@ export function useGame() {
     conversation,
     conversationActive,
     finishConversation: conversationEnding ? closeConversation : undefined,
+    onReplySettled: revealPendingCloseup,
+    showDinerBoardHint,
     activeCharacter,
     activeChoices,
     travelingTo,

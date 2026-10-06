@@ -12,7 +12,7 @@ type GameMenuProps = {
   onMainMenu: () => void;
   onSave: (slotNumber: number) => boolean;
   onLoad: (slotNumber: number) => boolean;
-  /** Fired when the menu opens, so thought overlays can step aside. */
+  /** Optional. Opening the menu does not dismiss thoughts; the menu paints above them. */
   onOpen?: () => void;
 };
 

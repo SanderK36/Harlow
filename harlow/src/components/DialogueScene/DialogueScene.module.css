@@ -289,6 +289,12 @@
   overflow: hidden;
 }
 
+/* Once the replies are open, a line added on a later beat (a flag that
+   commits a moment late) has to be able to grow the row. */
+.choicesVisible .choicesInner {
+  overflow: visible;
+}
+
 .choicesVisible {
   grid-template-rows: 1fr;
   margin-top: 14px;

@@ -30,6 +30,8 @@ type DialogueSceneProps = {
   /** Set while a closing reply plays: called once its last line has been
    *  read and the player clicks on (or right after Ethan's own last line). */
   onFinish?: () => void;
+  /** The latest line is fully on screen and nothing is queued after it. */
+  onSettled?: () => void;
 };
 
 // Ethan's own (already chosen) line steps aside on its own for the NPC reply.
@@ -79,6 +81,7 @@ export default function DialogueScene({
   choices,
   choiceKey = "",
   onFinish,
+  onSettled,
 }: DialogueSceneProps) {
   const lines = toDialogueLines(entries);
   const reducedMotion = useReducedMotion();
@@ -125,6 +128,12 @@ export default function DialogueScene({
   const shownChoices = choicesReady ? choices : heldChoices;
   const speakerIsEthan = isEthan(line?.speaker ?? null);
   const canFinish = active && !!onFinish && lineComplete && !hasQueuedLines;
+  const beatSettled = active && lineComplete && !hasQueuedLines;
+
+  useEffect(() => {
+    if (!beatSettled) return;
+    onSettled?.();
+  }, [beatSettled, lineIndex, onSettled]);
   const partner = lines.find((entry) => entry.speaker && !isEthan(entry.speaker))?.speaker ?? null;
 
   // Typewriter: reveal one character per tick.
@@ -349,6 +358,7 @@ export default function DialogueScene({
         </p>
 
         <div
+          key={choiceKey}
           ref={choicesRef}
           className={`${styles.choices} ${choicesReady ? styles.choicesVisible : ""}`}
           inert={!choicesReady}
