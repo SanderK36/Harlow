@@ -178,7 +178,6 @@ export const hallway: Scene = {
   // Scene objects are data first: narration, art, available choices, and optional
   // conversations/NPCs. Copy this shape when creating a new location.
   id: "hallway",
-  captionPosition: "center",
 
   story: [
     narration("Rain ticks against the windows.", { weather: WET }),
@@ -406,9 +405,6 @@ export const frontYard: Scene = {
       "Heavy rain": "./images/locations/home/homeOutsideRainy.png",
       Thunderstorm: "./images/locations/home/homeThunderstorm.png",
     },
-    // Those rainy plates are night shots. Daytime rain uses the day plate
-    // plus the interim filter, or 10:35 looks like night.
-    weatherNightOnly: true,
   },
 
   choices: [

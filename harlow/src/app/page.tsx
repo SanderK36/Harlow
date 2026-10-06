@@ -650,6 +650,8 @@ export default function Home() {
   // A rainy day plate keeps the scene dry-looking once night art takes over.
   const interimRain =
     RAIN_WEATHER.includes(gameState.weather)
+    && !sceneIsIndoor
+    && currentScene.id !== "front-yard"
     && !isRainPlate(sceneImage, currentScene, gameState.weather);
   const interimRainNight = interimRain && isNightTime(gameState.time);
   const syntheticNight = isNightTime(gameState.time) && Boolean(currentScene.image.noNightVariant);

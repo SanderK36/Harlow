@@ -89,8 +89,6 @@ function toBox(rect: DOMRect): Box {
   return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
 }
 
-const MIN_PICTURE = 110;
-
 function clearPictureSize(art: HTMLElement) {
   const image = art.querySelector<HTMLElement>(":scope > .scene-image");
   art.style.width = "";
@@ -111,8 +109,8 @@ function clearPictureSize(art: HTMLElement) {
  * Puts the SCENE box in the first clear corner at full width. Only hotspots
  * block a corner. The choice panel and the thought bar do not, even when
  * they sit along the bottom. If none fit, the caption, the thought, and the
- * choices stack under the picture, and the picture shrinks (same ratio) until
- * that stack is inside the viewport.
+ * choices stack under the picture. The picture keeps its size and the page
+ * scrolls when the stack extends beyond the viewport.
  */
 export function placeSceneChrome(frame: HTMLElement) {
   const art = frame.querySelector<HTMLElement>(".scene-art");
@@ -122,6 +120,7 @@ export function placeSceneChrome(frame: HTMLElement) {
 
   const sceneId = frame.dataset.sceneId ?? "";
   const mode = window.innerWidth <= 640 ? "phone" : "desk";
+  const keepHomeOverlays = mode === "desk" && (sceneId === "hallway" || sceneId === "kitchen");
   if (frame.dataset.captionScene !== sceneId || frame.dataset.captionMode !== mode) {
     delete frame.dataset.choices;
     delete frame.dataset.thought;
@@ -157,7 +156,8 @@ export function placeSceneChrome(frame: HTMLElement) {
     // The box is the caption that is on screen. A lead reserve used to make
     // this taller than the text, so a free corner was thrown out.
     const height = stack.offsetHeight;
-    spot = placeCaption(toBox(artRect), { width, height }, hotspots);
+    // Keep the home hallway and kitchen panels anchored over the art.
+    spot = keepHomeOverlays ? "top-left" : placeCaption(toBox(artRect), { width, height }, hotspots);
     if (spot === "below") {
       stack.style.cssText = "";
       panel.style.cssText = "";
@@ -229,59 +229,12 @@ export function placeSceneChrome(frame: HTMLElement) {
     }
   }
 
-  // One shrink can reveal more overflow once the picture actually gets shorter.
-  fitPictureInViewport(frame);
-  fitPictureInViewport(frame);
-}
-
-/** Shrink the picture, keeping its ratio, until the text and choices are on screen. */
-function fitPictureInViewport(frame: HTMLElement) {
-  const art = frame.querySelector<HTMLElement>(".scene-art");
-  const image = art?.querySelector<HTMLElement>(":scope > .scene-image");
-  if (!art || !image) return;
-
-  const vh = window.innerHeight;
-  const vw = window.innerWidth;
-  const watched = [
-    frame.querySelector(".scene-caption-plate-row"),
-    frame.querySelector(".scene-info-panel"),
-    frame.querySelector(".scene-caption-thought"),
-    frame.querySelector(":scope > .opening-thought"),
-    frame.querySelector(":scope > .overlayActionList h2"),
-    frame.querySelector(":scope > .overlayActionList .overlayActionButtons"),
-  ];
-  let overflow = 0;
-  for (const el of watched) {
-    if (!el) continue;
-    const rect = el.getBoundingClientRect();
-    if (rect.width < 2 || rect.height < 2) continue;
-    overflow = Math.max(
-      overflow,
-      rect.bottom - (vh - 8),
-      8 - rect.top,
-      rect.right - (vw - 8),
-      8 - rect.left,
-    );
+  if (keepHomeOverlays) {
+    delete frame.dataset.caption;
+    delete frame.dataset.choices;
+    delete frame.dataset.thought;
   }
-  if (overflow <= 2) return;
 
-  const rect = image.getBoundingClientRect();
-  if (rect.height < 2 || rect.width < 2) return;
-  const nextH = Math.max(MIN_PICTURE, Math.floor(rect.height - overflow));
-  if (rect.height - nextH < 2) return;
-  const nextW = Math.max(120, Math.round(nextH * (rect.width / rect.height)));
-  // A flex item's automatic minimum is the picture's intrinsic height, so a
-  // set height alone does not shrink it. Cap the image and zero that minimum.
-  art.style.minHeight = "0";
-  art.style.width = `${nextW}px`;
-  art.style.height = `${nextH}px`;
-  art.style.maxWidth = "100%";
-  art.style.marginLeft = "auto";
-  art.style.marginRight = "auto";
-  image.style.display = "block";
-  image.style.width = `${nextW}px`;
-  image.style.height = `${nextH}px`;
-  image.style.maxWidth = "100%";
-  image.style.maxHeight = `${nextH}px`;
-  image.style.objectFit = "contain";
+  // Caption placement must not change the image size between scenes.
+  clearPictureSize(art);
 }

@@ -15,13 +15,10 @@ export default function TravelOverlay({
   location,
   method,
   isNight,
-  location,
-  method,
-  isNight,
   weather,
   rainy = false,
 }: TravelOverlayProps) {
-  const isRainy = RAIN_WEATHER.includes(weather);
+  const isRainy = rainy || RAIN_WEATHER.includes(weather);
   const image =
     method === "work"
       ? "/images/locations/NeedleGroove/ethan_working.jpg"
@@ -29,13 +26,6 @@ export default function TravelOverlay({
       ? isRainy
         ? "/images/Travel/busTravelRainy.png"
         : isNight
-        ? "/images/Travel/busTravelNight.png"
-        : "/images/Travel/busTravelDay.png"
-  }: TravelOverlayProps) {
-  const isRainy = rainy || RAIN_WEATHER.includes(weather);
-  const image =
-    method === "bus"
-      ? isNight
         ? "/images/Travel/busTravelNight.png"
         : "/images/Travel/busTravelDay.png"
       : isRainy
