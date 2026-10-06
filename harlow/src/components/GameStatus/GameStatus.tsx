@@ -1,13 +1,13 @@
 import styles from "./GameStatus.module.css";
 import type { Player, GameState } from "@/game/types";
-import { formatTime } from "@/game/utils";
+import { formatTime, weatherStatusLabel } from "@/game/utils";
 
 type GameStatusProps = {
   player: Player;
   gameState: GameState;
   onStatsClick: () => void;
-  onInventoryClick: () => void;
-  onQuestsClick: () => void;
+  onInventoryClick: (opener: HTMLButtonElement) => void;
+  onQuestsClick: (opener: HTMLButtonElement) => void;
 };
 
 export default function GameStatus({
@@ -42,14 +42,14 @@ export default function GameStatus({
 
           <button
             className={styles.statsButton}
-            onClick={onInventoryClick}
+            onClick={(event) => onInventoryClick(event.currentTarget)}
           >
             INVENTORY
           </button>
 
           <button
             className={`${styles.statsButton} ${styles.questsButton}`}
-            onClick={onQuestsClick}
+            onClick={(event) => onQuestsClick(event.currentTarget)}
           >
             QUESTS
           </button>
@@ -123,7 +123,7 @@ export default function GameStatus({
 
           <div className={styles.locationInfo}>
             <strong>{gameState.location}</strong>
-            <span>{gameState.weather}</span>
+            <span>{weatherStatusLabel(gameState.weather, gameState.time)}</span>
           </div>
 
         </div>

@@ -296,6 +296,9 @@ button {
 
 .scene-image-frame {
   position: relative;
+  /* Stacking context below the game menu (z-index 40) so thoughts and
+     lead cards cannot paint over the menu. */
+  z-index: 0;
   width: min(100%, 1100px);
   margin: 28px auto 0;
 }
@@ -329,8 +332,109 @@ button {
     filter 360ms ease;
 }
 
-.scene-image-enter {
-  animation: sceneImageEnter 420ms ease-out;
+/* Incoming scene art, held at opacity 0 until it has loaded, then faded in
+   over the picture that is already on screen. */
+.scene-image-crossfade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease, filter 360ms ease;
+}
+
+.scene-image-crossfade-in {
+  opacity: 1;
+}
+
+/* Rainy weather while the plate on screen is not rain art. Day plates
+   lose the blue sky; night plates only dim, so a moon or sunset stays. */
+.scene-image-frame-interim-rain .scene-image {
+  filter: saturate(0.4) brightness(0.85);
+}
+
+.scene-image-frame-interim-rain-night .scene-image {
+  filter: saturate(0.4) brightness(0.95);
+}
+
+/* Grey only the sky half of the picture. mix-blend-mode: color recolors
+   the plate and leaves the rain streaks, portraits, and UI alone. */
+.scene-rain-sky {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 14px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(88, 96, 106, 0.6), transparent 55%);
+  mix-blend-mode: color;
+}
+
+.scene-image-frame-interim-rain-night .scene-rain-sky {
+  background: linear-gradient(to bottom, rgba(88, 96, 106, 0.28), transparent 42%);
+}
+
+/* Wet exteriors at night: the mild night wash left a full moon and dusk light. */
+.scene-image-frame-exterior.scene-image-frame-interim-rain-night .scene-image {
+  filter: saturate(0.32) brightness(0.72);
+}
+
+.scene-image-frame-exterior.scene-image-frame-interim-rain-night .scene-rain-sky {
+  background: linear-gradient(to bottom, rgba(72, 80, 90, 0.72), transparent 62%);
+}
+
+/* No all-dark sanatorium plate yet. After Light on the Hill, crush the
+   night plate so the painted lamps and windows do not read as still lit. */
+.scene-image-frame-sanatorium-dark .scene-image,
+.scene-image-frame-sanatorium-dark.scene-image-frame-interim-rain .scene-image,
+.scene-image-frame-sanatorium-dark.scene-image-frame-interim-rain-night .scene-image {
+  filter: brightness(0.28) saturate(0.35);
+}
+
+/* Day art used after dark (image.noNightVariant). Darker and cooler than
+   the rain filter; when both apply, this later rule wins. */
+.scene-image-frame-synthetic-night .scene-image {
+  filter: brightness(0.55) saturate(0.7);
+}
+
+.scene-night-tint {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 14px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(92, 128, 176, 0.2), rgba(16, 32, 58, 0.34));
+  mix-blend-mode: multiply;
+}
+
+.scene-rain-glass {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: 14px;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(186, 196, 208, 0.05), rgba(90, 100, 112, 0.1)),
+    repeating-linear-gradient(
+      104deg,
+      transparent 0 16px,
+      rgba(226, 234, 242, 0.2) 16px 17px,
+      transparent 17px 34px
+    );
+  background-size: auto, 90px 140px;
+  animation: rainGlassDrift 2.8s linear infinite;
+}
+
+@keyframes rainGlassDrift {
+  from {
+    background-position: 0 0, 0 0;
+  }
+
+  to {
+    background-position: 0 0, -48px 140px;
+  }
 }
 
 /* Conversations keep the scene in view, pushed back so the speakers lead. */
@@ -446,8 +550,8 @@ button {
     inset 0 1px 0 rgba(255, 220, 205, 0.07);
   -webkit-backdrop-filter: blur(10px) saturate(1.1);
   backdrop-filter: blur(10px) saturate(1.1);
-  pointer-events: auto;
-  animation: sceneCaptionEnter 520ms cubic-bezier(0.2, 0.7, 0.2, 1) 120ms backwards;
+  pointer-events: none;
+  overflow: visible;
   transition:
     opacity 240ms ease,
     transform 280ms ease;
@@ -468,6 +572,7 @@ button {
   top: 0;
   left: 16px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   max-width: calc(100% - 32px);
@@ -495,16 +600,20 @@ button {
 }
 
 .scene-caption-place {
-  overflow: hidden;
+  min-width: 0;
+  /* Wide enough for "POLICE STATION" and not the whole "POLICE STATION INSIDE",
+     so the long name wraps to two lines instead of ellipsizing. */
+  max-width: 11.5em;
+  overflow: visible;
   padding: 3px 8px 2px;
   color: rgba(245, 225, 215, 0.9);
   font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.24em;
-  text-overflow: ellipsis;
+  letter-spacing: 0.16em;
+  line-height: 1.35;
   text-transform: uppercase;
-  white-space: nowrap;
+  white-space: normal;
   background: rgba(9, 5, 6, 0.8);
   border-radius: 3px;
 }
@@ -552,34 +661,38 @@ button {
   line-height: 1.4;
 }
 
-/* The Needle & Groove sign starts about a third of the way in. */
+/* The SCENE box never shrinks to dodge a hotspot. It moves, or it drops
+   below the art. Narration grows in height; it is not clipped. */
 @media (min-width: 641px) {
-  .scene-image-frame-needle-and-groove-inside .scene-info-panel {
-    min-width: 0;
-    max-width: 31%;
+  .scene-info-panel {
+    width: min(440px, calc(100% - 32px));
+    min-width: 280px;
+    max-width: 440px;
+    overflow: visible;
+  }
+
+  .scene-info-panel .scene-caption-narration,
+  .scene-info-panel .scene-caption-thought {
+    overflow: visible;
+    max-height: none;
   }
 }
 
-@keyframes sceneCaptionEnter {
+/* Image, caption, and choices arrive together. The previous plate stays
+   underneath so the frame is never blank. A second enter animation on the
+   caption restarted after this one and left the box half faded. */
+.scene-frame-arrive .scene-info-panel,
+.scene-frame-arrive .overlayActionList {
+  animation: sceneArriveIn 150ms ease;
+}
+
+@keyframes sceneArriveIn {
   from {
     opacity: 0;
-    transform: translateY(-8px);
   }
 
   to {
     opacity: 1;
-    transform: none;
-  }
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .scene-image-frame:not(.scene-image-frame-has-conversation):has(
-      > .scene-art > .scene-hotspot:hover
-    )
-    > .scene-info-stack
-    > .scene-info-panel {
-    opacity: 0;
-    transform: translateY(-24px);
   }
 }
 
@@ -597,14 +710,15 @@ button {
   right: clamp(12px, 2.4vw, 28px);
   bottom: clamp(12px, 2.4vw, 28px);
   left: clamp(12px, 2.4vw, 28px);
-  z-index: 5;
+  z-index: 8;
 }
 
-/* Keep the late-night route-home actions above the persistent thought panel. */
-.scene-image-frame:has(.late-night-thought) .overlayActionList {
-  z-index: 6;
-  padding-bottom: clamp(128px, 15vw, 170px);
-  background: transparent;
+/* The tired line sits under the choice heading if they share the bottom edge.
+   Lift the choices and leave the thought in the strip beneath them. */
+@media (min-width: 641px) {
+  .scene-image-frame:has(.late-night-thought) .overlayActionList {
+    bottom: 132px;
+  }
 }
 
 .new-day-screen {
@@ -617,7 +731,118 @@ button {
   background:
     radial-gradient(circle at 50% 35%, rgba(150, 96, 60, 0.2), transparent 42%),
     rgba(8, 4, 5, 0.94);
+  pointer-events: none;
   animation: newDayScreenFade 3.4s ease-in-out forwards;
+}
+
+/* Chapter end fades in and stays. The morning card uses new-day-screen,
+   which fades back out; that animation left an invisible click blocker. */
+.chapter-end-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(150, 96, 60, 0.2), transparent 42%),
+    rgba(8, 4, 5, 0.94);
+  pointer-events: auto;
+  animation: chapterEndFadeIn 450ms ease forwards;
+}
+
+.chapter-end-screen-content {
+  width: min(680px, 100%);
+  padding: clamp(48px, 8vw, 82px);
+  text-align: center;
+  color: #fff4f4;
+  border: 1px solid rgba(237, 85, 98, 0.38);
+  border-radius: 12px;
+  background: rgba(29, 18, 18, 0.92);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.48), inset 3px 0 0 var(--accent);
+  animation: chapterEndContentIn 450ms ease forwards;
+}
+
+.chapter-end-screen-content p {
+  display: block;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+
+.chapter-end-screen-content h2 {
+  margin: 12px 0 18px;
+  font-family: var(--font-display);
+  font-size: clamp(44px, 8.4vw, 76px);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.chapter-end-screen-content button {
+  min-height: 44px;
+  padding: 12px 22px;
+  color: rgba(255, 255, 255, 0.86);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgba(237, 85, 98, 0.45);
+  border-radius: 6px;
+}
+
+.chapter-end-screen-content button:focus-visible {
+  outline: 2px solid #f2e4c9;
+  outline-offset: 3px;
+}
+
+.stat-toast {
+  position: fixed;
+  top: 88px;
+  right: 28px;
+  z-index: 900;
+  padding: 8px 12px;
+  color: #f2e4c9;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  background: rgba(29, 18, 18, 0.92);
+  border: 1px solid rgba(237, 85, 98, 0.4);
+  border-radius: 6px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+.stat-toast-fading {
+  animation: statToastOut 300ms ease forwards;
+}
+
+@keyframes chapterEndFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes chapterEndContentIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes statToastOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 .new-day-screen-content {
@@ -864,7 +1089,10 @@ button {
     border-color: rgba(255, 196, 178, 0.26);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
     opacity: 1;
-    transform: translate(calc(-50% + var(--caption-offset, 0px)), -50%);
+    transform: translate(
+      calc(-50% + var(--caption-offset, 0px)),
+      calc(-50% + var(--caption-lift, 0px))
+    );
   }
 
   .scene-hotspot:active::before {
@@ -1504,14 +1732,18 @@ button {
     padding: 0;
   }
 
-  /* Phones: the art is short, so the scene text sits above it and the
-     actions below it instead of on top. Hotspots live in .scene-art, so
-     their percentages still map onto the picture. */
+  .game-panel {
+    padding: 8px 12px 12px;
+  }
+
+  /* Phones: the caption is as wide as the screen, so it cannot sit in a
+     corner. It goes under the picture and above the choices. Hotspots live
+     in .scene-art, so their percentages still map onto the picture. */
   .scene-image-frame {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-top: 20px;
+    gap: 6px;
+    margin-top: 8px;
   }
 
   .scene-art {
@@ -1521,20 +1753,20 @@ button {
   .scene-info-stack {
     position: relative;
     z-index: auto;
-    order: 0;
+    order: 2;
   }
 
   .scene-image-frame-has-conversation .scene-info-stack {
     display: none;
   }
 
-  /* Above the art the card spans the column; the plate still overhangs. */
+  /* 16px margin on each side of the viewport. The box does not shrink. */
   .scene-info-panel {
-    align-self: stretch;
-    width: auto;
+    align-self: center;
+    width: calc(100vw - 32px);
     min-width: 0;
-    max-width: none;
-    margin: 12px 0 0;
+    max-width: calc(100vw - 32px);
+    margin: 12px auto 0;
     padding: 22px 16px 13px;
   }
 
@@ -1543,23 +1775,24 @@ button {
   }
 
   .scene-info-stack .quest-notification {
-    align-self: stretch;
-    width: auto;
-    margin: 22px 0 0;
+    align-self: center;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    margin: 22px auto 0;
   }
 
   .scene-info-stack .quest-lead {
-    order: -1;
+    order: 1;
     align-self: stretch;
     width: calc(100% - 10px);
-    margin: 0 auto 8px;
+    margin: 8px auto 0;
   }
 
   /* The plate tab overhangs the panel's top edge. */
   .opening-thought {
     position: relative;
     inset: auto;
-    order: 2;
+    order: 3;
     margin-top: 12px;
   }
 
@@ -1608,6 +1841,12 @@ button {
     border-radius: 10px;
   }
 
+  .scene-rain-glass,
+  .scene-rain-sky,
+  .scene-night-tint {
+    border-radius: 10px;
+  }
+
   .scene-spotlight {
     border-radius: 10px;
   }
@@ -1619,21 +1858,84 @@ button {
   }
 }
 
-/* Side by side over the art: the caption top-left, notices top-right. */
+/* Desktop: a 280–440px column. JS moves it to the first clear corner.
+   If no corner fits, the caption, thought, and choices sit under the
+   picture, and the picture shrinks so the stack stays in the viewport.
+   Hotspots are not moved. */
 @media (min-width: 641px) {
   .scene-info-stack {
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: stretch;
+    width: min(440px, calc(100% - 32px));
+    left: 16px;
+    right: auto;
   }
+
+  .scene-image-frame[data-caption="below"],
+  .scene-image-frame[data-choices="below"],
+  .scene-image-frame[data-thought="below"] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .scene-image-frame[data-caption="below"] > .scene-art,
+  .scene-image-frame[data-choices="below"] > .scene-art,
+  .scene-image-frame[data-thought="below"] > .scene-art {
+    order: 1;
+  }
+
+  .scene-image-frame[data-caption="below"] > .scene-info-stack {
+    position: relative;
+    order: 2;
+    top: auto;
+    right: auto;
+    left: auto;
+    width: min(440px, calc(100% - 32px));
+    min-width: 280px;
+    margin: 12px 0 0;
+  }
+
+  .scene-image-frame[data-caption="below"] .scene-info-panel {
+    width: 100%;
+    min-width: 280px;
+    max-width: 440px;
+  }
+
+  .scene-image-frame[data-thought="below"] > .opening-thought {
+    position: relative;
+    order: 3;
+    inset: auto;
+    margin: 12px 0 0;
+  }
+
+  .scene-image-frame[data-choices="below"] > .overlayActionList,
+  .scene-image-frame[data-choices="below"]:has(.late-night-thought) > .overlayActionList {
+    position: relative;
+    order: 4;
+    inset: auto;
+    bottom: auto;
+    max-height: none;
+    padding: 12px 0 0;
+    overflow: visible;
+    background: none;
+  }
+}
+
+/* A quest card has to paint over the fading conversation, still under the menu. */
+.scene-info-stack:has(.quest-lead),
+.scene-info-stack:has(.quest-notification) {
+  z-index: 8;
 }
 
 /* Quest notice: the dialogue box's glass with an amber "quest" plate on its
    top edge, at the top-right of the scene. */
 .quest-notification {
   position: relative;
-  width: min(360px, calc(100% - 28px));
+  width: max-content;
+  max-width: calc(100vw - 32px);
   margin: 22px 16px 0;
+  pointer-events: auto;
+  white-space: nowrap;
   padding: 22px 18px 13px;
   color: #f4e9e2;
   background:
@@ -1675,6 +1977,7 @@ button {
 
 .quest-notification p {
   margin: 0;
+  white-space: nowrap;
   font-family: var(--font-body);
   font-size: 17px;
   line-height: 1.38;
@@ -1707,6 +2010,7 @@ button {
 .quest-lead {
   position: relative;
   width: min(280px, calc(100% - 28px));
+  pointer-events: auto;
   min-height: 44px;
   margin: 18px 16px 0 auto;
   padding: 12px 16px 13px;
@@ -1825,12 +2129,6 @@ button {
     animation: questLeadFadeOut 300ms ease-in forwards;
   }
 
-  .scene-image-frame:has(> .scene-art > .scene-hotspot:hover)
-    > .scene-info-stack
-    > .scene-info-panel {
-    transform: none;
-  }
-
   *,
   *::before,
   *::after {
@@ -1853,6 +2151,11 @@ button {
   .scene-hotspot,
   .conversation-overlay {
     transition: none;
+  }
+
+  .scene-rain-glass,
+  .scene-hotspot-cue::before {
+    animation: none;
   }
 
   .mainMenuArtwork,
@@ -1905,6 +2208,7 @@ button {
 
 .door-transition-opening {
   animation: doorFadeOut 300ms ease-out forwards;
+  pointer-events: none;
 }
 
 @keyframes doorFadeIn {
@@ -1959,9 +2263,51 @@ button {
   height: 42%;
 }
 
+/* One-shot: the brackets brighten so the board reads as something to look at. */
+.scene-hotspot-cue {
+  --bracket: #fff6ee;
+  z-index: 3;
+}
+
+.scene-hotspot-cue::before {
+  animation: hotspotCue 1s ease;
+}
+
+@keyframes hotspotCue {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  45% {
+    opacity: 0.35;
+  }
+}
+
 .scene-hotspot-lookAtSanatoriumCigarette {
   top: 55%;
   left: 40%;
   width: 18%;
   height: 20%;
+}
+
+/* These animations are declared after the main reduced-motion block, so a
+   rule here is what actually wins. The door classes are also skipped in JS. */
+@media (prefers-reduced-motion: reduce) {
+  .door-transition-closing,
+  .door-transition-opening,
+  .scene-hotspot-cue::before,
+  .chapter-end-screen,
+  .chapter-end-screen-content,
+  .stat-toast,
+  .stat-toast-fading,
+  .scene-frame-arrive .scene-info-panel,
+  .scene-frame-arrive .overlayActionList {
+    animation: none;
+  }
+
+  .chapter-end-screen,
+  .chapter-end-screen-content {
+    opacity: 1;
+  }
 }

@@ -19,6 +19,13 @@
   max-height: min(92vh, 980px);
 }
 
+.art {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
+}
+
 .image {
   display: block;
   max-width: 100%;
@@ -28,6 +35,61 @@
   object-fit: contain;
   border: 1px solid rgba(255, 220, 180, 0.18);
   box-shadow: 0 28px 80px rgba(0, 0, 0, 0.65);
+}
+
+/* Same interim filter as a dry plate in the rain. No extra wash. */
+.imageRain {
+  filter: saturate(0.4) brightness(0.85);
+}
+
+.imageRainNight {
+  filter: saturate(0.4) brightness(0.95);
+}
+
+/* A wet night exterior should not read as a clear moon or a dry dusk. */
+.imageRainNightExterior {
+  filter: saturate(0.25) brightness(0.5);
+}
+
+.overcast {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(42, 48, 56, 0.88), rgba(42, 48, 56, 0.45) 70%);
+  mix-blend-mode: multiply;
+}
+
+.rainGlass {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(186, 196, 208, 0.05), rgba(90, 100, 112, 0.1)),
+    repeating-linear-gradient(
+      104deg,
+      transparent 0 16px,
+      rgba(226, 234, 242, 0.2) 16px 17px,
+      transparent 17px 34px
+    );
+  background-size: auto, 90px 140px;
+  animation: closeupRainDrift 2.8s linear infinite;
+}
+
+@keyframes closeupRainDrift {
+  from {
+    background-position: 0 0, 0 0;
+  }
+
+  to {
+    background-position: 0 0, -48px 140px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rainGlass {
+    animation: none;
+  }
 }
 
 .thought {
