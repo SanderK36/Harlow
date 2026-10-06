@@ -610,15 +610,9 @@ export const elrodHouse: Scene = {
   id: "elrod-house",
   story: [
     narration("You stop at the Elrod house. Yellow tape across the porch."),
+    // Off on every plate, including the night plate. Only the street lamp is lit.
     thought("Her porch light's off. First time in twenty years.", {
       from: 1080,
-      weather: DRY,
-    }),
-    // The rain and thunder plates are daytime, and their porch lights are off.
-    // From 18:00 those plates give way to the night plate, where the light is on.
-    thought("Her porch light's still on. Nobody's had the heart to turn it off.", {
-      from: 1080,
-      weather: WET,
     }),
     thought("Rain's beating the tape flat. Washing the street clean.", {
       weather: WET,

@@ -360,32 +360,23 @@ describe("walks and the rainy front yard", () => {
     assert.equal(isRainPlate(emptyNight, elrodHouse, "Rainy"), false);
   });
 
-  it("keeps the dry porch line off a wet evening", () => {
+  it("says the porch light is off after 18:00 in every weather", () => {
     const off = elrodHouse.story.find(
       (entry) => entry.type === "thought" && entry.text.startsWith("Her porch light's off"),
     );
-    const on = elrodHouse.story.find(
-      (entry) => entry.type === "thought" && entry.text.startsWith("Her porch light's still on"),
+    const stillOn = elrodHouse.story.find(
+      (entry) => entry.type === "thought" && entry.text.includes("still on"),
     );
-    assert.ok(off && on);
+    assert.ok(off);
+    assert.equal(stillOn, undefined);
     const evening = 18 * 60 + 30;
-    assert.equal(storyEntryApplies(off, evening, "Sunny"), true);
-    assert.equal(storyEntryApplies(off, evening, "Cloudy"), true);
-    assert.equal(storyEntryApplies(off, evening, "Rainy"), false);
-    assert.equal(storyEntryApplies(on, evening, "Rainy"), true);
-    assert.equal(storyEntryApplies(on, evening, "Heavy rain"), true);
-    assert.equal(storyEntryApplies(on, evening, "Thunderstorm"), true);
-    assert.equal(storyEntryApplies(on, evening, "Sunny"), false);
-    assert.equal(storyEntryApplies(on, 17 * 60 + 59, "Rainy"), false);
-    assert.equal(storyEntryApplies(on, 30, "Rainy"), false);
-    assert.equal(
-      getSceneThought("elrod-house", evening, "Rainy"),
-      "Her porch light's still on. Nobody's had the heart to turn it off.",
-    );
-    assert.equal(
-      getSceneThought("elrod-house", evening, "Sunny"),
-      "Her porch light's off. First time in twenty years.",
-    );
+    const line = "Her porch light's off. First time in twenty years.";
+    for (const weather of ["Sunny", "Cloudy", "Rainy", "Heavy rain", "Thunderstorm"] as const) {
+      assert.equal(storyEntryApplies(off, evening, weather), true);
+      assert.equal(getSceneThought("elrod-house", evening, weather), line);
+    }
+    assert.equal(storyEntryApplies(off, 17 * 60 + 59, "Rainy"), false);
+    assert.equal(storyEntryApplies(off, 30, "Sunny"), false);
     assert.equal(
       getSceneThought("elrod-house", 8 * 60 + 16, "Rainy"),
       "Rain's beating the tape flat. Washing the street clean.",
