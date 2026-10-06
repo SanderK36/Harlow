@@ -1732,14 +1732,18 @@ button {
     padding: 0;
   }
 
-  /* Phones: the art is short, so the scene text sits above it and the
-     actions below it instead of on top. Hotspots live in .scene-art, so
-     their percentages still map onto the picture. */
+  .game-panel {
+    padding: 8px 12px 12px;
+  }
+
+  /* Phones: the caption is as wide as the screen, so it cannot sit in a
+     corner. It goes under the picture and above the choices. Hotspots live
+     in .scene-art, so their percentages still map onto the picture. */
   .scene-image-frame {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-top: 20px;
+    gap: 6px;
+    margin-top: 8px;
   }
 
   .scene-art {
@@ -1749,7 +1753,7 @@ button {
   .scene-info-stack {
     position: relative;
     z-index: auto;
-    order: 0;
+    order: 2;
   }
 
   .scene-image-frame-has-conversation .scene-info-stack {
@@ -1778,17 +1782,17 @@ button {
   }
 
   .scene-info-stack .quest-lead {
-    order: -1;
+    order: 1;
     align-self: stretch;
     width: calc(100% - 10px);
-    margin: 0 auto 8px;
+    margin: 8px auto 0;
   }
 
   /* The plate tab overhangs the panel's top edge. */
   .opening-thought {
     position: relative;
     inset: auto;
-    order: 2;
+    order: 3;
     margin-top: 12px;
   }
 
@@ -1855,8 +1859,9 @@ button {
 }
 
 /* Desktop: a 280–440px column. JS moves it to the first clear corner.
-   If no corner fits, or the choices and thought cover a hotspot, they
-   sit in a band under the picture. Hotspots are not moved. */
+   If no corner fits, the caption, thought, and choices sit under the
+   picture, and the picture shrinks so the stack stays in the viewport.
+   Hotspots are not moved. */
 @media (min-width: 641px) {
   .scene-info-stack {
     flex-direction: column;

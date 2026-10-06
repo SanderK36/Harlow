@@ -63,7 +63,7 @@
   :global(.scene-image-frame) > .overlayActionList {
     position: relative;
     inset: auto;
-    order: 3;
+    order: 4;
     max-height: none;
     padding: 4px 0 0;
     overflow: visible;
@@ -191,6 +191,12 @@
 @media (max-width: 600px) {
   .actionButtons, .homeActionButtons {
     grid-template-columns: 1fr;
+  }
+
+  /* Scene choices stay two-up so the picture, caption, and buttons fit
+     the phone viewport. Dialogue replies stay one per line. */
+  .overlayActionButtons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   :global(.conversation-overlay) .overlayActionButtons button,

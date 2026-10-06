@@ -151,6 +151,24 @@ async function measure(page) {
     } else if (Math.abs(panelRect.width - (viewport - 32)) > 4) {
       hit("width", "caption", `${Math.round(panelRect.width)}!=${viewport - 32}`);
     }
+    const vh = window.innerHeight;
+    const inside = (el, name) => {
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.width < 2 || rect.height < 2) return;
+      if (rect.top < -1 || rect.left < -1 || rect.right > viewport + 1 || rect.bottom > vh + 1) {
+        hit(
+          "viewport",
+          name,
+          `${Math.round(rect.left)},${Math.round(rect.top)}-${Math.round(rect.right)},${Math.round(rect.bottom)}`,
+        );
+      }
+    };
+    inside(panel, "caption");
+    inside(document.querySelector(".scene-caption-plate-row"), "caption-tab");
+    inside(document.querySelector(".scene-caption-thought"), "caption-thought");
+    inside(document.querySelector(".opening-thought"), "thought");
+    inside(document.querySelector(".overlayActionButtons"), "choices");
     const buttonList = document.querySelector(".overlayActionButtons");
     const thoughtBar = document.querySelector(".opening-thought, .late-night-thought");
     const panelCovers = [buttonList, thoughtBar].filter(Boolean).map((element) =>
@@ -158,12 +176,6 @@ async function measure(page) {
     );
     compareCovers(panelCovers);
     compareCovers([boxOf(panel, "caption")]);
-    const fake = document.createElement("button");
-    fake.className = "quest-lead";
-    fake.innerHTML = "<span>New lead</span><p>Coffee for Mom</p>";
-    stack.appendChild(fake);
-    compareCovers([boxOf(panel, "caption"), boxOf(fake, "card")]);
-    fake.remove();
     for (const hotspot of document.querySelectorAll(".scene-hotspot")) {
       const label = hotspot.querySelector("span");
       if (label) label.style.opacity = "1";
@@ -204,6 +216,47 @@ async function measure(page) {
     }
     return { sceneId, hits };
   });
+}
+
+async function probeLead(page, sceneId) {
+  await page.evaluate(() => {
+    document.querySelector("[data-caption-probe]")?.remove();
+    const stack = document.querySelector(".scene-info-stack");
+    if (!stack) return;
+    const fake = document.createElement("button");
+    fake.className = "quest-lead";
+    fake.dataset.captionProbe = "lead";
+    fake.innerHTML = "<span>New lead</span><p>Coffee for Mom</p>";
+    stack.appendChild(fake);
+  });
+  await new Promise((resolve) => setTimeout(resolve, 80));
+  return page.evaluate((sceneId) => {
+    const fake = document.querySelector("[data-caption-probe]");
+    const art = document.querySelector(".scene-art");
+    const hits = [];
+    if (!fake || !art) return hits;
+    const cover = fake.getBoundingClientRect();
+    const artRect = art.getBoundingClientRect();
+    for (const hotspot of document.querySelectorAll(".scene-hotspot")) {
+      const rect = hotspot.getBoundingClientRect();
+      if (rect.width < 2 || rect.height < 2) continue;
+      const ax = Math.min(cover.right, artRect.right) - Math.max(cover.left, artRect.left);
+      const ay = Math.min(cover.bottom, artRect.bottom) - Math.max(cover.top, artRect.top);
+      if (ax <= 1 || ay <= 1) continue;
+      const ix = Math.min(cover.right, rect.right) - Math.max(cover.left, rect.left);
+      const iy = Math.min(cover.bottom, rect.bottom) - Math.max(cover.top, rect.top);
+      if (ix > 1 && iy > 1) {
+        hits.push({
+          sceneId,
+          cover: "card",
+          hotspot: hotspot.getAttribute("aria-label") || hotspot.className,
+          overlap: `${Math.round(ix)}x${Math.round(iy)}`,
+        });
+      }
+    }
+    fake.remove();
+    return hits;
+  }, sceneId);
 }
 
 async function clickText(page, text) {
@@ -301,6 +354,7 @@ try {
     for (const profile of PROFILES) {
       await loadProfile(page, profile);
       const landing = await measure(page);
+      landing.hits.push(...await probeLead(page, landing.sceneId));
       process.stderr.write(`  landing ${landing.sceneId} hits ${landing.hits.length}\n`);
       for (const hit of landing.hits) {
         collisions.push({ viewport: `${viewport.width}x${viewport.height}`, ...hit });
@@ -312,6 +366,7 @@ try {
           continue;
         }
         const result = await visit(page, label);
+        result.hits.push(...await probeLead(page, result.sceneId));
         process.stderr.write(`  ${result.sceneId} hits ${result.hits.length}\n`);
         for (const hit of result.hits) {
           collisions.push({ viewport: `${viewport.width}x${viewport.height}`, ...hit });

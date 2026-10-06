@@ -64,6 +64,15 @@ describe("round 6 captions", () => {
     assert.equal(placeCaption(art, box, [topLeft]), "top-right");
     const full: Box = { left: 0, top: 0, right: 1000, bottom: 600 };
     assert.equal(placeCaption(art, box, [full]), "below");
+    const choices: Box = { left: 0, top: 480, right: 1000, bottom: 600 };
+    assert.equal(placeCaption(art, box, [choices]), "top-left");
+  });
+
+  it("keeps the kitchen caption in a bottom corner when the box is its real height", () => {
+    const kitchen: Box = { left: 316, top: 75, right: 1158, bottom: 707 };
+    const mom: Box = { left: 619, top: 176, right: 914, bottom: 543 };
+    assert.equal(placeCaption(kitchen, { width: 440, height: 142 }, [mom]), "bottom-left");
+    assert.equal(placeCaption(kitchen, { width: 440, height: 256 }, [mom]), "below");
   });
 });
 

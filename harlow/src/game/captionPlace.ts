@@ -89,13 +89,30 @@ function toBox(rect: DOMRect): Box {
   return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
 }
 
-const LEAD_RESERVE = 96;
-const TAB = 18;
+const MIN_PICTURE = 110;
+
+function clearPictureSize(art: HTMLElement) {
+  const image = art.querySelector<HTMLElement>(":scope > .scene-image");
+  art.style.width = "";
+  art.style.height = "";
+  art.style.minHeight = "";
+  art.style.marginLeft = "";
+  art.style.marginRight = "";
+  if (!image) return;
+  image.style.display = "";
+  image.style.width = "";
+  image.style.height = "";
+  image.style.maxHeight = "";
+  image.style.maxWidth = "";
+  image.style.objectFit = "";
+}
 
 /**
- * Puts the SCENE box in the first clear corner at full width. Choice buttons
- * and the bottom thought move below the art when they cover a hotspot.
- * Hotspot rectangles stay where the art put them.
+ * Puts the SCENE box in the first clear corner at full width. Only hotspots
+ * block a corner. The choice panel and the thought bar do not, even when
+ * they sit along the bottom. If none fit, the caption, the thought, and the
+ * choices stack under the picture, and the picture shrinks (same ratio) until
+ * that stack is inside the viewport.
  */
 export function placeSceneChrome(frame: HTMLElement) {
   const art = frame.querySelector<HTMLElement>(".scene-art");
@@ -104,95 +121,167 @@ export function placeSceneChrome(frame: HTMLElement) {
   if (!art || !stack || !panel) return;
 
   const sceneId = frame.dataset.sceneId ?? "";
-  if (frame.dataset.captionScene !== sceneId) {
+  const mode = window.innerWidth <= 640 ? "phone" : "desk";
+  if (frame.dataset.captionScene !== sceneId || frame.dataset.captionMode !== mode) {
     delete frame.dataset.choices;
     delete frame.dataset.thought;
     delete frame.dataset.caption;
-    frame.dataset.captionScene = sceneId;
-  }
-
-  if (window.innerWidth <= 640) {
+    clearPictureSize(art);
     stack.style.cssText = "";
     panel.style.cssText = "";
-    return;
+    frame.dataset.captionScene = sceneId;
+    frame.dataset.captionMode = mode;
   }
 
   const artRect = art.getBoundingClientRect();
   if (artRect.width < 2 || artRect.height < 2) return;
 
-  const hotspots = [...frame.querySelectorAll<HTMLElement>(".scene-hotspot")]
+  const hotspots = [...art.querySelectorAll<HTMLElement>(".scene-hotspot")]
     .map((el) => el.getBoundingClientRect())
     .filter((rect) => rect.width > 2 && rect.height > 2)
     .map(toBox);
 
+  const phone = mode === "phone";
+  let spot: CaptionSpot = "below";
+  if (!phone) {
+    const width = Math.min(
+      CAPTION_DESKTOP_MAX,
+      Math.max(CAPTION_DESKTOP_MIN, artRect.width - CAPTION_EDGE * 2),
+    );
+    stack.style.width = `${width}px`;
+    panel.style.width = "100%";
+    panel.style.minWidth = "0";
+    panel.style.maxWidth = "none";
+    panel.style.margin = "0";
+    panel.style.overflow = "visible";
+    // The box is the caption that is on screen. A lead reserve used to make
+    // this taller than the text, so a free corner was thrown out.
+    const height = stack.offsetHeight;
+    spot = placeCaption(toBox(artRect), { width, height }, hotspots);
+    if (spot === "below") {
+      stack.style.cssText = "";
+      panel.style.cssText = "";
+    } else {
+      const frameRect = frame.getBoundingClientRect();
+      const placed = cornerBox(toBox(artRect), { width, height }, spot);
+      stack.style.position = "absolute";
+      stack.style.margin = "0";
+      stack.style.right = "auto";
+      stack.style.bottom = "auto";
+      stack.style.flexDirection = "column";
+      stack.style.alignItems = "stretch";
+      stack.style.top = `${Math.round(placed.top - frameRect.top)}px`;
+      stack.style.left = `${Math.round(placed.left - frameRect.left)}px`;
+    }
+  } else {
+    stack.style.cssText = "";
+    panel.style.cssText = "";
+  }
+
   const choiceList = frame.querySelector<HTMLElement>(":scope > .overlayActionList");
   const buttons = choiceList?.querySelector<HTMLElement>(".overlayActionButtons") ?? null;
   const thought = frame.querySelector<HTMLElement>(":scope > .opening-thought");
-  const obstacles = [...hotspots];
-
-  if (choiceList && getComputedStyle(choiceList).position === "absolute" && buttons) {
-    const box = toBox(buttons.getBoundingClientRect());
-    if (box.right - box.left > 2 && box.bottom - box.top > 2) obstacles.push(box);
-  }
-  if (thought && getComputedStyle(thought).position === "absolute") {
-    const box = toBox(thought.getBoundingClientRect());
-    if (box.bottom - box.top > 2) obstacles.push(box);
-  }
-
-  const width = Math.min(CAPTION_DESKTOP_MAX, Math.max(CAPTION_DESKTOP_MIN, artRect.width - CAPTION_EDGE * 2));
-  stack.style.position = "absolute";
-  stack.style.width = `${width}px`;
-  stack.style.margin = "0";
-  stack.style.right = "auto";
-  stack.style.bottom = "auto";
-  stack.style.flexDirection = "column";
-  stack.style.alignItems = "stretch";
-  panel.style.width = "100%";
-  panel.style.minWidth = "0";
-  panel.style.maxWidth = "none";
-  panel.style.margin = "0";
-  panel.style.overflow = "visible";
-
-  const measured = panel.getBoundingClientRect();
-  const frameRect = frame.getBoundingClientRect();
-  const size = { width, height: measured.height + LEAD_RESERVE + TAB };
-  const spot = placeCaption(toBox(artRect), size, obstacles);
-
-  if (spot === "below") {
-    frame.dataset.caption = "below";
-    stack.style.cssText = "";
-    panel.style.cssText = "";
-  } else {
-    delete frame.dataset.caption;
-    const placed = cornerBox(toBox(artRect), size, spot);
-    stack.style.top = `${Math.round(placed.top + TAB - frameRect.top)}px`;
-    stack.style.left = `${Math.round(placed.left - frameRect.left)}px`;
-  }
-
+  const captionBox = toBox(panel.getBoundingClientRect());
   const choiceIsOverlay = Boolean(choiceList && getComputedStyle(choiceList).position === "absolute");
   const thoughtIsOverlay = Boolean(thought && getComputedStyle(thought).position === "absolute");
-  const buttonBox = buttons ? toBox(buttons.getBoundingClientRect()) : null;
+  const buttonBox = buttons && buttons.getBoundingClientRect().height > 2
+    ? toBox(buttons.getBoundingClientRect())
+    : null;
   const heading = choiceList?.querySelector("h2");
-  const headingBox = heading ? toBox(heading.getBoundingClientRect()) : null;
-  const thoughtBox = thoughtIsOverlay && thought ? toBox(thought.getBoundingClientRect()) : null;
-  const thoughtHitsChoices = Boolean(
+  const headingBox = heading && heading.getBoundingClientRect().height > 2
+    ? toBox(heading.getBoundingClientRect())
+    : null;
+  const thoughtBox = thoughtIsOverlay && thought && thought.getBoundingClientRect().height > 2
+    ? toBox(thought.getBoundingClientRect())
+    : null;
+
+  const choicesCoverCaption = Boolean(
+    (buttonBox && overlaps(captionBox, buttonBox))
+    || (headingBox && overlaps(captionBox, headingBox)),
+  );
+  const choicesCoverHotspot = Boolean(
+    choiceIsOverlay
+    && (
+      (buttonBox && hotspots.some((hotspot) => overlaps(hotspot, buttonBox)))
+      || (headingBox && hotspots.some((hotspot) => overlaps(hotspot, headingBox)))
+    ),
+  );
+  const thoughtCovered = Boolean(
     thoughtBox
     && (
-      (buttonBox && overlaps(thoughtBox, buttonBox))
+      overlaps(thoughtBox, captionBox)
+      || hotspots.some((hotspot) => overlaps(hotspot, thoughtBox))
+      || (buttonBox && overlaps(thoughtBox, buttonBox))
       || (headingBox && overlaps(thoughtBox, headingBox))
     ),
   );
 
-  if (choiceIsOverlay && buttonBox && hotspots.some((hotspot) => overlaps(hotspot, buttonBox))) {
+  if (spot === "below") {
+    frame.dataset.caption = "below";
     frame.dataset.choices = "below";
+    if (thought) frame.dataset.thought = "below";
+  } else {
+    delete frame.dataset.caption;
+    if (choicesCoverCaption || choicesCoverHotspot) frame.dataset.choices = "below";
+    if (thoughtCovered) {
+      frame.dataset.thought = "below";
+      frame.dataset.choices = "below";
+    }
   }
-  if (thoughtBox && hotspots.some((hotspot) => overlaps(hotspot, thoughtBox))) {
-    frame.dataset.thought = "below";
+
+  // One shrink can reveal more overflow once the picture actually gets shorter.
+  fitPictureInViewport(frame);
+  fitPictureInViewport(frame);
+}
+
+/** Shrink the picture, keeping its ratio, until the text and choices are on screen. */
+function fitPictureInViewport(frame: HTMLElement) {
+  const art = frame.querySelector<HTMLElement>(".scene-art");
+  const image = art?.querySelector<HTMLElement>(":scope > .scene-image");
+  if (!art || !image) return;
+
+  const vh = window.innerHeight;
+  const vw = window.innerWidth;
+  const watched = [
+    frame.querySelector(".scene-caption-plate-row"),
+    frame.querySelector(".scene-info-panel"),
+    frame.querySelector(".scene-caption-thought"),
+    frame.querySelector(":scope > .opening-thought"),
+    frame.querySelector(":scope > .overlayActionList h2"),
+    frame.querySelector(":scope > .overlayActionList .overlayActionButtons"),
+  ];
+  let overflow = 0;
+  for (const el of watched) {
+    if (!el) continue;
+    const rect = el.getBoundingClientRect();
+    if (rect.width < 2 || rect.height < 2) continue;
+    overflow = Math.max(
+      overflow,
+      rect.bottom - (vh - 8),
+      8 - rect.top,
+      rect.right - (vw - 8),
+      8 - rect.left,
+    );
   }
-  // Once the choices leave the picture, an absolute thought still pins to
-  // the bottom of the frame and lands on the button row. Move it under the art.
-  if (thoughtHitsChoices) {
-    frame.dataset.choices = "below";
-    frame.dataset.thought = "below";
-  }
+  if (overflow <= 2) return;
+
+  const rect = image.getBoundingClientRect();
+  if (rect.height < 2 || rect.width < 2) return;
+  const nextH = Math.max(MIN_PICTURE, Math.floor(rect.height - overflow));
+  if (rect.height - nextH < 2) return;
+  const nextW = Math.max(120, Math.round(nextH * (rect.width / rect.height)));
+  // A flex item's automatic minimum is the picture's intrinsic height, so a
+  // set height alone does not shrink it. Cap the image and zero that minimum.
+  art.style.minHeight = "0";
+  art.style.width = `${nextW}px`;
+  art.style.height = `${nextH}px`;
+  art.style.maxWidth = "100%";
+  art.style.marginLeft = "auto";
+  art.style.marginRight = "auto";
+  image.style.display = "block";
+  image.style.width = `${nextW}px`;
+  image.style.height = `${nextH}px`;
+  image.style.maxWidth = "100%";
+  image.style.maxHeight = `${nextH}px`;
+  image.style.objectFit = "contain";
 }

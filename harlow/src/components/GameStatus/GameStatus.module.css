@@ -268,3 +268,66 @@
   }
 
 }
+
+/* The scene has to share a short phone screen with this block. Keep the
+   portrait and the three buttons in one row so the picture still fits. */
+@media (max-width: 640px) {
+  .status {
+    gap: 8px;
+    padding: 8px 0;
+  }
+
+  .playerInfo {
+    gap: 10px;
+  }
+
+  .portraitSection {
+    width: 168px;
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .portrait {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    width: 64px;
+    height: 96px;
+  }
+
+  .statsButton,
+  .questsButton {
+    grid-column: 2;
+    min-height: 44px;
+    padding: 4px 6px;
+  }
+
+  .playerDetails h2 {
+    margin-bottom: 6px;
+    font-size: 18px;
+  }
+
+  .playerStats {
+    gap: 2px;
+  }
+
+  .playerStats p {
+    font-size: 14px;
+  }
+
+  .statWithMeter {
+    gap: 2px;
+  }
+
+  .worldInfo {
+    gap: 10px;
+    padding-top: 6px;
+  }
+
+  .worldDetails {
+    gap: 4px;
+  }
+
+  .timeInfo {
+    font-size: 26px;
+  }
+}
