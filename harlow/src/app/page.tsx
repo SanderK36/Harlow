@@ -27,6 +27,7 @@ import GameMenu from "@/components/GameMenu/GameMenu";
 import CharacterWindow from "@/components/CharacterWindow/CharacterWindow";
 import QuestWindow from "@/components/QuestWindow/QuestWindow";
 
+import { useReducedMotion } from "@/components/DialogueScene/typewriter";
 import { isNightTime } from "@/game/utils";
 import { useGame } from "@/game/useGame";
 import { storyEntryApplies } from "@/game/story";
@@ -296,8 +297,6 @@ export default function Home() {
     notifyMomQuest,
   } = useGame();
   const [travelMode, setTravelMode] = useState<"walk" | "bus">("walk");
-  const [sceneImageEntering, setSceneImageEntering] = useState(false);
-  const sceneImageAnimationFrame = useRef<number | null>(null);
 
   function continueGame() {
     if (loadMostRecentGame()) setHasStarted(true);
@@ -388,9 +387,6 @@ export default function Home() {
       }
       if (vinylThoughtTimer.current !== null) {
         window.clearTimeout(vinylThoughtTimer.current);
-      }
-      if (sceneImageAnimationFrame.current !== null) {
-        window.cancelAnimationFrame(sceneImageAnimationFrame.current);
       }
     },
     [],
@@ -483,17 +479,6 @@ export default function Home() {
     setHasStarted(false);
   }
 
-  function replaySceneImageEnter() {
-    if (sceneImageAnimationFrame.current !== null) {
-      window.cancelAnimationFrame(sceneImageAnimationFrame.current);
-    }
-    setSceneImageEntering(false);
-    sceneImageAnimationFrame.current = window.requestAnimationFrame(() => {
-      setSceneImageEntering(true);
-      sceneImageAnimationFrame.current = null;
-    });
-  }
-
   const hasConversationOverlay = conversation.length > 0;
 
   // Character art has priority, then weather-specific art, then day/night art.
@@ -565,6 +550,51 @@ export default function Home() {
     hasConversationOverlay && emptySceneImage && emptySceneImage !== sceneImage
       ? emptySceneImage
       : null;
+  const interimRain =
+    RAIN_WEATHER.includes(gameState.weather)
+    && !currentScene.image.weather?.[gameState.weather];
+  const syntheticNight = isNightTime(gameState.time) && Boolean(currentScene.image.noNightVariant);
+  const reducedMotion = useReducedMotion();
+  const [shownSceneImage, setShownSceneImage] = useState(sceneImage);
+  const [incomingSceneImage, setIncomingSceneImage] = useState<string | null>(null);
+  const [incomingSceneVisible, setIncomingSceneVisible] = useState(false);
+  // Reduced motion swaps the plate immediately. The held image stays behind
+  // only while a crossfade is allowed to run.
+  const displayedSceneImage = reducedMotion ? sceneImage : shownSceneImage;
+
+  useEffect(() => {
+    if (reducedMotion || sceneImage === shownSceneImage) return;
+
+    let cancelled = false;
+    const preloader = new window.Image();
+    preloader.onload = () => {
+      if (cancelled) return;
+      setIncomingSceneImage(sceneImage);
+      setIncomingSceneVisible(false);
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          if (!cancelled) setIncomingSceneVisible(true);
+        });
+      });
+    };
+    preloader.onerror = () => {
+      if (!cancelled) setShownSceneImage(sceneImage);
+    };
+    preloader.src = sceneImage;
+    return () => {
+      cancelled = true;
+    };
+  }, [sceneImage, shownSceneImage, reducedMotion]);
+
+  useEffect(() => {
+    if (!incomingSceneVisible || !incomingSceneImage) return;
+    const timer = window.setTimeout(() => {
+      setShownSceneImage(incomingSceneImage);
+      setIncomingSceneImage(null);
+      setIncomingSceneVisible(false);
+    }, 180);
+    return () => window.clearTimeout(timer);
+  }, [incomingSceneVisible, incomingSceneImage]);
   const hotspotActions =
     sanatoriumHotspotActions[currentScene.id] ??
     (currentScene.id === "living-room"
@@ -795,6 +825,19 @@ export default function Home() {
           onMainMenu={returnToMainMenu}
           onSave={saveGame}
           onLoad={loadGame}
+          onOpen={() => {
+            setShowVinylThought(false);
+            setShowLateNightThought(false);
+            setTvNewsLine(null);
+            if (vinylThoughtTimer.current !== null) {
+              window.clearTimeout(vinylThoughtTimer.current);
+              vinylThoughtTimer.current = null;
+            }
+            if (lateNightThoughtTimer.current !== null) {
+              window.clearTimeout(lateNightThoughtTimer.current);
+              lateNightThoughtTimer.current = null;
+            }
+          }}
         />
 
         <GameStatus
@@ -806,7 +849,7 @@ export default function Home() {
         />
 
         <div
-          className={`scene-image-frame scene-image-frame-${currentScene.id}${weatherImage && sceneImage === weatherImage ? " scene-image-frame-weather-art" : ""}${hasConversationOverlay ? " scene-image-frame-has-conversation" : ""}${conversationActive ? " scene-image-frame-conversation-active" : ""}`}
+          className={`scene-image-frame scene-image-frame-${currentScene.id}${weatherImage && sceneImage === weatherImage ? " scene-image-frame-weather-art" : ""}${conversationActive ? " scene-image-frame-has-conversation scene-image-frame-conversation-active" : ""}${interimRain ? " scene-image-frame-interim-rain" : ""}${syntheticNight ? " scene-image-frame-synthetic-night" : ""}`}
         >
           {/* The picture and its hotspots share one box, so percentage hotspot
               positions always map onto the art, wherever the panels sit. */}
@@ -816,15 +859,23 @@ export default function Home() {
               className="scene-ambient"
               aria-hidden="true"
               style={{
-                backgroundImage: `url("${conversationActive && conversationBackdrop ? conversationBackdrop : sceneImage}")`,
+                backgroundImage: `url("${conversationActive && conversationBackdrop ? conversationBackdrop : displayedSceneImage}")`,
               }}
             />
             <img
-              src={sceneImage}
+              src={displayedSceneImage}
               alt=""
-              className={`scene-image${sceneImageEntering ? " scene-image-enter" : ""}`}
-              onLoad={replaySceneImageEnter}
+              className="scene-image"
             />
+            {!reducedMotion && incomingSceneImage && (
+              <img
+                src={incomingSceneImage}
+                alt=""
+                className={`scene-image scene-image-crossfade${incomingSceneVisible ? " scene-image-crossfade-in" : ""}`}
+              />
+            )}
+            {syntheticNight && <div className="scene-night-tint" aria-hidden="true" />}
+            {interimRain && <div className="scene-rain-glass" aria-hidden="true" />}
             {conversationBackdrop && (
               <img
                 src={conversationBackdrop}
@@ -1008,7 +1059,7 @@ export default function Home() {
               />
             </div>
           )}
-          {!hasConversationOverlay &&
+          {!conversationActive &&
             !(showOpeningThought || showVinylThought || tvNewsLine !== null) &&
             actionList}
         </div>

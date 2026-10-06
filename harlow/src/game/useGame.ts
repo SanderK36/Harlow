@@ -14,7 +14,7 @@ import {
   scenes,
 } from "@/game/scenes";
 import { harlowAudio } from "@/game/audio";
-import { advanceGameTime } from "@/game/time";
+import { advanceGameTime, withCanonWeekday } from "@/game/time";
 import { isNightTime } from "@/game/utils";
 import {
   readMostRecentSave,
@@ -30,6 +30,7 @@ import {
   isQuestActive,
   isQuestCompleted,
   migrateQuestsFromLegacy,
+  resolveMomTalked,
   setQuestStep,
   startQuest,
   type JobId,
@@ -137,22 +138,44 @@ const HOME_SCENE_IDS = new Set([
 
 type ShopId = "gas-station" | "needle-groove";
 
+function sceneAfterPickups(
+  sceneId: string,
+  save: {
+    deskCigarettesPickedUp?: boolean;
+    scrapyardKnifePickedUp?: boolean;
+    garageFlashlightPickedUp?: boolean;
+  } | null,
+) {
+  if (sceneId === "ethan-room-desk" && save?.deskCigarettesPickedUp) return "ethan-room-desk-empty";
+  if (sceneId === "scrapyard-desk" && save?.scrapyardKnifePickedUp) return "scrapyard-desk-empty";
+  if (sceneId === "garage-bench" && save?.garageFlashlightPickedUp) return "garage-bench-empty";
+  return sceneId;
+}
+
 export function useGame() {
   const sessionSave = readSessionSave();
-  const sessionScene = sessionSave && scenes[sessionSave.currentSceneId as keyof typeof scenes];
+  const sessionSceneId = sessionSave
+    ? sceneAfterPickups(sessionSave.currentSceneId, sessionSave)
+    : null;
+  const sessionScene = sessionSceneId
+    ? scenes[sessionSceneId as keyof typeof scenes]
+    : null;
 
   // Persistent world and player data. Add a field to its type and initial value
   // before using it in a scene requirement or effect.
-  const [gameState, setGameState] = useState(sessionSave?.gameState ?? initialGameState);
+  const [gameState, setGameState] = useState(() =>
+    withCanonWeekday(sessionSave?.gameState ?? initialGameState),
+  );
   const [playerState, setPlayerState] = useState(sessionSave?.playerState ?? player);
 
   // The currently displayed scene and its short, time-aware thought.
   const [currentScene, setCurrentScene] = useState(sessionScene ?? ethanRoom);
   const [currentThought, setCurrentThought] = useState<string | null>(() => {
     const sceneId = sessionScene?.id ?? ethanRoom.id;
-    const time = sessionSave?.gameState.time ?? initialGameState.time;
-    const weather = sessionSave?.gameState.weather ?? initialGameState.weather;
-    const day = sessionSave?.gameState.dayOfWeek ?? initialGameState.dayOfWeek;
+    const loaded = withCanonWeekday(sessionSave?.gameState ?? initialGameState);
+    const time = loaded.time;
+    const weather = loaded.weather;
+    const day = loaded.dayOfWeek;
     const migrated = migrateQuestsFromLegacy(sessionSave ?? { momTalked: true });
     const flags = sessionSave?.storyFlags ?? (
       sessionSave?.momJobConcernHeard ? { momJobConcern: true } : {}
@@ -222,7 +245,9 @@ export function useGame() {
   const [deskCigarettesPickedUp, setDeskCigarettesPickedUp] = useState(sessionSave?.deskCigarettesPickedUp ?? false);
   const [scrapyardKnifePickedUp, setScrapyardKnifePickedUp] = useState(sessionSave?.scrapyardKnifePickedUp ?? false);
   const [garageFlashlightPickedUp, setGarageFlashlightPickedUp] = useState(sessionSave?.garageFlashlightPickedUp ?? false);
-  const [momTalked, setMomTalked] = useState(sessionSave?.momTalked ?? true);
+  const [momTalked, setMomTalked] = useState(() =>
+    resolveMomTalked(migrateQuestsFromLegacy(sessionSave ?? { momTalked: true })),
+  );
   const [momJobConcernHeard, setMomJobConcernHeard] = useState(sessionSave?.momJobConcernHeard ?? false);
   // Completing Find a Job sets one permanent workplace benefit.
   const [job, setJob] = useState<JobId | null>(sessionSave?.job ?? null);
@@ -562,8 +587,10 @@ export function useGame() {
   function closeConversation() {
     setConversationActive(false);
     setConversationEnding(false);
+    // Drop the lock immediately so the scene choices return while the
+    // dialogue layer finishes fading. Notices wait until that layer is gone.
+    conversationActiveRef.current = false;
     window.setTimeout(() => {
-      conversationActiveRef.current = false;
       setConversation([]);
       setActiveConversation(null);
       setUsedConversationChoices([]);
@@ -1209,21 +1236,23 @@ export function useGame() {
   }
 
   function restoreSave(save: ReturnType<typeof readSaveSlot>) {
-    const savedScene = save && scenes[save.currentSceneId as keyof typeof scenes];
+    const savedSceneId = save ? sceneAfterPickups(save.currentSceneId, save) : null;
+    const savedScene = savedSceneId && scenes[savedSceneId as keyof typeof scenes];
 
     // Ignore saves from an older/incomplete build instead of leaving the game
     // on a scene that no longer exists.
     if (!save || !savedScene) return false;
 
-    writeSessionSave(save);
+    const alignedState = withCanonWeekday(save.gameState);
+    writeSessionSave({ ...save, gameState: alignedState });
 
-    setGameState(save.gameState);
+    setGameState(alignedState);
     setPlayerState(save.playerState);
     const restoredFlags = save.storyFlags ?? (save.momJobConcernHeard ? { momJobConcern: true } : {});
     let restoredQuests = migrateQuestsFromLegacy(save);
     const restoredHill = shouldNoticeHill(
       savedScene.id,
-      save.gameState.time,
+      alignedState.time,
       restoredQuests,
       restoredFlags,
     );
@@ -1235,9 +1264,9 @@ export function useGame() {
         ? HILL_THOUGHT
         : getSceneThought(
           savedScene.id,
-          save.gameState.time,
-          save.gameState.weather,
-          save.gameState.dayOfWeek,
+          alignedState.time,
+          alignedState.weather,
+          alignedState.dayOfWeek,
         ),
     );
     setCurrentEffects([]);
@@ -1246,7 +1275,7 @@ export function useGame() {
     setDeskCigarettesPickedUp(save.deskCigarettesPickedUp);
     setScrapyardKnifePickedUp(save.scrapyardKnifePickedUp);
     setGarageFlashlightPickedUp(save.garageFlashlightPickedUp);
-    setMomTalked(save.momTalked ?? true);
+    setMomTalked(resolveMomTalked(restoredQuests));
     setMomJobConcernHeard(save.momJobConcernHeard ?? false);
     setJob(save.job ?? null);
     setJobQuestTarget(save.jobQuestTarget ?? null);

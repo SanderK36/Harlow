@@ -42,6 +42,12 @@ export type Scene = {
     weather?: Partial<Record<Weather, string>>;
     /** The weather art is daylit: at night the night art wins. */
     weatherDayOnly?: boolean;
+    /**
+     * No night art yet: `night` is the day plate. After dark the scene is
+     * dimmed and cooled instead of showing daylight. Set this on any scene
+     * that still shares its day image at night.
+     */
+    noNightVariant?: boolean;
   };
   choices: Choice[];
   conversation?: Conversation;
@@ -1380,9 +1386,9 @@ export const ethanRoom: Scene = {
   image: {
     day: "./images/locations/home/ethanRoomDay.png",
     night: "./images/locations/home/ethanRoomNight.png",
-    // ethanRoomRainy.png exists but is NOT wired: pennant says RIVERTON
-    // (must be Harlow) and is 1024×768 vs day art 1448×1086. Wire via rainArt
-    // once Sander replaces the asset.
+    // ethanRoomRainy.png is not wired: the pennant says RIVERTON (it has to
+    // say Harlow) and the cassette labels are anachronistic. Rainy weather
+    // uses the interim rain filter on this room until that art is replaced.
   },
   choices: [
     {
@@ -2670,6 +2676,7 @@ export const motelRoom203: Scene = {
   image: {
     day: "./images/locations/motel/motelRoom203.png",
     night: "./images/locations/motel/motelRoom203.png",
+    noNightVariant: true,
   },
   choices: [
     {

@@ -39,7 +39,7 @@ const TITLE_FADE = 1100;
 // With reduced motion the card simply appears and goes; it's held a little
 // shorter since nothing is animating in.
 const TITLE_HOLD_REDUCED = 4000;
-const SKIP_HINT_DELAY = 1200;
+const SKIP_HINT_DELAY = 1000;
 // Longest the splash may run (the film itself is 10 seconds).
 const SPLASH_FAILSAFE = 16000;
 
@@ -84,8 +84,17 @@ export default function OpeningSequence({
   const endSplash = () => setPhase((current) => (current === "splash" ? "splashOut" : current));
 
   function advance() {
-    if (phase === "splash") endSplash();
-    else if (phase === "title") setPhase("titleOut");
+    setPhase((current) => {
+      if (current === "splash") return "splashOut";
+      if (current === "title") return "titleOut";
+      return current;
+    });
+  }
+
+  function onSequencePointerDown(event: React.PointerEvent) {
+    if (phase === "prologue") return;
+    event.stopPropagation();
+    if (phase === "splash" || phase === "title") advance();
   }
 
   const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
@@ -161,7 +170,7 @@ export default function OpeningSequence({
   return (
     <div
       className={`${styles.sequence} ${phase === "titleOut" ? styles.sequenceOut : ""}`}
-      onClick={advance}
+      onPointerDown={onSequencePointerDown}
       role="presentation"
     >
       {inSplash && (
@@ -189,6 +198,10 @@ export default function OpeningSequence({
             autoPlay
             playsInline
             onTimeUpdate={syncBackdrop}
+            onPointerDown={(event) => {
+              event.stopPropagation();
+              advance();
+            }}
             onEnded={endSplash}
             // React bubbles a skipped <source>'s error up to here (Chrome skips
             // the .mov), so only the video's own errors count.
@@ -227,6 +240,19 @@ export default function OpeningSequence({
             </p>
           </div>
         </div>
+      )}
+
+      {(phase === "splash" || phase === "title") && (
+        <button
+          type="button"
+          className={`${styles.skipButton} ${showSkipHint ? styles.skipButtonVisible : ""}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            advance();
+          }}
+        >
+          Skip
+        </button>
       )}
 
       <p

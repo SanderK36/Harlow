@@ -11,7 +11,6 @@
 /* The title card lifts away to reveal the first scene underneath. */
 .sequenceOut {
   opacity: 0;
-  pointer-events: none;
 }
 
 /* ---------- Studio splash ---------- */
@@ -187,6 +186,39 @@
 
 /* ---------- Skip hint ---------- */
 
+.skipButton {
+  position: absolute;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(64px, calc(env(safe-area-inset-bottom) + 48px));
+  z-index: 6;
+  min-width: 88px;
+  min-height: 44px;
+  padding: 10px 18px;
+  color: #fbe6d6;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  background: rgba(13, 7, 8, 0.82);
+  border: 1px solid rgba(255, 196, 178, 0.45);
+  border-radius: 8px;
+  opacity: 0;
+  pointer-events: none;
+  cursor: pointer;
+}
+
+.skipButtonVisible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.skipButton:hover,
+.skipButton:focus-visible {
+  background: rgba(142, 26, 38, 0.9);
+  outline: none;
+}
+
 .skipHint {
   position: absolute;
   right: 0;
@@ -274,7 +306,8 @@
 @media (prefers-reduced-motion: reduce) {
   .sequence,
   .splash,
-  .skipHint {
+  .skipHint,
+  .skipButton {
     transition: none;
   }
 
