@@ -120,7 +120,11 @@ export function placeSceneChrome(frame: HTMLElement) {
 
   const sceneId = frame.dataset.sceneId ?? "";
   const mode = window.innerWidth <= 640 ? "phone" : "desk";
-  const keepHomeOverlays = mode === "desk" && (sceneId === "hallway" || sceneId === "kitchen");
+  const keepHomeOverlays = mode === "desk" && (
+    sceneId === "hallway"
+    || sceneId === "kitchen"
+    || sceneId === "living-room"
+  );
   if (frame.dataset.captionScene !== sceneId || frame.dataset.captionMode !== mode) {
     delete frame.dataset.choices;
     delete frame.dataset.thought;

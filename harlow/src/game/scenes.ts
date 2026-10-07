@@ -650,8 +650,9 @@ export const elrodHouse: Scene = {
       closeup: {
         image: "./images/misc/flashbackEthanPovForest.png",
         thought:
-          "Flashlights in the trees. October night. Same night Emily never came home.",
+          "The police tapes reminds me of that night. Same night Emily disappeared... I remember watching the police looking for her. I remember the rain. I remember the woods. For some reason this feels exactly like that night.",
         label: "1972 memory",
+        disableWeatherFilter: true,
       },
       setsFlags: ["tapeSeen"],
       questStep: "rachel",

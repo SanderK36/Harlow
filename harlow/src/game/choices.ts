@@ -53,7 +53,14 @@ export type Choice = {
     video?: string;
     thought: string;
     label?: string;
-    next?: { image: string; thought: string; label?: string };
+    /** Some memories should bypass the rainy override styling. */
+    disableWeatherFilter?: boolean;
+    next?: {
+      image: string;
+      thought: string;
+      label?: string;
+      disableWeatherFilter?: boolean;
+    };
   };
   /** Hidden once any listed story flag is set. */
   excludesStoryFlag?: import("./quests").StoryFlag | import("./quests").StoryFlag[];

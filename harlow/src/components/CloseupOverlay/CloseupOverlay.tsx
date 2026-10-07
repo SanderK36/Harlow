@@ -11,6 +11,8 @@ export type CloseupContent = {
   thought: string;
   /** Optional short label for screen readers. */
   label?: string;
+  /** Some memories should avoid the rainy-weather closeup wash. */
+  disableWeatherFilter?: boolean;
 };
 
 type CloseupOverlayProps = {

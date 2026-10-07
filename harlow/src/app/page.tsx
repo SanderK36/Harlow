@@ -1001,7 +1001,7 @@ export default function Home() {
                 src={closeup.video}
                 className="scene-pickup-video"
                 onLoadedMetadata={(event) => {
-                  event.currentTarget.playbackRate = 1.25;
+                  event.currentTarget.playbackRate = 2;
                 }}
                 autoPlay
                 muted
@@ -1361,11 +1361,13 @@ export default function Home() {
             closeup={closeup}
             onDismiss={dismissCloseup}
             rain={
-              RAIN_WEATHER.includes(gameState.weather)
-                ? sceneIsIndoor
-                  ? "interior"
-                  : "exterior"
-                : null
+              closeup.disableWeatherFilter
+                ? null
+                : RAIN_WEATHER.includes(gameState.weather)
+                  ? sceneIsIndoor
+                    ? "interior"
+                    : "exterior"
+                  : null
             }
             rainNight={isNightTime(gameState.time)}
           />

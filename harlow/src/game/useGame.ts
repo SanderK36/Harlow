@@ -931,12 +931,14 @@ export function useGame() {
           video: choice.closeup.video ? toUrl(choice.closeup.video) : undefined,
           thought: choice.closeup.thought,
           label: choice.closeup.label,
+          disableWeatherFilter: choice.closeup.disableWeatherFilter,
         },
         choice.closeup.next
           ? {
               image: toUrl(choice.closeup.next.image),
               thought: choice.closeup.next.thought,
               label: choice.closeup.next.label,
+              disableWeatherFilter: choice.closeup.next.disableWeatherFilter,
             }
           : undefined,
       );

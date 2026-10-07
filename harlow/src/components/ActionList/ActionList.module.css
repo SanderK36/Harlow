@@ -146,23 +146,35 @@
   border-color: var(--accent-bright);
 }
 
+:global(.scene-image-frame-hallway) .overlayActionList {
+  padding-top: 36px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(8, 4, 5, 0.82) 22%, rgba(8, 4, 5, 0.9) 100%);
+}
+
 :global(.scene-image-frame-hallway) .overlayActionList h2 {
-  color: var(--muted);
-  text-shadow: none;
+  position: absolute;
+  top: 12px;
+  left: 33%;
+  margin: 0;
+  color: #fff4f4;
+  text-shadow: 0 2px 8px #000;
+  transform: translateX(-50%);
 }
 
 :global(.scene-image-frame-hallway) .overlayActionButtons {
   width: min(100%, 620px);
   margin-inline: auto;
+  margin-top: 10px;
 }
 
 :global(.scene-image-frame-hallway) .overlayActionButtons button {
-  min-height: 34px;
-  padding-top: 6px;
-  padding-bottom: 6px;
-  font-size: 15px;
-  background: rgba(255, 255, 255, 0.035);
-  backdrop-filter: none;
+  min-height: 44px;
+  padding-top: 9px;
+  padding-bottom: 9px;
+  font-size: 17px;
+  background: rgba(21, 16, 16, 0.82);
+  border-color: rgba(239, 221, 221, 0.28);
+  backdrop-filter: blur(4px);
 }
 
 .overlayActionList h2,
