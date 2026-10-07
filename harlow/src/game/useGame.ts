@@ -1216,11 +1216,17 @@ export function useGame() {
       return false;
     }
     if (!momTalked && action === "relaxOnCouch") return false;
+    if (!momTalked && currentScene.id === "front-yard") {
+      return ["enterGarage", "goBackYard", "goToStreets", "goHome"].includes(action);
+    }
     if (action === "goToSleep") {
       return currentScene.id === "ethan-room" && (time >= BEDTIME_START || time < TIRED_END);
     }
+    if (action === "goToStreets") {
+      return currentScene.id === "front-yard";
+    }
     if (action === "watchTv") {
-      return currentScene.id === "living-room" && !momTalked;
+      return currentScene.id === "living-room";
     }
 
     if (action === "talkToMom") {

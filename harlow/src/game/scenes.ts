@@ -117,6 +117,7 @@ export function isExteriorScene(sceneId: string): boolean {
   // Used by the page to decide whether to show travel controls.
   return (
     sceneId === "bus-stop" ||
+    sceneId === "street" ||
     exteriorDestinations.some((destination) => destination.id === sceneId)
   );
 }
@@ -422,17 +423,10 @@ export const frontYard: Scene = {
       timeCost: 2,
     },
     {
-      label: "Look at the light pole",
-      action: "lookAtLightPole",
-      nextScene: "light-pole",
-      timeCost: 1,
-    },
-    {
-      label: "Walk to the Elrod house",
-      action: "goElrodHouse",
-      nextScene: "elrod-house",
-      timeCost: 10,
-      /* Availability: the-tape active or rachelMet — gated in useGame. */
+      label: "Go to the streets",
+      action: "goToStreets",
+      nextScene: "street",
+      timeCost: 5,
     },
     {
       label: "Talk to Rachel",
@@ -467,7 +461,7 @@ export const frontYard: Scene = {
 };
 
 export const rachelElrodConversation: Conversation = {
-  opening: [npc("Rachel", "Hey, Ethan. You look like hell.")],
+  opening: [npc("Rachel", "Hey, Ethan. You look rough.")],
   choices: [
     {
       label: "Didn't sleep. Sirens all night.",
@@ -475,7 +469,7 @@ export const rachelElrodConversation: Conversation = {
         ethan("Didn't sleep. Sirens all night."),
         npc(
           "Rachel",
-          "Whole street heard them. I kept waiting for somebody to say it was a mistake.",
+          "The whole street heard them. I kept waiting for somebody to say it was a mistake.",
         ),
       ],
     },
@@ -496,7 +490,7 @@ export const rachelElrodConversation: Conversation = {
         ethan("Who'd do this to her?"),
         npc(
           "Rachel",
-          "Somebody who knew the house. Tape doesn't go up this fast for strangers.",
+          "Someone who knew the house. Tape doesn't go up that fast for strangers.",
         ),
       ],
     },
@@ -505,7 +499,7 @@ export const rachelElrodConversation: Conversation = {
       response: [
         ethan("This feels like Emily all over again."),
         npc("Rachel", "I know. Your mom left the porch light on for a month."),
-        thought("I'd forgotten about the porch light."),
+        thought("I'd forgotten about that."),
       ],
     },
     {
@@ -602,6 +596,49 @@ export const rachelFrontYardConversation: Conversation = {
   ],
 };
 
+export const street: Scene = {
+  id: "street",
+  story: [
+    narration("You head down the block. The houses sit in the cold, dark hush."),
+    thought("The whole street looks waiting."),
+    thought("That porch light at the end of the block still feels wrong.", {
+      weather: RAIN,
+    }),
+  ],
+  location: "Neighbourhood",
+  image: {
+    day: "./images/locations/neighbourhood/neighbourhood.png",
+    night: "./images/locations/neighbourhood/neighbourhoodNight.png",
+    weather: {
+      Rainy: "./images/locations/neighbourhood/neighbourhoodRainy.png",
+      "Heavy rain": "./images/locations/neighbourhood/neighbourhoodRainy.png",
+      Thunderstorm: "./images/locations/neighbourhood/neighbourhoodThunder.png",
+    },
+  },
+  choices: [
+    {
+      label: "Go back home",
+      action: "goHome",
+      nextScene: "front-yard",
+      timeCost: 5,
+    },
+    {
+      label: "Light pole",
+      action: "lookAtLightPole",
+      nextScene: "light-pole",
+      timeCost: 1,
+      hotspots: [{ left: 2, top: 18, width: 13, height: 70 }],
+    },
+    {
+      label: "Elrod house",
+      action: "goElrodHouse",
+      nextScene: "elrod-house",
+      timeCost: 10,
+      hotspots: [{ left: 42, top: 45, width: 22, height: 20 }],
+    },
+  ],
+};
+
 export const elrodHouse: Scene = {
   id: "elrod-house",
   story: [
@@ -617,11 +654,11 @@ export const elrodHouse: Scene = {
   ],
   location: "Elrod House",
   image: {
-    day: "./images/locations/ElrodHouse/ElrodHouseDay.png",
-    night: "./images/locations/ElrodHouse/ElrodHouseNight.png",
+    day: "./images/locations/neighbourhood/ElrodHouse/ElrodHouseDay.png",
+    night: "./images/locations/neighbourhood/ElrodHouse/ElrodHouseNight.png",
     weather: rainArt(
-      "./images/locations/ElrodHouse/ElrodHouseRainy.png",
-      "./images/locations/ElrodHouse/ElrodHouseThunder.png",
+      "./images/locations/neighbourhood/ElrodHouse/ElrodHouseRainy.png",
+      "./images/locations/neighbourhood/ElrodHouse/ElrodHouseThunder.png",
     ),
     // Both weather plates are daytime. After dark the night plate wins.
     weatherDayOnly: true,
@@ -682,9 +719,9 @@ export const lightPole: Scene = {
   /** The top flyer sits under a top-left caption. Keep the card on the grass. */
   captionPosition: "bottom",
   image: {
-    day: "./images/locations/home/lightPoleDay.png",
-    night: "./images/locations/home/lightPoleNight.png",
-    weather: rainArt("./images/locations/home/lightPoleRainy.png"),
+    day: "./images/locations/neighbourhood/lightPoleDay.png",
+    night: "./images/locations/neighbourhood/lightPoleNight.png",
+    weather: rainArt("./images/locations/neighbourhood/lightPoleRainy.png"),
     // Both weather plates are daytime. After dark the night plate wins.
     weatherDayOnly: true,
   },
@@ -941,7 +978,7 @@ export const momDeathConversation: Conversation = {
       label: "It's true. Walter wouldn't tell me anything else.",
       response: [
         ethan("It's true. Walter wouldn't tell me anything else."),
-        npc("Linda", "He asked me when I last saw her. It's been a few days."),
+        npc("Linda", "He asked me when I last saw her. It was a few days ago."),
       ],
     },
     {
@@ -1111,7 +1148,7 @@ export const walterConversation: Conversation = {
       requiresStoryFlag: "rachelMet",
       excludesStoryFlag: "walterStationTalk",
       response: [
-        ethan("I saw someone last night. End of the street. In a hood."),
+        ethan("I saw someone last night. Down by the end of the street. In a hood."),
         npc("Walter", "...You tell anyone else that?"),
         ethan("No."),
         npc("Walter", "Keep it that way. Go home, Ethan."),
@@ -1123,7 +1160,7 @@ export const walterConversation: Conversation = {
       leadQuest: "what-walter-said",
       closeup: {
         image: "./images/locations/police_station/filingCabinetOpen.png",
-        thought: "PARKER, E. – 1972. Closed ten years. Still in his drawer.",
+        thought: "PARKER, E. — 1972. Closed ten years. Still in his drawer.",
         label: "Open filing drawer",
         setsFlags: ["fileDrawerSeen"],
         next: {
@@ -1841,7 +1878,7 @@ export const rayConversation: Conversation = {
         ethan("None of that. I'm looking for work."),
         npc(
           "Ray",
-          "I can use somebody reliable. You're hired. Anything in the shop is half price while you work here.",
+          "I can use somebody reliable. You're hired. Anything in the shop is half-price while you work here.",
         ),
       ],
     },
@@ -3145,6 +3182,7 @@ export const scenes = {
   "hallway-upstairs-attic-open": upstairsHallwayAtticOpen,
   "made-coffee": madeCoffee,
   "front-yard": frontYard,
+  street,
   "elrod-house": elrodHouse,
   "light-pole": lightPole,
   "back-yard": backYard,

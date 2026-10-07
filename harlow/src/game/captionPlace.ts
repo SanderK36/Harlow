@@ -124,6 +124,7 @@ export function placeSceneChrome(frame: HTMLElement) {
     sceneId === "hallway"
     || sceneId === "kitchen"
     || sceneId === "living-room"
+    || sceneId === "street"
   );
   if (frame.dataset.captionScene !== sceneId || frame.dataset.captionMode !== mode) {
     delete frame.dataset.choices;

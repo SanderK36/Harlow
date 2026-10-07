@@ -96,6 +96,7 @@ const hotspotLabels: Record<string, string> = {
   goBackYard: "Backyard",
   lookAtLightPole: "Light pole",
   goHome: "Go inside",
+  goToStreets: "Go to the streets",
   enterGarage: "Enter garage",
   talkToEarl: "Earl",
   chooseNeedleGrooveJob: "Needle & Groove flyer",
@@ -135,6 +136,7 @@ const ADMIN_SCENE_NAMES: Record<string, string> = {
   "elrod-house": "Elrod house",
   "ethan-room": "Ethan's room",
   "front-yard": "Front yard",
+  street: "Street",
   "sheriff-office": "Sheriff's office",
   "needle-and-groove": "Needle & Groove",
   "gas-station": "Gas station",
@@ -162,6 +164,7 @@ const adminDestinations = Object.values(scenes)
 // Open-air scenes beyond the travel destinations, for rain and lightning.
 const OUTDOOR_SCENE_IDS = new Set([
   "back-yard",
+  "street",
   "light-pole",
   "cementary-backside",
   "sanatorium-entrance",
@@ -183,7 +186,7 @@ const OPENING_THOUGHTS = [
   "I hardly slept last night.",
   "Mrs. Elrod. Somebody actually killed her.",
   "And that guy in the hood at the end of the street, by the woods... he was looking right at me.",
-  "Walter looked scared. Walter doesn't get scared.",
+  "Walter looked scared. Walter doesn't get scared easily.",
   "I should check on Mom.",
 ];
 const OPENING_THOUGHT_BASE_MS = 1500;
@@ -714,8 +717,8 @@ export default function Home() {
     sanatoriumHotspotActions[currentScene.id] ??
     (currentScene.id === "living-room"
       ? activeCharacter?.name === "Linda"
-        ? ["talkToMom", ...(momTalked ? [] : ["watchTv"])]
-        : ["relaxOnCouch", ...(momTalked ? [] : ["watchTv"])]
+        ? ["talkToMom", "watchTv"]
+        : ["relaxOnCouch", "watchTv"]
       : currentScene.id === "ethan-room"
         ? ["goToSleep", "playVinyl", "lookAtDesk"]
         : currentScene.id === "ethan-room-desk"
@@ -798,12 +801,15 @@ export default function Home() {
                                                             "front-yard"
                                                           ? [
                                                               "goBackYard",
-                                                              "goHome",
                                                               "enterGarage",
+                                                              "goHome",
                                                               "lookAtSanatoriumHill",
                                                             ]
                                                           : currentScene.id ===
-                                                              "light-pole"
+                                                              "street"
+                                                            ? []
+                                                            : currentScene.id ===
+                                                                "light-pole"
                                                             ? [
                                                                 "chooseNeedleGrooveJob",
                                                                 "chooseGasStationJob",

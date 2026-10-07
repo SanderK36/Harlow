@@ -59,6 +59,7 @@ export type Location =
 "Sheriff's office" |
 "Home front yard"|
 "Home back yard"|
+"Neighbourhood"|
 "Cemetery"|
 "Gas Station" |
 "Gas Station Inside" |
