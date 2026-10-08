@@ -215,6 +215,8 @@ export function hotspotActionsFor(
                                                             "leaveMotel",
                                                             "talkToEarl",
                                                           ]
+                                                        : sceneId === "diner"
+                                                          ? ["enterDiner"]
                                                         : sceneId === "front-yard"
                                                           ? [
                                                               "goBackYard",

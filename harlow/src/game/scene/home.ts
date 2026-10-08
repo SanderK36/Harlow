@@ -270,9 +270,9 @@ export const momConversation: Conversation = {
         ethan("Heading out. Need anything?"),
         npc(
           "Linda",
-          "We're out of coffee. Run down to Margaret's for me. Put it on my tab.",
+          "We're out of coffee. Run down to Margaret's for me. Tell her to put it on my tab and I'll pay her next time i'm there.",
         ),
-        ethan("I'll get it."),
+        ethan("Sure mom, I'll get it for you."),
         npc("Linda", "Thanks, honey."),
       ],
       storyFlag: "coffeeErrandHeard",

@@ -523,7 +523,9 @@ export function useGame() {
         : currentScene.id === "front-yard"
           ? rachelFrontYardConversation
           : currentScene.id === "elrod-house"
-            ? rachelElrodConversation
+            ? storyFlags.walterStationTalk
+              ? rachelFrontYardConversation
+              : rachelElrodConversation
             : currentScene.conversation;
     const asEmployee =
       !!selectedConversation?.jobOpening && selectedConversation.jobOpening.job === job;

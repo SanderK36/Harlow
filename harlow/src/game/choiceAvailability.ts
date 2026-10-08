@@ -111,15 +111,16 @@ export function isChoiceAvailable(choice: Choice, ctx: ChoiceContext) {
   if (action === "talkToRachel") {
     // Elrod: Rachel is only out 07:00–19:00 (matches her standing art).
     if (sceneId === "elrod-house") {
-      return !ctx.hasFlag("rachelMet") && time >= 420 && time < 1140;
-    }
-    // Front yard follow-up: 07:00–21:00.
-    if (sceneId === "front-yard") {
       return (
-        ctx.hasFlag("walterStationTalk")
-        && isQuestActive(ctx.quests, "what-walter-said")
+        (
+          !ctx.hasFlag("rachelMet")
+          || (
+            ctx.hasFlag("walterStationTalk")
+            && isQuestActive(ctx.quests, "what-walter-said")
+          )
+        )
         && time >= 420
-        && time < 1260
+        && time < 1140
       );
     }
     return false;

@@ -30,12 +30,18 @@ export function resolveSceneArt(input: {
     || (!sceneIsNight && scene.image.weatherNightOnly)
       ? undefined
       : scene.image.weather?.[weather];
-  // Elrod: Rachel is painted into the daytime art until she's met. Her rain
-  // and thunder plates are daylit too, so after dark the night plate shows.
+  // Elrod: Rachel is painted into the daytime art before the first meeting,
+  // and again for the post-Walter follow-up. Her rain and thunder plates are
+  // daylit too, so after dark the night plate shows.
   // During her talk the empty house is the backdrop so she isn't on screen twice.
+  const walterFollowUpActive =
+    input.storyFlags.walterStationTalk
+    && input.quests.some(
+      (quest) => quest.id === "what-walter-said" && quest.status === "active",
+    );
   const elrodWithRachel =
     scene.id === "elrod-house"
-    && !input.storyFlags.rachelMet
+    && (!input.storyFlags.rachelMet || walterFollowUpActive)
     && time >= 420
     && time < 1140;
   const elrodRachel = elrodWithRachel
@@ -93,10 +99,10 @@ export function resolveSceneArt(input: {
       ? "./images/locations/police_station/WalterHarringtonOfficeRain.jpg"
     : elrodWithRachel || elrodRachel
       ? weather === "Thunderstorm"
-        ? "./images/locations/ElrodHouse/ElrodHouseRachelOutsideThunder.png"
+        ? "./images/locations/neighbourhood/ElrodHouse/ElrodHouseRachelOutsideThunder.png"
         : RAIN_WEATHER.includes(weather)
-          ? "./images/locations/ElrodHouse/ElrodHouseRachelOutsideRainy.png"
-          : "./images/locations/ElrodHouse/ElrodHouseRachelOutsideDay.png"
+          ? "./images/locations/neighbourhood/ElrodHouse/ElrodHouseRachelOutsideRainy.png"
+          : "./images/locations/neighbourhood/ElrodHouse/ElrodHouseRachelOutsideDay.png"
     : ((isNightTime(time) && input.activeCharacter?.nightImage
         ? input.activeCharacter.nightImage
         : input.activeCharacter?.image) ?? emptySceneImage);
