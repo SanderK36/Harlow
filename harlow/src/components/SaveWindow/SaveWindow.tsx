@@ -1,4 +1,5 @@
 import type { SavedGameSlot } from "@/game/save";
+import { formatTime } from "@/game/utils";
 
 import styles from "./SaveWindow.module.css";
 
@@ -9,12 +10,6 @@ type SaveWindowProps = {
   onSelect: (slotNumber: number) => void;
   onClose: () => void;
 };
-
-function formatTime(minutes: number) {
-  const hours = Math.floor(minutes / 60).toString().padStart(2, "0");
-  const remainingMinutes = (minutes % 60).toString().padStart(2, "0");
-  return `${hours}:${remainingMinutes}`;
-}
 
 export default function SaveWindow({
   mode,

@@ -15,8 +15,7 @@ import {
   scenes,
 } from "@/game/scenes";
 import { conversationChoiceVisible } from "@/game/conversationChoices";
-import { sceneWeatherPlate } from "@/game/scenePlate";
-import { harlowAudio } from "@/game/audio";
+import { plateUrl, sceneWeatherPlate } from "@/game/scenePlate";
 import { hillCheckScene, HILL_THOUGHT, shouldNoticeHill } from "@/game/hill";
 import {
   actionMinutes,
@@ -26,15 +25,7 @@ import {
   TIRED_END,
   waitingMinutesAllowed,
 } from "@/game/lateNight";
-import {
-  emptyNoticeQueue,
-  enqueueNoticeCard,
-  finishShowingNotice,
-  noticesAreHeld,
-  pauseNoticeQueue,
-  pumpNoticeQueue,
-  type NoticeCard,
-} from "@/game/notices";
+import { noticesAreHeld } from "@/game/notices";
 import { advanceGameTime, withCanonWeekday } from "@/game/time";
 import { isNightTime } from "@/game/utils";
 import {
@@ -59,22 +50,16 @@ import {
   type QuestProgress,
   type StoryFlag,
   questTitle,
-  coffeeErrandOpen,
 } from "@/game/quests";
 import type { GameState, Weather } from "@/game/types";
 import type { CloseupContent } from "@/components/CloseupOverlay/CloseupOverlay";
-
-/**
- * Going through a door: a quick dip to black while the door opens and shuts
- * (the scene swaps while the screen is black). In milliseconds; under 1s.
- */
-export const DOOR_FADE_IN = 250;
-export const DOOR_HOLD = 350;
-export const DOOR_FADE_OUT = 300;
-/** With reduced motion there is no fade; doors are just ignored this long. */
-const DOOR_REDUCED_MOTION_LOCK = 400;
-
-export type DoorTransitionPhase = "idle" | "closing" | "black" | "opening";
+import { findActiveCharacter } from "@/game/activeCharacter";
+import { isChoiceAvailable as choiceIsAvailable } from "@/game/choiceAvailability";
+import { presentedThought } from "@/game/presentedThought";
+import { sceneAfterPickups } from "@/game/sceneAfterPickups";
+import { travelDestinationIds } from "@/game/travelDestinations";
+import { useDoorTransition } from "@/game/useDoorTransition";
+import { useNoticeQueue } from "@/game/useNoticeQueue";
 
 const CONVERSATION_ACTIONS = new Set([
   // Add an action name here when a scene choice should open its conversation data.
@@ -92,33 +77,8 @@ const CONVERSATION_ACTIONS = new Set([
 
 const NPC_REPLY_DELAY = 450;
 const TRAVEL_DURATION = 3000;
-const BEDTIME_START = 1320;
-/** Slide in, then hold, then fade. The hold is the time the card sits still. */
-const LEAD_ENTER_MS = 200;
-const LEAD_HOLD_MS = 2000;
-const LEAD_EXIT_MS = 300;
-
-type QuestNotice = {
-  kind: "lead" | "notice";
-  label: string;
-  message: string;
-};
 
 type ShopId = "gas-station" | "needle-groove";
-
-function sceneAfterPickups(
-  sceneId: string,
-  save: {
-    deskCigarettesPickedUp?: boolean;
-    scrapyardKnifePickedUp?: boolean;
-    garageFlashlightPickedUp?: boolean;
-  } | null,
-) {
-  if (sceneId === "ethan-room-desk" && save?.deskCigarettesPickedUp) return "ethan-room-desk-empty";
-  if (sceneId === "scrapyard-desk" && save?.scrapyardKnifePickedUp) return "scrapyard-desk-empty";
-  if (sceneId === "garage-bench" && save?.garageFlashlightPickedUp) return "garage-bench-empty";
-  return sceneId;
-}
 
 export function useGame() {
   const sessionSave = readSessionSave();
@@ -174,20 +134,17 @@ export function useGame() {
   // The conversation opened with its jobOpening (Ethan came back as an employee).
   const [openedAsEmployee, setOpenedAsEmployee] = useState(false);
   const replyTimer = useRef<number | null>(null);
-  const questNotificationTimer = useRef<number | null>(null);
   const locationDiscoveryTimer = useRef<number | null>(null);
-  const noticesRef = useRef(emptyNoticeQueue());
   // True while dialogue is on screen. Leads wait so the card is not hidden
   // under the conversation (or display:none on a phone).
   const conversationActiveRef = useRef(false);
-  const [doorTransition, setDoorTransition] = useState<DoorTransitionPhase>("idle");
-  const doorBusy = useRef(false);
-  const doorTimers = useRef<number[]>([]);
+  const handleChoiceRef = useRef<(choice: Choice, throughDoor?: boolean) => void>(() => {});
+  const { doorTransition, doorBusy, walkThroughDoor } = useDoorTransition(
+    (choice) => handleChoiceRef.current(choice, true),
+  );
 
   useEffect(() => () => {
-    doorTimers.current.forEach((timer) => window.clearTimeout(timer));
     if (replyTimer.current !== null) window.clearTimeout(replyTimer.current);
-    if (questNotificationTimer.current !== null) window.clearTimeout(questNotificationTimer.current);
     if (locationDiscoveryTimer.current !== null) window.clearTimeout(locationDiscoveryTimer.current);
     if (lateNightThoughtTimer.current !== null) window.clearTimeout(lateNightThoughtTimer.current);
   }, []);
@@ -205,8 +162,8 @@ export function useGame() {
     isNight: boolean;
     rainy: boolean;
   } | null>(null);
-  // Small pieces of story progress that currently need custom logic. For more
-  // flags, consider grouping them into a future `storyFlags` object.
+  // Small pieces of story progress that still have their own fields, mirrored
+  // into storyFlags where a scene requirement needs them.
   const [busStopReturnSceneId, setBusStopReturnSceneId] = useState(sessionSave?.busStopReturnSceneId ?? "front-yard");
   const [marleneActive, setMarleneActive] = useState(sessionSave?.marleneActive ?? false);
   const [deskCigarettesPickedUp, setDeskCigarettesPickedUp] = useState(sessionSave?.deskCigarettesPickedUp ?? false);
@@ -264,27 +221,10 @@ export function useGame() {
     next?: CloseupContent;
     flags?: StoryFlag | StoryFlag[];
   } | null>(null);
-  const pumpNoticesRef = useRef<() => void>(() => {});
   const closeupRef = useRef<CloseupContent | null>(null);
   const chapterEndRef = useRef(false);
   const pendingChapterEnd = useRef(false);
   const [showChapterEnd, setShowChapterEnd] = useState(false);
-  const [questNotification, setQuestNotification] = useState<string | null>(null);
-  const [questNotificationLabel, setQuestNotificationLabel] = useState("NEW LEAD");
-  const [questNotificationKind, setQuestNotificationKind] = useState<QuestNotice["kind"]>("lead");
-  const [questNotificationExiting, setQuestNotificationExiting] = useState(false);
-
-  function clearQuestNotification() {
-    if (questNotificationTimer.current !== null) window.clearTimeout(questNotificationTimer.current);
-    if (locationDiscoveryTimer.current !== null) window.clearTimeout(locationDiscoveryTimer.current);
-    questNotificationTimer.current = null;
-    locationDiscoveryTimer.current = null;
-    noticesRef.current = emptyNoticeQueue();
-    setQuestNotification(null);
-    setQuestNotificationLabel("NEW LEAD");
-    setQuestNotificationKind("lead");
-    setQuestNotificationExiting(false);
-  }
 
   function overlayHoldsNotices() {
     return noticesAreHeld({
@@ -294,48 +234,21 @@ export function useGame() {
     });
   }
 
-  function showNoticeCard(card: NoticeCard) {
-    setQuestNotification(card.message);
-    setQuestNotificationLabel(card.label);
-    setQuestNotificationKind(card.kind);
-    setQuestNotificationExiting(false);
-    if (questNotificationTimer.current !== null) window.clearTimeout(questNotificationTimer.current);
-    questNotificationTimer.current = window.setTimeout(() => {
-      setQuestNotificationExiting(true);
-      questNotificationTimer.current = window.setTimeout(() => {
-        questNotificationTimer.current = null;
-        const next = finishShowingNotice(noticesRef.current, overlayHoldsNotices());
-        noticesRef.current = next;
-        if (next.showing) showNoticeCard(next.showing);
-        else {
-          setQuestNotification(null);
-          setQuestNotificationLabel("NEW LEAD");
-          setQuestNotificationKind("lead");
-          setQuestNotificationExiting(false);
-        }
-      }, LEAD_EXIT_MS);
-    }, LEAD_ENTER_MS + LEAD_HOLD_MS);
-  }
+  const {
+    questNotification,
+    questNotificationLabel,
+    questNotificationKind,
+    questNotificationExiting,
+    clearQuestNotification: clearNoticeCards,
+    pauseNoticesForOverlay,
+    pumpNotices,
+    enqueueNotice,
+  } = useNoticeQueue(conversationActive, overlayHoldsNotices);
 
-  function pumpNotices() {
-    const next = pumpNoticeQueue(noticesRef.current, overlayHoldsNotices());
-    if (next === noticesRef.current) return;
-    const started = !noticesRef.current.showing && next.showing;
-    noticesRef.current = next;
-    if (started && next.showing) showNoticeCard(next.showing);
-  }
-
-  /** Put a card that is already on screen back in the queue. Its timer stops. */
-  function pauseNoticesForOverlay() {
-    if (questNotificationTimer.current !== null) {
-      window.clearTimeout(questNotificationTimer.current);
-      questNotificationTimer.current = null;
-    }
-    noticesRef.current = pauseNoticeQueue(noticesRef.current);
-    setQuestNotification(null);
-    setQuestNotificationLabel("NEW LEAD");
-    setQuestNotificationKind("lead");
-    setQuestNotificationExiting(false);
+  function clearQuestNotification() {
+    if (locationDiscoveryTimer.current !== null) window.clearTimeout(locationDiscoveryTimer.current);
+    locationDiscoveryTimer.current = null;
+    clearNoticeCards();
   }
 
   function showChapterEndScreen() {
@@ -349,22 +262,6 @@ export function useGame() {
     pendingChapterEnd.current = false;
     setShowChapterEnd(false);
     pumpNotices();
-  }
-
-  pumpNoticesRef.current = pumpNotices;
-
-  function enqueueNotice(notice: QuestNotice, key?: string) {
-    const card: NoticeCard = {
-      key: key ?? `${notice.kind}:${notice.label}:${notice.message}`,
-      kind: notice.kind,
-      label: notice.label,
-      message: notice.message,
-    };
-    const next = enqueueNoticeCard(noticesRef.current, card, overlayHoldsNotices());
-    if (next === noticesRef.current) return;
-    const started = !noticesRef.current.showing && next.showing;
-    noticesRef.current = next;
-    if (started && next.showing) showNoticeCard(next.showing);
   }
 
   function enqueueLead(id: QuestId) {
@@ -520,15 +417,6 @@ export function useGame() {
   useEffect(() => {
     if (readSessionSave()) writeSessionSave(currentSave());
   }, [currentSave]);
-
-  // Leads queued during a conversation wait until the dialogue layer is gone.
-  // Pumping from the close itself is not enough: that timeout can be skipped
-  // while the card is still marked announced.
-  useEffect(() => {
-    if (conversationActive) return;
-    const timer = window.setTimeout(() => pumpNoticesRef.current(), 320);
-    return () => window.clearTimeout(timer);
-  }, [conversationActive]);
 
   function advanceTime(
     minutes: number,
@@ -786,16 +674,15 @@ export function useGame() {
     }
 
     if (choice.closeup) {
-      const toUrl = (path: string) => path.replace(/^\.\//, "/");
       pendingCloseup.current = {
         first: {
-          image: toUrl(choice.closeup.image),
+          image: plateUrl(choice.closeup.image),
           thought: choice.closeup.thought,
           label: choice.closeup.label,
         },
         next: choice.closeup.next
           ? {
-              image: toUrl(choice.closeup.next.image),
+              image: plateUrl(choice.closeup.next.image),
               thought: choice.closeup.next.thought,
               label: choice.closeup.next.label,
             }
@@ -924,18 +811,17 @@ export function useGame() {
     }
 
     if (choice.closeup) {
-      const toUrl = (path: string) => path.replace(/^\.\//, "/");
       enqueueCloseup(
         {
-          image: toUrl(choice.closeup.image),
-          video: choice.closeup.video ? toUrl(choice.closeup.video) : undefined,
+          image: plateUrl(choice.closeup.image),
+          video: choice.closeup.video ? plateUrl(choice.closeup.video) : undefined,
           thought: choice.closeup.thought,
           label: choice.closeup.label,
           disableWeatherFilter: choice.closeup.disableWeatherFilter,
         },
         choice.closeup.next
           ? {
-              image: toUrl(choice.closeup.next.image),
+              image: plateUrl(choice.closeup.next.image),
               thought: choice.closeup.next.thought,
               label: choice.closeup.next.label,
               disableWeatherFilter: choice.closeup.next.disableWeatherFilter,
@@ -1132,43 +1018,9 @@ export function useGame() {
 
   // The door transition calls back into the router once the screen is black;
   // this keeps that call on the latest render's state.
-  const latestHandleChoice = useRef(handleChoice);
   useEffect(() => {
-    latestHandleChoice.current = handleChoice;
+    handleChoiceRef.current = handleChoice;
   });
-
-  /** Dip to black, play the door, and take the choice while it's dark. */
-  function walkThroughDoor(choice: Choice) {
-    doorBusy.current = true;
-    doorTimers.current.forEach((timer) => window.clearTimeout(timer));
-    const later = (callback: () => void, delay: number) => {
-      doorTimers.current.push(window.setTimeout(callback, delay));
-    };
-    const done = () => {
-      doorTimers.current = [];
-      doorBusy.current = false;
-      setDoorTransition("idle");
-    };
-    harlowAudio().door();
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      latestHandleChoice.current(choice, true);
-      later(done, DOOR_REDUCED_MOTION_LOCK);
-      return;
-    }
-
-    setDoorTransition("closing");
-    later(() => {
-      latestHandleChoice.current(choice, true);
-      setDoorTransition("black");
-    }, DOOR_FADE_IN);
-    later(() => {
-      // The scene is back. Clicks land while the black fades out.
-      doorBusy.current = false;
-      setDoorTransition("opening");
-    }, DOOR_FADE_IN + DOOR_HOLD);
-    later(done, DOOR_FADE_IN + DOOR_HOLD + DOOR_FADE_OUT);
-  }
 
   function goToBusStop() {
     if (!lateNightChoiceAllowed(
@@ -1204,127 +1056,25 @@ export function useGame() {
   }
 
   function isChoiceAvailable(choice: Choice) {
-    // Temporary availability rules for story moments. Keep rules keyed by action
-    // names, or move them into a richer `requirements` type as the game grows.
-    const { action } = choice;
-    const { time } = gameState;
-
-    if (choice.excludesStoryFlag && hasAnyFlag(choice.excludesStoryFlag)) return false;
-    if (action === "makeCoffee" && coffeeErrandOpen(storyFlags)) return false;
-
-    if (!momTalked && (choice.travel || ["front-yard", "back-yard", "light-pole"].includes(choice.nextScene))) {
-      return false;
-    }
-    if (!momTalked && action === "relaxOnCouch") return false;
-    if (!momTalked && currentScene.id === "front-yard") {
-      return ["enterGarage", "goBackYard", "goToStreets", "goHome"].includes(action);
-    }
-    if (action === "goToSleep") {
-      return currentScene.id === "ethan-room" && (time >= BEDTIME_START || time < TIRED_END);
-    }
-    if (action === "goToStreets") {
-      return currentScene.id === "front-yard";
-    }
-    if (action === "watchTv") {
-      return currentScene.id === "living-room";
-    }
-
-    if (action === "talkToMom") {
-      const weekend =
-        gameState.dayOfWeek === "Saturday" || gameState.dayOfWeek === "Sunday";
-      if (currentScene.id === "kitchen") {
-        return (time >= 450 && time < 540)
-          || (weekend && time >= 720 && time < 1140);
-      }
-      if (currentScene.id === "living-room") {
-        return weekend
-          ? time >= 540 && time < 1320
-          : time >= 540 && time < 1080;
-      }
-      return false;
-    }
-    if (action === "talkToJohnny") return time >= 480 && time < 840;
-    if (action === "workNeedleGrooveShift") {
-      return job === "needle-groove" && time >= 600 && time < 1140;
-    }
-    if (action === "talkToWalter") return time >= 480 && time < 960;
-    if (action === "talkToMargaret") return time >= 420 && time < 900;
-    if (action === "talkToEarl") return time >= 480 && time < 1020;
-    if (action === "talkToBigRoy") return time >= 420 && time < 900;
-    if (action === "talkToRay") return time >= 540 && time < 1380;
-    if (action === "talkToTommy") return time >= 480 && time < 1020;
-    if (action === "openShop") return time >= 540 && time < 1380;
-    if (action === "goToMarleneCounter") return !marleneActive;
-    if (action === "talkToMarlene" || action === "leaveMarleneCounter") return marleneActive;
-    if (marleneActive && (action === "leaveHospital" || action === "goToHospitalRoom")) return false;
-    if (action === "pickUpCigarettes") return !deskCigarettesPickedUp;
-    // Roy works in the scrapyard from 07:00 to 15:00, so Ethan cannot
-    // quietly take the knife while he is nearby.
-    if (action === "takeScrapyardKnife") {
-      return !scrapyardKnifePickedUp && (time < 420 || time >= 900);
-    }
-    if (action === "pickUpGarageFlashlight") return !garageFlashlightPickedUp;
-    if (action.startsWith("choose") && action.endsWith("Job")) {
-      // The flyers are the job quest. Hearing Mom worry is not enough.
-      return (
-        !job
-        && !jobQuestTarget
-        && (isQuestActive(quests, "find-a-job") || hasFlag("willHelpMom"))
-      );
-    }
-
-    if (action === "goElrodHouse") {
-      return momTalked && (
-        isQuestActive(quests, "the-tape")
-        || hasFlag("rachelMet")
-        || isQuestCompleted(quests, "the-tape")
-      );
-    }
-    if (action === "talkToRachel") {
-      // Elrod: Rachel is only out 07:00–19:00 (matches her standing art).
-      if (currentScene.id === "elrod-house") {
-        return !hasFlag("rachelMet") && time >= 420 && time < 1140;
-      }
-      // Front yard follow-up: 07:00–21:00.
-      if (currentScene.id === "front-yard") {
-        return (
-          hasFlag("walterStationTalk")
-          && isQuestActive(quests, "what-walter-said")
-          && time >= 420
-          && time < 1260
-        );
-      }
-      return false;
-    }
-    if (action === "lookAtSanatoriumHill") {
-      const night = time >= 1080 || time < 360;
-      // Hidden until the night line has started the quest. The button itself
-      // says there is something on the hill.
-      return (
-        night
-        && (
-          isQuestActive(quests, "light-on-the-hill")
-          || isQuestCompleted(quests, "light-on-the-hill")
-        )
-        && !hasFlag("sanatoriumSeenFromStreet")
-      );
-    }
-    if (action === "lookAtDinerBulletin") {
-      // Board is inspectable once the diner is in play; finding the poster
-      // can start Faded Poster even before Linda's coffee errand.
-      return momTalked && !hasFlag("posterFound");
-    }
-    if (action === "lookAtSanatoriumCigarette") {
-      return isNightTime(time) && !hasFlag("sanatoriumCigaretteSeen");
-    }
-    if (action === "lookAtElrodTape") return true;
-
-    if (choice.requirements?.flags && !hasAllFlags(choice.requirements.flags)) return false;
-    if (choice.requirements?.excludesFlags && hasAnyFlag(choice.requirements.excludesFlags)) return false;
-    if (choice.requirements?.item && !playerState.inventory.includes(choice.requirements.item)) return false;
-
-    return true;
+    return choiceIsAvailable(choice, {
+      gameState,
+      currentSceneId: currentScene.id,
+      momTalked,
+      job,
+      jobQuestTarget,
+      quests,
+      marleneActive,
+      deskCigarettesPickedUp,
+      scrapyardKnifePickedUp,
+      garageFlashlightPickedUp,
+      inventory: playerState.inventory,
+      storyFlags,
+      hasFlag,
+      hasAllFlags,
+      hasAnyFlag,
+    });
   }
+
 
   function saveGame(slotNumber: number) {
     return writeSaveSlot(slotNumber, currentSave());
@@ -1477,26 +1227,11 @@ export function useGame() {
     });
   }
 
-  // A scene can list multiple NPCs; only the first one available at this time
-  // is rendered over the scene image.
-  const activeCharacter = currentScene.characters?.find((character) => {
-    if (character.name === "Marlene" && !marleneActive) {
-      return false;
-    }
-    if (character.days && !character.days.includes(gameState.dayOfWeek)) {
-      return false;
-    }
-    if (character.requiresFlags && !character.requiresFlags.every((flag) => hasFlag(flag))) {
-      return false;
-    }
-    if (character.excludesFlags && character.excludesFlags.some((flag) => hasFlag(flag))) {
-      return false;
-    }
-
-    return (
-      (character.from === undefined || gameState.time >= character.from) &&
-      (character.until === undefined || gameState.time < character.until)
-    );
+  const activeCharacter = findActiveCharacter(currentScene.characters, {
+    time: gameState.time,
+    day: gameState.dayOfWeek,
+    marleneActive,
+    hasFlag,
   });
 
   const activeChoices = replyPending || conversationEnding ? [] : conversationActive
@@ -1514,44 +1249,26 @@ export function useGame() {
         }),
       )
     : currentScene.choices.filter(isChoiceAvailable);
-  const availableTravelDestinations = [
-    "front-yard",
-    "hospital",
-    ...(momTalked ? ["diner"] : []),
-    ...(hasFlag("rachelMet")
-      || isQuestActive(quests, "down-to-the-station")
-      || isQuestCompleted(quests, "down-to-the-station")
-      ? ["police-station"]
-      : []),
-    ...(hasFlag("sanatoriumSeenFromStreet")
-      || isQuestActive(quests, "light-on-the-hill")
-      || isQuestCompleted(quests, "light-on-the-hill")
-      ? ["sanatorium"]
-      : []),
-    ...(jobQuestTarget === "needle-groove" || job === "needle-groove"
-      ? ["needle-and-groove"]
-      : []),
-    ...(jobQuestTarget === "gas-station" || job === "gas-station"
-      ? ["gas-station"]
-      : []),
-    ...(jobQuestTarget === "scrapyard" || job === "scrapyard"
-      ? ["scrapyard"]
-      : []),
-  ];
+  const availableTravelDestinations = travelDestinationIds({
+    momTalked,
+    job,
+    jobQuestTarget,
+    quests,
+    hasFlag,
+  });
 
   return {
     gameState,
     playerState,
     currentScene,
-    currentThought: isLateNight()
-      ? "It's late. I should get to bed."
-      : momTalked && currentScene.id === "ethan-room" && gameState.dayNumber > initialGameState.dayNumber
-        ? "Another day. Better get moving."
-      : momTalked
-        ? currentThought
-        : currentScene.id === "living-room-relaxing"
-          ? "I need to talk to Mom first."
-          : "I should talk to Mom.",
+    currentThought: presentedThought({
+      lateNight: isLateNight(),
+      momTalked,
+      sceneId: currentScene.id,
+      dayNumber: gameState.dayNumber,
+      openingDay: initialGameState.dayNumber,
+      thought: currentThought,
+    }),
     currentEffects,
     lateNightActionThought,
     newDayAnnouncement,
@@ -1599,8 +1316,7 @@ export function useGame() {
     goToBusStop,
     adminTravel,
     waitingLocked: isWaitingLocked(gameState.time),
-    // Same lock as the on-screen Wait buttons. Sleep still jumps to 07:00.
-    adminWait: (minutes: number) => advanceTime(minutes, false, true),
+    // Sleep still jumps to 07:00. Waiting uses the same 03:30 lock as the buttons.
     wait: (minutes: number) => {
       if (isWaitingLocked(gameState.time)) {
         showLateNightActionThought();

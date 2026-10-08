@@ -1,0 +1,704 @@
+.game {
+  position: relative;
+  z-index: 1;
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: clamp(16px, 2.5vw, 32px);
+}
+
+.gameClouds {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 48% at 8% -8%, rgba(186, 196, 214, 0.16), transparent 58%),
+    radial-gradient(80% 36% at 92% 0%, rgba(150, 160, 180, 0.1), transparent 52%);
+  opacity: 0.7;
+  transition: opacity 600ms ease;
+}
+
+.gameCloudsNight {
+  opacity: 0.9;
+  background:
+    radial-gradient(100% 42% at 50% -8%, rgba(24, 32, 54, 0.72), transparent 70%),
+    radial-gradient(70% 28% at 82% 6%, rgba(70, 82, 112, 0.22), transparent 62%);
+}
+
+.game-panel {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  padding: clamp(20px, 3vw, 36px);
+  background: linear-gradient(
+    145deg,
+    rgba(31, 17, 18, 0.97),
+    rgba(12, 10, 10, 0.98)
+  );
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.35);
+}
+
+.game-panel > h1 {
+  margin: 0 0 2px;
+  color: #f4e7e1;
+  font-family: var(--font-display);
+  font-size: clamp(30px, 5.6vw, 50px);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  line-height: 1;
+  text-shadow: 0 8px 24px rgba(0, 0, 0, 0.42);
+}
+
+.scene-image-frame {
+  position: relative;
+  /* Stacking context below the game menu (z-index 40) so thoughts and
+     lead cards cannot paint over the menu. */
+  z-index: 0;
+  width: min(100%, 1100px);
+  margin: 28px auto 0;
+}
+
+/* Blurred spill of the current art behind the frame, so the space around a
+   narrower image glows with its colours instead of reading as an empty band. */
+.scene-ambient {
+  position: absolute;
+  inset: -18px -96px;
+  z-index: -1;
+  background-position: center;
+  background-size: cover;
+  border-radius: 40px;
+  filter: blur(42px) brightness(0.6) saturate(1.2);
+  opacity: 0.9;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(closest-side, #000 62%, transparent);
+  mask-image: radial-gradient(closest-side, #000 62%, transparent);
+  transition: background-image 420ms ease;
+}
+
+.scene-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.32);
+  transition:
+    opacity 360ms ease,
+    filter 360ms ease;
+}
+
+.scene-pickup-video {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 14px;
+}
+
+.scene-image-frame:has(.scene-pickup-video) > :not(.scene-art) {
+  visibility: hidden;
+}
+
+/* Incoming scene art, held at opacity 0 until it has loaded, then faded in
+   over the picture that is already on screen. */
+.scene-image-crossfade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease, filter 360ms ease;
+}
+
+.scene-image-crossfade-in {
+  opacity: 1;
+}
+
+/* Rainy weather while the plate on screen is not rain art. Day plates
+   lose the blue sky; night plates only dim, so a moon or sunset stays. */
+.scene-image-frame-interim-rain .scene-image {
+  filter: saturate(0.4) brightness(0.85);
+}
+
+.scene-image-frame-interim-rain-night .scene-image {
+  filter: saturate(0.4) brightness(0.95);
+}
+
+/* Grey only the sky half of the picture. mix-blend-mode: color recolors
+   the plate and leaves the rain streaks, portraits, and UI alone. */
+.scene-rain-sky {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 14px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(88, 96, 106, 0.6), transparent 55%);
+  mix-blend-mode: color;
+}
+
+.scene-image-frame-interim-rain-night .scene-rain-sky {
+  background: linear-gradient(to bottom, rgba(88, 96, 106, 0.28), transparent 42%);
+}
+
+/* Wet exteriors at night: the mild night wash left a full moon and dusk light. */
+.scene-image-frame-exterior.scene-image-frame-interim-rain-night .scene-image {
+  filter: saturate(0.32) brightness(0.72);
+}
+
+.scene-image-frame-exterior.scene-image-frame-interim-rain-night .scene-rain-sky {
+  background: linear-gradient(to bottom, rgba(72, 80, 90, 0.72), transparent 62%);
+}
+
+/* No all-dark sanatorium plate yet. After Light on the Hill, crush the
+   night plate so the painted lamps and windows do not read as still lit. */
+.scene-image-frame-sanatorium-dark .scene-image,
+.scene-image-frame-sanatorium-dark.scene-image-frame-interim-rain .scene-image,
+.scene-image-frame-sanatorium-dark.scene-image-frame-interim-rain-night .scene-image {
+  filter: brightness(0.28) saturate(0.35);
+}
+
+/* Day art used after dark (image.noNightVariant). Darker and cooler than
+   the rain filter; when both apply, this later rule wins. */
+.scene-image-frame-synthetic-night .scene-image {
+  filter: brightness(0.55) saturate(0.7);
+}
+
+.scene-night-tint {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 14px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(92, 128, 176, 0.2), rgba(16, 32, 58, 0.34));
+  mix-blend-mode: multiply;
+}
+
+.scene-rain-glass {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: 14px;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(186, 196, 208, 0.05), rgba(90, 100, 112, 0.1)),
+    repeating-linear-gradient(
+      104deg,
+      transparent 0 16px,
+      rgba(226, 234, 242, 0.2) 16px 17px,
+      transparent 17px 34px
+    );
+  background-size: auto, 90px 140px;
+  animation: rainGlassDrift 2.8s linear infinite;
+}
+
+@keyframes rainGlassDrift {
+  from {
+    background-position: 0 0, 0 0;
+  }
+
+  to {
+    background-position: 0 0, -48px 140px;
+  }
+}
+
+/* Conversations keep the scene in view, pushed back so the speakers lead. */
+.scene-image-frame-conversation-active .scene-image {
+  filter: brightness(0.55) saturate(0.78) blur(2.5px);
+}
+
+/* The picture plus its hotspots. Hotspot percentages resolve against this
+   box, which is always exactly the size of the art. */
+.scene-art {
+  position: relative;
+}
+
+/* The empty version of a scene, faded in over the character art while that
+   character is in a conversation (their portrait stands in front instead). */
+.scene-image.scene-image-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  object-fit: cover;
+  opacity: 0;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.scene-image.scene-image-backdrop-active {
+  opacity: 1;
+}
+
+/* Hotspot spotlight: a dark veil over the art with a soft-edged hole that
+   follows the hotspot under the pointer (positioned by SceneHotspot.tsx). */
+.scene-spotlight {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+}
+
+.scene-spotlight-hole {
+  position: absolute;
+  top: var(--spot-top, 0);
+  left: var(--spot-left, 0);
+  width: var(--spot-width, 0);
+  height: var(--spot-height, 0);
+  border-radius: 18px;
+  box-shadow:
+    0 0 0 200vmax rgba(7, 3, 4, 0.56),
+    inset 0 0 26px 6px rgba(7, 3, 4, 0.42);
+  transition:
+    top 260ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    left 260ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    width 260ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    height 260ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.scene-art[data-spotlight-jump] .scene-spotlight-hole {
+  transition: none;
+}
+
+.scene-art:has(> .scene-hotspot:focus-visible) > .scene-spotlight {
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .scene-image-frame:not(.scene-image-frame-has-conversation)
+    .scene-art:has(> .scene-hotspot:hover)
+    > .scene-spotlight {
+    opacity: 1;
+  }
+}
+
+.scene-info-stack {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+/* Scene caption: a small glass card at the top-left of the art, in the
+   dialogue box's language (dark glass, a red hairline, a Cinzel plate tab on
+   the top edge). Narration reads first; Ethan's thought sits beneath a fine
+   rule as a quieter, italic aside. It keeps to the corner so the middle and
+   right of the picture (signs, faces) stay clear. */
+.scene-info-panel {
+  position: relative;
+  align-self: flex-start;
+  width: fit-content;
+  min-width: min(260px, 40%);
+  max-width: min(380px, 42%);
+  margin: clamp(22px, 2.4vw, 28px) 0 0 clamp(14px, 1.8vw, 22px);
+  padding: 22px 20px 14px;
+  color: #f4e9e2;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(169, 22, 36, 0.16), transparent 60%),
+    linear-gradient(180deg, rgba(22, 12, 13, 0.82), rgba(9, 5, 6, 0.88));
+  border: 1px solid rgba(237, 85, 98, 0.26);
+  border-radius: 10px;
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 220, 205, 0.07);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  backdrop-filter: blur(10px) saturate(1.1);
+  pointer-events: none;
+  overflow: visible;
+  transition:
+    opacity 240ms ease,
+    transform 280ms ease;
+}
+
+.scene-info-panel::before {
+  position: absolute;
+  top: -1px;
+  right: 16%;
+  left: 16%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 120, 120, 0.8), transparent);
+  content: "";
+}
+
+.scene-caption-plate-row {
+  position: absolute;
+  top: 0;
+  left: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 32px);
+  transform: translateY(-58%);
+}
+
+.scene-caption-plate {
+  flex: none;
+  margin: 0;
+  padding: 6px 14px 5px;
+  color: #fbe6d6;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  line-height: 1;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+  background: linear-gradient(180deg, #8e1a26, #4d0d15);
+  border: 1px solid rgba(255, 196, 178, 0.38);
+  border-radius: 3px;
+  box-shadow:
+    0 6px 14px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 220, 205, 0.25);
+}
+
+.scene-caption-place {
+  min-width: 0;
+  /* Wide enough for "POLICE STATION" and not the whole "POLICE STATION INSIDE",
+     so the long name wraps to two lines instead of ellipsizing. */
+  max-width: 11.5em;
+  overflow: visible;
+  padding: 3px 8px 2px;
+  color: rgba(245, 225, 215, 0.9);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  line-height: 1.35;
+  text-transform: uppercase;
+  white-space: normal;
+  background: rgba(9, 5, 6, 0.8);
+  border-radius: 3px;
+}
+
+.scene-info-panel .scene-caption-narration section {
+  padding: 0;
+  border: 0;
+}
+
+.scene-info-panel .scene-caption-narration p {
+  margin: 0;
+  color: #f4e9e2;
+  font-family: var(--font-body);
+  font-size: clamp(18px, 1.6vw, 20px);
+  line-height: 1.4;
+  text-wrap: pretty;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.scene-info-panel .scene-caption-narration p + p {
+  margin-top: 6px;
+}
+
+.scene-caption-thought {
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px solid rgba(237, 85, 98, 0.18);
+}
+
+.scene-caption-thought img {
+  width: 30px;
+  height: 36px;
+  border-radius: 4px;
+  opacity: 0.9;
+}
+
+.scene-caption-thought strong {
+  margin-bottom: 2px;
+  font-size: 10px;
+}
+
+.scene-caption-thought p {
+  color: #e2d0cd;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+/* The SCENE box never shrinks to dodge a hotspot. It moves, or it drops
+   below the art. Narration grows in height; it is not clipped. */
+@media (min-width: 641px) {
+  .scene-info-panel {
+    width: min(440px, calc(100% - 32px));
+    min-width: 280px;
+    max-width: 440px;
+    overflow: visible;
+  }
+
+  .scene-info-panel .scene-caption-narration,
+  .scene-info-panel .scene-caption-thought {
+    overflow: visible;
+    max-height: none;
+  }
+}
+
+/* Image, caption, and choices arrive together. The previous plate stays
+   underneath so the frame is never blank. A second enter animation on the
+   caption restarted after this one and left the box half faded. */
+.scene-frame-arrive .scene-info-panel,
+.scene-frame-arrive .overlayActionList {
+  animation: sceneArriveIn 150ms ease;
+}
+
+@keyframes sceneArriveIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.scene-image-frame-has-conversation .scene-info-panel,
+.scene-image-frame-has-conversation .scene-hotspot {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 280ms ease;
+}
+
+/* Bottom-of-scene line (Ethan's thoughts, the TV); the look comes from
+   ThoughtPanel.module.css, this only places it over the art. */
+.opening-thought {
+  position: absolute;
+  right: clamp(12px, 2.4vw, 28px);
+  bottom: clamp(12px, 2.4vw, 28px);
+  left: clamp(12px, 2.4vw, 28px);
+  z-index: 8;
+}
+
+/* The tired line sits under the choice heading if they share the bottom edge.
+   Lift the choices and leave the thought in the strip beneath them. */
+@media (min-width: 641px) {
+  .scene-image-frame:has(.late-night-thought) .overlayActionList {
+    bottom: 132px;
+  }
+}
+
+.new-day-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(150, 96, 60, 0.2), transparent 42%),
+    rgba(8, 4, 5, 0.94);
+  pointer-events: none;
+  animation: newDayScreenFade 3.4s ease-in-out forwards;
+}
+
+/* Chapter end fades in and stays. The morning card uses new-day-screen,
+   which fades back out; that animation left an invisible click blocker. */
+.chapter-end-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(150, 96, 60, 0.2), transparent 42%),
+    rgba(8, 4, 5, 0.94);
+  pointer-events: auto;
+  animation: chapterEndFadeIn 450ms ease forwards;
+}
+
+.chapter-end-screen-content {
+  width: min(680px, 100%);
+  padding: clamp(48px, 8vw, 82px);
+  text-align: center;
+  color: #fff4f4;
+  border: 1px solid rgba(237, 85, 98, 0.38);
+  border-radius: 12px;
+  background: rgba(29, 18, 18, 0.92);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.48), inset 3px 0 0 var(--accent);
+  animation: chapterEndContentIn 450ms ease forwards;
+}
+
+.chapter-end-screen-content p {
+  display: block;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+
+.chapter-end-screen-content h2 {
+  margin: 12px 0 18px;
+  font-family: var(--font-display);
+  font-size: clamp(44px, 8.4vw, 76px);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.chapter-end-screen-content button {
+  min-height: 44px;
+  padding: 12px 22px;
+  color: rgba(255, 255, 255, 0.86);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgba(237, 85, 98, 0.45);
+  border-radius: 6px;
+}
+
+.chapter-end-screen-content button:focus-visible {
+  outline: 2px solid #f2e4c9;
+  outline-offset: 3px;
+}
+
+.stat-toast {
+  position: fixed;
+  top: 88px;
+  right: 28px;
+  z-index: 900;
+  padding: 8px 12px;
+  color: #f2e4c9;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  background: rgba(29, 18, 18, 0.92);
+  border: 1px solid rgba(237, 85, 98, 0.4);
+  border-radius: 6px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+.stat-toast-fading {
+  animation: statToastOut 300ms ease forwards;
+}
+
+@keyframes chapterEndFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes chapterEndContentIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes statToastOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.new-day-screen-content {
+  width: min(680px, 100%);
+  padding: clamp(48px, 8vw, 82px);
+  text-align: center;
+  color: #fff4f4;
+  border: 1px solid rgba(237, 85, 98, 0.38);
+  border-radius: 12px;
+  background: rgba(29, 18, 18, 0.92);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.48), inset 3px 0 0 var(--accent);
+  animation: newDayContentFade 3.4s ease-in-out forwards;
+}
+
+.new-day-screen-content p,
+.new-day-screen-content span {
+  display: block;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+
+.new-day-screen-content h2 {
+  margin: 12px 0 4px;
+  font-family: var(--font-display);
+  font-size: clamp(44px, 8.4vw, 76px);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+@keyframes newDayScreenFade {
+  0%, 100% {
+    opacity: 0;
+  }
+
+  14%, 82% {
+    opacity: 1;
+  }
+}
+
+@keyframes newDayContentFade {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+
+  14%, 82% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.conversation-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  overflow: hidden;
+  border-radius: 14px;
+  /* Vignette + floor shadow so portraits and the dialogue box read cleanly
+     over any art while the scene stays visible. */
+  background:
+    radial-gradient(130% 90% at 50% 30%, transparent 40%, rgba(8, 4, 5, 0.55)),
+    linear-gradient(0deg, rgba(8, 4, 5, 0.78), rgba(8, 4, 5, 0.12) 55%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms ease;
+}
+
+.conversation-overlay-active {
+  opacity: 1;
+  pointer-events: auto;
+  animation: conversationOverlayEnter 300ms ease-out both;
+}
+
+@keyframes conversationOverlayEnter {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

@@ -1,0 +1,308 @@
+@keyframes sceneImageEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes menuArtworkEnter {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes menuContentEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Desktop scenes fill the available width and retain their natural ratio
+   so percentage-based hotspots stay aligned with the art. */
+@media (min-width: 1000px) {
+  .game {
+    width: min(1800px, 100%);
+    padding: 6px;
+  }
+
+  .game-panel {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    gap: 10px 14px;
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .game-panel > h1 {
+    grid-column: 1 / -1;
+    min-height: 44px;
+    padding-right: 112px;
+    font-size: 32px;
+    line-height: 44px;
+  }
+
+  /* Use a consistent frame width instead of shrinking taller art to fit
+     the viewport height. */
+  .scene-image-frame {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+    width: min(100%, 1100px);
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .scene-image {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: none;
+  }
+
+  .waitControls {
+    grid-column: 2;
+    margin: 0 auto;
+  }
+
+}
+
+@media (max-width: 640px) {
+  .mainMenuStudioLogo {
+    width: 82px;
+  }
+
+  .mainMenuSocialLink {
+    width: 44px;
+  }
+
+  .mainMenuContent {
+    width: 100%;
+    padding: 40px 32px;
+  }
+
+  .mainMenuShade {
+    background:
+      linear-gradient(90deg, rgba(8, 4, 5, 0.64), rgba(8, 4, 5, 0.26)),
+      linear-gradient(0deg, rgba(8, 4, 5, 0.76), transparent 62%);
+  }
+
+  .mainMenu h1 {
+    font-size: clamp(38px, 10.6vw, 64px);
+    letter-spacing: 0.04em;
+  }
+
+  .mainMenuActions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .game {
+    padding: 0;
+  }
+
+  .game-panel {
+    padding: 8px 12px 12px;
+  }
+
+  /* Phones: the caption is as wide as the screen, so it cannot sit in a
+     corner. It goes under the picture and above the choices. Hotspots live
+     in .scene-art, so their percentages still map onto the picture. */
+  .scene-image-frame {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .scene-art {
+    order: 1;
+  }
+
+  .scene-info-stack {
+    position: relative;
+    z-index: auto;
+    order: 2;
+  }
+
+  .scene-image-frame-has-conversation .scene-info-stack {
+    display: none;
+  }
+
+  /* 16px margin on each side of the viewport. The box does not shrink. */
+  .scene-info-panel {
+    align-self: center;
+    width: calc(100vw - 32px);
+    min-width: 0;
+    max-width: calc(100vw - 32px);
+    margin: 12px auto 0;
+    padding: 22px 16px 13px;
+  }
+
+  .scene-info-panel .scene-caption-narration p {
+    font-size: 18px;
+  }
+
+  .scene-info-stack .quest-notification {
+    align-self: center;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    margin: 22px auto 0;
+  }
+
+  .scene-info-stack .quest-lead {
+    order: 1;
+    align-self: stretch;
+    width: calc(100% - 10px);
+    margin: 8px auto 0;
+  }
+
+  /* The plate tab overhangs the panel's top edge. */
+  .opening-thought {
+    position: relative;
+    inset: auto;
+    order: 3;
+    margin-top: 12px;
+  }
+
+  .scene-image-frame-conversation-active .scene-art {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* Phones: the art is short, so a conversation grows the frame into a
+     taller stage and lets the dimmed scene cover it. */
+  .scene-image-frame-conversation-active {
+    min-height: min(640px, calc(100svh - 24px));
+  }
+
+  .scene-image-frame-conversation-active .scene-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin-top: 0;
+    object-fit: cover;
+  }
+
+  .scene-image-frame-conversation-active .scene-ambient {
+    display: none;
+  }
+
+  .scene-image-frame-conversation-active .conversation-overlay {
+    position: relative;
+    inset: auto;
+    display: flex;
+    min-height: inherit;
+    border-radius: 10px;
+  }
+
+  .game-panel {
+    min-height: 100vh;
+    border-radius: 0;
+  }
+
+  .game-panel > h1 {
+    font-size: 32px;
+  }
+
+  .scene-image {
+    border-radius: 10px;
+  }
+
+  .scene-rain-glass,
+  .scene-rain-sky,
+  .scene-night-tint {
+    border-radius: 10px;
+  }
+
+  .scene-spotlight {
+    border-radius: 10px;
+  }
+
+  .waitControls > span {
+    width: 100%;
+    margin-right: 0;
+    text-align: center;
+  }
+}
+
+/* Desktop: a 280–440px column. JS moves it to the first clear corner.
+   If no corner fits, the caption, thought, and choices sit under the
+   picture. The page scrolls while the picture keeps its full size.
+   Hotspots are not moved. */
+@media (min-width: 641px) {
+  .scene-info-stack {
+    flex-direction: column;
+    align-items: stretch;
+    width: min(440px, calc(100% - 32px));
+    left: 16px;
+    right: auto;
+  }
+
+  .scene-image-frame[data-caption="below"],
+  .scene-image-frame[data-choices="below"],
+  .scene-image-frame[data-thought="below"] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .scene-image-frame[data-caption="below"] > .scene-art,
+  .scene-image-frame[data-choices="below"] > .scene-art,
+  .scene-image-frame[data-thought="below"] > .scene-art {
+    order: 1;
+  }
+
+  .scene-image-frame[data-caption="below"] > .scene-info-stack {
+    position: relative;
+    order: 2;
+    top: auto;
+    right: auto;
+    left: auto;
+    width: min(440px, calc(100% - 32px));
+    min-width: 280px;
+    margin: 12px 0 0;
+  }
+
+  .scene-image-frame[data-caption="below"] .scene-info-panel {
+    width: 100%;
+    min-width: 280px;
+    max-width: 440px;
+  }
+
+  .scene-image-frame[data-thought="below"] > .opening-thought {
+    position: relative;
+    order: 3;
+    inset: auto;
+    margin: 12px 0 0;
+  }
+
+  .scene-image-frame[data-choices="below"] > .overlayActionList,
+  .scene-image-frame[data-choices="below"]:has(.late-night-thought) > .overlayActionList {
+    position: relative;
+    order: 4;
+    inset: auto;
+    bottom: auto;
+    max-height: none;
+    padding: 12px 0 0;
+    overflow: visible;
+    background: none;
+  }
+}

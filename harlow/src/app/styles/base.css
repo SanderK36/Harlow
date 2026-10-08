@@ -1,0 +1,45 @@
+:root {
+  --bg: #080808;
+  --surface: #151010;
+  --surface-raised: #211515;
+  --line: rgba(239, 221, 221, 0.14);
+  --line-strong: rgba(239, 221, 221, 0.28);
+  --text: #f5eeee;
+  --muted: #bba9a9;
+  --accent: #a91624;
+  --accent-bright: #ed5562;
+  --gold: #d93443;
+
+  /* Type system (fonts are loaded with next/font in app/layout.tsx).
+     Display: inscriptional capitals for the wordmark and window titles.
+     Body: a bookish serif for narration, thoughts, and dialogue.
+     UI: a condensed grotesque for labels, stats, and controls. */
+  --font-display: var(--font-cinzel), "Trajan Pro", Georgia, serif;
+  --font-body: var(--font-crimson), Georgia, "Times New Roman", serif;
+  --font-ui: var(--font-oswald), "Arial Narrow", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  position: relative;
+  min-width: 320px;
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-weight: 400;
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body.production-splash-active {
+  overflow: hidden;
+}
+
+button {
+  font-family: inherit;
+}

@@ -1,0 +1,241 @@
+/* A quest card has to paint over the fading conversation, still under the menu. */
+.scene-info-stack:has(.quest-lead),
+.scene-info-stack:has(.quest-notification) {
+  z-index: 8;
+}
+
+/* Quest notice: the dialogue box's glass with an amber "quest" plate on its
+   top edge, at the top-right of the scene. */
+.quest-notification {
+  position: relative;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  margin: 22px 16px 0;
+  pointer-events: auto;
+  white-space: nowrap;
+  padding: 22px 18px 13px;
+  color: #f4e9e2;
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgba(230, 155, 102, 0.14), transparent 60%),
+    linear-gradient(180deg, rgba(22, 12, 13, 0.88), rgba(9, 5, 6, 0.92));
+  border: 1px solid rgba(230, 155, 102, 0.42);
+  border-radius: 10px;
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.45),
+    0 0 28px rgba(230, 155, 102, 0.12),
+    inset 0 1px 0 rgba(255, 220, 205, 0.07);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  animation: questNoticeEnter 420ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.quest-notification-exiting {
+  animation: questNoticeExit 240ms ease-in forwards;
+}
+
+.quest-notification span {
+  position: absolute;
+  top: 0;
+  left: 16px;
+  padding: 6px 13px 5px;
+  color: #1c0f0a;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  line-height: 1;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #f0b07f, #c97a45);
+  border: 1px solid rgba(255, 220, 190, 0.5);
+  border-radius: 3px;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
+  transform: translateY(-58%);
+}
+
+.quest-notification p {
+  margin: 0;
+  white-space: nowrap;
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.38;
+}
+
+@keyframes questNoticeEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes questNoticeExit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+/* New lead: a torn notebook card. One at a time, top-right on a desk,
+   full width above the picture on a phone. Clicking opens the notebook. */
+.quest-lead {
+  position: relative;
+  width: min(280px, calc(100% - 28px));
+  pointer-events: auto;
+  min-height: 44px;
+  margin: 18px 16px 0 auto;
+  padding: 12px 16px 13px;
+  color: #24150e;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  background-color: #d8c4a0;
+  background-image:
+    linear-gradient(180deg, rgba(255, 248, 230, 0.62), rgba(196, 164, 118, 0.16)),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 22px,
+      rgba(90, 60, 30, 0.08) 22px,
+      rgba(90, 60, 30, 0.08) 23px
+    );
+  border: 1px solid rgba(70, 40, 18, 0.55);
+  border-radius: 2px;
+  box-shadow:
+    0 14px 28px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 1px rgba(255, 240, 210, 0.4);
+  transform: rotate(-1.5deg);
+  transform-origin: right top;
+  pointer-events: auto;
+  animation: questLeadIn 200ms ease-out;
+}
+
+.quest-lead-exiting {
+  animation: questLeadOut 300ms ease-in forwards;
+}
+
+.quest-lead span {
+  display: block;
+  margin: 0 0 5px;
+  color: #8e1a26;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  text-transform: none;
+}
+
+.quest-lead p {
+  margin: 0;
+  color: #24150e;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+}
+
+.quest-lead:focus-visible {
+  outline: 2px solid #8e1a26;
+  outline-offset: 3px;
+}
+
+@keyframes questLeadIn {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) rotate(-1.5deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(-1.5deg);
+  }
+}
+
+@keyframes questLeadOut {
+  from {
+    opacity: 1;
+    transform: rotate(-1.5deg);
+  }
+
+  to {
+    opacity: 0;
+    transform: rotate(-1.5deg);
+  }
+}
+
+@keyframes questLeadFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes questLeadFadeOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quest-notification,
+  .quest-notification-exiting {
+    animation: none;
+  }
+
+  .quest-lead {
+    animation: questLeadFadeIn 200ms ease-out;
+  }
+
+  .quest-lead-exiting {
+    animation: questLeadFadeOut 300ms ease-in forwards;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .scene-image,
+  .scene-info-panel,
+  .conversation-overlay-active {
+    animation: none;
+  }
+
+  .scene-ambient {
+    transition: none;
+  }
+
+  .scene-image,
+  .scene-info-panel,
+  .scene-hotspot,
+  .conversation-overlay {
+    transition: none;
+  }
+
+  .scene-rain-glass,
+  .scene-hotspot-cue::before {
+    animation: none;
+  }
+
+  .mainMenuArtwork,
+  .mainMenuContent {
+    animation: none;
+  }
+}
