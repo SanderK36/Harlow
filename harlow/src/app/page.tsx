@@ -3,17 +3,14 @@
 import {
   useEffect,
   useEffectEvent,
-  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
 } from "react";
-import Image from "next/image";
 import SceneHotspot from "@/components/SceneHotspot";
 
 import GameStatus from "@/components/GameStatus/GameStatus";
 import ActionList from "@/components/ActionList/ActionList";
-import ActionButton from "@/components/ActionButton/ActionButton";
 import StatsWindow from "@/components/StatsWindow/StatsWindow";
 import StoryLog from "@/components/StoryLog/StoryLog";
 import CharacterLine from "@/components/CharacterLine/CharacterLine";
@@ -31,17 +28,33 @@ import QuestWindow from "@/components/QuestWindow/QuestWindow";
 import { useReducedMotion } from "@/components/DialogueScene/typewriter";
 import { isNightTime } from "@/game/utils";
 import { isTiredWindow } from "@/game/lateNight";
-import { placeSceneChrome } from "@/game/captionPlace";
 import { useGame } from "@/game/useGame";
 import { storyEntryApplies } from "@/game/story";
-import { DINER_BOARD_HINT, isExteriorScene, RAIN_WEATHER, SANATORIUM_ONE_WINDOW, sanatoriumNarration, sanatoriumShowsOneWindow, scenes } from "@/game/scenes";
-import { elrodRachelPlate, isRainPlate } from "@/game/scenePlate";
+import { DINER_BOARD_HINT, isExteriorScene, RAIN_WEATHER, sanatoriumNarration } from "@/game/scenes";
 import { clearSessionSave, readSessionSave } from "@/game/save";
 import { harlowAudio } from "@/game/audio";
 import Atmosphere from "@/components/Atmosphere/Atmosphere";
 import StormLightning from "@/components/StormLightning/StormLightning";
 import CloseupOverlay from "@/components/CloseupOverlay/CloseupOverlay";
+import CaptionPlacer from "@/components/CaptionPlacer/CaptionPlacer";
+import MainMenu from "@/components/MainMenu/MainMenu";
+import PlaytestControls from "@/components/PlaytestControls/PlaytestControls";
 import type { Choice } from "@/game/choices";
+import {
+  OPENING_THOUGHT_BASE_MS,
+  OPENING_THOUGHT_FIRST_EXTRA_MS,
+  OPENING_THOUGHT_PER_CHARACTER_MS,
+  OPENING_THOUGHTS,
+} from "./openingThoughts";
+import { playtestDebugOnClient, subscribePlaytestDebug } from "./playtestDebug";
+import { resolveSceneArt } from "./sceneArt";
+import {
+  OUTDOOR_SCENE_IDS,
+  adminDestinations,
+  hotspotActionsFor,
+  hotspotKind,
+  hotspotLabels,
+} from "./sceneHotspots";
 
 function subscribeToSession() {
   return () => {};
@@ -51,178 +64,6 @@ function hasActiveSession() {
   return readSessionSave() !== null;
 }
 
-const hotspotLabels: Record<string, string> = {
-  goToSleep: "Go to sleep",
-  playVinyl: "Vinyl player",
-  lookAtDesk: "Desk",
-  goEthanRoom: "Your room",
-  goMomRoom: "Mom's room",
-  goEmilyRoom: "Emily's room",
-  pickUpCigarettes: "Cigarettes",
-  goLivingRoom: "Living room",
-  talkToMom: "Talk to Mom",
-  watchTv: "Watch TV",
-  relaxOnCouch: "Relax on the couch",
-  goKitchen: "Kitchen",
-  checkFridge: "Check the fridge",
-  makeCoffee: "Make some coffee",
-  lookAtGarageBench: "Workbench",
-  pickUpGarageFlashlight: "Flashlight",
-  goHallway: "Hallway",
-  goBathroom: "Bathroom",
-  openAtticHatch: "Attic hatch",
-  goAttic: "Attic stairs",
-  enterGasStation: "Enter gas station",
-  talkToRay: "Ray",
-  enterNeedleAndGroove: "Enter shop",
-  talkToJohnny: "Johnny",
-  enterNeedleAndGrooveBackroom: "Back room",
-  enterPoliceStation: "Enter station",
-  leavePoliceStation: "Go outside",
-  enterHospital: "Enter hospital",
-  goToMarleneCounter: "Reception desk",
-  talkToMarlene: "Marlene",
-  goToHospitalRoom: "Elevator",
-  enterScrapyard: "Enter workshop",
-  lookAtScrapyardDesk: "Workbench",
-  takeScrapyardKnife: "Knife",
-  leaveScrapyard: "Back to the yard",
-  talkToBigRoy: "Big Roy",
-  enterCemetery: "Enter church",
-  goCemeteryBackside: "Back of church",
-  leaveCemeteryBackside: "Go back inside",
-  enterMotel: "Enter office",
-  leaveMotel: "Go outside",
-  goBackYard: "Backyard",
-  lookAtLightPole: "Light pole",
-  goHome: "Go inside",
-  goToStreets: "Go to the streets",
-  enterGarage: "Enter garage",
-  talkToEarl: "Earl",
-  chooseNeedleGrooveJob: "Needle & Groove flyer",
-  chooseGasStationJob: "Gas station flyer",
-  chooseScrapyardJob: "Scrapyard flyer",
-  approachSanatorium: "Approach entrance",
-  enterSanatorium: "Enter sanatorium",
-  enterSanatoriumHallway: "Hallway",
-  leaveSanatorium: "Go outside",
-  enterSanatoriumRoom1: "First room",
-  enterSanatoriumRoom2: "Second room",
-  leaveSanatoriumHallway: "Go outside",
-  leaveSanatoriumRoom1: "Return to hallway",
-  leaveSanatoriumRoom2: "Return to hallway",
-  goElrodHouse: "Elrod house",
-  talkToRachel: "Rachel",
-  lookAtElrodTape: "Police tape",
-  lookAtDinerBulletin: "Bulletin board",
-  lookAtSanatoriumHill: "The hill",
-  lookAtSanatoriumCigarette: "Look at the ash",
-};
-
-const sanatoriumHotspotActions: Record<string, string[]> = {
-  sanatorium: ["approachSanatorium"],
-  "sanatorium-entrance": ["enterSanatorium"],
-  "sanatorium-main-floor": ["enterSanatoriumHallway", "leaveSanatorium"],
-  "sanatorium-hallway": [
-    "enterSanatoriumRoom1",
-    "enterSanatoriumRoom2",
-    "leaveSanatoriumHallway",
-  ],
-  "sanatorium-room-1": ["leaveSanatoriumRoom1"],
-  "sanatorium-room-2": ["leaveSanatoriumRoom2"],
-};
-
-const ADMIN_SCENE_NAMES: Record<string, string> = {
-  "elrod-house": "Elrod house",
-  "ethan-room": "Ethan's room",
-  "front-yard": "Front yard",
-  street: "Street",
-  "sheriff-office": "Sheriff's office",
-  "needle-and-groove": "Needle & Groove",
-  "gas-station": "Gas station",
-  "police-station": "Police station",
-  "sanatorium-room-2": "Sanatorium room 2",
-  cementary: "Entrance",
-  "cementary-inside": "Inside",
-  "cementary-backside": "Behind the church",
-};
-
-function adminSceneName(id: string) {
-  return (
-    ADMIN_SCENE_NAMES[id]
-    ?? id.replaceAll("cementary", "cemetery").replaceAll("-", " ")
-  );
-}
-
-const adminDestinations = Object.values(scenes)
-  .map((scene) => ({
-    id: scene.id,
-    label: `${scene.location} — ${adminSceneName(scene.id)}`,
-  }))
-  .sort((a, b) => a.label.localeCompare(b.label));
-
-// Open-air scenes beyond the travel destinations, for rain and lightning.
-const OUTDOOR_SCENE_IDS = new Set([
-  "back-yard",
-  "street",
-  "light-pole",
-  "cementary-backside",
-  "sanatorium-entrance",
-  "elrod-house",
-]);
-
-/** Which cursor a hotspot gets: look, go, talk or take (see globals.css). */
-function hotspotKind(action: string) {
-  if (action.startsWith("talkTo")) return "talk";
-  if (action.startsWith("pickUp") || action.startsWith("take")) return "take";
-  if (action === "goToSleep") return "inspect";
-  if (/^(go|enter|leave|approach)/.test(action)) return "go";
-  return "inspect";
-}
-
-// Ethan's first thoughts on a new game, one beat at a time in the thought
-// panel; the "Talk to Mom" quest starts after the last one.
-const OPENING_THOUGHTS = [
-  "I hardly slept last night.",
-  "Mrs. Elrod. Somebody actually killed her.",
-  "And that guy in the hood at the end of the street, by the woods... he was looking right at me.",
-  "Walter looked scared. Walter doesn't get scared easily.",
-  "I should check on Mom.",
-];
-const OPENING_THOUGHT_BASE_MS = 1500;
-const OPENING_THOUGHT_PER_CHARACTER_MS = 45;
-// The first line starts while the title card is still lifting.
-const OPENING_THOUGHT_FIRST_EXTRA_MS = 900;
-
-/** Playtest tools stay available after ?debug=1, including a production build. */
-const PLAYTEST_DEBUG_KEY = "harlow-debug";
-
-function persistPlaytestDebugQuery() {
-  if (typeof window === "undefined") return;
-  const flag = new URLSearchParams(window.location.search).get("debug");
-  try {
-    if (flag === "1") window.localStorage.setItem(PLAYTEST_DEBUG_KEY, "1");
-    else if (flag === "0") window.localStorage.removeItem(PLAYTEST_DEBUG_KEY);
-  } catch {
-    // Storage can be blocked. The query string is checked again below.
-  }
-}
-
-persistPlaytestDebugQuery();
-
-function subscribePlaytestDebug() {
-  return () => {};
-}
-
-function playtestDebugOnClient() {
-  const flag = new URLSearchParams(window.location.search).get("debug");
-  if (flag === "0") return false;
-  try {
-    return flag === "1" || window.localStorage.getItem(PLAYTEST_DEBUG_KEY) === "1";
-  } catch {
-    return flag === "1";
-  }
-}
 
 export default function Home() {
   // Restore the session until the player explicitly chooses a screen.
@@ -558,106 +399,29 @@ export default function Home() {
 
   const hasConversationOverlay = conversation.length > 0;
 
-  // Character art has priority, then weather-specific art, then day/night art.
-  const isWeekend =
-    gameState.dayOfWeek === "Saturday" || gameState.dayOfWeek === "Sunday";
-  const momInKitchen =
-    currentScene.id === "kitchen" &&
-    ((gameState.time >= 450 && gameState.time < 540)
-      || (isWeekend && gameState.time >= 720 && gameState.time < 1140));
-  // The scene as it looks without anyone painted into it.
-  // Daylit weather art (weatherDayOnly) gives way to the night art after dark.
-  // Night weather art (weatherNightOnly) gives way to the day art before dark.
-  const weatherImage =
-    (sceneIsNight && currentScene.image.weatherDayOnly)
-    || (!sceneIsNight && currentScene.image.weatherNightOnly)
-      ? undefined
-      : currentScene.image.weather?.[gameState.weather];
-  // Elrod: Rachel is painted into the daytime art until she's met. Her rain
-  // and thunder plates are daylit too, so after dark the night plate shows.
-  // During her talk the empty house is the backdrop so she isn't on screen twice.
-  const elrodWithRachel =
-    currentScene.id === "elrod-house"
-    && !storyFlags.rachelMet
-    && gameState.time >= 420
-    && gameState.time < 1140;
-  const elrodRachel = elrodWithRachel
-    ? elrodRachelPlate(gameState.time, gameState.weather)
-    : null;
-  const sanatoriumCigaretteRoom =
-    currentScene.id === "sanatorium-room-2"
-    && isNightTime(gameState.time)
-    && !storyFlags.sanatoriumCigaretteSeen;
-  const royRainy =
-    currentScene.id === "scrapyard-inside"
-    && activeCharacter?.name === "Big Roy"
-    && RAIN_WEATHER.includes(gameState.weather)
-    && !isNightTime(gameState.time);
-  const rayRainy =
-    currentScene.id === "gas-station-inside"
-    && activeCharacter?.name === "Ray Mercer"
-    && RAIN_WEATHER.includes(gameState.weather)
-    && !isNightTime(gameState.time);
-  const walterRainy =
-    currentScene.id === "sheriff-office"
-    && activeCharacter?.name === "Walter Harrington"
-    && RAIN_WEATHER.includes(gameState.weather)
-    && !isNightTime(gameState.time);
-  const hillCompleted = quests.some(
-    (quest) => quest.id === "light-on-the-hill" && quest.status === "completed",
-  );
-  const sanatoriumOneWindow =
-    currentScene.id === "sanatorium"
-    && sanatoriumShowsOneWindow(gameState.time, hillCompleted);
-  const sanatoriumDark =
-    currentScene.id === "sanatorium"
-    && isNightTime(gameState.time)
-    && hillCompleted;
-  const emptySceneImage =
-    sanatoriumCigaretteRoom
-      ? "./images/locations/sanatorium/sanatoriumRoom2NightCigarette.png"
-      : sanatoriumOneWindow
-        ? SANATORIUM_ONE_WINDOW
-      : weatherImage ??
-    (isNightTime(gameState.time)
-      ? currentScene.image.night
-      : currentScene.image.day);
-  const sceneImage = momInKitchen
-    ? RAIN_WEATHER.includes(gameState.weather)
-      ? "./images/locations/home/momMorningKitchen-rain.jpg"
-      : "./images/locations/home/momMorningKitchen.png"
-    : royRainy
-      ? "./images/locations/scrapyard/bigRoyWorkingRainy.png"
-    : rayRainy
-      ? "./images/locations/gas_station/rayMercerGasStationRainy.png"
-    : walterRainy
-      ? "./images/locations/police_station/WalterHarringtonOfficeRain.jpg"
-    : elrodWithRachel || elrodRachel
-      ? gameState.weather === "Thunderstorm"
-        ? "./images/locations/ElrodHouse/ElrodHouseRachelOutsideThunder.png"
-        : RAIN_WEATHER.includes(gameState.weather)
-          ? "./images/locations/ElrodHouse/ElrodHouseRachelOutsideRainy.png"
-          : "./images/locations/ElrodHouse/ElrodHouseRachelOutsideDay.png"
-    : ((isNightTime(gameState.time) && activeCharacter?.nightImage
-        ? activeCharacter.nightImage
-        : activeCharacter?.image) ?? emptySceneImage);
-  // In a conversation the speaker stands in front as a portrait, so the scene
-  // behind swaps to its empty variant rather than showing them twice. It is
-  // layered over the character art (which keeps sizing the frame) and simply
-  // isn't shown when a scene has no separate empty art.
-  const conversationBackdrop =
-    hasConversationOverlay && emptySceneImage && emptySceneImage !== sceneImage
-      ? emptySceneImage
-      : null;
-  // The filter follows the plate on screen, not the scene's weather map.
-  // A rainy day plate keeps the scene dry-looking once night art takes over.
-  const interimRain =
-    RAIN_WEATHER.includes(gameState.weather)
-    && !sceneIsIndoor
-    && currentScene.id !== "front-yard"
-    && !isRainPlate(sceneImage, currentScene, gameState.weather);
-  const interimRainNight = interimRain && isNightTime(gameState.time);
-  const syntheticNight = isNightTime(gameState.time) && Boolean(currentScene.image.noNightVariant);
+  const art = resolveSceneArt({
+    scene: currentScene,
+    time: gameState.time,
+    weather: gameState.weather,
+    dayOfWeek: gameState.dayOfWeek,
+    storyFlags,
+    activeCharacter,
+    quests,
+    sceneIsIndoor,
+    hasConversationOverlay,
+  });
+  const {
+    momInKitchen,
+    weatherImage,
+    hillCompleted,
+    sanatoriumDark,
+    sceneImage,
+    conversationBackdrop,
+    interimRain,
+    interimRainNight,
+    syntheticNight,
+  } = art;
+
   const reducedMotion = useReducedMotion();
   const [shownSceneImage, setShownSceneImage] = useState(sceneImage);
   const [incomingSceneImage, setIncomingSceneImage] = useState<string | null>(null);
@@ -713,109 +477,11 @@ export default function Home() {
     return () => window.clearTimeout(timer);
   }, [cueState]);
   const boardCue = cueState === "on";
-  const hotspotActions =
-    sanatoriumHotspotActions[currentScene.id] ??
-    (currentScene.id === "living-room"
-      ? activeCharacter?.name === "Linda"
-        ? ["talkToMom", "watchTv"]
-        : ["relaxOnCouch", "watchTv"]
-      : currentScene.id === "ethan-room"
-        ? ["goToSleep", "playVinyl", "lookAtDesk"]
-        : currentScene.id === "ethan-room-desk"
-          ? ["pickUpCigarettes"]
-          : currentScene.id === "hallway"
-            ? ["goLivingRoom", "goKitchen", "goBathroom"]
-            : currentScene.id === "hallway-upstairs"
-              ? ["openAtticHatch"]
-              : currentScene.id === "kitchen"
-                ? [
-                    ...(activeCharacter?.name === "Linda" ? ["talkToMom"] : []),
-                    ...(momInKitchen ? [] : momTalked ? ["checkFridge"] : []),
-                    ...(momInKitchen ? [] : ["makeCoffee"]),
-                    ...(momInKitchen ? [] : ["goBackYard"]),
-                  ]
-                : currentScene.id === "back-yard"
-                  ? ["goKitchen"]
-                  : currentScene.id === "basement"
-                    ? ["goHallway"]
-                    : currentScene.id === "garage"
-                      ? ["lookAtGarageBench", "goHallway"]
-                      : currentScene.id === "garage-bench"
-                        ? ["pickUpGarageFlashlight"]
-                        : currentScene.id === "gas-station"
-                          ? ["enterGasStation"]
-                          : currentScene.id === "gas-station-inside"
-                            ? ["talkToRay"]
-                            : currentScene.id === "needle-and-groove"
-                              ? ["enterNeedleAndGroove"]
-                              : currentScene.id === "needle-and-groove-inside"
-                                ? [
-                                    "talkToJohnny",
-                                    "enterNeedleAndGrooveBackroom",
-                                  ]
-                                : currentScene.id === "police-station"
-                                  ? ["enterPoliceStation"]
-                                  : currentScene.id === "police-station-inside"
-                                    ? ["leavePoliceStation"]
-                                    : currentScene.id === "hospital"
-                                      ? ["enterHospital"]
-                                      : currentScene.id === "hospital-reception"
-                                        ? [
-                                            "goToMarleneCounter",
-                                            "talkToMarlene",
-                                            "goToHospitalRoom",
-                                          ]
-                                        : currentScene.id === "scrapyard"
-                                          ? ["enterScrapyard"]
-                                          : currentScene.id ===
-                                              "scrapyard-inside"
-                                            ? [
-                                                "talkToBigRoy",
-                                                "lookAtScrapyardDesk",
-                                                "leaveScrapyard",
-                                              ]
-                                            : currentScene.id ===
-                                                "scrapyard-desk"
-                                              ? ["takeScrapyardKnife"]
-                                              : currentScene.id === "cementary"
-                                                ? [
-                                                    "enterCemetery",
-                                                    "goCemeteryBackside",
-                                                  ]
-                                                : currentScene.id ===
-                                                    "cementary-inside"
-                                                  ? ["goCemeteryBackside"]
-                                                  : currentScene.id ===
-                                                      "cementary-backside"
-                                                    ? ["leaveCemeteryBackside"]
-                                                    : currentScene.id ===
-                                                        "motel"
-                                                      ? ["enterMotel"]
-                                                      : currentScene.id ===
-                                                          "motel-inside"
-                                                        ? [
-                                                            "leaveMotel",
-                                                            "talkToEarl",
-                                                          ]
-                                                        : currentScene.id ===
-                                                            "front-yard"
-                                                          ? [
-                                                              "goBackYard",
-                                                              "enterGarage",
-                                                              "goHome",
-                                                              "lookAtSanatoriumHill",
-                                                            ]
-                                                          : currentScene.id ===
-                                                              "street"
-                                                            ? []
-                                                            : currentScene.id ===
-                                                                "light-pole"
-                                                            ? [
-                                                                "chooseNeedleGrooveJob",
-                                                                "chooseGasStationJob",
-                                                                "chooseScrapyardJob",
-                                                              ]
-                                                            : []);
+  const hotspotActions = hotspotActionsFor(currentScene.id, {
+    lindaHere: activeCharacter?.name === "Linda",
+    momInKitchen,
+    momTalked,
+  });
   const visibleChoices =
     !momTalked && currentScene.id === "kitchen"
       ? activeChoices.filter(
@@ -897,56 +563,7 @@ export default function Home() {
   const boardHint = showDinerBoardHint && visual.scene.id === "diner-inside";
 
   if (!(hasStarted ?? resumedSession)) {
-    return (
-      <main className="mainMenu">
-        <div className="mainMenuArtwork" aria-hidden="true" />
-        <div className="mainMenuShade" aria-hidden="true" />
-        <div className="mainMenuBranding">
-          <a
-            className="mainMenuStudioLogoLink"
-            href="https://www.lostfrequencygames.com/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <Image
-              className="mainMenuStudioLogo"
-              src="/LostFrequencyGames-transparent.png"
-              alt="Lost Frequency Games"
-              width={1254}
-              height={1254}
-            />
-          </a>
-          <a
-            className="mainMenuSocialLink"
-            href="https://x.com/HarlowTheGame"
-            target="_blank"
-            rel="noreferrer"
-            aria-label="Follow Harlow: 1982 on X"
-          >
-            <Image src="/X.png" alt="" width={1500} height={1500} />
-          </a>
-        </div>
-
-        <section className="mainMenuContent" aria-labelledby="game-title">
-          <p className="mainMenuEyebrow">A small-town mystery unfolds</p>
-          <h1 id="game-title">Harlow: 1982</h1>
-          <div className="mainMenuActions">
-            <button className="mainMenuStart" onClick={startNewGame}>
-              New Game
-            </button>
-            <button
-              className="mainMenuStart mainMenuContinue"
-              onClick={continueGame}
-            >
-              Continue
-            </button>
-          </div>
-        </section>
-        <p className="mainMenuCopyright">
-          © 2026 Lost Frequency Games. All rights reserved.
-        </p>
-      </main>
-    );
+    return <MainMenu onNewGame={startNewGame} onContinue={continueGame} />;
   }
 
   return (
@@ -964,11 +581,7 @@ export default function Home() {
       )}
       <Atmosphere night={sceneIsNight} />
       {isNightTime(gameState.time) && (
-        <div className="gameClouds gameCloudsNight" aria-hidden="true">
-          <div className="gameCloud gameCloudOne" />
-          <div className="gameCloud gameCloudTwo" />
-          <div className="gameCloud gameCloudThree" />
-        </div>
+        <div className="gameClouds gameCloudsNight" aria-hidden="true" />
       )}
       <div className="game-panel">
         <h1>HARLOW</h1>
@@ -1317,49 +930,17 @@ export default function Home() {
         )}
 
         {showPlaytestControls && (
-        <div className="waitControls">
-          <span>Pass time</span>
-          <ActionButton label="Wait 1 min" disabled={waitingLocked} onClick={() => wait(1)} />
-
-          <ActionButton label="Wait 5 min" disabled={waitingLocked} onClick={() => wait(5)} />
-
-          <ActionButton label="Wait 10 min" disabled={waitingLocked} onClick={() => wait(10)} />
-
-          <ActionButton label="Wait 30 min" disabled={waitingLocked} onClick={() => wait(30)} />
-
-          <ActionButton label="Wait 1 hour" disabled={waitingLocked} onClick={() => wait(60)} />
-        </div>
-        )}
-
-        {showPlaytestControls && (
-        <div className="adminTravelControls">
-          <ActionButton
-            label={showAdminTravel ? "Hide admin travel" : "Admin travel"}
-            onClick={() => setShowAdminTravel((visible) => !visible)}
+          <PlaytestControls
+            waitingLocked={waitingLocked}
+            onWait={wait}
+            showAdminTravel={showAdminTravel}
+            onToggleAdminTravel={() => setShowAdminTravel((visible) => !visible)}
+            destinations={adminDestinations}
+            onTravel={(sceneId) => {
+              adminTravel(sceneId);
+              setShowAdminTravel(false);
+            }}
           />
-          {showAdminTravel && (
-            <div
-              className="adminTravelPanel"
-              aria-label="Admin travel destinations"
-            >
-              <span>Free travel</span>
-              <div>
-                {adminDestinations.map((destination) => (
-                  <button
-                    key={destination.id}
-                    type="button"
-                    onClick={() => {
-                      adminTravel(destination.id);
-                      setShowAdminTravel(false);
-                    }}
-                  >
-                    {destination.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
         )}
 
         {closeup && !closeup.video && (
@@ -1448,39 +1029,4 @@ export default function Home() {
       </div>
     </main>
   );
-}
-
-/** Moves the SCENE box after layout. Hotspot positions stay on the art. */
-function CaptionPlacer({
-  sceneId,
-  signature,
-  thought,
-  lead,
-}: {
-  sceneId: string;
-  signature: string;
-  thought: string;
-  lead: string;
-}) {
-  const marker = useRef<HTMLSpanElement>(null);
-  useLayoutEffect(() => {
-    const frame = marker.current?.closest<HTMLElement>(".scene-image-frame");
-    if (!frame) return;
-    const place = () => placeSceneChrome(frame);
-    place();
-    const raf = window.requestAnimationFrame(place);
-    const observer = new ResizeObserver(place);
-    const art = frame.querySelector(".scene-art");
-    if (art) observer.observe(art);
-    // A lead card grows the stack. Place again so it does not cover a hotspot.
-    const stack = frame.querySelector(".scene-info-stack");
-    const leads = new MutationObserver(place);
-    if (stack) leads.observe(stack, { childList: true });
-    return () => {
-      window.cancelAnimationFrame(raf);
-      observer.disconnect();
-      leads.disconnect();
-    };
-  }, [sceneId, signature, thought, lead]);
-  return <span ref={marker} hidden />;
 }

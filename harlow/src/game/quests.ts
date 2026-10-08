@@ -239,10 +239,6 @@ export function resolveMomTalked(
   return isQuestCompleted(quests, "talk-to-mom");
 }
 
-export function getQuest(quests: QuestProgress[], id: QuestId) {
-  return quests.find((quest) => quest.id === id);
-}
-
 /** Build quest state from a legacy save that only had mom/job fields. */
 export function migrateQuestsFromLegacy(save: {
   momTalked?: boolean;
@@ -324,7 +320,7 @@ export function migrateQuestsFromLegacy(save: {
   return quests;
 }
 
-export function upsertQuest(
+function upsertQuest(
   quests: QuestProgress[],
   id: QuestId,
   status: QuestStatus,
