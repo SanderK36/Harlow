@@ -551,6 +551,9 @@ export const busStop: Scene = {
       "./images/Travel/busStopRain.png",
       "./images/Travel/busStopThunder.png",
     ),
+    // Both weather plates are daytime. After dark the night plate wins,
+    // and the interim filter carries the rain.
+    weatherDayOnly: true,
   },
   choices: [
     {

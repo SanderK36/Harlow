@@ -67,6 +67,9 @@ const SCENE_DISTANCE: Record<string, number> = {
   basement: 3,
   garage: 3,
   "front-yard": 3,
+  // One step out from the yard, with the backyard and the light pole.
+  // Home is closer. The light pole and the Elrod house are not.
+  street: 4,
   "living-room-relaxing": 4,
   "made-coffee": 4,
   fridge: 4,
