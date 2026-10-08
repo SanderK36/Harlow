@@ -383,15 +383,19 @@ describe("walks and the rainy front yard", () => {
     );
   });
 
-  it("uses the day plate for a rainy front yard at 10:35", () => {
+  it("uses the rainy front-yard plates by day and by night", () => {
     const day = sceneWeatherPlate(frontYard, 10 * 60 + 35, "Rainy");
     const night = sceneWeatherPlate(frontYard, 22 * 60, "Rainy");
-    assert.match(day, /homeDayTime\.jpg$/);
-    assert.equal(isRainPlate(day, frontYard, "Rainy"), false);
+    const dayStorm = sceneWeatherPlate(frontYard, 10 * 60 + 35, "Thunderstorm");
+    const nightStorm = sceneWeatherPlate(frontYard, 22 * 60, "Thunderstorm");
+    assert.match(day, /homeOutsideRainy\.png$/);
+    assert.equal(isRainPlate(day, frontYard, "Rainy"), true);
     assert.match(night, /homeOutsideRainy\.png$/);
     assert.equal(isRainPlate(night, frontYard, "Rainy"), true);
-    assert.match(sceneWeatherPlate(frontYard, 10 * 60 + 35, "Thunderstorm"), /homeDayTime\.jpg$/);
-    assert.match(sceneWeatherPlate(frontYard, 22 * 60, "Thunderstorm"), /homeThunderstorm\.png$/);
+    assert.match(dayStorm, /homeThunderstorm\.png$/);
+    assert.equal(isRainPlate(dayStorm, frontYard, "Thunderstorm"), true);
+    assert.match(nightStorm, /homeThunderstorm\.png$/);
+    assert.equal(isRainPlate(nightStorm, frontYard, "Thunderstorm"), true);
   });
 
   it("hides making coffee while Mom is out of it", () => {
