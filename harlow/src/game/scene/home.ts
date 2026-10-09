@@ -1,12 +1,15 @@
-import {
-  type Conversation,
-  narration,
-  thought,
-  npc,
-  ethan,
-} from "../story";
+import { type Conversation, narration, thought, npc, ethan } from "../story";
 import type { Scene } from "./types";
-import { rainArt, RAIN, STORM, WET, DRY, HEAVY, WEEKDAYS, WEEKEND } from "./weather";
+import {
+  rainArt,
+  RAIN,
+  STORM,
+  WET,
+  DRY,
+  HEAVY,
+  WEEKDAYS,
+  WEEKEND,
+} from "./weather";
 
 // ----------------------------------------
 // HALLWAY
@@ -75,7 +78,7 @@ export const hallway: Scene = {
       action: "leaveHouse",
       door: true,
       nextScene: "front-yard",
-      timeCost: 5,
+      timeCost: 1,
     },
   ],
 };
@@ -349,7 +352,10 @@ export const momConversation: Conversation = {
       excludesStoryFlag: ["coffeeDelivered", "posterFound"],
       response: [
         ethan("Got your coffee."),
-        npc("Linda", "Thanks, honey. Did Margaret ever take that old board down?"),
+        npc(
+          "Linda",
+          "Thanks, honey. Did Margaret ever take that old board down?",
+        ),
         ethan("Don't think so."),
         npc("Linda", "No. She wouldn't."),
       ],
@@ -583,7 +589,7 @@ export const kitchen: Scene = {
       action: "goBackYard",
       door: true,
       nextScene: "back-yard",
-      timeCost: 5,
+      timeCost: 1,
     },
     {
       label: "Make some coffee",
