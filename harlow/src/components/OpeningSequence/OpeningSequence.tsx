@@ -51,8 +51,8 @@ function formatClock(minutes: number) {
 }
 
 /**
- * New-game intro: the Lost Frequency Games splash (filled edge to edge with a
- * blurred copy of itself), a fade to black, the prologue (see Prologue.tsx),
+ * New-game intro: the Lost Frequency Games splash (the whole 854×480 frame,
+ * with a blurred copy behind the letterbox), a fade to black, the prologue,
  * then a HARLOW title card with the date, time and place over falling rain,
  * which fades into the first scene. On the splash and the title card any
  * click, tap or key skips ahead one step; the prologue has its own controls.
@@ -219,7 +219,6 @@ export default function OpeningSequence({
               />
             ))}
           </video>
-          <div className={styles.vignette} aria-hidden="true" />
         </div>
       )}
 

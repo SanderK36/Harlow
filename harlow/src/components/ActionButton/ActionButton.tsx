@@ -6,6 +6,8 @@ type ActionButtonProps = {
   disabled?: boolean;
   /** Subtle notebook mark. The choice starts a quest that has not begun. */
   leadsQuest?: boolean;
+  /** Effect and time the choice already declares, e.g. "+5 STAM · 10 min". */
+  detail?: string;
 };
 
 export default function ActionButton({
@@ -13,6 +15,7 @@ export default function ActionButton({
   onClick,
   disabled = false,
   leadsQuest = false,
+  detail = "",
 }: ActionButtonProps) {
   return (
     <button
@@ -20,7 +23,10 @@ export default function ActionButton({
       onClick={onClick}
       disabled={disabled}
     >
-      <span className={styles.label}>{label}</span>
+      <span className={styles.label}>
+        {label}
+        {detail ? <span className={styles.detail}> · {detail}</span> : null}
+      </span>
       {leadsQuest && (
         <>
           <span className={styles.leadMark} aria-hidden="true">

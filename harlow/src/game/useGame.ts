@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { applyEffects, effectsToStory, restAfterSleep } from "@/game/effects";
+import { applyEffects, restAfterSleep, statDeltas } from "@/game/effects";
 import initialGameState from "@/game/gameState";
 import player from "@/game/player";
 import {
@@ -570,8 +570,9 @@ export function useGame() {
       return;
     }
 
-    setPlayerState((previous) => applyEffects(previous, choice.effects!));
-    setCurrentEffects(effectsToStory(choice.effects));
+    const next = applyEffects(playerState, choice.effects);
+    setPlayerState(next);
+    setCurrentEffects(statDeltas(playerState, next));
   }
 
   function showLateNightActionThought() {
@@ -953,7 +954,9 @@ export function useGame() {
         : 1440 - gameState.time + TIRED_END;
       const nextGameState = advanceTime(minutesUntilSevenAm, false, true, "ethan-room");
       moveToScene("ethan-room", nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek);
-      setPlayerState((previous) => restAfterSleep(previous));
+      const rested = restAfterSleep(playerState);
+      setPlayerState(rested);
+      setCurrentEffects(statDeltas(playerState, rested));
       setNewDayAnnouncement(nextGameState);
       return;
     }

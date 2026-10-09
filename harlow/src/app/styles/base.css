@@ -10,13 +10,15 @@
   --accent-bright: #ed5562;
   --gold: #d93443;
 
-  /* Type system (fonts are loaded with next/font in app/layout.tsx).
+  /* Type system (local fonts in app/layout.tsx, files in app/fonts).
      Display: inscriptional capitals for the wordmark and window titles.
      Body: a bookish serif for narration, thoughts, and dialogue.
-     UI: a condensed grotesque for labels, stats, and controls. */
+     UI: a condensed grotesque for labels, stats, and controls.
+     Typewriter: the stats index card. */
   --font-display: var(--font-cinzel), "Trajan Pro", Georgia, serif;
   --font-body: var(--font-crimson), Georgia, "Times New Roman", serif;
   --font-ui: var(--font-oswald), "Arial Narrow", Arial, sans-serif;
+  --font-typewriter: var(--font-special-elite), "Courier New", Courier, monospace;
 }
 
 * {

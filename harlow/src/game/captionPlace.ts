@@ -106,11 +106,10 @@ function clearPictureSize(art: HTMLElement) {
 }
 
 /**
- * Puts the SCENE box in the first clear corner at full width. Only hotspots
- * block a corner. The choice panel and the thought bar do not, even when
- * they sit along the bottom. If none fit, the caption, the thought, and the
- * choices stack under the picture. The picture keeps its size and the page
- * scrolls when the stack extends beyond the viewport.
+ * Puts the SCENE box in the first clear corner at full width. Hotspots and
+ * the choice buttons block a corner, so the caption moves instead of the
+ * buttons. Choices always stay painted on the picture. A caption or thought
+ * that does not fit drops below the art. The picture keeps its size.
  */
 export function placeSceneChrome(frame: HTMLElement) {
   const art = frame.querySelector<HTMLElement>(".scene-art");
@@ -126,6 +125,7 @@ export function placeSceneChrome(frame: HTMLElement) {
     || sceneId === "living-room"
     || sceneId === "street"
   );
+  const choiceList = frame.querySelector<HTMLElement>(":scope > .overlayActionList");
   if (frame.dataset.captionScene !== sceneId || frame.dataset.captionMode !== mode) {
     delete frame.dataset.choices;
     delete frame.dataset.thought;
@@ -133,6 +133,7 @@ export function placeSceneChrome(frame: HTMLElement) {
     clearPictureSize(art);
     stack.style.cssText = "";
     panel.style.cssText = "";
+    if (choiceList) choiceList.style.cssText = "";
     frame.dataset.captionScene = sceneId;
     frame.dataset.captionMode = mode;
   }
@@ -140,10 +141,25 @@ export function placeSceneChrome(frame: HTMLElement) {
   const artRect = art.getBoundingClientRect();
   if (artRect.width < 2 || artRect.height < 2) return;
 
+  // Pin twice: the first pass takes a list that was in normal flow out of
+  // it, and the second measures that overlay.
+  pinChoicesToArt(frame, art, choiceList);
+  pinChoicesToArt(frame, art, choiceList);
+
   const hotspots = [...art.querySelectorAll<HTMLElement>(".scene-hotspot")]
     .map((el) => el.getBoundingClientRect())
     .filter((rect) => rect.width > 2 && rect.height > 2)
     .map(toBox);
+
+  const buttons = choiceList?.querySelector<HTMLElement>(".overlayActionButtons") ?? null;
+  const heading = choiceList?.querySelector("h2");
+  const buttonBox = buttons && buttons.getBoundingClientRect().height > 2
+    ? toBox(buttons.getBoundingClientRect())
+    : null;
+  const headingBox = heading && heading.getBoundingClientRect().height > 2
+    ? toBox(heading.getBoundingClientRect())
+    : null;
+  const choiceObstacles = [buttonBox, headingBox].filter((box): box is Box => box !== null);
 
   const phone = mode === "phone";
   let spot: CaptionSpot = "below";
@@ -161,8 +177,9 @@ export function placeSceneChrome(frame: HTMLElement) {
     // The box is the caption that is on screen. A lead reserve used to make
     // this taller than the text, so a free corner was thrown out.
     const height = stack.offsetHeight;
+    const obstacles = keepHomeOverlays ? hotspots : [...hotspots, ...choiceObstacles];
     // Keep the home hallway and kitchen panels anchored over the art.
-    spot = keepHomeOverlays ? "top-left" : placeCaption(toBox(artRect), { width, height }, hotspots);
+    spot = keepHomeOverlays ? "top-left" : placeCaption(toBox(artRect), { width, height }, obstacles);
     if (spot === "below") {
       stack.style.cssText = "";
       panel.style.cssText = "";
@@ -183,55 +200,31 @@ export function placeSceneChrome(frame: HTMLElement) {
     panel.style.cssText = "";
   }
 
-  const choiceList = frame.querySelector<HTMLElement>(":scope > .overlayActionList");
-  const buttons = choiceList?.querySelector<HTMLElement>(".overlayActionButtons") ?? null;
   const thought = frame.querySelector<HTMLElement>(":scope > .opening-thought");
   const captionBox = toBox(panel.getBoundingClientRect());
-  const choiceIsOverlay = Boolean(choiceList && getComputedStyle(choiceList).position === "absolute");
   const thoughtIsOverlay = Boolean(thought && getComputedStyle(thought).position === "absolute");
-  const buttonBox = buttons && buttons.getBoundingClientRect().height > 2
-    ? toBox(buttons.getBoundingClientRect())
-    : null;
-  const heading = choiceList?.querySelector("h2");
-  const headingBox = heading && heading.getBoundingClientRect().height > 2
-    ? toBox(heading.getBoundingClientRect())
-    : null;
   const thoughtBox = thoughtIsOverlay && thought && thought.getBoundingClientRect().height > 2
     ? toBox(thought.getBoundingClientRect())
     : null;
 
-  const choicesCoverCaption = Boolean(
-    (buttonBox && overlaps(captionBox, buttonBox))
-    || (headingBox && overlaps(captionBox, headingBox)),
-  );
-  const choicesCoverHotspot = Boolean(
-    choiceIsOverlay
-    && (
-      (buttonBox && hotspots.some((hotspot) => overlaps(hotspot, buttonBox)))
-      || (headingBox && hotspots.some((hotspot) => overlaps(hotspot, headingBox)))
-    ),
-  );
   const thoughtCovered = Boolean(
     thoughtBox
     && (
       overlaps(thoughtBox, captionBox)
       || hotspots.some((hotspot) => overlaps(hotspot, thoughtBox))
-      || (buttonBox && overlaps(thoughtBox, buttonBox))
-      || (headingBox && overlaps(thoughtBox, headingBox))
+      || choiceObstacles.some((obstacle) => overlaps(thoughtBox, obstacle))
     ),
   );
 
+  // Never eject the choice list. Once a caption or thought drops below, it
+  // stays there until the scene changes, so the two do not swap every frame.
+  delete frame.dataset.choices;
   if (spot === "below") {
     frame.dataset.caption = "below";
-    frame.dataset.choices = "below";
     if (thought) frame.dataset.thought = "below";
   } else {
     delete frame.dataset.caption;
-    if (choicesCoverCaption || choicesCoverHotspot) frame.dataset.choices = "below";
-    if (thoughtCovered) {
-      frame.dataset.thought = "below";
-      frame.dataset.choices = "below";
-    }
+    if (thoughtCovered) frame.dataset.thought = "below";
   }
 
   if (keepHomeOverlays) {
@@ -240,6 +233,43 @@ export function placeSceneChrome(frame: HTMLElement) {
     delete frame.dataset.thought;
   }
 
+  pinChoicesToArt(frame, art, choiceList);
   // Caption placement must not change the image size between scenes.
   clearPictureSize(art);
+}
+
+/** Keeps the choice list on the picture, even when the frame grows below it. */
+function pinChoicesToArt(
+  frame: HTMLElement,
+  art: HTMLElement,
+  choiceList: HTMLElement | null,
+) {
+  if (!choiceList) return;
+  const frameRect = frame.getBoundingClientRect();
+  const artNow = art.getBoundingClientRect();
+  if (artNow.width < 2 || artNow.height < 2) return;
+  // The picture can run past the window. Keep the buttons on the part of it
+  // that is actually on screen.
+  const visibleTop = Math.max(artNow.top, 0);
+  const visibleBottom = Math.min(artNow.bottom, window.innerHeight);
+  let lift = 0;
+  const thoughtBar = frame.querySelector<HTMLElement>(":scope > .opening-thought");
+  if (thoughtBar && getComputedStyle(thoughtBar).position === "absolute") {
+    const thoughtRect = thoughtBar.getBoundingClientRect();
+    if (
+      thoughtRect.height > 2
+      && thoughtRect.top < visibleBottom - 1
+      && thoughtRect.bottom > visibleTop
+    ) {
+      lift = Math.max(0, visibleBottom - thoughtRect.top);
+    }
+  }
+  choiceList.style.position = "absolute";
+  choiceList.style.left = `${Math.round(artNow.left - frameRect.left)}px`;
+  choiceList.style.width = `${Math.round(artNow.width)}px`;
+  choiceList.style.right = "auto";
+  choiceList.style.top = "auto";
+  choiceList.style.margin = "0";
+  choiceList.style.bottom = `${Math.round(frameRect.bottom - visibleBottom + lift)}px`;
+  choiceList.style.maxHeight = `${Math.round(Math.max(48, visibleBottom - visibleTop - lift))}px`;
 }
