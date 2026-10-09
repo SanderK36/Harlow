@@ -123,12 +123,6 @@ export const upstairsHallway: Scene = {
       hotspots: [{ left: 64.5, top: 15, width: 4.5, height: 26 }],
     },
     {
-      label: "Go to the attic",
-      action: "goAttic",
-      nextScene: "attic",
-      timeCost: 0,
-    },
-    {
       label: "Go downstairs",
       action: "goDownstairs",
       nextScene: "hallway",
@@ -156,22 +150,24 @@ export const upstairsHallwayAtticOpen: Scene = {
     ...upstairsHallway.choices
       .filter((choice) => choice.action !== "openAtticHatch")
       .map((choice) =>
-        choice.action === "goAttic"
-          ? {
+        choice.action === "goMomRoom"
+          ? // The lowered ladder sits just right of Mom's door here.
+            {
               ...choice,
-              hotspots: [{ left: 55, top: 1, width: 15, height: 79 }],
+              hotspots: [{ left: 44, top: 21, width: 10.5, height: 39 }],
             }
-          : choice.action === "goMomRoom"
-            ? // The lowered ladder sits just right of Mom's door here.
-              {
-                ...choice,
-                hotspots: [{ left: 44, top: 21, width: 10.5, height: 39 }],
-              }
-            : choice.action === "goEmilyRoom"
-              ? // Emily's door is behind the ladder; it stays a button below.
-                { ...choice, hotspots: undefined }
-              : choice,
+          : choice.action === "goEmilyRoom"
+            ? // Emily's door is behind the ladder; it stays a button below.
+              { ...choice, hotspots: undefined }
+            : choice,
       ),
+    {
+      label: "Go to the attic",
+      action: "goAttic",
+      nextScene: "attic",
+      timeCost: 0,
+      hotspots: [{ left: 55, top: 1, width: 15, height: 79 }],
+    },
     {
       label: "Close the attic hatch",
       action: "closeAtticHatch",

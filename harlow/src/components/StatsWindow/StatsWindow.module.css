@@ -13,89 +13,123 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  width: min(420px, calc(100vw - 28px), calc((100dvh - 28px) * 1225 / 1284));
-  aspect-ratio: 1225 / 1284;
-  padding: 14% 10% 8%;
+  width: min(440px, calc(100vw - 28px));
+  max-height: min(90vh, 640px);
   overflow: hidden;
-  color: #f6ebe6;
-  background: #14080a url("/statsBackground.png") center / 100% 100% no-repeat;
-  border: 0;
-  border-radius: 12px;
-  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.7);
+  color: #2a1a12;
+  background-color: #d8c4a0;
+  background-image:
+    linear-gradient(180deg, rgba(255, 248, 230, 0.55), rgba(196, 164, 118, 0.2)),
+    linear-gradient(125deg, rgba(90, 50, 20, 0.08) 0%, transparent 42%);
+  border: 1px solid rgba(70, 40, 18, 0.55);
+  border-radius: 10px;
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.7),
+    inset 0 0 0 1px rgba(255, 240, 210, 0.35),
+    inset 0 0 60px rgba(90, 50, 20, 0.12);
   animation: modalEnter 0.22s ease-out;
 }
 
-.window h2 {
+.header {
   flex: 0 0 auto;
-  margin: 0 0 10px;
-  color: #f6ebe6;
-  font-family: var(--font-display);
-  font-size: clamp(18px, 2.2vw, 24px);
+  padding: 16px 22px 10px;
+  border-bottom: 1px solid rgba(90, 55, 25, 0.28);
+}
+
+.caseLabel {
+  margin: 0 0 4px;
+  color: #7a4a28;
+  font-family: var(--font-ui);
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.18em;
-  line-height: 1.1;
-  text-align: center;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.65);
+}
+
+.window h2 {
+  margin: 0;
+  color: #24150e;
+  font-family: var(--font-typewriter);
+  font-size: clamp(22px, 2.6vw, 28px);
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  line-height: 1.1;
+  text-transform: uppercase;
 }
 
 .list {
   flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-evenly;
   min-height: 0;
-  padding: 4px 12px;
-  background: rgba(8, 3, 4, 0.62);
-  border: 1px solid rgba(240, 200, 180, 0.18);
-  border-radius: 8px;
-}
-
-.window p {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
   margin: 0;
-  padding: 7px 0;
-  color: #f4e9e2;
-  font-family: var(--font-body);
-  font-size: clamp(16px, 1.8vw, 18px);
-  border-top: 1px solid rgba(240, 200, 180, 0.16);
+  padding: 6px 22px 12px;
+  overflow-y: auto;
+  list-style: none;
 }
 
-.window p:first-child {
+.list li {
+  padding: 10px 0 11px;
+  border-top: 1px solid rgba(90, 55, 25, 0.22);
+}
+
+.list li:first-child {
   border-top: 0;
 }
 
+.line {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0;
+  color: #24150e;
+  font-family: var(--font-typewriter);
+  font-size: clamp(16px, 1.8vw, 18px);
+  letter-spacing: 0.02em;
+}
+
 .statsNumber {
-  color: #f3ddb0;
-  font-family: var(--font-ui);
-  font-size: 1.05em;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  margin: 4px 0 0;
+  color: #5c3a22;
+  font-family: var(--font-typewriter);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.closeRow {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 18px 12px;
+  border-top: 1px solid rgba(90, 55, 25, 0.28);
+  background: linear-gradient(180deg, rgba(216, 196, 160, 0.95), rgba(200, 176, 140, 0.98));
 }
 
 .closeButton {
-  flex: 0 0 auto;
+  min-width: 110px;
   min-height: 44px;
-  margin-top: 12px;
   padding: 10px 16px;
-  color: #f6ebe6;
+  color: #24150e;
   font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  background: rgba(169, 22, 36, 0.72);
-  border: 1px solid rgba(255, 196, 178, 0.45);
+  background: #f3e6c8;
+  border: 1.5px solid #5c3a22;
   border-radius: 6px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 240, 0.55),
+    0 2px 4px rgba(40, 20, 10, 0.2);
   cursor: pointer;
 }
 
 .closeButton:hover,
 .closeButton:focus-visible {
-  background: rgba(201, 48, 62, 0.88);
-  outline: 2px solid #f0c8c4;
+  background: #fff6e4;
+  outline: 2px solid #5c3a22;
   outline-offset: 2px;
 }
 
@@ -112,16 +146,16 @@
 }
 
 @media (max-width: 640px) {
-  .window {
-    padding: 11% 7% 6%;
+  .header {
+    padding: 14px 16px 8px;
   }
 
-  .window p {
-    padding: 5px 0;
+  .list {
+    padding: 4px 16px 10px;
   }
 
-  .closeButton {
-    margin-top: 8px;
+  .note {
+    font-size: 12.5px;
   }
 }
 

@@ -43,6 +43,28 @@ export function restAfterSleep(player: Player): Player {
   };
 }
 
+type EffectStat = Extract<StoryEntry, { type: "effect" }>["stat"];
+
+const EFFECT_STATS: readonly EffectStat[] = [
+  "courage",
+  "intelligence",
+  "charisma",
+  "athletics",
+  "strength",
+  "health",
+  "stamina",
+  "fear",
+  "money",
+];
+
+/** Actual changes after clamping. A stat that did not move is omitted. */
+export function statDeltas(before: Player, after: Player): StoryEntry[] {
+  return EFFECT_STATS.flatMap((stat) => {
+    const amount = after[stat] - before[stat];
+    return amount === 0 ? [] : [{ type: "effect" as const, stat, amount }];
+  });
+}
+
 export function effectsToStory(effects: ChoiceEffects): StoryEntry[] {
   return Object.entries(effects).map(
     ([stat, amount]) => ({

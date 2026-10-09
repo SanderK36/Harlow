@@ -38,34 +38,15 @@
   filter: blur(36px) brightness(0.55) saturate(1.25);
 }
 
+/* The master is 854×480. Show the whole frame, never larger than that, so a
+   desktop window is 1:1 and a phone only scales down. */
 .splashVideo {
   position: relative;
-  width: 100%;
-  height: 100%;
+  width: auto;
+  height: auto;
+  max-width: min(100%, 854px);
+  max-height: min(100%, 480px);
   object-fit: contain;
-  /* Feather the video's own edges into the backdrop so no seam shows. */
-  -webkit-mask-image:
-    linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%),
-    linear-gradient(180deg, transparent 0, #000 9%, #000 91%, transparent 100%);
-  -webkit-mask-composite: source-in;
-  mask-image:
-    linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%),
-    linear-gradient(180deg, transparent 0, #000 9%, #000 91%, transparent 100%);
-  mask-composite: intersect;
-}
-
-/* Tall screens: the 16:9 film would be a thin strip, so it is enlarged
-   (cropping the outer rings, never the centred logo) and feathered at the
-   top and bottom instead. */
-@media (max-aspect-ratio: 1/1) {
-  .splashVideo {
-    width: 170%;
-    max-width: none;
-    height: auto;
-    aspect-ratio: 16 / 9;
-    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 22%, #000 78%, transparent 100%);
-    mask-image: linear-gradient(180deg, transparent 0, #000 22%, #000 78%, transparent 100%);
-  }
 }
 
 .vignette {

@@ -57,19 +57,8 @@
   z-index: 7;
 }
 
-/* Phones: scene actions sit below the art (see .scene-image-frame in
-   globals.css) instead of over its lower half. */
-@media (max-width: 640px) {
-  :global(.scene-image-frame) > .overlayActionList {
-    position: relative;
-    inset: auto;
-    order: 4;
-    max-height: none;
-    padding: 4px 0 0;
-    overflow: visible;
-    background: none;
-  }
-}
+/* Phones keep the same overlay: choices stay on the picture. The caption
+   and thought can still sit under the art. */
 
 /* Replies inside the visual-novel dialogue box. Scoped here so the selector
    uses the generated CSS Module class instead of a literal name. */

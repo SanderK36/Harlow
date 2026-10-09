@@ -1,5 +1,6 @@
 import ActionButton from "@/components/ActionButton/ActionButton";
 import type { GameChoice } from "@/game/choices";
+import { choiceAffordance } from "@/game/statLabels";
 import styles from "./ActionList.module.css";
 
 type ActionListProps = {
@@ -72,6 +73,7 @@ export default function ActionList({
           <ActionButton
             key={"response" in choice ? choice.label : choice.action}
             label={choice.label}
+            detail={"response" in choice ? "" : choiceAffordance(choice)}
             onClick={() => onChoice(choice)}
             disabled={isDisabled(choice)}
             leadsQuest={leadsQuest?.(choice) ?? false}

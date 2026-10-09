@@ -27,7 +27,16 @@ export type StoryEntry =
     }
   | {
       type: "effect";
-      stat: "health" | "stamina" | "fear" | "money" | "courage";
+      stat:
+        | "health"
+        | "stamina"
+        | "fear"
+        | "money"
+        | "courage"
+        | "intelligence"
+        | "charisma"
+        | "athletics"
+        | "strength";
       amount: number;
     };
 
