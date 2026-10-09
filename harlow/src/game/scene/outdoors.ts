@@ -110,8 +110,9 @@ export const rachelElrodConversation: Conversation = {
         ethan("Who'd do this to her?"),
         npc(
           "Rachel",
-          "Someone who knew the house. Tape doesn't go up that fast for strangers.",
+          "I don't know. She never locked her door. Everyone on this street knew that.",
         ),
+        ethan("Nobody here locks anything."),
       ],
     },
     {
@@ -123,16 +124,18 @@ export const rachelElrodConversation: Conversation = {
       ],
     },
     {
-      label: "Hang on. Let me look at the tape.",
+      label: "Give me a minute. I want a closer look.",
       excludesStoryFlag: "tapeSeen",
       response: [
-        ethan("Hang on. Let me look at the tape."),
-        npc("Rachel", "Go on. Look. I'll be right here."),
+        ethan("Give me a minute. I want a closer look."),
+        npc("Rachel", "Careful. They've been chasing people off all morning."),
+        ethan("I'll be quick."),
       ],
       endsConversation: true,
     },
     {
-      label: "I've seen enough. I'm gonna try to talk to Walter.",
+      label:
+        "I'm gonna head down to the station. See if I can get Walter to tell me anything.",
       requiresStoryFlag: "tapeSeen",
       response: [
         ethan(
@@ -163,14 +166,14 @@ export const rachelFrontYardConversation: Conversation = {
       response: [
         ethan("I told him about the hooded man."),
         npc("Rachel", "You saw what?!"),
-        ethan("yeah, I saw a man in a hood. Down by the end of the street."),
+        ethan("Yeah, I saw a man in a hood. Down by the end of the street."),
         npc("Rachel", "Why didn't you tell me? When did you see him?"),
         ethan(
           "Last night. I wasn't sure what I was looking at. He was gone before I could get a good look.",
         ),
         npc("Rachel", "Did he say anything? Did he come near you?"),
         ethan(
-          "No. He just stood there, watching the house, but it sure felt like he was watching me aswell.",
+          "No. He just stood there, watching the house, but it sure felt like he was watching me as well.",
         ),
         npc(
           "Rachel",
@@ -201,9 +204,9 @@ export const rachelFrontYardConversation: Conversation = {
           "They stopped looking after a month. So why's he still keeping it in a drawer?",
         ),
         ethan("I don't know. He shut it before I could take a good look."),
-        npc("Rachel", "Kinda weird, right? Looks like he's hiding something."),
-        ethan("Yeah. But what could that be?"),
-        npc("Rachel", "No idea."),
+        npc("Rachel", "Kinda weird, right? Ten years and he's still sitting on it."),
+        ethan("Like he's hiding something."),
+        npc("Rachel", "Or waiting for something."),
       ],
       storyFlag: ["rachelTrusted", "rachelKnowsFile"],
       completesQuest: "what-walter-said",
@@ -335,7 +338,7 @@ export const elrodHouse: Scene = {
       closeup: {
         image: "./images/misc/flashbackEthanPovForest.png",
         thought:
-          "The police tapes reminds me of that night. Same night Emily disappeared... I remember watching the police looking for her. I remember the rain. I remember the woods. For some reason this feels exactly like that night.",
+          "The tape takes me back. Ten years ago, to the night Emily disappeared. Cops in the woods, flashlights in the trees. This feels exactly like that night.",
         label: "1972 memory",
         disableWeatherFilter: true,
       },

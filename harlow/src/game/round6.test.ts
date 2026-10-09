@@ -61,7 +61,10 @@ describe("round 6 captions", () => {
   it("uses the first clear corner and never a smaller box", () => {
     assert.equal(placeCaption(art, box, []), "top-left");
     const topLeft: Box = { left: 0, top: 0, right: 500, bottom: 200 };
-    assert.equal(placeCaption(art, box, [topLeft]), "top-right");
+    assert.equal(placeCaption(art, box, [topLeft]), "bottom-left");
+    const door: Box = { left: 0, top: 80, right: 160, bottom: 420 };
+    assert.equal(placeCaption(art, { width: 440, height: 140 }, [door]), "bottom-left");
+    assert.equal(placeCaption(art, box, [topLeft, { left: 0, top: 420, right: 1000, bottom: 600 }]), "top-right");
     const full: Box = { left: 0, top: 0, right: 1000, bottom: 600 };
     assert.equal(placeCaption(art, box, [full]), "below");
     const choices: Box = { left: 0, top: 480, right: 1000, bottom: 600 };

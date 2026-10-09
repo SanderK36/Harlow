@@ -382,11 +382,14 @@
   height: 17%;
 }
 
+/* The doorway is the left edge. Its top used to start at 18%, which overlaps
+   a normal top-left caption, and the caption then jumped to the right.
+   The clickable door begins below that caption. */
 .scene-hotspot-leavePoliceStation {
-  top: 18%;
+  top: 26%;
   left: 1%;
   width: 13%;
-  height: 50%;
+  height: 42%;
 }
 
 .scene-hotspot-enterHospital {

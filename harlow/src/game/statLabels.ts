@@ -23,12 +23,15 @@ export function formatStatDelta(stat: string, amount: number) {
 
 /**
  * What a choice button can promise before it is taken.
- * Time is included only when the choice already has a time cost.
+ * Minutes belong on the town map only. Scene buttons keep stat changes.
  */
-export function choiceAffordance(choice: {
-  effects?: ChoiceEffects;
-  timeCost?: number;
-}) {
+export function choiceAffordance(
+  choice: {
+    effects?: ChoiceEffects;
+    timeCost?: number;
+  },
+  options?: { showTime?: boolean },
+) {
   const parts: string[] = [];
   if (choice.effects) {
     for (const [stat, amount] of Object.entries(choice.effects)) {
@@ -37,7 +40,7 @@ export function choiceAffordance(choice: {
       }
     }
   }
-  if (choice.timeCost && choice.timeCost > 0) {
+  if (options?.showTime && choice.timeCost && choice.timeCost > 0) {
     parts.push(`${choice.timeCost} min`);
   }
   return parts.join(" · ");

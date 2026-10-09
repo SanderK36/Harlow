@@ -8,8 +8,8 @@ export type CaptionSpot = "top-left" | "top-right" | "bottom-left" | "bottom-rig
 
 const CORNERS: Array<Exclude<CaptionSpot, "below">> = [
   "top-left",
-  "top-right",
   "bottom-left",
+  "top-right",
   "bottom-right",
 ];
 
@@ -65,8 +65,8 @@ export function cornerBox(
 }
 
 /**
- * First corner where the full-size box sits inside the art and misses every
- * obstacle. The box never shrinks. If none fit, the caption goes below the art.
+ * First clear corner: top-left, then bottom-left, then the right side.
+ * The box never shrinks. If none fit, the caption goes below the art.
  */
 export function placeCaption(
   art: Box,

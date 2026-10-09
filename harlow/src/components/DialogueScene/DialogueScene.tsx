@@ -11,6 +11,7 @@ import Image from "next/image";
 
 import styles from "./DialogueScene.module.css";
 import type { StoryEntry } from "@/game/story";
+import { dialogueFocus } from "@/game/dialogueFocus";
 import { getPortrait } from "@/game/portraits";
 import StoryLog from "@/components/StoryLog/StoryLog";
 import { prefersReducedMotion, revealDelay, useReducedMotion } from "./typewriter";
@@ -30,8 +31,10 @@ type DialogueSceneProps = {
   /** Set while a closing reply plays: called once its last line has been
    *  read and the player clicks on (or right after Ethan's own last line). */
   onFinish?: () => void;
-  /** The latest line is fully on screen and nothing is queued after it. */
-  onSettled?: () => void;
+  /** The latest line is fully on screen and nothing is queued after it.
+   *  Receives how many lines are in the log, so a close-up armed for a later
+   *  reply cannot open on an earlier settled beat. */
+  onSettled?: (lineCount: number) => void;
 };
 
 // Ethan's own (already chosen) line steps aside on its own for the NPC reply.
@@ -61,6 +64,10 @@ function toDialogueLines(entries: StoryEntry[]): DialogueLine[] {
 
 function isEthan(speaker: string | null) {
   return speaker?.toLowerCase() === "ethan";
+}
+
+function isThought(speaker: string | null) {
+  return speaker === "Thought";
 }
 
 function isInteractiveTarget(target: EventTarget | null) {
@@ -127,14 +134,23 @@ export default function DialogueScene({
   }
   const shownChoices = choicesReady ? choices : heldChoices;
   const speakerIsEthan = isEthan(line?.speaker ?? null);
+  const focus = dialogueFocus(line?.speaker ?? null);
   const canFinish = active && !!onFinish && lineComplete && !hasQueuedLines;
   const beatSettled = active && lineComplete && !hasQueuedLines;
 
+  // Keep the latest callback without re-running the settle effect. That
+  // effect used to depend on the callback, and a new function on every
+  // parent render re-fired it while a line was already settled, which opened
+  // Walter's file in the middle of the talk.
+  const onSettledRef = useRef(onSettled);
+  useEffect(() => {
+    onSettledRef.current = onSettled;
+  }, [onSettled]);
   useEffect(() => {
     if (!beatSettled) return;
-    onSettled?.();
-  }, [beatSettled, lineIndex, onSettled]);
-  const partner = lines.find((entry) => entry.speaker && !isEthan(entry.speaker))?.speaker ?? null;
+    onSettledRef.current?.(lines.length);
+  }, [beatSettled, lineIndex, lines.length]);
+  const partner = lines.find((entry) => entry.speaker && !isEthan(entry.speaker) && !isThought(entry.speaker))?.speaker ?? null;
 
   // Typewriter: reveal one character per tick.
   useEffect(() => {
@@ -268,7 +284,11 @@ export default function DialogueScene({
         {partner && (
           <div
             className={`${styles.portrait} ${styles.partnerPortrait} ${
-              speakerIsEthan || !line.speaker ? styles.portraitIdle : styles.portraitSpeaking
+              focus === "thought"
+                ? styles.portraitThought
+                : focus === "partner"
+                  ? styles.portraitSpeaking
+                  : styles.portraitIdle
             }`}
           >
             <Image
@@ -282,7 +302,11 @@ export default function DialogueScene({
         )}
         <div
           className={`${styles.portrait} ${styles.ethanPortrait} ${
-            speakerIsEthan ? styles.portraitSpeaking : styles.portraitIdle
+            focus === "thought"
+              ? styles.portraitThought
+              : focus === "ethan"
+                ? styles.portraitSpeaking
+                : styles.portraitIdle
           }`}
         >
           <Image
@@ -298,15 +322,17 @@ export default function DialogueScene({
       <div
         ref={boxRef}
         className={`${styles.box} ${speakerIsEthan ? styles.boxEthan : ""} ${
-          line.speaker ? "" : styles.boxNarration
+          line.speaker && focus !== "thought" ? "" : styles.boxNarration
         }`}
       >
         {line.speaker && (
           <div
             key={`${lineIndex}-${line.speaker}`}
-            className={`${styles.namePlate} ${speakerIsEthan ? styles.namePlateEthan : ""}`}
+            className={`${styles.namePlate} ${speakerIsEthan ? styles.namePlateEthan : ""} ${
+              focus === "thought" ? styles.namePlateThought : ""
+            }`}
           >
-            {line.speaker}
+            {focus === "thought" ? "Ethan · Inner thought" : line.speaker}
           </div>
         )}
 
@@ -337,7 +363,7 @@ export default function DialogueScene({
         >
           <span
             key={lineIndex}
-            className={`${styles.line} ${line.speaker ? "" : styles.lineNarration}`}
+            className={`${styles.line} ${line.speaker && focus !== "thought" ? "" : styles.lineNarration}`}
             aria-hidden="true"
           >
             {line.text.slice(0, shown)}
@@ -354,7 +380,7 @@ export default function DialogueScene({
 
         {/* Screen readers get each finished line once, not every typed character. */}
         <p className={styles.srOnly} aria-live="polite">
-          {`${line.speaker ?? "Narration"}: ${line.text}`}
+          {`${focus === "thought" ? "Ethan, inner thought" : line.speaker ?? "Narration"}: ${line.text}`}
         </p>
 
         <div

@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { walterConversation } from "./scenes.ts";
-import { busStop, diner, elrodHouse } from "./scenes.ts";
+import { busStop, diner, elrodHouse, rachelElrodConversation, rachelFrontYardConversation } from "./scenes.ts";
 import { conversationChoiceVisible } from "./conversationChoices.ts";
+import { dialogueLineCount, shouldRevealArmedCloseup } from "./conversationCloseup.ts";
+import { dialogueFocus } from "./dialogueFocus.ts";
 import { questObjective } from "./quests.ts";
 import { isRainPlate, sceneWeatherPlate } from "./scenePlate.ts";
 
@@ -90,6 +92,97 @@ describe("Walter's first talk", () => {
     assert.equal(labels.includes(emily), false);
     assert.equal(labels.includes(forget), false);
     assert.deepEqual(labels, ["...Fine"]);
+  });
+});
+
+describe("Walter's file close-up", () => {
+  const hood = walterConversation.choices.find((choice) => choice.label === hoodLabel);
+  const openingLines = dialogueLineCount(walterConversation.opening);
+
+  it("arms the drawer only on the line that sets the flag and the quests", () => {
+    assert.ok(hood?.closeup);
+    assert.deepEqual(hood.closeup.setsFlags, ["fileDrawerSeen"]);
+    assert.equal(hood.completesQuest, "down-to-the-station");
+    assert.equal(hood.startsQuest, "what-walter-said");
+    assert.match(hood.closeup.image, /filingCabinetOpen/);
+    const others = walterConversation.choices.filter((choice) => choice !== hood);
+    assert.ok(others.length > 0);
+    assert.equal(others.every((choice) => choice.closeup === undefined), true);
+  });
+
+  it("stays hidden on earlier beats and opens once that reply has settled", () => {
+    assert.ok(hood);
+    const armedAt = openingLines + dialogueLineCount(hood.response);
+    assert.ok(armedAt > openingLines);
+    assert.equal(shouldRevealArmedCloseup(null, armedAt), false);
+    assert.equal(shouldRevealArmedCloseup({ armedAt }, openingLines), false);
+    assert.equal(shouldRevealArmedCloseup({ armedAt }, armedAt - 1), false);
+    assert.equal(shouldRevealArmedCloseup({ armedAt }, armedAt), true);
+  });
+});
+
+describe("Rachel at the Elrod house", () => {
+  it("uses the approved tape lines and leaves the flags where they were", () => {
+    const who = rachelElrodConversation.choices.find((choice) => choice.label === "Who'd do this to her?");
+    assert.deepEqual(
+      who?.response.map((entry) => entry.type === "conversation" ? entry.text : entry.type),
+      [
+        "Who'd do this to her?",
+        "I don't know. She never locked her door. Everyone on this street knew that.",
+        "Nobody here locks anything.",
+      ],
+    );
+
+    const tape = rachelElrodConversation.choices.find((choice) => choice.excludesStoryFlag === "tapeSeen");
+    assert.equal(tape?.label, "Give me a minute. I want a closer look.");
+    assert.equal(tape?.endsConversation, true);
+    assert.equal(tape?.storyFlag, undefined);
+    assert.deepEqual(
+      tape?.response.map((entry) => entry.type === "conversation" ? entry.text : ""),
+      [
+        "Give me a minute. I want a closer look.",
+        "Careful. They've been chasing people off all morning.",
+        "I'll be quick.",
+      ],
+    );
+
+    const stationLine =
+      "I'm gonna head down to the station. See if I can get Walter to tell me anything.";
+    const walter = rachelElrodConversation.choices.find((choice) => choice.storyFlag === "rachelMet");
+    assert.equal(walter?.label, stationLine);
+    assert.equal(walter?.requiresStoryFlag, "tapeSeen");
+    assert.equal(walter?.completesQuest, "the-tape");
+    assert.equal(walter?.startsQuest, "down-to-the-station");
+    const spoken = walter?.response.find((entry) => entry.type === "conversation");
+    assert.equal(spoken?.type === "conversation" ? spoken.text : "", stationLine);
+    const goodbye = walter?.response.find((entry) => entry.type === "conversation" && entry.text.startsWith("Sure"));
+    assert.equal(goodbye?.type === "conversation" ? goodbye.text : "", "Sure.");
+
+    const memory = elrodHouse.choices.find((choice) => choice.action === "lookAtElrodTape");
+    assert.equal(
+      memory?.closeup?.thought,
+      "The tape takes me back. Ten years ago, to the night Emily disappeared. Cops in the woods, flashlights in the trees. This feels exactly like that night.",
+    );
+    assert.deepEqual(memory?.setsFlags, ["tapeSeen"]);
+  });
+
+  it("capitalizes the hooded-man lines", () => {
+    const hood = rachelFrontYardConversation.choices.find((choice) => choice.storyFlag && (
+      Array.isArray(choice.storyFlag) ? choice.storyFlag.includes("rachelKnowsHood") : choice.storyFlag === "rachelKnowsHood"
+    ));
+    const lines = hood?.response.flatMap((entry) => entry.type === "conversation" ? [entry.text] : []);
+    assert.equal(lines?.[2], "Yeah, I saw a man in a hood. Down by the end of the street.");
+    assert.match(lines?.join(" ") ?? "", /as well/);
+    assert.equal((lines?.join(" ") ?? "").includes("aswell"), false);
+  });
+});
+
+describe("conversation portraits", () => {
+  it("greys both sides for a thought and lights only the speaker otherwise", () => {
+    assert.equal(dialogueFocus("Thought"), "thought");
+    assert.equal(dialogueFocus("Ethan"), "ethan");
+    assert.equal(dialogueFocus("Rachel"), "partner");
+    assert.equal(dialogueFocus(null), "quiet");
   });
 });
 
