@@ -100,42 +100,70 @@ export const walterConversation: Conversation = {
 };
 
 export const margaretConversation: Conversation = {
-  opening: [npc("Margaret", "Sit anywhere you like, hon.")],
+  opening: [
+    npc(
+      "Margaret",
+      "Ethan, there you are. Sit wherever you like, honey. It's quiet enough that I can keep an eye on you.",
+    ),
+  ],
   choices: [
     {
-      label: "Mom's coffee. On her tab.",
+      label: "Mom sent me for coffee. She said to put it on her tab.",
       requiresStoryFlag: "coffeeErrandHeard",
       excludesItem: "Coffee",
       excludesStoryFlag: "coffeeDelivered",
       response: [
-        ethan("Mom's coffee. On her tab."),
-        npc("Margaret", "Coming up. Tell Linda I said hey."),
+        ethan("Mom sent me for coffee. She said to put it on her tab."),
+        npc(
+          "Margaret",
+          "Of course she did. Your mother has a talent for remembering coffee only after the last drop is gone.",
+        ),
+        ethan("She said she'd settle up next time she comes in."),
+        npc("Margaret", "I know where to find her. Give me a minute and I'll have it wrapped up."),
       ],
       givesItem: "Coffee",
       questStep: "coffee",
     },
     {
-      label: "Thanks. How's business today?",
+      label: "Thanks. It looks quiet today.",
       response: [
-        ethan("Thanks. How's business today?"),
-        npc("Margaret", "Slow. Coffee goes cold before anybody orders it."),
-      ],
-    },
-    {
-      label: "People talking about Mrs. Elrod?",
-      response: [
-        ethan("People talking about Mrs. Elrod?"),
-        npc("Margaret", "People talk. Not much of it I'd repeat."),
-      ],
-    },
-    {
-      label: "That poster on the board. Emily.",
-      requiresStoryFlag: "posterFound",
-      response: [
-        ethan("That poster on the board. Emily."),
+        ethan("Thanks. It looks quiet today."),
         npc(
           "Margaret",
-          "I know, hon. Nobody ever had the heart to take it down.",
+          "Quiet enough to hear the refrigerator complain. Most folks are staying home with this weather.",
+        ),
+        ethan("Probably not the worst day for that."),
+        npc("Margaret", "Maybe not. But a diner feels wrong when nobody's in it."),
+      ],
+    },
+    {
+      label: "Have people been talking about Mrs. Elrod?",
+      response: [
+        ethan("Have people been talking about Mrs. Elrod?"),
+        npc(
+          "Margaret",
+          "They have. Half the town is whispering, and the other half is pretending it hasn't heard anything.",
+        ),
+        ethan("Did you hear something useful?"),
+        npc(
+          "Margaret",
+          "Nothing I'd call useful. Just frightened people filling in the blanks with whatever scares them most.",
+        ),
+      ],
+    },
+    {
+      label: "That poster on the board. Emily Parker.",
+      requiresStoryFlag: "posterFound",
+      response: [
+        ethan("That poster on the board. Emily Parker. It's been there all this time?"),
+        npc(
+          "Margaret",
+          "I know, honey. Nobody ever had the heart to take it down, and after a while taking it down felt worse.",
+        ),
+        ethan("Did you know her?"),
+        npc(
+          "Margaret",
+          "Only enough to remember her coming in with her friends. She was just a kid. That's what stays with you.",
         ),
       ],
     },
@@ -143,7 +171,7 @@ export const margaretConversation: Conversation = {
       label: "Can't stay. Catch you later.",
       response: [
         ethan("Can't stay. Catch you later."),
-        npc("Margaret", "You take care now."),
+        npc("Margaret", "Take care, Ethan. And tell Linda I'll put her coffee aside if she comes by."),
       ],
       endsConversation: true,
     },
@@ -712,11 +740,9 @@ export const dinerInside: Scene = {
   story: [
     narration("You step into the diner. Coffee and fried food."),
     thought("Margaret's working the floor.", { from: 420, until: 900 }),
-    thought("Dead in here, this hour."),
+    thought("Dead in here. Margaret must be off.", { from: 900 }),
   ],
   location: "Diner",
-  /** The bulletin board fills the top-left. Keep the caption off that hotspot. */
-  captionPosition: "bottom",
   image: {
     day: "./images/locations/diner/dinerInsideDay.png",
     night: "./images/locations/diner/dinerInsideNight.png",

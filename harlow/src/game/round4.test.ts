@@ -130,7 +130,17 @@ describe("diner bulletin choice", () => {
     const board = dinerInside.choices.find((choice) => choice.action === "lookAtDinerBulletin");
     assert.equal(board?.label, "Look at the bulletin board");
     assert.equal(board?.excludesStoryFlag, "posterFound");
-    assert.equal(dinerInside.captionPosition, "bottom");
+    assert.equal(dinerInside.story.filter((entry) => entry.type === "thought").length, 2);
+    assert.equal(
+      dinerInside.story.find(
+        (entry) => entry.type === "thought" && entry.text.startsWith("Dead"),
+      )?.type === "thought"
+        ? dinerInside.story.find(
+            (entry) => entry.type === "thought" && entry.text.startsWith("Dead"),
+          )?.condition?.from
+        : undefined,
+      900,
+    );
     assert.ok(board?.hotspots?.length);
   });
 });

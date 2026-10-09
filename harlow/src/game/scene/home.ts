@@ -285,9 +285,16 @@ export const momConversation: Conversation = {
       requiresStoryFlag: "posterFound",
       excludesStoryFlag: "posterShownToMom",
       response: [
-        ethan("I found Emily's poster at the diner."),
-        npc("Linda", "Put that away."),
-        ethan("Okay."),
+        ethan("I found Emily's poster at the diner. It's still hanging there after all these years."),
+        npc(
+          "Linda",
+          "Emily Parker... I haven't heard her name in a long time. I don't want to look at that right now, honey.",
+        ),
+        ethan("You knew her?"),
+        npc(
+          "Linda",
+          "Not well. But she was a kid from this town, and nobody ever got to bring her home.",
+        ),
       ],
       storyFlag: ["posterShownToMom", "coffeeDelivered"],
       completesQuest: "faded-poster",
@@ -300,9 +307,16 @@ export const momConversation: Conversation = {
       requiresStoryFlag: ["posterFound", "coffeeDelivered"],
       excludesStoryFlag: "posterShownToMom",
       response: [
-        ethan("I found Emily's poster at the diner."),
-        npc("Linda", "Put that away."),
-        ethan("Okay."),
+        ethan("I found Emily's poster at the diner. It's still hanging there after all these years."),
+        npc(
+          "Linda",
+          "Emily Parker... I haven't heard her name in a long time. I don't want to look at that right now, honey.",
+        ),
+        ethan("You knew her?"),
+        npc(
+          "Linda",
+          "Not well. But she was a kid from this town, and nobody ever got to bring her home.",
+        ),
       ],
       storyFlag: "posterShownToMom",
       completesQuest: "faded-poster",
@@ -314,10 +328,13 @@ export const momConversation: Conversation = {
       requiresStoryFlag: ["posterFound", "coffeeErrandHeard"],
       excludesStoryFlag: ["posterShownToMom", "coffeeDelivered"],
       response: [
-        ethan("I found Emily's poster at the diner."),
+        ethan("I found Emily's poster at the diner. It's still hanging there after all these years."),
         npc("Linda", "...Did you get the coffee?"),
-        ethan("Not yet. I'll get it."),
-        npc("Linda", "Alright, honey. Don't forget."),
+        ethan("Not yet. I got distracted when I saw it. Emily was only seventeen, Mom."),
+        npc(
+          "Linda",
+          "I know, honey. It's awful. Just don't let the poster make you forget why you went out.",
+        ),
       ],
       storyFlag: "posterShownToMom",
       completesQuest: "faded-poster",
@@ -329,9 +346,16 @@ export const momConversation: Conversation = {
       requiresStoryFlag: "posterFound",
       excludesStoryFlag: ["posterShownToMom", "coffeeErrandHeard"],
       response: [
-        ethan("I found Emily's poster at the diner."),
-        npc("Linda", "Put that away."),
-        ethan("Okay."),
+        ethan("I found Emily's poster at the diner. It's still hanging there after all these years."),
+        npc(
+          "Linda",
+          "Emily Parker... I haven't heard her name in a long time. I don't want to look at that right now, honey.",
+        ),
+        ethan("I thought you might remember her."),
+        npc(
+          "Linda",
+          "I remember everyone asking what happened. Then people stopped asking, but she never came home.",
+        ),
       ],
       storyFlag: "posterShownToMom",
       completesQuest: "faded-poster",

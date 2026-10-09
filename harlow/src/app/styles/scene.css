@@ -486,6 +486,18 @@
   z-index: 8;
 }
 
+.scene-image-frame-diner-inside > .opening-thought {
+  top: clamp(12px, 2.4vw, 28px);
+  right: auto;
+  bottom: auto;
+  left: clamp(12px, 2.4vw, 28px);
+  width: min(440px, calc(100% - 32px));
+}
+
+.scene-image-frame.scene-image-frame-diner-inside[data-thought="below"] > .opening-thought {
+  position: absolute;
+}
+
 /* The tired line sits under the choice heading if they share the bottom edge.
    Lift the choices and leave the thought in the strip beneath them. */
 @media (min-width: 641px) {
