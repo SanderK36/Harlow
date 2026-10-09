@@ -69,10 +69,10 @@
 .title {
   margin: 0;
   color: #24150e;
-  font-family: var(--font-display);
+  font-family: var(--font-typewriter);
   font-size: clamp(28px, 4vw, 40px);
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  font-weight: 400;
+  letter-spacing: 0.12em;
   line-height: 0.95;
   text-transform: uppercase;
 }
@@ -80,9 +80,9 @@
 .year {
   margin: 2px 0 0;
   color: #4a3424;
-  font-family: var(--font-body);
-  font-size: 18px;
-  font-style: italic;
+  font-family: var(--font-typewriter);
+  font-size: 16px;
+  letter-spacing: 0.08em;
 }
 
 .close {
@@ -131,9 +131,8 @@
   width: 36px;
   height: 36px;
   color: #24180f;
-  font-family: var(--font-body);
+  font-family: var(--font-typewriter);
   font-size: 13px;
-  font-style: italic;
   pointer-events: none;
   border: 1px solid rgba(36, 24, 15, 0.55);
   border-radius: 50%;
@@ -338,9 +337,9 @@
   min-height: 36px;
   padding: 6px 10px;
   color: #f4e6cf;
-  font-family: var(--font-ui);
+  font-family: var(--font-typewriter);
   font-size: 13px;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   background: #24180f;
   border: 0;
   border-radius: 2px;
@@ -416,10 +415,10 @@
 }
 
 .rowTime {
-  font-family: var(--font-ui);
+  font-family: var(--font-typewriter);
   font-size: 13px;
   font-style: normal;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
 
 .rowButton .lock {

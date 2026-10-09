@@ -6,6 +6,18 @@ type StatsWindowProps = {
   onClose: () => void;
 };
 
+const ROWS: Array<{
+  key: "courage" | "intelligence" | "charisma" | "athletics" | "strength";
+  label: string;
+  note: string;
+}> = [
+  { key: "courage", label: "Courage", note: "How steadily you face what you find." },
+  { key: "intelligence", label: "Intelligence", note: "What you notice, and what you can put together." },
+  { key: "charisma", label: "Charisma", note: "Whether people open up or shut you out." },
+  { key: "athletics", label: "Athletics", note: "How well you move when you have to." },
+  { key: "strength", label: "Strength", note: "What you can force, lift, or hold." },
+];
+
 export default function StatsWindow({ player, onClose }: StatsWindowProps) {
   return (
     <div className={styles.backdrop}>
@@ -15,17 +27,26 @@ export default function StatsWindow({ player, onClose }: StatsWindowProps) {
         aria-modal="true"
         aria-labelledby="stats-title"
       >
-        <h2 id="stats-title">Stats</h2>
-        <div className={styles.list}>
-          <p>Courage <span className={styles.statsNumber}>{player.courage}</span></p>
-          <p>Intelligence <span className={styles.statsNumber}>{player.intelligence}</span></p>
-          <p>Charisma <span className={styles.statsNumber}>{player.charisma}</span></p>
-          <p>Athletics <span className={styles.statsNumber}>{player.athletics}</span></p>
-          <p>Strength <span className={styles.statsNumber}>{player.strength}</span></p>
+        <header className={styles.header}>
+          <p className={styles.caseLabel}>Index card</p>
+          <h2 id="stats-title">Stats</h2>
+        </header>
+        <ul className={styles.list}>
+          {ROWS.map((row) => (
+            <li key={row.key}>
+              <p className={styles.line}>
+                <span>{row.label}</span>
+                <span className={styles.statsNumber}>{player[row.key]}</span>
+              </p>
+              <p className={styles.note}>{row.note}</p>
+            </li>
+          ))}
+        </ul>
+        <div className={styles.closeRow}>
+          <button className={styles.closeButton} type="button" onClick={onClose}>
+            Close
+          </button>
         </div>
-        <button className={styles.closeButton} type="button" onClick={onClose}>
-          Close
-        </button>
       </div>
     </div>
   );

@@ -41,6 +41,7 @@ import CaptionPlacer from "@/components/CaptionPlacer/CaptionPlacer";
 import MainMenu from "@/components/MainMenu/MainMenu";
 import PlaytestControls from "@/components/PlaytestControls/PlaytestControls";
 import type { Choice } from "@/game/choices";
+import { choiceAffordance } from "@/game/statLabels";
 import {
   OPENING_THOUGHT_BASE_MS,
   OPENING_THOUGHT_FIRST_EXTRA_MS,
@@ -91,8 +92,7 @@ export default function Home() {
   const showOpeningThought = openingThoughtIndex !== null;
   const [showVinylThought, setShowVinylThought] = useState(false);
   const [showLateNightThought, setShowLateNightThought] = useState(false);
-  const [statToast, setStatToast] = useState<{ stat: string; amount: number } | null>(null);
-  const [statToastFading, setStatToastFading] = useState(false);
+  const [statNotices, setStatNotices] = useState<{ stat: string; amount: number }[]>([]);
   const chapterEndButtonRef = useRef<HTMLButtonElement>(null);
   const [tvNewsLine, setTvNewsLine] = useState<string | null>(null);
   const openingThoughtTimer = useRef<number | null>(null);
@@ -363,31 +363,18 @@ export default function Home() {
   }, [isLateNight]);
 
   useEffect(() => {
-    const effect = currentEffects.find((entry) => entry.type === "effect");
-    if (!effect || effect.type !== "effect") {
-      const clearToast = window.setTimeout(() => {
-        setStatToast(null);
-        setStatToastFading(false);
-      }, 0);
-      return () => window.clearTimeout(clearToast);
-    }
+    const effects = currentEffects.flatMap((entry) =>
+      entry.type === "effect" && entry.amount !== 0
+        ? [{ stat: entry.stat, amount: entry.amount }]
+        : [],
+    );
+    if (effects.length === 0) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const showToast = window.setTimeout(() => {
-      setStatToastFading(false);
-      setStatToast({ stat: effect.stat, amount: effect.amount });
-    }, 0);
-    const fadeToast = window.setTimeout(() => {
-      if (reduced) setStatToast(null);
-      else setStatToastFading(true);
-    }, 3000);
-    const removeToast = window.setTimeout(() => {
-      setStatToast(null);
-      setStatToastFading(false);
-    }, reduced ? 3000 : 3300);
+    const show = window.setTimeout(() => setStatNotices(effects), 0);
+    const clear = window.setTimeout(() => setStatNotices([]), reduced ? 1600 : 1400);
     return () => {
-      window.clearTimeout(showToast);
-      window.clearTimeout(fadeToast);
-      window.clearTimeout(removeToast);
+      window.clearTimeout(show);
+      window.clearTimeout(clear);
     };
   }, [currentEffects, currentScene.id]);
 
@@ -592,6 +579,7 @@ export default function Home() {
         <GameStatus
           player={playerState}
           gameState={gameState}
+          notices={statNotices}
           onStatsClick={() => setShowStats(true)}
           onInventoryClick={(opener) => {
             rememberPanel("inventory", opener);
@@ -672,7 +660,10 @@ export default function Home() {
             </div>
             {!(showOpeningThought || showVinylThought || tvNewsLine !== null) &&
               visual.hotspots.flatMap((sceneHotspot) =>
-                (sceneHotspot.hotspots ?? [undefined]).map((region, index) => (
+                (sceneHotspot.hotspots ?? [undefined]).map((region, index) => {
+                  const hint = choiceAffordance(sceneHotspot);
+                  const hotspotName = hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label;
+                  return (
                   <SceneHotspot
                     key={`${sceneHotspot.action}-${index}`}
                     type="button"
@@ -689,7 +680,7 @@ export default function Home() {
                         : undefined
                     }
                     aria-label={
-                      `${hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label}${
+                      `${hotspotName}${hint ? `. ${hint}` : ""}${
                         sceneHotspot.leadQuest
                         && !quests.some((quest) => quest.id === sceneHotspot.leadQuest)
                           ? ". Starts a new lead"
@@ -700,9 +691,7 @@ export default function Home() {
                       Boolean(sceneHotspot.leadQuest)
                       && !quests.some((quest) => quest.id === sceneHotspot.leadQuest)
                     }
-                    label={
-                      hotspotLabels[sceneHotspot.action] ?? sceneHotspot.label
-                    }
+                    label={`${hotspotName}${hint ? ` · ${hint}` : ""}`}
                     onClick={() => {
                       if (sceneHotspot.action === "watchTv") {
                         showTvNews();
@@ -715,7 +704,8 @@ export default function Home() {
                       handleChoice(sceneHotspot);
                     }}
                   />
-                )),
+                  );
+                }),
               )}
           </div>
           <div className="scene-info-stack">
@@ -959,16 +949,6 @@ export default function Home() {
             }
             rainNight={isNightTime(gameState.time)}
           />
-        )}
-
-        {statToast && (
-          <div
-            className={`stat-toast${statToastFading ? " stat-toast-fading" : ""}`}
-            role="status"
-          >
-            {statToast.amount >= 0 ? "+" : ""}
-            {statToast.amount} {statToast.stat.toUpperCase()}
-          </div>
         )}
 
         {showChapterEnd && (

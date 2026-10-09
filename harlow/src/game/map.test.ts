@@ -14,6 +14,7 @@ import {
   type MapContext,
 } from "./map.ts";
 import { inkRevealLocationIds } from "./mapInkReveal.ts";
+import { choiceAffordance } from "./statLabels.ts";
 import type { QuestProgress, StoryFlag } from "./quests.ts";
 import { travelDestinationIds } from "./travelDestinations.ts";
 
@@ -307,6 +308,8 @@ describe("map pins", () => {
     assert.equal(bus.timeCost, 10);
     assert.equal(bus.effects?.money, -7);
     assert.equal(bus.requirements?.money, 7);
+    assert.equal(choiceAffordance(bus), "-$7 · 10 min");
+    assert.equal(choiceAffordance(walk), `${walk.timeCost} min`);
     assert.equal(bus.nextScene, "front-yard");
     assert.equal(
       lateNightChoiceAllowed(bus, { time: 200, sceneId: "diner" }),

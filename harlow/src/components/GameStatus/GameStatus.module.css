@@ -31,6 +31,7 @@
 }
 
 .statsButton {
+  position: relative;
   min-height: 44px;
   padding: 8px 6px;
   color: var(--muted);
@@ -81,6 +82,7 @@
 }
 
 .statWithMeter {
+  position: relative;
   display: grid;
   gap: 5px;
 }
@@ -97,7 +99,7 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  transition: width 280ms ease;
+  transition: width 600ms ease;
 }
 
 .healthMeter span {
@@ -113,7 +115,55 @@
 }
 
 .money {
+  position: relative;
   color: #b7dcb8;
+}
+
+.delta {
+  position: absolute;
+  left: 0;
+  z-index: 3;
+  color: #f6ebe6;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px #000;
+  pointer-events: none;
+  animation: floatUp 1100ms ease forwards;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes floatUp {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  18% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
 }
 
 .health {
@@ -329,5 +379,17 @@
 
   .timeInfo {
     font-size: 26px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .statMeter span {
+    transition: none;
+  }
+
+  .delta {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 }

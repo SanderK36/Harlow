@@ -1,33 +1,48 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Cinzel, Crimson_Pro, Oswald } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-// Display face: Trajan-style inscriptional capitals, the classic horror
-// poster look, for the HARLOW wordmark and window titles.
-const displayFont = Cinzel({
+// Latin subsets only. Each family is a variable font, so one file covers the
+// weights the UI actually uses. They are committed under src/app/fonts so the
+// build never asks fonts.googleapis.com (Turbopack rejects next/font/google
+// when a family is requested at more than one weight).
+const displayFont = localFont({
+  src: "./fonts/cinzel-latin.woff2",
   variable: "--font-cinzel",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: "500 700",
   display: "swap",
 });
 
-// Body face: a bookish serif with a generous reading rhythm for narration,
-// inner thoughts, and dialogue.
-const bodyFont = Crimson_Pro({
+const bodyFont = localFont({
+  src: [
+    {
+      path: "./fonts/crimson-roman-latin.woff2",
+      weight: "400 600",
+      style: "normal",
+    },
+    {
+      path: "./fonts/crimson-italic-latin.woff2",
+      weight: "400 600",
+      style: "italic",
+    },
+  ],
   variable: "--font-crimson",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
   display: "swap",
 });
 
-// UI face: a condensed grotesque for labels, stats, and controls, echoing
-// 1980s VHS sleeves and paperback spines.
-const uiFont = Oswald({
+const uiFont = localFont({
+  src: "./fonts/oswald-latin.woff2",
   variable: "--font-oswald",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: "300 700",
+  display: "swap",
+});
+
+// Typewriter face for the stats index card. Static regular only.
+const typewriterFont = localFont({
+  src: "./fonts/specialelite-latin.woff2",
+  variable: "--font-special-elite",
+  weight: "400",
   display: "swap",
 });
 
@@ -52,7 +67,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      className={`${displayFont.variable} ${bodyFont.variable} ${uiFont.variable}`}
+      className={`${displayFont.variable} ${bodyFont.variable} ${uiFont.variable} ${typewriterFont.variable}`}
     >
       <body>{children}</body>
     </html>

@@ -11,6 +11,7 @@ import {
   markerPosition,
   type MapPinView,
 } from "@/game/map";
+import { choiceAffordance } from "@/game/statLabels";
 import HarlowMapArt from "./HarlowMapArt";
 import styles from "./TownMap.module.css";
 
@@ -159,6 +160,13 @@ export default function TownMap({
     return money >= (choice?.requirements?.money ?? 7);
   }
 
+  function tripLabel(pin: MapPinView, mode: "walk" | "bus") {
+    const choice = mapTripChoice(originId, pin.id, mode, availableIds);
+    const hint = choice ? choiceAffordance(choice) : "";
+    const name = mode === "walk" ? "Walk" : "Bus";
+    return hint ? `${name} · ${hint}` : name;
+  }
+
   function onDialogKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.key !== "Tab") return;
     const root = dialogRef.current;
@@ -251,7 +259,7 @@ export default function TownMap({
                         <div className={styles.tipActions}>
                           {coarse && (
                             <button type="button" onClick={() => trip(pin, "walk")}>
-                              Walk
+                              {tripLabel(pin, "walk")}
                             </button>
                           )}
                           <button
@@ -259,7 +267,7 @@ export default function TownMap({
                             disabled={!canAffordBus(pin)}
                             onClick={() => trip(pin, "bus")}
                           >
-                            Bus · $7 · 10 min
+                            {tripLabel(pin, "bus")}
                           </button>
                         </div>
                       )}
@@ -304,14 +312,14 @@ export default function TownMap({
                 {openCard && (
                   <div className={styles.rowActions}>
                     <button type="button" onClick={() => trip(pin, "walk")}>
-                      Walk · {pin.walkMinutes} min
+                      {tripLabel(pin, "walk")}
                     </button>
                     <button
                       type="button"
                       disabled={!canAffordBus(pin)}
                       onClick={() => trip(pin, "bus")}
                     >
-                      Bus · $7 · 10 min
+                      {tripLabel(pin, "bus")}
                     </button>
                   </div>
                 )}
