@@ -146,12 +146,17 @@ describe("Rachel at the Elrod house", () => {
       ],
     );
 
+    const stationLine =
+      "I'm gonna head down to the station. See if I can get Walter to tell me anything.";
     const walter = rachelElrodConversation.choices.find((choice) => choice.storyFlag === "rachelMet");
+    assert.equal(walter?.label, stationLine);
     assert.equal(walter?.requiresStoryFlag, "tapeSeen");
     assert.equal(walter?.completesQuest, "the-tape");
     assert.equal(walter?.startsQuest, "down-to-the-station");
+    const spoken = walter?.response.find((entry) => entry.type === "conversation");
+    assert.equal(spoken?.type === "conversation" ? spoken.text : "", stationLine);
     const goodbye = walter?.response.find((entry) => entry.type === "conversation" && entry.text.startsWith("Sure"));
-    assert.equal(goodbye?.type === "conversation" ? goodbye.text : "", "Sure, Rach.");
+    assert.equal(goodbye?.type === "conversation" ? goodbye.text : "", "Sure.");
 
     const memory = elrodHouse.choices.find((choice) => choice.action === "lookAtElrodTape");
     assert.equal(

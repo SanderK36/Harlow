@@ -1,10 +1,4 @@
-import {
-  type Conversation,
-  narration,
-  thought,
-  npc,
-  ethan,
-} from "../story";
+import { type Conversation, narration, thought, npc, ethan } from "../story";
 import type { Scene } from "./types";
 import { rainArt, RAIN, STORM, WET } from "./weather";
 
@@ -140,12 +134,18 @@ export const rachelElrodConversation: Conversation = {
       endsConversation: true,
     },
     {
-      label: "I've seen enough. I'm gonna try to talk to Walter.",
+      label:
+        "I'm gonna head down to the station. See if I can get Walter to tell me anything.",
       requiresStoryFlag: "tapeSeen",
       response: [
-        ethan("I've seen enough. I'm gonna try to talk to Walter."),
-        npc("Rachel", "If you think you can get him to talk, go for it. Come talk to me after, okay?"),
-        ethan("Sure, Rach."),
+        ethan(
+          "I'm gonna head down to the station. See if I can get Walter to tell me anything.",
+        ),
+        npc(
+          "Rachel",
+          "If you think you can get him to talk, go for it. Come talk to me after, okay?",
+        ),
+        ethan("Sure."),
       ],
       endsConversation: true,
       storyFlag: "rachelMet",
@@ -168,12 +168,24 @@ export const rachelFrontYardConversation: Conversation = {
         npc("Rachel", "You saw what?!"),
         ethan("Yeah, I saw a man in a hood. Down by the end of the street."),
         npc("Rachel", "Why didn't you tell me? When did you see him?"),
-        ethan("Last night. I wasn't sure what I was looking at. He was gone before I could get a good look."),
+        ethan(
+          "Last night. I wasn't sure what I was looking at. He was gone before I could get a good look.",
+        ),
         npc("Rachel", "Did he say anything? Did he come near you?"),
-        ethan("No. He just stood there, watching the house, but it sure felt like he was watching me as well."),
-        npc("Rachel", "And you went to Walter before telling me? Ethan, you should've told me."),
-        ethan("Rachel, I didn't want to worry you. I thought telling Walter first would be better."),
-        npc("Rachel", "I get it. I do. But please tell me next time you see something strange. I don't want to be left in the dark."),
+        ethan(
+          "No. He just stood there, watching the house, but it sure felt like he was watching me as well.",
+        ),
+        npc(
+          "Rachel",
+          "And you went to Walter before telling me? Ethan, you should've told me.",
+        ),
+        ethan(
+          "Rachel, I didn't want to worry you. I thought telling Walter first would be better.",
+        ),
+        npc(
+          "Rachel",
+          "I get it. I do. But please tell me next time you see something strange. I don't want to be left in the dark.",
+        ),
         ethan("I promise, Rach. Next time, I'll tell you first."),
       ],
       storyFlag: ["rachelTrusted", "rachelKnowsHood"],
@@ -191,7 +203,10 @@ export const rachelFrontYardConversation: Conversation = {
           "Rachel",
           "They stopped looking after a month. So why's he still keeping it in a drawer?",
         ),
-        ethan("I don't know. He shut it before I could."),
+        ethan("I don't know. He shut it before I could take a good look."),
+        npc("Rachel", "Kinda weird, right? Looks like he's hiding something."),
+        ethan("Yeah. But what could that be?"),
+        npc("Rachel", "No idea."),
       ],
       storyFlag: ["rachelTrusted", "rachelKnowsFile"],
       completesQuest: "what-walter-said",
@@ -233,7 +248,9 @@ export const rachelFrontYardConversation: Conversation = {
 export const street: Scene = {
   id: "street",
   story: [
-    narration("You head down the block. The houses sit in the cold, dark hush."),
+    narration(
+      "You head down the block. The houses sit in the cold, dark hush.",
+    ),
     thought("The whole street looks waiting."),
     thought("That porch light at the end of the block still feels wrong.", {
       weather: RAIN,
