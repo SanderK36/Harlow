@@ -116,8 +116,9 @@ export const rachelElrodConversation: Conversation = {
         ethan("Who'd do this to her?"),
         npc(
           "Rachel",
-          "Someone who knew the house. Tape doesn't go up that fast for strangers.",
+          "I don't know. She never locked her door. Everyone on this street knew that.",
         ),
+        ethan("Nobody here locks anything."),
       ],
     },
     {
@@ -129,11 +130,12 @@ export const rachelElrodConversation: Conversation = {
       ],
     },
     {
-      label: "Hang on. Let me look at the tape.",
+      label: "Give me a minute. I want a closer look.",
       excludesStoryFlag: "tapeSeen",
       response: [
-        ethan("Hang on. Let me look at the tape."),
-        npc("Rachel", "Go on. Look. I'll be right here."),
+        ethan("Give me a minute. I want a closer look."),
+        npc("Rachel", "Careful. They've been chasing people off all morning."),
+        ethan("I'll be quick."),
       ],
       endsConversation: true,
     },
@@ -143,7 +145,7 @@ export const rachelElrodConversation: Conversation = {
       response: [
         ethan("I've seen enough. I'm gonna try to talk to Walter."),
         npc("Rachel", "If you think you can get him to talk, go for it. Come talk to me after, okay?"),
-        ethan("Sure Rach."),
+        ethan("Sure, Rach."),
       ],
       endsConversation: true,
       storyFlag: "rachelMet",
@@ -164,11 +166,11 @@ export const rachelFrontYardConversation: Conversation = {
       response: [
         ethan("I told him about the hooded man."),
         npc("Rachel", "You saw what?!"),
-        ethan("yeah, I saw a man in a hood. Down by the end of the street."),
+        ethan("Yeah, I saw a man in a hood. Down by the end of the street."),
         npc("Rachel", "Why didn't you tell me? When did you see him?"),
         ethan("Last night. I wasn't sure what I was looking at. He was gone before I could get a good look."),
         npc("Rachel", "Did he say anything? Did he come near you?"),
-        ethan("No. He just stood there, watching the house, but it sure felt like he was watching me aswell."),
+        ethan("No. He just stood there, watching the house, but it sure felt like he was watching me as well."),
         npc("Rachel", "And you went to Walter before telling me? Ethan, you should've told me."),
         ethan("Rachel, I didn't want to worry you. I thought telling Walter first would be better."),
         npc("Rachel", "I get it. I do. But please tell me next time you see something strange. I don't want to be left in the dark."),
@@ -319,7 +321,7 @@ export const elrodHouse: Scene = {
       closeup: {
         image: "./images/misc/flashbackEthanPovForest.png",
         thought:
-          "The police tapes reminds me of that night. Same night Emily disappeared... I remember watching the police looking for her. I remember the rain. I remember the woods. For some reason this feels exactly like that night.",
+          "The tape takes me back. Ten years ago, to the night Emily disappeared. Cops in the woods, flashlights in the trees. This feels exactly like that night.",
         label: "1972 memory",
         disableWeatherFilter: true,
       },

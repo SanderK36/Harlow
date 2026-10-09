@@ -169,7 +169,7 @@ export default function TownMap({
 
   function tripLabel(pin: MapPinView, mode: "walk" | "bus") {
     const choice = mapTripChoice(originId, pin.id, mode, availableIds);
-    const hint = choice ? choiceAffordance(choice) : "";
+    const hint = choice ? choiceAffordance(choice, { showTime: true }) : "";
     const name = mode === "walk" ? "Walk" : "Bus";
     return hint ? `${name} · ${hint}` : name;
   }

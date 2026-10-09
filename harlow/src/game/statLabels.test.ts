@@ -5,6 +5,7 @@ import { choiceAffordance, formatStatDelta } from "./statLabels.ts";
 import { statDeltas, restAfterSleep } from "./effects.ts";
 import player from "./player.ts";
 import { upstairsHallway, upstairsHallwayAtticOpen, kitchen } from "./scene/home.ts";
+import { frontYard } from "./scene/outdoors.ts";
 
 describe("stat notices", () => {
   it("uses the side-panel names", () => {
@@ -15,11 +16,20 @@ describe("stat notices", () => {
     assert.equal(formatStatDelta("courage", 1), "+1 COURAGE");
   });
 
-  it("previews coffee from the choice data", () => {
+  it("previews coffee stats and hides minutes off the map", () => {
     const coffee = kitchen.choices.find((choice) => choice.action === "makeCoffee");
     assert.ok(coffee);
-    assert.equal(choiceAffordance(coffee), "+5 STAM · 10 min");
+    assert.equal(choiceAffordance(coffee), "+5 STAM");
+    assert.equal(choiceAffordance(coffee, { showTime: true }), "+5 STAM · 10 min");
     assert.equal(choiceAffordance({ timeCost: 0 }), "");
+  });
+
+  it("hides the clock on a move between rooms", () => {
+    const yard = frontYard.choices.find((choice) => choice.action === "goBackYard");
+    assert.ok(yard);
+    assert.ok(yard.timeCost > 0);
+    assert.equal(choiceAffordance(yard), "");
+    assert.equal(choiceAffordance(yard, { showTime: true }), `${yard.timeCost} min`);
   });
 
   it("reports the real sleep recovery and skips a stat that did not move", () => {

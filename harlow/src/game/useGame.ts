@@ -13,6 +13,11 @@ import {
   scenes,
 } from "@/game/scenes";
 import { conversationChoiceVisible } from "@/game/conversationChoices";
+import {
+  dialogueLineCount,
+  shouldRevealArmedCloseup,
+  type ArmedConversationCloseup,
+} from "@/game/conversationCloseup";
 import { plateUrl, sceneWeatherPlate } from "@/game/scenePlate";
 import { hillCheckScene, HILL_THOUGHT, shouldNoticeHill } from "@/game/hill";
 import {
@@ -123,6 +128,8 @@ export function useGame() {
   // Conversation state is kept separate from scene narration so dialogue can
   // grow as the player selects responses without changing the base scene.
   const [conversation, setConversation] = useState<StoryEntry[]>([]);
+  const conversationRef = useRef(conversation);
+  conversationRef.current = conversation;
   const [conversationActive, setConversationActive] = useState(false);
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   const [usedConversationChoices, setUsedConversationChoices] = useState<string[]>([]);
@@ -218,6 +225,7 @@ export function useGame() {
     first: CloseupContent;
     next?: CloseupContent;
     flags?: StoryFlag | StoryFlag[];
+    armedAt: number;
   } | null>(null);
   const closeupRef = useRef<CloseupContent | null>(null);
   const chapterEndRef = useRef(false);
@@ -318,10 +326,10 @@ export function useGame() {
     setCloseup(first);
   }
 
-  /** The filing-drawer pair waits until Walter's last line is actually up. */
-  function revealPendingCloseup() {
+  /** The filing-drawer pair waits until the reply that armed it has settled. */
+  function revealPendingCloseup(settledLineCount = 0) {
     const pending = pendingCloseup.current;
-    if (!pending) return;
+    if (!pending || !shouldRevealArmedCloseup(pending, settledLineCount)) return;
     pendingCloseup.current = null;
     enqueueCloseup(pending.first, pending.next);
     if (pending.flags) applyFlags(pending.flags);
@@ -536,6 +544,7 @@ export function useGame() {
     }
 
     conversationActiveRef.current = true;
+    pendingCloseup.current = null;
     setActiveConversation(selectedConversation ?? null);
     setConversationEnding(false);
     setOpenedAsEmployee(asEmployee);
@@ -607,7 +616,11 @@ export function useGame() {
       return;
     }
 
-    setConversation((previous) => [...previous, ...choice.response.slice(0, npcIndex)]);
+    setConversation((previous) => {
+      const next = [...previous, ...choice.response.slice(0, npcIndex)];
+      conversationRef.current = next;
+      return next;
+    });
     setReplyPending(true);
     replyTimer.current = window.setTimeout(() => {
       replyTimer.current = null;
@@ -617,7 +630,29 @@ export function useGame() {
   }
 
   function finishConversationChoice(choice: ConversationChoice) {
-    setConversation((previous) => [...previous, ...choice.response]);
+    // conversationRef, not the state closed over by the click. By the time
+    // Walter's reply is committed, Ethan's lead-in is already in the log.
+    const next = [...conversationRef.current, ...choice.response];
+    setConversation(next);
+    if (choice.closeup) {
+      const armed: ArmedConversationCloseup = { armedAt: dialogueLineCount(next) };
+      pendingCloseup.current = {
+        first: {
+          image: plateUrl(choice.closeup.image),
+          thought: choice.closeup.thought,
+          label: choice.closeup.label,
+        },
+        next: choice.closeup.next
+          ? {
+              image: plateUrl(choice.closeup.next.image),
+              thought: choice.closeup.next.thought,
+              label: choice.closeup.next.label,
+            }
+          : undefined,
+        flags: choice.closeup.setsFlags,
+        armedAt: armed.armedAt,
+      };
+    }
 
     const flags = choice.storyFlag;
     const flagList = !flags ? [] : Array.isArray(flags) ? flags : [flags];
@@ -672,24 +707,6 @@ export function useGame() {
           ? setQuestStep(questsRef.current, "faded-poster", choice.questStep!)
           : questsRef.current,
       );
-    }
-
-    if (choice.closeup) {
-      pendingCloseup.current = {
-        first: {
-          image: plateUrl(choice.closeup.image),
-          thought: choice.closeup.thought,
-          label: choice.closeup.label,
-        },
-        next: choice.closeup.next
-          ? {
-              image: plateUrl(choice.closeup.next.image),
-              thought: choice.closeup.next.thought,
-              label: choice.closeup.next.label,
-            }
-          : undefined,
-        flags: choice.closeup.setsFlags,
-      };
     }
 
     if (choice.endsConversation) {
@@ -1134,6 +1151,7 @@ export function useGame() {
     closeupRef.current = null;
     setCloseup(null);
     closeupQueue.current = [];
+    pendingCloseup.current = null;
     pendingChapterEnd.current = false;
     chapterEndRef.current = false;
     setShowChapterEnd(false);
@@ -1196,6 +1214,7 @@ export function useGame() {
     closeupRef.current = null;
     setCloseup(null);
     closeupQueue.current = [];
+    pendingCloseup.current = null;
     pendingChapterEnd.current = false;
     chapterEndRef.current = false;
     setShowChapterEnd(false);

@@ -308,8 +308,10 @@ describe("map pins", () => {
     assert.equal(bus.timeCost, 10);
     assert.equal(bus.effects?.money, -7);
     assert.equal(bus.requirements?.money, 7);
-    assert.equal(choiceAffordance(bus), "-$7 · 10 min");
-    assert.equal(choiceAffordance(walk), `${walk.timeCost} min`);
+    assert.equal(choiceAffordance(bus, { showTime: true }), "-$7 · 10 min");
+    assert.equal(choiceAffordance(walk, { showTime: true }), `${walk.timeCost} min`);
+    assert.equal(choiceAffordance(bus), "-$7");
+    assert.equal(choiceAffordance(walk), "");
     assert.equal(bus.nextScene, "front-yard");
     assert.equal(
       lateNightChoiceAllowed(bus, { time: 200, sceneId: "diner" }),
