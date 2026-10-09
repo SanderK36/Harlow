@@ -442,7 +442,7 @@
   right: 16px;
   bottom: 16px;
   left: 16px;
-  z-index: 3;
+  z-index: 5;
   width: min(640px, calc(100% - 32px));
   margin-inline: auto;
 }
@@ -503,6 +503,21 @@
   .listWrap {
     display: block;
     background: rgba(228, 207, 170, 0.92);
+  }
+
+  /* The thought sits in the scroll, above the list, so it never covers a row. */
+  .thought {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    z-index: 1;
+    width: auto;
+    margin: 18px 10px 0;
+  }
+
+  .list {
+    padding-bottom: 20px;
   }
 }
 

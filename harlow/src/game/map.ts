@@ -35,7 +35,7 @@ export type MapLabelSide = "top" | "bottom" | "left" | "right";
 export const MAP_PINS = [
   { id: "sanatorium", label: "Sanatorium", x: 14, y: 14, labelSide: "right" },
   { id: "cementary", label: "Cemetery", x: 62, y: 13, labelSide: "right" },
-  { id: "needle-and-groove", label: "Needle & Groove", x: 24, y: 32, labelSide: "top" },
+  { id: "needle-and-groove", label: "Needle & Groove", x: 24, y: 32, labelSide: "bottom" },
   { id: "police-station", label: "Police Station", x: 46, y: 30, labelSide: "left" },
   { id: "hospital", label: "Hospital", x: 84, y: 28, labelSide: "left" },
   { id: "diner", label: "Margaret's Diner", x: 50, y: 48, labelSide: "top" },

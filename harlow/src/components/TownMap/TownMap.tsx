@@ -88,6 +88,7 @@ export default function TownMap({
 }: TownMapProps) {
   const coarse = useCoarsePointer();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const thoughtRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -108,6 +109,12 @@ export default function TownMap({
   useEffect(() => {
     dialogRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    if (!thought) return;
+    if (!window.matchMedia("(max-width: 720px)").matches) return;
+    thoughtRef.current?.scrollIntoView({ block: "nearest" });
+  }, [thought]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -290,6 +297,12 @@ export default function TownMap({
           </div>
         </div>
 
+        {thought && (
+          <div ref={thoughtRef} className={styles.thought}>
+            <ThoughtPanel speaker="Ethan" caption="Inner thought" text={thought} />
+          </div>
+        )}
+
         <div className={styles.listWrap}>
         <p className={styles.listLabel}>By walking time</p>
         <ol className={styles.list} aria-label="Places by walking time">
@@ -329,11 +342,6 @@ export default function TownMap({
         </ol>
         </div>
       </div>
-      {thought && (
-        <div className={styles.thought}>
-          <ThoughtPanel speaker="Ethan" caption="Inner thought" text={thought} />
-        </div>
-      )}
     </div>
   );
 }
