@@ -18,7 +18,7 @@ import DialogueScene from "@/components/DialogueScene/DialogueScene";
 import ThoughtPanel from "@/components/ThoughtPanel/ThoughtPanel";
 import OpeningSequence from "@/components/OpeningSequence/OpeningSequence";
 import TravelOverlay from "@/components/TravelOverlay/TravelOverlay";
-import TravelWindow from "@/components/TravelWindow/TravelWindow";
+import TownMap from "@/components/TownMap/TownMap";
 import InventoryWindow from "@/components/InventoryWindow/InventoryWindow";
 import ShopWindow from "@/components/ShopWindow/ShopWindow";
 import GameMenu from "@/components/GameMenu/GameMenu";
@@ -28,6 +28,7 @@ import QuestWindow from "@/components/QuestWindow/QuestWindow";
 import { useReducedMotion } from "@/components/DialogueScene/typewriter";
 import { isNightTime } from "@/game/utils";
 import { isTiredWindow } from "@/game/lateNight";
+import { isQuestActive } from "@/game/quests";
 import { useGame } from "@/game/useGame";
 import { storyEntryApplies } from "@/game/story";
 import { DINER_BOARD_HINT, isExteriorScene, RAIN_WEATHER, sanatoriumNarration } from "@/game/scenes";
@@ -126,9 +127,7 @@ export default function Home() {
     travelingTo,
     showTravel,
     setShowTravel,
-    walkingChoices,
-    busChoices,
-    goToBusStop,
+    travelDestinations,
     activeShop,
     setActiveShop,
     job,
@@ -151,7 +150,12 @@ export default function Home() {
     startNewGameSession,
     notifyMomQuest,
   } = useGame();
-  const [travelMode, setTravelMode] = useState<"walk" | "bus">("walk");
+  const mapButtonRef = useRef<HTMLButtonElement>(null);
+
+  function closeMap() {
+    setShowTravel(false);
+    mapButtonRef.current?.focus();
+  }
 
   function continueGame() {
     if (loadMostRecentGame()) setHasStarted(true);
@@ -516,16 +520,8 @@ export default function Home() {
         Boolean(choice.leadQuest)
         && !quests.some((quest) => quest.id === choice.leadQuest)
       }
-      onWalk={() => {
-        setTravelMode("walk");
-        setShowTravel(true);
-      }}
-      onBus={() => {
-        setTravelMode("bus");
-        setShowTravel(true);
-      }}
-      onGoToBusStop={goToBusStop}
-      isBusStop={currentScene.id === "bus-stop"}
+      onOpenMap={() => setShowTravel(true)}
+      mapButtonRef={mapButtonRef}
       canTravel={isExteriorScene(currentScene.id)}
       playerMoney={playerState.money}
       layout="overlay"
@@ -918,14 +914,19 @@ export default function Home() {
           />
         )}
         {showTravel && (
-          <TravelWindow
-            walkingChoices={walkingChoices}
-            busChoices={busChoices}
-            onChoice={handleChoice}
-            onClose={() => setShowTravel(false)}
-            onTravelStart={() => setShowTravel(false)}
-            playerMoney={playerState.money}
-            initialMenu={travelMode}
+          <TownMap
+            originId={currentScene.id}
+            time={gameState.time}
+            momTalked={momTalked}
+            lightOnTheHillActive={isQuestActive(quests, "light-on-the-hill")}
+            availableIds={travelDestinations}
+            money={playerState.money}
+            night={isNightTime(gameState.time)}
+            onTravel={(choice) => {
+              setShowTravel(false);
+              handleChoice(choice);
+            }}
+            onClose={closeMap}
           />
         )}
 

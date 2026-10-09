@@ -1,3 +1,5 @@
+import type { Ref } from "react";
+
 import styles from "./ActionButton.module.css";
 
 type ActionButtonProps = {
@@ -6,6 +8,7 @@ type ActionButtonProps = {
   disabled?: boolean;
   /** Subtle notebook mark. The choice starts a quest that has not begun. */
   leadsQuest?: boolean;
+  buttonRef?: Ref<HTMLButtonElement>;
 };
 
 export default function ActionButton({
@@ -13,9 +16,11 @@ export default function ActionButton({
   onClick,
   disabled = false,
   leadsQuest = false,
+  buttonRef,
 }: ActionButtonProps) {
   return (
     <button
+      ref={buttonRef}
       className={`${styles.actionButton}${leadsQuest ? ` ${styles.leadsQuest}` : ""}`}
       onClick={onClick}
       disabled={disabled}

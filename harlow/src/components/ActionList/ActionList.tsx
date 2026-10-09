@@ -1,3 +1,5 @@
+import type { Ref } from "react";
+
 import ActionButton from "@/components/ActionButton/ActionButton";
 import type { GameChoice } from "@/game/choices";
 import styles from "./ActionList.module.css";
@@ -8,10 +10,8 @@ type ActionListProps = {
   onChoice: (choice: GameChoice) => void;
   /** True when this choice should show the new-lead mark. */
   leadsQuest?: (choice: GameChoice) => boolean;
-  onWalk: () => void;
-  onBus: () => void;
-  onGoToBusStop: () => void;
-  isBusStop: boolean;
+  onOpenMap: () => void;
+  mapButtonRef?: Ref<HTMLButtonElement>;
   canTravel: boolean;
   playerMoney: number;
   layout?: "default" | "home" | "overlay";
@@ -21,10 +21,8 @@ export default function ActionList({
   title,
   choices,
   onChoice,
-  onWalk,
-  onBus,
-  onGoToBusStop,
-  isBusStop,
+  onOpenMap,
+  mapButtonRef,
   canTravel,
   playerMoney,
   layout = "default",
@@ -78,23 +76,9 @@ export default function ActionList({
           />
         ))}
 
-        {!isConversation && canTravel && isBusStop ? (
-          <>
-            <ActionButton label="Walk" onClick={onWalk} />
-            <ActionButton
-              label="Take the bus"
-              onClick={onBus}
-            />
-          </>
-        ) : !isConversation && canTravel ? (
-          <>
-            <ActionButton label="Walk" onClick={onWalk} />
-            <ActionButton
-              label="Go to the bus stop"
-              onClick={onGoToBusStop}
-            />
-          </>
-        ) : null}
+        {!isConversation && canTravel && (
+          <ActionButton label="Map" buttonRef={mapButtonRef} onClick={onOpenMap} />
+        )}
       </div>
     </div>
   );

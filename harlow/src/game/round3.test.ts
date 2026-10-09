@@ -89,7 +89,7 @@ describe("Walter's first talk", () => {
     const labels = walterChoices({ rachelMet: true }, walterQuests, [asking, hoodLabel]);
     assert.equal(labels.includes(emily), false);
     assert.equal(labels.includes(forget), false);
-    assert.deepEqual(labels, ["Alright. I'm going."]);
+    assert.deepEqual(labels, ["...Fine"]);
   });
 });
 
