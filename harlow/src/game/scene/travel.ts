@@ -1,6 +1,6 @@
 import type { Choice } from "../choices";
 
-// Destinations listed here automatically appear in the walk and bus menus.
+// Listed times feed the town map and the walk and bus choices.
 // Add an exterior scene here after it has been added to `scenes`.
 const exteriorDestinations = [
   { id: "front-yard", label: "your house", walkMinutes: 30 },
@@ -24,7 +24,7 @@ export function isExteriorScene(sceneId: string): boolean {
   );
 }
 
-function listedWalkMinutes(sceneId: string) {
+export function listedWalkMinutes(sceneId: string) {
   return exteriorDestinations.find((destination) => destination.id === sceneId)?.walkMinutes ?? 0;
 }
 

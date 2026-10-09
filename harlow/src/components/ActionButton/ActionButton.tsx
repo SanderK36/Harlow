@@ -1,3 +1,5 @@
+import type { Ref } from "react";
+
 import styles from "./ActionButton.module.css";
 
 type ActionButtonProps = {
@@ -8,6 +10,7 @@ type ActionButtonProps = {
   leadsQuest?: boolean;
   /** Effect and time the choice already declares, e.g. "+5 STAM · 10 min". */
   detail?: string;
+  buttonRef?: Ref<HTMLButtonElement>;
 };
 
 export default function ActionButton({
@@ -16,9 +19,11 @@ export default function ActionButton({
   disabled = false,
   leadsQuest = false,
   detail = "",
+  buttonRef,
 }: ActionButtonProps) {
   return (
     <button
+      ref={buttonRef}
       className={`${styles.actionButton}${leadsQuest ? ` ${styles.leadsQuest}` : ""}`}
       onClick={onClick}
       disabled={disabled}

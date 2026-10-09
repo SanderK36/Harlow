@@ -4,8 +4,6 @@ import { applyEffects, restAfterSleep, statDeltas } from "@/game/effects";
 import initialGameState from "@/game/gameState";
 import player from "@/game/player";
 import {
-  createBusChoices,
-  createWalkingChoices,
   ethanRoom,
   getSceneThought,
   momDeathConversation,
@@ -1286,8 +1284,7 @@ export function useGame() {
     activeCharacter,
     activeChoices,
     travelingTo,
-    walkingChoices: createWalkingChoices(currentScene.id, availableTravelDestinations),
-    busChoices: createBusChoices(availableTravelDestinations),
+    travelDestinations: availableTravelDestinations,
     showStats,
     setShowStats,
     showInventory,

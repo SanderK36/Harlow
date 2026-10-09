@@ -22,8 +22,9 @@ export function travelDestinationIds(ctx: {
       || isQuestCompleted(ctx.quests, "down-to-the-station")
       ? ["police-station"]
       : []),
-    ...(ctx.hasFlag("sanatoriumSeenFromStreet")
-      || isQuestActive(ctx.quests, "light-on-the-hill")
+    // Seeing the light from the street does not open the pin.
+    // It opens only while Light on the Hill is active, or after it is done.
+    ...(isQuestActive(ctx.quests, "light-on-the-hill")
       || isQuestCompleted(ctx.quests, "light-on-the-hill")
       ? ["sanatorium"]
       : []),
