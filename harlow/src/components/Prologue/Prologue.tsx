@@ -12,6 +12,7 @@ import {
   OUTDOOR_BEATS,
   PROLOGUE,
   PROLOGUE_IMAGES,
+  PROLOGUE_VIDEOS,
   type PrologueBeat,
   type PrologueChoice,
   type PrologueImage,
@@ -221,6 +222,7 @@ export default function Prologue({ onDone }: PrologueProps) {
     >
       {IMAGE_ORDER.map((image, index) => {
         const active = image === visibleImage;
+        const video = image === "stairs" ? PROLOGUE_VIDEOS.stairs : undefined;
         // Load each picture one beat ahead of when it is needed.
         const load = index <= furthestIndex + 1;
         return (
@@ -233,11 +235,37 @@ export default function Prologue({ onDone }: PrologueProps) {
           >
             {load && (
               <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className={styles.backdrop} src={PROLOGUE_IMAGES[image]} alt="" aria-hidden="true" />
+                {video ? (
+                  <video
+                    className={styles.backdrop}
+                    src={video}
+                    poster={PROLOGUE_IMAGES[image]}
+                    autoPlay={active}
+                    muted
+                    playsInline
+                    preload={active ? "auto" : "none"}
+                    aria-hidden="true"
+                  />
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img className={styles.backdrop} src={PROLOGUE_IMAGES[image]} alt="" aria-hidden="true" />
+                )}
                 <div className={styles.frame}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img className={styles.art} src={PROLOGUE_IMAGES[image]} alt="" />
+                  {video ? (
+                    <video
+                      className={styles.art}
+                      src={video}
+                      poster={PROLOGUE_IMAGES[image]}
+                      autoPlay={active}
+                      muted
+                      playsInline
+                      preload={active ? "auto" : "none"}
+                      aria-label="Ethan walking down the stairs"
+                    />
+                  ) : (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img className={styles.art} src={PROLOGUE_IMAGES[image]} alt="" />
+                  )}
                   {(image === "bed" || image === "window") && (
                     <div className={`${styles.sirens} ${sirens && active ? styles.sirensOn : ""}`} aria-hidden="true" />
                   )}

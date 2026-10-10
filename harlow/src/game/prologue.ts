@@ -54,6 +54,10 @@ export const PROLOGUE_IMAGES = {
   killer: `${IMAGE_ROOT}/lightningKiller.jpg`,
 } as const;
 
+export const PROLOGUE_VIDEOS = {
+  stairs: "/images/animations/EthanWalkingDownStairs.mp4",
+} as const;
+
 export type PrologueImage = keyof typeof PROLOGUE_IMAGES;
 
 /** The beats that happen out of doors (for the night ambience). */
