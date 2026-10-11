@@ -400,7 +400,7 @@
   margin: 0;
   color: #f4e9e2;
   font-family: var(--font-body);
-  font-size: clamp(18px, 1.6vw, 20px);
+  font-size: var(--reading-size);
   line-height: 1.4;
   text-wrap: pretty;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);

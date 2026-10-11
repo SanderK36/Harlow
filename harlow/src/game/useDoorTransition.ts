@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { harlowAudio } from "./audio";
+import { isReducedMotionNow } from "./settings";
 import type { Choice } from "./choices";
 
 /**
@@ -43,7 +44,7 @@ export function useDoorTransition(applyChoice: (choice: Choice) => void) {
     };
     harlowAudio().door();
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (isReducedMotionNow()) {
       latestApply.current(choice);
       later(done, DOOR_REDUCED_MOTION_LOCK);
       return;

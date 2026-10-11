@@ -1,0 +1,32 @@
+.page {
+  min-height: 100vh;
+  padding: 28px 20px 48px;
+  color: var(--text);
+}
+
+.page h1 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 32px;
+  letter-spacing: 0.08em;
+}
+
+.page > p {
+  max-width: 46rem;
+  margin: 0 0 28px;
+  font-family: var(--font-body);
+  font-size: var(--reading-size, 18px);
+}
+
+.page section {
+  max-width: 720px;
+  margin: 0 0 36px;
+}
+
+.page h2 {
+  margin: 0 0 10px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}

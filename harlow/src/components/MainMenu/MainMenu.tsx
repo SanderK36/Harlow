@@ -1,60 +1,97 @@
-import Image from "next/image";
+"use client";
 
-export default function MainMenu({
-  onNewGame,
-  onContinue,
-}: {
+import { useEffect, useState } from "react";
+
+import ConfirmDialog from "@/components/ConfirmDialog/ConfirmDialog";
+import SettingsScreen from "@/components/SettingsScreen/SettingsScreen";
+import { continuePreview } from "@/game/continuePreview";
+import { MENU_BACKGROUND_FALLBACK, MENU_BACKGROUND_PATH } from "@/game/menuArt";
+import type { SavedGame } from "@/game/save";
+
+type MainMenuProps = {
+  continueSave: SavedGame | null;
   onNewGame: () => void;
   onContinue: () => void;
-}) {
+};
+
+export default function MainMenu({ continueSave, onNewGame, onContinue }: MainMenuProps) {
+  const [background, setBackground] = useState(MENU_BACKGROUND_PATH);
+  const [confirming, setConfirming] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const preview = continueSave ? continuePreview(continueSave) : null;
+
+  useEffect(() => {
+    const probe = new window.Image();
+    probe.onload = () => setBackground(MENU_BACKGROUND_PATH);
+    probe.onerror = () => setBackground(MENU_BACKGROUND_FALLBACK);
+    probe.src = MENU_BACKGROUND_PATH;
+  }, []);
+
   return (
     <main className="mainMenu">
-      <div className="mainMenuArtwork" aria-hidden="true" />
+      <div
+        className="mainMenuArtwork"
+        aria-hidden="true"
+        style={{ backgroundImage: `url("${background}")` }}
+      />
+      <div className="mainMenuRain" aria-hidden="true" />
       <div className="mainMenuShade" aria-hidden="true" />
-      <div className="mainMenuBranding">
-        <a
-          className="mainMenuStudioLogoLink"
-          href="https://www.lostfrequencygames.com/"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <Image
-            className="mainMenuStudioLogo"
-            src="/LostFrequencyGames-transparent.png"
-            alt="Lost Frequency Games"
-            width={1254}
-            height={1254}
-          />
-        </a>
-        <a
-          className="mainMenuSocialLink"
-          href="https://x.com/HarlowTheGame"
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Follow Harlow: 1982 on X"
-        >
-          <Image src="/X.png" alt="" width={1500} height={1500} />
-        </a>
-      </div>
 
       <section className="mainMenuContent" aria-labelledby="game-title">
-        <p className="mainMenuEyebrow">A small-town mystery unfolds</p>
-        <h1 id="game-title">Harlow: 1982</h1>
+        <h1 id="game-title">HARLOW</h1>
+        <p className="mainMenuYear">1982</p>
         <div className="mainMenuActions">
-          <button className="mainMenuStart" onClick={onNewGame}>
+          {preview && (
+            <button
+              type="button"
+              className="mainMenuContinueCard"
+              onClick={onContinue}
+              aria-label={`Continue. ${preview.location}, ${preview.weekday}, ${preview.time}`}
+            >
+              {preview.thumbnail && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={preview.thumbnail} alt="" width={160} height={120} />
+              )}
+              <span className="mainMenuContinueCopy">
+                <span className="mainMenuContinueLabel">Continue</span>
+                <span className="mainMenuContinuePlace">{preview.location}</span>
+                <span>{preview.weekday}</span>
+                <span>{preview.time}</span>
+              </span>
+            </button>
+          )}
+          <button
+            type="button"
+            className="mainMenuStart"
+            onClick={() => {
+              if (continueSave) setConfirming(true);
+              else onNewGame();
+            }}
+          >
             New Game
           </button>
-          <button
-            className="mainMenuStart mainMenuContinue"
-            onClick={onContinue}
-          >
-            Continue
+          <button type="button" className="mainMenuStart mainMenuQuiet" onClick={() => setSettingsOpen(true)}>
+            Settings
           </button>
         </div>
       </section>
-      <p className="mainMenuCopyright">
-        © 2026 Lost Frequency Games. All rights reserved.
-      </p>
+
+      <p className="mainMenuCopyright">© 2026 Lost Frequency Games. All rights reserved.</p>
+
+      {confirming && (
+        <ConfirmDialog
+          title="New game"
+          message="Start over? Your saved game will be lost."
+          confirmLabel="Start over"
+          cancelLabel="Cancel"
+          onConfirm={() => {
+            setConfirming(false);
+            onNewGame();
+          }}
+          onCancel={() => setConfirming(false)}
+        />
+      )}
+      {settingsOpen && <SettingsScreen onBack={() => setSettingsOpen(false)} />}
     </main>
   );
 }

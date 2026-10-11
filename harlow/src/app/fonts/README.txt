@@ -8,3 +8,6 @@ See Cinzel-OFL.txt, CrimsonPro-OFL.txt, and Oswald-OFL.txt.
 Special Elite is a static regular (weight 400) used for the stats index card.
 Its name table licenses it under the Apache License 2.0, not the OFL.
 See SpecialElite-LICENSE.txt.
+
+Caveat is the Latin handwriting face for Ethan's notebook lines and for
+notes written on pictures. SIL Open Font License 1.1. See Caveat-OFL.txt.

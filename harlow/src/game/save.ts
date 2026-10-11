@@ -4,8 +4,12 @@ import type { JobId, QuestProgress, StoryFlag } from "@/game/quests";
 const LEGACY_SAVE_KEY = "harlow-save";
 const SAVE_SLOTS_KEY = "harlow-save-slots";
 const SESSION_SAVE_KEY = "harlow-active-session";
+/** Separate from the five manual slots, so an autosave cannot overwrite them. */
+export const AUTOSAVE_KEY = "harlow-autosave";
 export const SAVE_SLOT_COUNT = 5;
 const SAVE_VERSION = 1;
+
+export type SaveStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 export type SavedGame = {
   version: typeof SAVE_VERSION;
@@ -32,6 +36,23 @@ export type SavedGameSlot = {
   savedAt: string;
   save: SavedGame;
 };
+
+export type AutosaveRecord = {
+  savedAt: string;
+  /** Month-day-hour of the last scene-change autosave. Null if none yet. */
+  sceneStamp: string | null;
+  save: SavedGame;
+};
+
+function resolveStorage(storage?: SaveStorage): SaveStorage | null {
+  if (storage) return storage;
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
 
 function isSavedGame(value: unknown): value is SavedGame {
   if (!value || typeof value !== "object") return false;
@@ -61,12 +82,13 @@ function isSavedGameSlot(value: unknown): value is SavedGameSlot {
   );
 }
 
-export function readSaveSlots(): Array<SavedGameSlot | null> {
+export function readSaveSlots(storage?: SaveStorage): Array<SavedGameSlot | null> {
   const emptySlots = Array<SavedGameSlot | null>(SAVE_SLOT_COUNT).fill(null);
-  if (typeof window === "undefined") return emptySlots;
+  const store = resolveStorage(storage);
+  if (!store) return emptySlots;
 
   try {
-    const rawSlots = window.localStorage.getItem(SAVE_SLOTS_KEY);
+    const rawSlots = store.getItem(SAVE_SLOTS_KEY);
     if (rawSlots) {
       const slots: unknown = JSON.parse(rawSlots);
       if (!Array.isArray(slots)) return emptySlots;
@@ -79,7 +101,7 @@ export function readSaveSlots(): Array<SavedGameSlot | null> {
 
     // Preserve saves made before the multiple-slot system was introduced.
     const legacySave: unknown = JSON.parse(
-      window.localStorage.getItem(LEGACY_SAVE_KEY) ?? "null"
+      store.getItem(LEGACY_SAVE_KEY) ?? "null"
     );
     if (isSavedGame(legacySave)) {
       emptySlots[0] = { slot: 1, savedAt: "Previous save", save: legacySave };
@@ -90,31 +112,81 @@ export function readSaveSlots(): Array<SavedGameSlot | null> {
   }
 }
 
-export function readSaveSlot(slotNumber: number): SavedGame | null {
-  return readSaveSlots()[slotNumber - 1]?.save ?? null;
+export function readSaveSlot(slotNumber: number, storage?: SaveStorage): SavedGame | null {
+  return readSaveSlots(storage)[slotNumber - 1]?.save ?? null;
 }
 
-export function readMostRecentSave(): SavedGame | null {
-  return readSaveSlots()
-    .filter((slot): slot is SavedGameSlot => slot !== null)
-    .sort((first, second) => Date.parse(second.savedAt) - Date.parse(first.savedAt))[0]?.save ?? null;
+export function readMostRecentSave(storage?: SaveStorage): SavedGame | null {
+  const manual = readSaveSlots(storage).filter((slot): slot is SavedGameSlot => slot !== null);
+  const autosave = readAutosave(storage);
+  const candidates = [
+    ...manual.map((slot) => ({ savedAt: slot.savedAt, save: slot.save })),
+    ...(autosave ? [{ savedAt: autosave.savedAt, save: autosave.save }] : []),
+  ];
+  return candidates.sort((first, second) => Date.parse(second.savedAt) - Date.parse(first.savedAt))[0]?.save ?? null;
 }
 
-export function writeSaveSlot(slotNumber: number, save: SavedGame): boolean {
+export function writeSaveSlot(slotNumber: number, save: SavedGame, storage?: SaveStorage): boolean {
   if (slotNumber < 1 || slotNumber > SAVE_SLOT_COUNT) return false;
-  if (typeof window === "undefined") return false;
+  const store = resolveStorage(storage);
+  if (!store) return false;
 
   try {
-    const slots = readSaveSlots();
+    const slots = readSaveSlots(store);
     slots[slotNumber - 1] = {
       slot: slotNumber,
       savedAt: new Date().toISOString(),
       save,
     };
-    window.localStorage.setItem(SAVE_SLOTS_KEY, JSON.stringify(slots.filter(Boolean)));
+    store.setItem(SAVE_SLOTS_KEY, JSON.stringify(slots.filter(Boolean)));
     return true;
   } catch {
     return false;
+  }
+}
+
+function isAutosaveRecord(value: unknown): value is AutosaveRecord {
+  if (!value || typeof value !== "object") return false;
+  const record = value as Partial<AutosaveRecord>;
+  return (
+    typeof record.savedAt === "string"
+    && (record.sceneStamp === null || typeof record.sceneStamp === "string")
+    && isSavedGame(record.save)
+  );
+}
+
+export function readAutosave(storage?: SaveStorage): AutosaveRecord | null {
+  const store = resolveStorage(storage);
+  if (!store) return null;
+  try {
+    const parsed: unknown = JSON.parse(store.getItem(AUTOSAVE_KEY) ?? "null");
+    return isAutosaveRecord(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeAutosave(record: AutosaveRecord, storage?: SaveStorage): boolean {
+  const store = resolveStorage(storage);
+  if (!store || !isSavedGame(record.save)) return false;
+  try {
+    store.setItem(AUTOSAVE_KEY, JSON.stringify(record));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Manual slots, the legacy single save, and the autosave. Settings stay. */
+export function clearStoredGames(storage?: SaveStorage) {
+  const store = resolveStorage(storage);
+  if (!store) return;
+  try {
+    store.removeItem(SAVE_SLOTS_KEY);
+    store.removeItem(LEGACY_SAVE_KEY);
+    store.removeItem(AUTOSAVE_KEY);
+  } catch {
+    // Storage can throw in private mode. The new game still starts.
   }
 }
 

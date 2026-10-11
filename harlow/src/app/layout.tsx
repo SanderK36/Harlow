@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import localFont from "next/font/local";
 import "./globals.css";
+import ApplySettings from "@/components/ApplySettings/ApplySettings";
 
 // Latin subsets only. Each family is a variable font, so one file covers the
 // weights the UI actually uses. They are committed under src/app/fonts so the
@@ -46,6 +47,14 @@ const typewriterFont = localFont({
   display: "swap",
 });
 
+// Caveat, the handwriting on Ethan's notebook lines and on notes in pictures.
+const handwritingFont = localFont({
+  src: "./fonts/caveat-latin.woff2",
+  variable: "--font-caveat",
+  weight: "500 700",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Harlow",
   applicationName: "Harlow",
@@ -67,9 +76,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      className={`${displayFont.variable} ${bodyFont.variable} ${uiFont.variable} ${typewriterFont.variable}`}
+      className={`${displayFont.variable} ${bodyFont.variable} ${uiFont.variable} ${typewriterFont.variable} ${handwritingFont.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        <ApplySettings />
+        {children}
+      </body>
     </html>
   );
 }
