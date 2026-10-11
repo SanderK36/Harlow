@@ -71,7 +71,7 @@ export default function ActionList({
           <ActionButton
             key={"response" in choice ? choice.label : choice.action}
             label={choice.label}
-            detail={"response" in choice ? "" : choiceAffordance(choice)}
+            detail={choiceAffordance(choice)}
             onClick={() => onChoice(choice)}
             disabled={isDisabled(choice)}
             leadsQuest={leadsQuest?.(choice) ?? false}

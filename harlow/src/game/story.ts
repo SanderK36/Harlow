@@ -99,6 +99,20 @@ export type ConversationChoice = {
   requiresQuestActive?: import("./quests").QuestId;
   /** Optional quest step id to set while the quest is active. */
   questStep?: string;
+  /** Show this reply only when hidden trust is inside this range. Never a quest gate. */
+  requiresTrust?: import("./trust").TrustCondition;
+  /** Hide this reply when hidden trust is inside this range. */
+  excludesTrust?: import("./trust").TrustCondition;
+  /** Changes hidden trust when this reply is selected. Net ±1 per person per conversation. */
+  trust?: import("./trust").TrustStep;
+  /** Dollars this reply costs. Dropped when `freeWhen` matches. */
+  price?: number;
+  /** `price` is not taken when hidden trust matches (Margaret's coffee at +2). */
+  freeWhen?: import("./trust").TrustCondition;
+  /** Stays on the list after it has been picked in this conversation. */
+  repeatable?: boolean;
+  /** Stat changes applied with the reply (money for a priced line). */
+  effects?: import("./choices").ChoiceEffects;
   /** Show a closeup after this reply finishes (drawer, poster, memory). */
   closeup?: {
     image: string;
@@ -122,6 +136,12 @@ export type Conversation = {
   opening: StoryEntry[];
   /** Replaces the opening once Ethan works for this NPC. */
   jobOpening?: { job: import("./quests").JobId; opening: StoryEntry[] };
+  /**
+   * Where a return-visit trust greeting sits.
+   * `replace` swaps the existing greeting. `prepend` keeps a quest question
+   * and puts the greeting ahead of it. First meetings always use `opening`.
+   */
+  returnGreeting?: "replace" | "prepend";
   choices: ConversationChoice[];
 };
 

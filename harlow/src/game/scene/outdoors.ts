@@ -148,7 +148,7 @@ export const rachelElrodConversation: Conversation = {
         ethan("Sure."),
       ],
       endsConversation: true,
-      storyFlag: "rachelMet",
+      storyFlag: ["rachelMet", "rachelComebackAsked"],
       completesQuest: "the-tape",
       questStep: "done",
       startsQuest: "down-to-the-station",
@@ -159,6 +159,7 @@ export const rachelElrodConversation: Conversation = {
 
 export const rachelFrontYardConversation: Conversation = {
   opening: [npc("Rachel", "Been out here an hour. What'd Walter say?")],
+  returnGreeting: "prepend",
   choices: [
     {
       label: "I told him about the hooded man.",
@@ -189,6 +190,7 @@ export const rachelFrontYardConversation: Conversation = {
         ethan("I promise, Rach. Next time, I'll tell you first."),
       ],
       storyFlag: ["rachelTrusted", "rachelKnowsHood"],
+      trust: { person: "rachel", amount: 1 },
       completesQuest: "what-walter-said",
       questStep: "done",
       endsConversation: true,
@@ -209,6 +211,7 @@ export const rachelFrontYardConversation: Conversation = {
         npc("Rachel", "Or waiting for something."),
       ],
       storyFlag: ["rachelTrusted", "rachelKnowsFile"],
+      trust: { person: "rachel", amount: 1 },
       completesQuest: "what-walter-said",
       questStep: "done",
       endsConversation: true,
@@ -223,6 +226,7 @@ export const rachelFrontYardConversation: Conversation = {
         npc("Rachel", "Fine. I'll find out myself. I always do."),
       ],
       storyFlag: "rachelShutOut",
+      trust: { person: "rachel", amount: -1 },
       completesQuest: "what-walter-said",
       questStep: "shut",
       endsConversation: true,
@@ -316,7 +320,7 @@ export const elrodHouse: Scene = {
   },
   characters: [
     {
-      name: "Rachel Bennet",
+      name: "Rachel Bennett",
       from: 420,
       until: 1140,
       excludesFlags: ["rachelMet"],

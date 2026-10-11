@@ -1,5 +1,6 @@
 import type { GameState, Player } from "@/game/types";
 import type { JobId, QuestProgress, StoryFlag } from "@/game/quests";
+import type { TrustMap, TrustPerson } from "@/game/trust";
 
 const LEGACY_SAVE_KEY = "harlow-save";
 const SAVE_SLOTS_KEY = "harlow-save-slots";
@@ -29,6 +30,14 @@ export type SavedGame = {
   quests?: QuestProgress[];
   storyFlags?: Partial<Record<StoryFlag, boolean>>;
   chapter?: number;
+  /** Hidden trust. Missing on older saves; migrate via migrateTrust. */
+  trust?: Partial<TrustMap>;
+  /** People Ethan has met, in order. */
+  met?: TrustPerson[];
+  /** Trust last read on the People page. A difference is the notebook dot. */
+  peopleSeenTrust?: Partial<TrustMap>;
+  /** dayNumber of the last once-per-day trust gain, per person. */
+  trustGainedOnDay?: Partial<Record<TrustPerson, number>>;
 };
 
 export type SavedGameSlot = {
