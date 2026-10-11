@@ -120,12 +120,15 @@ export type ConversationChoice = {
     label?: string;
     /** Some memories should bypass the rainy override styling. */
     disableWeatherFilter?: boolean;
+    /** Words drawn on the picture. */
+    inscriptions?: import("@/components/ImageText/imageText").Inscription[];
     /** Optional follow-up closeup (e.g. drawer shut). */
     next?: {
       image: string;
       thought: string;
       label?: string;
       disableWeatherFilter?: boolean;
+      inscriptions?: import("@/components/ImageText/imageText").Inscription[];
     };
     /** Set when the close-up is actually shown, not when the line is chosen. */
     setsFlags?: import("./quests").StoryFlag | import("./quests").StoryFlag[];

@@ -26,7 +26,9 @@ export type QuestId =
   | "down-to-the-station"
   | "what-walter-said"
   | "faded-poster"
-  | "light-on-the-hill";
+  | "light-on-the-hill"
+  | "the-gate"
+  | "emilys-room";
 
 export type QuestStatus = "active" | "completed";
 
@@ -71,7 +73,17 @@ export type StoryFlag =
   | "tapeSeen"
   /** Earl told Ethan to look somewhere else. Hides "Just looking." */
   | "earlLookElsewhere"
-  | "chapter1Complete";
+  | "chapter1Complete"
+  /** Margaret's gossip started The Gate. */
+  | "bootPrintSeen"
+  /** One of the three things in Emily's room. */
+  | "emilyMusicBoxSeen"
+  | "emilyPolaroidSeen"
+  /** The note is what puts Dad's box in the attic. */
+  | "emilyNoteRead"
+  | "waltPhotoSeen"
+  /** Saturday's Harlow Gazette, picked up off the porch step. */
+  | "gazetteFound";
 
 export type QuestDef = {
   id: QuestId;
@@ -146,6 +158,23 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
       default: "One light on the hill.",
       inside: "One light on the hill.",
       done: "Still burning. Someone was just here.",
+    },
+  },
+  "the-gate": {
+    id: "the-gate",
+    title: "The Gate",
+    objectives: {
+      default: "Somebody kept leaving her gate open.",
+      print: "A boot print. Pine needles in the mud.",
+      done: "Pine needles by her gate. Nobody listened.",
+    },
+  },
+  "emilys-room": {
+    id: "emilys-room",
+    title: "Emily's Room",
+    objectives: {
+      default: "Her room. Nobody's touched it.",
+      done: "Dad and Walter. I'd forgotten they were friends.",
     },
   },
 };
@@ -257,6 +286,10 @@ export function migrateQuestsFromLegacy(save: {
   jobQuestTarget?: JobId | null;
   quests?: QuestProgress[];
   storyFlags?: Partial<Record<StoryFlag, boolean>>;
+  askedAbout?: {
+    rachel?: readonly string[];
+    walter?: readonly string[];
+  } | null;
 }): QuestProgress[] {
   let quests: QuestProgress[];
   if (save.quests && Array.isArray(save.quests)) {
@@ -327,7 +360,85 @@ export function migrateQuestsFromLegacy(save: {
     quests.push({ id: "faded-poster", status: "active" });
   }
 
-  return quests;
+  return migrateSideQuests(quests, save.storyFlags, save.askedAbout);
+}
+
+function askedAboutBootPrint(asked: {
+  rachel?: readonly string[];
+  walter?: readonly string[];
+} | null | undefined) {
+  return Boolean(
+    asked?.rachel?.includes("boot-print") || asked?.walter?.includes("boot-print"),
+  );
+}
+
+/**
+ * The Gate and Emily's Room are optional. An old save that already heard
+ * the gossip, found the print, or opened Emily's things picks the step up
+ * without touching the main story.
+ */
+export function migrateSideQuests(
+  quests: QuestProgress[],
+  flags: Partial<Record<StoryFlag, boolean>> | undefined,
+  asked?: { rachel?: readonly string[]; walter?: readonly string[] } | null,
+): QuestProgress[] {
+  let next = quests;
+  const heardGossip = Boolean(flags?.margaretGossipHeard);
+  const sawPrint = Boolean(flags?.bootPrintSeen);
+  const askedGate = askedAboutBootPrint(asked);
+  if (heardGossip && !next.some((quest) => quest.id === "the-gate")) {
+    if (askedGate) next = completeQuest(next, "the-gate", "done");
+    else if (sawPrint) next = startQuest(next, "the-gate", "print");
+    else next = startQuest(next, "the-gate");
+  } else if (heardGossip && isQuestActive(next, "the-gate")) {
+    if (askedGate) next = completeQuest(next, "the-gate", "done");
+    else if (sawPrint) {
+      const step = next.find((quest) => quest.id === "the-gate")?.step;
+      if (step !== "print") next = setQuestStep(next, "the-gate", "print");
+    }
+  }
+
+  const looked = Boolean(
+    flags?.emilyMusicBoxSeen || flags?.emilyPolaroidSeen || flags?.emilyNoteRead,
+  );
+  const sawPhoto = Boolean(flags?.waltPhotoSeen);
+  if ((looked || sawPhoto) && !next.some((quest) => quest.id === "emilys-room")) {
+    next = sawPhoto
+      ? completeQuest(next, "emilys-room", "done")
+      : startQuest(next, "emilys-room");
+  } else if (sawPhoto && isQuestActive(next, "emilys-room")) {
+    next = completeQuest(next, "emilys-room", "done");
+  }
+
+  return next;
+}
+
+/** Gossip is the only way The Gate begins. */
+export function startTheGate(quests: QuestProgress[]): { quests: QuestProgress[]; started: boolean } {
+  if (quests.some((quest) => quest.id === "the-gate")) return { quests, started: false };
+  return { quests: startQuest(quests, "the-gate"), started: true };
+}
+
+export function advanceGatePrint(quests: QuestProgress[]): QuestProgress[] {
+  if (!isQuestActive(quests, "the-gate")) return quests;
+  if (quests.find((quest) => quest.id === "the-gate")?.step === "print") return quests;
+  return setQuestStep(quests, "the-gate", "print");
+}
+
+export function finishGate(quests: QuestProgress[]): { quests: QuestProgress[]; completed: boolean } {
+  if (isQuestCompleted(quests, "the-gate")) return { quests, completed: false };
+  return { quests: completeQuest(quests, "the-gate", "done"), completed: true };
+}
+
+/** The first of the three looks starts the sidequest. Later looks do not restart it. */
+export function startEmilyRoom(quests: QuestProgress[]): { quests: QuestProgress[]; started: boolean } {
+  if (quests.some((quest) => quest.id === "emilys-room")) return { quests, started: false };
+  return { quests: startQuest(quests, "emilys-room"), started: true };
+}
+
+export function finishEmilyRoom(quests: QuestProgress[]): { quests: QuestProgress[]; completed: boolean } {
+  if (isQuestCompleted(quests, "emilys-room")) return { quests, completed: false };
+  return { quests: completeQuest(quests, "emilys-room", "done"), completed: true };
 }
 
 function upsertQuest(

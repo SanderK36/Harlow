@@ -5,7 +5,7 @@
  * A slight tilt and multiply blending keep the words in the paper, not on it.
  */
 
-export type InscriptionKind = "headline" | "caption" | "note";
+export type InscriptionKind = "headline" | "subline" | "body" | "caption" | "note";
 
 export type Inscription = {
   id: string;
@@ -23,6 +23,8 @@ export type Inscription = {
 
 const DEFAULTS: Record<InscriptionKind, { rotate: number; font: "body" | "handwriting"; weight: number }> = {
   headline: { rotate: -1.2, font: "body", weight: 600 },
+  subline: { rotate: -0.4, font: "body", weight: 600 },
+  body: { rotate: 0, font: "body", weight: 400 },
   caption: { rotate: -2, font: "handwriting", weight: 500 },
   note: { rotate: -3.5, font: "handwriting", weight: 500 },
 };

@@ -1,0 +1,82 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.list ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.note,
+.asked,
+.never {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  color: #f6efe6;
+  font-family: var(--font-body);
+  font-size: var(--reading-size);
+  text-align: left;
+  background: rgba(255, 240, 235, 0.04);
+  border: 1px solid rgba(239, 221, 221, 0.16);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.asked {
+  opacity: 0.55;
+}
+
+.thumb,
+.thumbEmpty {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  background: #2a1c16;
+  border: 1px solid rgba(243, 226, 200, 0.28);
+}
+
+.thumbEmpty {
+  background:
+    linear-gradient(160deg, rgba(243, 226, 200, 0.14), transparent 55%),
+    #241812;
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+}
+
+.check {
+  color: #d7c4a4;
+  font-size: 14px;
+}
+
+.never {
+  justify-content: flex-start;
+}
+
+.note:focus-visible,
+.asked:focus-visible,
+.never:focus-visible {
+  outline: 2px solid #e7c9a4;
+  outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+  .note,
+  .asked,
+  .never {
+    min-height: 44px;
+  }
+}

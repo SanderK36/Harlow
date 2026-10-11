@@ -12,7 +12,24 @@ import {
   rachelFrontYardConversation,
   scenes,
 } from "@/game/scenes";
+import {
+  ASK_ABOUT_LABEL,
+  askCompletesGate,
+  askTopicsFor,
+  resolveAskAbout,
+} from "@/game/askAbout";
+import {
+  collectClue,
+  clueForFlag,
+  migrateClues,
+  tryConnect,
+  unseenClues as unseenClueIds,
+  type AskedAbout,
+  type ClueConnectionId,
+  type ClueId,
+} from "@/game/clues";
 import { conversationChoiceVisible } from "@/game/conversationChoices";
+import { repeatVisitOpening, visitHasNothingNew } from "@/game/repeatVisits";
 import {
   dialogueLineCount,
   shouldRevealArmedCloseup,
@@ -50,13 +67,18 @@ import {
 import type { Choice, GameChoice } from "@/game/choices";
 import type { Conversation, ConversationChoice, StoryEntry } from "@/game/story";
 import {
+  advanceGatePrint,
   completeQuest,
+  finishEmilyRoom,
+  finishGate,
   isQuestActive,
   isQuestCompleted,
   migrateQuestsFromLegacy,
   resolveMomTalked,
   setQuestStep,
+  startEmilyRoom,
   startQuest,
+  startTheGate,
   type JobId,
   type QuestId,
   type QuestProgress,
@@ -268,6 +290,19 @@ export function useGame() {
   const [trustGainedOnDay, setTrustGainedOnDay] = useState<Partial<Record<TrustPerson, number>>>(
     () => sessionSave?.trustGainedOnDay ?? {},
   );
+  const migratedClues = migrateClues(sessionSave);
+  const [clues, setClues] = useState<ClueId[]>(migratedClues.clues);
+  const cluesRef = useRef(clues);
+  cluesRef.current = clues;
+  const [clueConnections, setClueConnections] = useState<ClueConnectionId[]>(migratedClues.connections);
+  const connectionsRef = useRef(clueConnections);
+  connectionsRef.current = clueConnections;
+  const [cluesSeen, setCluesSeen] = useState<ClueId[]>(migratedClues.cluesSeen);
+  const [askedAbout, setAskedAbout] = useState<AskedAbout>(migratedClues.askedAbout);
+  const askedRef = useRef(askedAbout);
+  askedRef.current = askedAbout;
+  const [askAboutOpen, setAskAboutOpen] = useState(false);
+  const [conversationPerson, setConversationPerson] = useState<TrustPerson | null>(null);
   const gainedOnDayRef = useRef(trustGainedOnDay);
   gainedOnDayRef.current = trustGainedOnDay;
   const trustSpentRef = useRef<Partial<Record<TrustPerson, number>>>({});
@@ -371,6 +406,40 @@ export function useGame() {
     setStoryFlags(next);
     // Keep legacy mirror in sync.
     if (list.includes("momJobConcern")) setMomJobConcernHeard(true);
+    absorbDiscoveries(list);
+  }
+
+  function grantClue(id: ClueId) {
+    const next = collectClue(cluesRef.current, id);
+    if (!next.added) return;
+    cluesRef.current = next.clues;
+    setClues(next.clues);
+    harlowAudio().playSfx("pen-scribble");
+  }
+
+  /** A find can pin a clue and move a sidequest. Neither one gates the main story. */
+  function absorbDiscoveries(flags: StoryFlag[]) {
+    for (const flag of flags) {
+      const clueId = clueForFlag(flag);
+      if (clueId) grantClue(clueId);
+    }
+    const looked = flags.some((flag) =>
+      flag === "emilyMusicBoxSeen" || flag === "emilyPolaroidSeen" || flag === "emilyNoteRead",
+    );
+    if (looked) {
+      const started = startEmilyRoom(questsRef.current);
+      if (started.started) applyQuestHooks({ startsQuest: "emilys-room" });
+    }
+    if (flags.includes("bootPrintSeen")) {
+      const stepped = advanceGatePrint(questsRef.current);
+      if (stepped !== questsRef.current) commitQuests(stepped);
+    }
+    if (flags.includes("waltPhotoSeen")) {
+      const done = finishEmilyRoom(questsRef.current);
+      if (done.completed) {
+        applyQuestHooks({ completesQuest: "emilys-room", questStep: "done" });
+      }
+    }
   }
 
   function enqueueCloseup(first: CloseupContent, next?: CloseupContent) {
@@ -473,8 +542,12 @@ export function useGame() {
       met: metPeople,
       peopleSeenTrust,
       trustGainedOnDay,
+      clues,
+      clueConnections,
+      cluesSeen,
+      askedAbout,
     };
-  }, [gameState, playerState, currentScene, busStopReturnSceneId, marleneActive, deskCigarettesPickedUp, scrapyardKnifePickedUp, garageFlashlightPickedUp, momTalked, momJobConcernHeard, job, jobQuestTarget, quests, storyFlags, chapter, trust, metPeople, peopleSeenTrust, trustGainedOnDay]);
+  }, [gameState, playerState, currentScene, busStopReturnSceneId, marleneActive, deskCigarettesPickedUp, scrapyardKnifePickedUp, garageFlashlightPickedUp, momTalked, momJobConcernHeard, job, jobQuestTarget, quests, storyFlags, chapter, trust, metPeople, peopleSeenTrust, trustGainedOnDay, clues, clueConnections, cluesSeen, askedAbout]);
 
   // This is a temporary, per-tab resume point. It survives refreshes but is
   // automatically cleared when the browser tab is closed.
@@ -641,15 +714,45 @@ export function useGame() {
     ) {
       applyFlags("rachelFollowedUp");
     }
+    const choiceContext = {
+      storyFlags: storyFlagsRef.current,
+      quests: questsRef.current,
+      job,
+      jobQuestTarget,
+      usedLabels: [] as string[],
+      openedAsEmployee: asEmployee,
+      inventory: playerState.inventory,
+      trust: trustRef.current,
+      money: playerState.money,
+    };
+    const gossipWaiting = Boolean(
+      person === "margaret"
+      && returning
+      && trustRef.current.margaret >= 2
+      && !storyFlagsRef.current.margaretGossipHeard,
+    );
+    const nothingNew = Boolean(
+      person
+      && returning
+      && !gossipWaiting
+      && visitHasNothingNew(selectedConversation.choices, choiceContext),
+    );
     const built = buildNpcOpening({
-      opening: baseOpening,
+      opening: nothingNew && person ? repeatVisitOpening(person, gameState.time) : baseOpening,
       person,
       trust: person ? trustRef.current[person] : 0,
       returning,
       mode: selectedConversation.returnGreeting,
       gossipHeard: Boolean(storyFlagsRef.current.margaretGossipHeard),
+      skipGreeting: nothingNew,
     });
-    if (built.gossipShown) applyFlags("margaretGossipHeard");
+    setConversationPerson(person);
+    setAskAboutOpen(false);
+    if (built.gossipShown) {
+      applyFlags("margaretGossipHeard");
+      const gate = startTheGate(questsRef.current);
+      if (gate.started) applyQuestHooks({ startsQuest: "the-gate" });
+    }
     trustSpentRef.current = {};
 
     conversationActiveRef.current = true;
@@ -663,6 +766,8 @@ export function useGame() {
   }
 
   function closeConversation() {
+    setAskAboutOpen(false);
+    setConversationPerson(null);
     setConversationActive(false);
     setConversationEnding(false);
     // Drop the lock immediately so the scene choices return while the
@@ -750,12 +855,14 @@ export function useGame() {
           image: plateUrl(choice.closeup.image),
           thought: choice.closeup.thought,
           label: choice.closeup.label,
+          inscriptions: choice.closeup.inscriptions,
         },
         next: choice.closeup.next
           ? {
               image: plateUrl(choice.closeup.next.image),
               thought: choice.closeup.next.thought,
               label: choice.closeup.next.label,
+              inscriptions: choice.closeup.next.inscriptions,
             }
           : undefined,
         flags: choice.closeup.setsFlags,
@@ -932,6 +1039,10 @@ export function useGame() {
     }
 
     if ("response" in choice) {
+      if (choice.label === ASK_ABOUT_LABEL) {
+        setAskAboutOpen(true);
+        return;
+      }
       handleConversationChoice(choice);
       return;
     }
@@ -971,6 +1082,7 @@ export function useGame() {
           thought: choice.closeup.thought,
           label: choice.closeup.label,
           disableWeatherFilter: choice.closeup.disableWeatherFilter,
+          inscriptions: choice.closeup.inscriptions,
         },
         choice.closeup.next
           ? {
@@ -978,6 +1090,7 @@ export function useGame() {
               thought: choice.closeup.next.thought,
               label: choice.closeup.next.label,
               disableWeatherFilter: choice.closeup.next.disableWeatherFilter,
+              inscriptions: choice.closeup.next.inscriptions,
             }
           : undefined,
       );
@@ -1305,6 +1418,16 @@ export function useGame() {
     gainedOnDayRef.current = restoredGains;
     setTrustGainedOnDay(restoredGains);
     trustSpentRef.current = {};
+    const restoredClues = migrateClues(save);
+    cluesRef.current = restoredClues.clues;
+    setClues(restoredClues.clues);
+    connectionsRef.current = restoredClues.connections;
+    setClueConnections(restoredClues.connections);
+    setCluesSeen(restoredClues.cluesSeen);
+    askedRef.current = restoredClues.askedAbout;
+    setAskedAbout(restoredClues.askedAbout);
+    setAskAboutOpen(false);
+    setConversationPerson(null);
     closeupRef.current = null;
     setCloseup(null);
     closeupQueue.current = [];
@@ -1378,6 +1501,15 @@ export function useGame() {
     gainedOnDayRef.current = {};
     setTrustGainedOnDay({});
     trustSpentRef.current = {};
+    cluesRef.current = [];
+    setClues([]);
+    connectionsRef.current = [];
+    setClueConnections([]);
+    setCluesSeen([]);
+    askedRef.current = {};
+    setAskedAbout({});
+    setAskAboutOpen(false);
+    setConversationPerson(null);
     setChapter(1);
     closeupRef.current = null;
     setCloseup(null);
@@ -1418,6 +1550,10 @@ export function useGame() {
       met: [],
       peopleSeenTrust: freshSeen,
       trustGainedOnDay: {},
+      clues: [],
+      clueConnections: [],
+      cluesSeen: [],
+      askedAbout: {},
     });
   }
 
@@ -1450,6 +1586,75 @@ export function useGame() {
       })
     : currentScene.choices.filter(isChoiceAvailable);
 
+  const askTopics = conversationActive && conversationPerson
+    ? askTopicsFor(conversationPerson, clues, clueConnections)
+    : [];
+  const choicesForScene = conversationActive && !replyPending && !conversationEnding && askTopics.length > 0
+    ? [...activeChoices, { label: ASK_ABOUT_LABEL, response: [] as StoryEntry[], repeatable: true }]
+    : activeChoices;
+
+  function acknowledgeClues() {
+    setCluesSeen(cluesRef.current);
+  }
+
+  function connectOnBoard(a: ClueId, b: ClueId) {
+    const result = tryConnect(
+      a,
+      b,
+      cluesRef.current,
+      connectionsRef.current,
+      Math.floor(Math.random() * 3),
+    );
+    if (result.status === "linked") {
+      if (result.added) {
+        connectionsRef.current = result.connections;
+        setClueConnections(result.connections);
+        harlowAudio().playSfx("pen-scribble");
+      }
+      setCurrentThought(result.thought);
+      return { ok: true as const, line: result.thought };
+    }
+    setCurrentThought(result.line);
+    return { ok: false as const, line: result.line };
+  }
+
+  function beginAsk(clueId: ClueId) {
+    if (!conversationPerson) return;
+    const trustNow = trustRef.current;
+    const result = resolveAskAbout({
+      person: conversationPerson,
+      clue: clueId,
+      trust: trustNow,
+      asked: askedRef.current,
+    });
+    askedRef.current = result.asked;
+    setAskedAbout(result.asked);
+    if (askCompletesGate(conversationPerson, clueId)) {
+      const gate = finishGate(questsRef.current);
+      if (gate.completed) {
+        applyQuestHooks({ completesQuest: "the-gate", questStep: "done" });
+      }
+    }
+    setAskAboutOpen(false);
+    const spoken = result.lines.find(
+      (entry) => entry.type === "conversation" && entry.character === "Ethan",
+    );
+    handleConversationChoice({
+      label: spoken?.type === "conversation" ? spoken.text : ASK_ABOUT_LABEL,
+      response: result.lines,
+      repeatable: true,
+    });
+  }
+
+  function dismissAskAbout() {
+    setConversation((previous) => {
+      const next = [...previous, { type: "conversation" as const, character: "Ethan", text: "Never mind." }];
+      conversationRef.current = next;
+      return next;
+    });
+    setAskAboutOpen(false);
+  }
+
   function acknowledgePeople() {
     setPeopleSeenTrust((previous) => {
       const next = { ...previous };
@@ -1466,6 +1671,10 @@ export function useGame() {
     quests,
     hasFlag,
   });
+
+  const noteHoodedMan = useCallback(() => {
+    grantClue("man-in-a-hood");
+  }, []);
 
   return {
     gameState,
@@ -1489,7 +1698,7 @@ export function useGame() {
     onReplySettled: revealPendingCloseup,
     showDinerBoardHint,
     activeCharacter,
-    activeChoices,
+    activeChoices: choicesForScene,
     travelingTo,
     travelDestinations: availableTravelDestinations,
     showStats,
@@ -1509,6 +1718,18 @@ export function useGame() {
     metPeople,
     unseenPeople,
     acknowledgePeople,
+    clues,
+    clueConnections,
+    unseenClues: unseenClueIds(clues, cluesSeen),
+    acknowledgeClues,
+    connectOnBoard,
+    askAboutOpen,
+    askTopics,
+    askedAbout,
+    conversationPerson,
+    beginAsk,
+    dismissAskAbout,
+    noteHoodedMan,
     closeup,
     dismissCloseup,
     showChapterEnd,

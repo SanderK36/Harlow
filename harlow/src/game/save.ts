@@ -1,4 +1,5 @@
 import type { GameState, Player } from "@/game/types";
+import type { AskedAbout, ClueConnectionId, ClueId } from "@/game/clues";
 import type { JobId, QuestProgress, StoryFlag } from "@/game/quests";
 import type { TrustMap, TrustPerson } from "@/game/trust";
 
@@ -38,6 +39,14 @@ export type SavedGame = {
   peopleSeenTrust?: Partial<TrustMap>;
   /** dayNumber of the last once-per-day trust gain, per person. */
   trustGainedOnDay?: Partial<Record<TrustPerson, number>>;
+  /** Clues pinned in the notebook. Missing on older saves. */
+  clues?: ClueId[];
+  /** Corkboard threads Ethan has already drawn. */
+  clueConnections?: ClueConnectionId[];
+  /** Clues already opened on the Clues page. A difference is the ink dot. */
+  cluesSeen?: ClueId[];
+  /** Clues Ethan has already asked this person about. */
+  askedAbout?: AskedAbout;
 };
 
 export type SavedGameSlot = {

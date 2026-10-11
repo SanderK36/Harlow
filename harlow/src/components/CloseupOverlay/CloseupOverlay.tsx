@@ -2,6 +2,9 @@
 
 import { useEffect } from "react";
 
+import PlateImage from "@/components/ImageText/PlateImage";
+import type { Inscription } from "@/components/ImageText/imageText";
+
 import styles from "./CloseupOverlay.module.css";
 
 export type CloseupContent = {
@@ -13,6 +16,8 @@ export type CloseupContent = {
   label?: string;
   /** Some memories should avoid the rainy-weather closeup wash. */
   disableWeatherFilter?: boolean;
+  /** Headline, caption, or note drawn on the picture. */
+  inscriptions?: Inscription[];
 };
 
 type CloseupOverlayProps = {
@@ -54,11 +59,11 @@ export default function CloseupOverlay({ closeup, onDismiss, rain = null, rainNi
       <p className={styles.hint}>Click or press Space</p>
       <div className={styles.frame} onClick={(event) => event.stopPropagation()}>
         <div className={styles.art}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <PlateImage
             src={closeup.image}
-            alt=""
-            className={`${styles.image}${
+            alt={closeup.label ?? "Closeup"}
+            inscriptions={closeup.inscriptions}
+            imageClassName={`${styles.image}${
               rain
                 ? ` ${
                   rainNight

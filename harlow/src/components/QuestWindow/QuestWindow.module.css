@@ -459,3 +459,195 @@
     width: 100%;
   }
 }
+
+.inkDot {
+  position: absolute;
+  top: 8px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  background: radial-gradient(circle at 35% 30%, #3a3228, #14110e 72%);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.pageTab {
+  position: relative;
+}
+
+.board {
+  position: relative;
+  min-height: 280px;
+  margin: 0 -6px;
+  padding: 16px 12px 18px;
+  background-color: #7a4a28;
+  background-image:
+    url("/images/ui/corkboardTexture.png"),
+    radial-gradient(ellipse at 18% 12%, rgba(255, 214, 160, 0.2), transparent 42%),
+    repeating-linear-gradient(90deg, rgba(80, 36, 12, 0.16) 0 2px, transparent 2px 6px),
+    repeating-linear-gradient(0deg, rgba(60, 28, 10, 0.12) 0 1px, transparent 1px 5px),
+    linear-gradient(165deg, #c4894e, #6e4124 60%, #8d5a30);
+  background-size: cover, auto, auto, auto, auto;
+  background-position: center;
+  border-radius: 4px;
+  box-shadow: inset 0 0 24px rgba(40, 16, 6, 0.35);
+}
+
+.threads {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.threads path {
+  fill: none;
+  stroke: #c4282a;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.ghostThread {
+  position: absolute;
+  z-index: 3;
+  height: 2.5px;
+  background: #c4282a;
+  border-radius: 2px;
+  transform-origin: 0 50%;
+  pointer-events: none;
+}
+
+.clueGrid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.polaroidCard,
+.pinned {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 8px 10px;
+  color: #24150e;
+  text-align: left;
+  touch-action: none;
+  cursor: pointer;
+  background: transparent;
+  border: 2px solid transparent;
+}
+
+.polaroidCard {
+  background: #f4efe4;
+  box-shadow: 0 3px 8px rgba(40, 16, 8, 0.35);
+  transform: rotate(-1.5deg);
+}
+
+.clueGrid li:nth-child(2n) .polaroidCard,
+.clueGrid li:nth-child(2n) .pinned {
+  transform: rotate(1.6deg);
+}
+
+.pinned {
+  padding: 16px 10px 10px;
+  background: #f3e6c4;
+  box-shadow: 0 2px 6px rgba(40, 16, 8, 0.28);
+}
+
+.pinned .pin {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+}
+
+.clueSelected {
+  z-index: 2;
+  border-color: #a32020;
+  transform: translateY(-6px) rotate(0deg);
+  box-shadow: 0 8px 16px rgba(40, 16, 8, 0.4);
+}
+
+.polaroidFrame {
+  display: block;
+  background: #1a1210;
+}
+
+.cluePhoto,
+.photoMissing {
+  display: block;
+  width: 100%;
+  height: 72px;
+  object-fit: cover;
+}
+
+.photoMissing {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(120, 90, 60, 0.35), transparent 60%),
+    #241812;
+}
+
+.clueCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.clueName {
+  font-family: var(--font-typewriter);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.clueNote {
+  min-height: 1.2em;
+  font-family: var(--font-handwriting);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.boardThought {
+  position: relative;
+  z-index: 1;
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  color: #f3e2c8;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.4;
+  text-align: center;
+  background: rgba(18, 10, 12, 0.88);
+  border: 1px solid rgba(230, 155, 102, 0.35);
+  border-radius: 8px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.polaroidCard:focus-visible,
+.pinned:focus-visible {
+  outline: 2px solid #f3e6c8;
+  outline-offset: 2px;
+}

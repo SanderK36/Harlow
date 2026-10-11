@@ -55,11 +55,14 @@ export type Choice = {
     label?: string;
     /** Some memories should bypass the rainy override styling. */
     disableWeatherFilter?: boolean;
+    /** Words drawn on the picture. The plate stays readable if the file is missing. */
+    inscriptions?: import("@/components/ImageText/imageText").Inscription[];
     next?: {
       image: string;
       thought: string;
       label?: string;
       disableWeatherFilter?: boolean;
+      inscriptions?: import("@/components/ImageText/imageText").Inscription[];
     };
   };
   /** Hidden once any listed story flag is set. */
