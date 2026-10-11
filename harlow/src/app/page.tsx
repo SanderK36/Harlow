@@ -137,6 +137,10 @@ export default function Home() {
     showChapterEnd,
     dismissChapterEnd,
     storyFlags,
+    trust,
+    metPeople,
+    unseenPeople,
+    acknowledgePeople,
     momTalked,
     questNotification,
     questNotificationLabel,
@@ -589,6 +593,7 @@ export default function Home() {
             rememberPanel("quests", opener);
             setShowQuestLog(true);
           }}
+          notebookUpdated={unseenPeople.length > 0}
         />
 
         <div
@@ -897,6 +902,10 @@ export default function Home() {
             currentMonth={gameState.currentMonth}
             inventory={playerState.inventory}
             storyFlags={storyFlags}
+            trust={trust}
+            metPeople={metPeople}
+            unseenPeople={unseenPeople}
+            onPeopleViewed={acknowledgePeople}
             onClose={() => {
               forgetPanel("quests");
               setShowQuestLog(false);

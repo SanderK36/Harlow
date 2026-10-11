@@ -12,6 +12,8 @@ type GameStatusProps = {
   onInventoryClick: (opener: HTMLButtonElement) => void;
   onQuestsClick: (opener: HTMLButtonElement) => void;
   notices?: StatNotice[];
+  /** Ink mark when a People line is new. Clears once that page is opened. */
+  notebookUpdated?: boolean;
 };
 
 const ATTRIBUTES = new Set(["courage", "intelligence", "charisma", "athletics", "strength"]);
@@ -36,6 +38,7 @@ export default function GameStatus({
   onInventoryClick,
   onQuestsClick,
   notices = [],
+  notebookUpdated = false,
 }: GameStatusProps) {
   const percentage = (value: number, maximum: number) =>
     Math.min(100, Math.max(0, (value / maximum) * 100));
@@ -73,6 +76,12 @@ export default function GameStatus({
             onClick={(event) => onQuestsClick(event.currentTarget)}
           >
             QUESTS
+            {notebookUpdated && (
+              <>
+                <span className={styles.inkDot} aria-hidden="true" />
+                <span className={styles.srOnly}>Notebook updated</span>
+              </>
+            )}
           </button>
 
         </div>

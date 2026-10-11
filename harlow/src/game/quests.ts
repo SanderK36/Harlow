@@ -48,6 +48,16 @@ export type StoryFlag =
   | "rachelKnowsHood"
   | "rachelKnowsFile"
   | "rachelShutOut"
+  /** Ethan told Rachel he'd come back after Walter. */
+  | "rachelComebackAsked"
+  /** He talked to her again before sleeping. */
+  | "rachelFollowedUp"
+  /** He slept before that second talk. */
+  | "rachelWaited"
+  /** He brought Emily's poster up with Linda. Trust does not move. */
+  | "lindaPosterRaised"
+  /** Margaret's +2 gossip has already been said. */
+  | "margaretGossipHeard"
   | "posterFound"
   /** First visit to the diner interior, before the missing poster is found. */
   | "dinerBoardHintSeen"

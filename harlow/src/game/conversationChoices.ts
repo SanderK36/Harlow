@@ -6,6 +6,12 @@ import {
   type QuestProgress,
   type StoryFlag,
 } from "@/game/quests";
+import {
+  canAffordPricedChoice,
+  defaultTrust,
+  meetsTrust,
+  type TrustMap,
+} from "@/game/trust";
 
 export type ConversationChoiceContext = {
   storyFlags: Partial<Record<StoryFlag, boolean>>;
@@ -15,6 +21,8 @@ export type ConversationChoiceContext = {
   usedLabels: string[];
   openedAsEmployee: boolean;
   inventory: string[];
+  trust?: TrustMap;
+  money?: number;
 };
 
 function flagList(flags: StoryFlag | StoryFlag[] | undefined) {
@@ -60,12 +68,16 @@ export function conversationChoiceVisible(
   choice: ConversationChoice,
   ctx: ConversationChoiceContext,
 ) {
+  const trust = ctx.trust ?? defaultTrust();
+  const money = ctx.money ?? Number.POSITIVE_INFINITY;
   return (
     (!choice.requiresNoJob || !ctx.job)
     && (!choice.requiresJob || choice.requiresJob === ctx.job)
     && (!choice.requiresJobQuestTarget || choice.requiresJobQuestTarget === ctx.jobQuestTarget)
     && meetsStoryRequirement(choice, ctx)
     && !hasAnyFlag(ctx.storyFlags, choice.excludesStoryFlag)
+    && (!choice.requiresTrust || meetsTrust(trust, choice.requiresTrust))
+    && (!choice.excludesTrust || !meetsTrust(trust, choice.excludesTrust))
     && (!choice.requiresChoice || ctx.usedLabels.includes(choice.requiresChoice))
     && (!choice.requiresAnyChoice || choice.requiresAnyChoice.some((label) => ctx.usedLabels.includes(label)))
     && (!choice.requiresPriorChoice || ctx.usedLabels.length > 0)
@@ -76,6 +88,7 @@ export function conversationChoiceVisible(
     && (!choice.requiresItem || ctx.inventory.includes(choice.requiresItem))
     && (!choice.excludesItem || !ctx.inventory.includes(choice.excludesItem))
     && (!choice.requiresQuestActive || isQuestActive(ctx.quests, choice.requiresQuestActive))
-    && (choice.endsConversation || !ctx.usedLabels.includes(choice.label))
+    && canAffordPricedChoice(choice, trust, money)
+    && (choice.repeatable || choice.endsConversation || !ctx.usedLabels.includes(choice.label))
   );
 }

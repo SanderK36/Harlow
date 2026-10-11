@@ -1,4 +1,10 @@
+"use client";
+
+import Image from "next/image";
+import { useEffect, useState } from "react";
+
 import ActionButton from "@/components/ActionButton/ActionButton";
+import { useReducedMotion } from "@/components/DialogueScene/typewriter";
 import {
   jobDetails,
   questObjective,
@@ -7,6 +13,15 @@ import {
   type QuestProgress,
   type StoryFlag,
 } from "@/game/quests";
+import {
+  handwritingCount,
+  notebookLine,
+  notebookPeople,
+  notebookPortrait,
+  NOTEBOOK_NAME,
+  type TrustMap,
+  type TrustPerson,
+} from "@/game/trust";
 import type { DayOfWeek, Month } from "@/game/types";
 
 import styles from "./QuestWindow.module.css";
@@ -19,6 +34,10 @@ type QuestWindowProps = {
   currentMonth: Month;
   inventory: string[];
   storyFlags: Partial<Record<StoryFlag, boolean>>;
+  trust: TrustMap;
+  metPeople: TrustPerson[];
+  unseenPeople: TrustPerson[];
+  onPeopleViewed: () => void;
   onClose: () => void;
 };
 
@@ -47,6 +66,27 @@ const MONTH_SHORT: Record<Month, string> = {
   December: "Dec.",
 };
 
+function HandLine({ text, animate }: { text: string; animate: boolean }) {
+  const reduced = useReducedMotion();
+  const [count, setCount] = useState(0);
+  const reveal = animate && !reduced;
+
+  useEffect(() => {
+    if (!reveal) return;
+    const started = performance.now();
+    let frame = 0;
+    const tick = (now: number) => {
+      const next = handwritingCount(text.length, now - started, false);
+      setCount(next);
+      if (next < text.length) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [reveal, text]);
+
+  return <p className={styles.hand}>{reveal ? text.slice(0, count) : text}</p>;
+}
+
 /** Notebook date line, e.g. "Sat., Oct. 2, 1982". */
 export function formatQuestLogDate(
   dayOfWeek: DayOfWeek,
@@ -68,9 +108,23 @@ export default function QuestWindow({
   currentMonth,
   inventory,
   storyFlags,
+  trust,
+  metPeople,
+  unseenPeople,
+  onPeopleViewed,
   onClose,
 }: QuestWindowProps) {
+  const [tab, setTab] = useState<"quests" | "people">("quests");
+  const [writing, setWriting] = useState<TrustPerson[]>([]);
   const objectiveCtx = { inventory, storyFlags };
+
+  function openPeople() {
+    if (tab !== "people") {
+      setWriting(unseenPeople);
+      onPeopleViewed();
+    }
+    setTab("people");
+  }
   const active = quests.filter((quest) => quest.status === "active");
   const completed = quests.filter((quest) => quest.status === "completed");
   const details = job ? jobDetails[job] : null;
@@ -91,9 +145,71 @@ export default function QuestWindow({
             Notebook
           </h2>
           <p className={styles.date}>{dateLine}</p>
+          <div className={styles.tabs} role="tablist" aria-label="Notebook">
+            <button
+              type="button"
+              role="tab"
+              id="notebook-tab-quests"
+              className={styles.pageTab}
+              aria-selected={tab === "quests"}
+              aria-controls="notebook-panel-quests"
+              onClick={() => setTab("quests")}
+            >
+              Quests
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="notebook-tab-people"
+              className={styles.pageTab}
+              aria-selected={tab === "people"}
+              aria-controls="notebook-panel-people"
+              onClick={openPeople}
+            >
+              People
+            </button>
+          </div>
         </header>
 
-        <div className={styles.pages}>
+        <div
+          className={styles.pages}
+          id={tab === "quests" ? "notebook-panel-quests" : "notebook-panel-people"}
+          role="tabpanel"
+          aria-labelledby={tab === "quests" ? "notebook-tab-quests" : "notebook-tab-people"}
+        >
+          {tab === "people" ? (
+              <ul className={styles.people}>
+                {notebookPeople(metPeople).map((person, index) => {
+                  const line = notebookLine(person, trust[person]);
+                  const name = NOTEBOOK_NAME[person];
+                  return (
+                    <li
+                      key={person}
+                      className={`${styles.person} ${index % 2 === 0 ? styles.tiltA : styles.tiltB}`}
+                    >
+                      <article className={styles.card} aria-label={`${name}. ${line}`}>
+                        <div className={styles.polaroidWrap}>
+                          <div className={styles.polaroid}>
+                            <Image
+                              className={styles.photo}
+                              src={notebookPortrait(person)}
+                              alt=""
+                              width={64}
+                              height={58}
+                            />
+                          </div>
+                        </div>
+                        <div className={styles.personCopy} aria-hidden="true">
+                          <h3 className={styles.personName}>{name}</h3>
+                          <HandLine key={line} text={line} animate={writing.includes(person)} />
+                        </div>
+                      </article>
+                    </li>
+                  );
+                })}
+              </ul>
+          ) : (
+          <>
           {active.length === 0 && completed.length === 0 && (
             <p className={styles.empty}>Nothing written down yet.</p>
           )}
@@ -141,6 +257,8 @@ export default function QuestWindow({
             <p className={styles.jobNote}>
               Job: <strong>{details.name}</strong> — {details.benefit}
             </p>
+          )}
+          </>
           )}
         </div>
 
