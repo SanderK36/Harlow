@@ -61,6 +61,17 @@ import { isChoiceAvailable as choiceIsAvailable } from "@/game/choiceAvailabilit
 import { presentedThought } from "@/game/presentedThought";
 import { sceneAfterPickups } from "@/game/sceneAfterPickups";
 import { travelDestinationIds } from "@/game/travelDestinations";
+import {
+  applyConversationTrust,
+  buildNpcOpening,
+  migrateMet,
+  migrateTrust,
+  personFromOpening,
+  pricedEffects,
+  shouldMarkRachelWaited,
+  type TrustMap,
+  type TrustPerson,
+} from "@/game/trust";
 import { useDoorTransition } from "@/game/useDoorTransition";
 import { useNoticeQueue } from "@/game/useNoticeQueue";
 
@@ -217,6 +228,21 @@ export function useGame() {
   // Updated in the same turn as setStoryFlags so a choice list built later
   // in that turn still sees rachelMet and the other flags.
   const storyFlagsRef = useRef(storyFlags);
+  const [trust, setTrust] = useState<TrustMap>(() => migrateTrust(sessionSave));
+  const trustRef = useRef(trust);
+  trustRef.current = trust;
+  const [metPeople, setMetPeople] = useState<TrustPerson[]>(() => migrateMet(sessionSave));
+  const metRef = useRef(metPeople);
+  metRef.current = metPeople;
+  const [peopleSeenTrust, setPeopleSeenTrust] = useState<Partial<TrustMap>>(
+    () => sessionSave?.peopleSeenTrust ?? {},
+  );
+  const [trustGainedOnDay, setTrustGainedOnDay] = useState<Partial<Record<TrustPerson, number>>>(
+    () => sessionSave?.trustGainedOnDay ?? {},
+  );
+  const gainedOnDayRef = useRef(trustGainedOnDay);
+  gainedOnDayRef.current = trustGainedOnDay;
+  const trustSpentRef = useRef<Partial<Record<TrustPerson, number>>>({});
   const [showDinerBoardHint, setShowDinerBoardHint] = useState(false);
   const [chapter, setChapter] = useState(sessionSave?.chapter ?? 1);
   const [closeup, setCloseup] = useState<CloseupContent | null>(null);
@@ -415,8 +441,12 @@ export function useGame() {
       quests,
       storyFlags,
       chapter,
+      trust,
+      met: metPeople,
+      peopleSeenTrust,
+      trustGainedOnDay,
     };
-  }, [gameState, playerState, currentScene, busStopReturnSceneId, marleneActive, deskCigarettesPickedUp, scrapyardKnifePickedUp, garageFlashlightPickedUp, momTalked, momJobConcernHeard, job, jobQuestTarget, quests, storyFlags, chapter]);
+  }, [gameState, playerState, currentScene, busStopReturnSceneId, marleneActive, deskCigarettesPickedUp, scrapyardKnifePickedUp, garageFlashlightPickedUp, momTalked, momJobConcernHeard, job, jobQuestTarget, quests, storyFlags, chapter, trust, metPeople, peopleSeenTrust, trustGainedOnDay]);
 
   // This is a temporary, per-tab resume point. It survives refreshes but is
   // automatically cleared when the browser tab is closed.
@@ -535,21 +565,47 @@ export function useGame() {
             : currentScene.conversation;
     const asEmployee =
       !!selectedConversation?.jobOpening && selectedConversation.jobOpening.job === job;
-    const opening = asEmployee
+    const baseOpening = asEmployee
       ? selectedConversation.jobOpening!.opening
       : selectedConversation?.opening;
 
-    if (!opening) {
+    if (!baseOpening || !selectedConversation) {
       return;
     }
 
+    const person = personFromOpening(baseOpening);
+    const returning = person ? metRef.current.includes(person) : false;
+    if (person && !returning) {
+      const nextMet = [...metRef.current, person];
+      metRef.current = nextMet;
+      setMetPeople(nextMet);
+    }
+    // The promise is set during the first talk. A later opening is the follow-up.
+    if (
+      person === "rachel"
+      && storyFlagsRef.current.rachelComebackAsked
+      && !storyFlagsRef.current.rachelFollowedUp
+    ) {
+      applyFlags("rachelFollowedUp");
+    }
+    const built = buildNpcOpening({
+      opening: baseOpening,
+      person,
+      trust: person ? trustRef.current[person] : 0,
+      returning,
+      mode: selectedConversation.returnGreeting,
+      gossipHeard: Boolean(storyFlagsRef.current.margaretGossipHeard),
+    });
+    if (built.gossipShown) applyFlags("margaretGossipHeard");
+    trustSpentRef.current = {};
+
     conversationActiveRef.current = true;
     pendingCloseup.current = null;
-    setActiveConversation(selectedConversation ?? null);
+    setActiveConversation(selectedConversation);
     setConversationEnding(false);
     setOpenedAsEmployee(asEmployee);
     setUsedConversationChoices([]);
-    setConversation(opening);
+    setConversation(built.opening);
     setConversationActive(true);
   }
 
@@ -663,6 +719,30 @@ export function useGame() {
       setCurrentThought("I gotta get a job. Maybe those flyers on the light pole out front.");
     }
     if (flagList.length) applyFlags(flagList);
+
+    if (choice.trust) {
+      const nextTrust = applyConversationTrust(
+        {
+          trust: trustRef.current,
+          spent: trustSpentRef.current,
+          gainedOnDay: gainedOnDayRef.current,
+        },
+        choice.trust,
+        gameState.dayNumber,
+      );
+      trustRef.current = nextTrust.trust;
+      trustSpentRef.current = nextTrust.spent;
+      gainedOnDayRef.current = nextTrust.gainedOnDay;
+      setTrust(nextTrust.trust);
+      setTrustGainedOnDay(nextTrust.gainedOnDay);
+    }
+
+    if (choice.effects) {
+      const effects = choice.effects;
+      setPlayerState((previous) => applyEffects(previous, effects));
+      const notices = statDeltas(playerState, applyEffects(playerState, effects));
+      if (notices.length) setCurrentEffects(notices);
+    }
 
     if (choice.givesItem) {
       setPlayerState((previous) =>
@@ -964,6 +1044,7 @@ export function useGame() {
     }
 
     if (choice.action === "goToSleep") {
+      if (shouldMarkRachelWaited(storyFlagsRef.current)) applyFlags("rachelWaited");
       const minutesUntilSevenAm = gameState.time < TIRED_END
         ? TIRED_END - gameState.time
         : 1440 - gameState.time + TIRED_END;
@@ -1148,6 +1229,17 @@ export function useGame() {
     storyFlagsRef.current = restoredFlags;
     setStoryFlags(restoredFlags);
     setChapter(save.chapter ?? 1);
+    const restoredTrust = migrateTrust(save);
+    const restoredMet = migrateMet(save);
+    trustRef.current = restoredTrust;
+    setTrust(restoredTrust);
+    metRef.current = restoredMet;
+    setMetPeople(restoredMet);
+    setPeopleSeenTrust(save.peopleSeenTrust ?? {});
+    const restoredGains = save.trustGainedOnDay ?? {};
+    gainedOnDayRef.current = restoredGains;
+    setTrustGainedOnDay(restoredGains);
+    trustSpentRef.current = {};
     closeupRef.current = null;
     setCloseup(null);
     closeupQueue.current = [];
@@ -1210,6 +1302,15 @@ export function useGame() {
     commitQuests([{ id: "talk-to-mom", status: "active" }]);
     storyFlagsRef.current = {};
     setStoryFlags({});
+    const freshTrust = migrateTrust(null);
+    trustRef.current = freshTrust;
+    setTrust(freshTrust);
+    metRef.current = [];
+    setMetPeople([]);
+    setPeopleSeenTrust({});
+    gainedOnDayRef.current = {};
+    setTrustGainedOnDay({});
+    trustSpentRef.current = {};
     setChapter(1);
     closeupRef.current = null;
     setCloseup(null);
@@ -1246,6 +1347,10 @@ export function useGame() {
       quests: [{ id: "talk-to-mom", status: "active" }],
       storyFlags: {},
       chapter: 1,
+      trust: migrateTrust(null),
+      met: [],
+      peopleSeenTrust: {},
+      trustGainedOnDay: {},
     });
   }
 
@@ -1268,9 +1373,25 @@ export function useGame() {
           usedLabels: usedConversationChoices,
           openedAsEmployee,
           inventory: playerState.inventory,
+          trust,
+          money: playerState.money,
         }),
       )
+      .map((choice) => {
+        const effects = pricedEffects(choice, trust);
+        return effects === choice.effects ? choice : { ...choice, effects };
+      })
     : currentScene.choices.filter(isChoiceAvailable);
+
+  function acknowledgePeople() {
+    setPeopleSeenTrust((previous) => {
+      const next = { ...previous };
+      for (const person of metRef.current) next[person] = trustRef.current[person];
+      return next;
+    });
+  }
+
+  const unseenPeople = metPeople.filter((person) => peopleSeenTrust[person] !== trust[person]);
   const availableTravelDestinations = travelDestinationIds({
     momTalked,
     job,
@@ -1317,6 +1438,10 @@ export function useGame() {
     quests,
     storyFlags,
     chapter,
+    trust,
+    metPeople,
+    unseenPeople,
+    acknowledgePeople,
     closeup,
     dismissCloseup,
     showChapterEnd,

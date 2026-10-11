@@ -27,6 +27,7 @@ export const walterConversation: Conversation = {
         ethan("Emily."),
         npc("Walter", "That file's been closed ten years, Ethan. Leave it closed."),
       ],
+      trust: { person: "walter", amount: -1 },
     },
     {
       label: "Forget it.",
@@ -39,6 +40,7 @@ export const walterConversation: Conversation = {
         ethan("Forget it."),
         npc("Walter", "Then we're done."),
       ],
+      trust: { person: "walter", amount: 0 },
       endsConversation: true,
     },
     {
@@ -68,6 +70,7 @@ export const walterConversation: Conversation = {
         npc("Walter", "Good. Don't go looking for him. Go home, Ethan."),
       ],
       storyFlag: "walterStationTalk",
+      trust: { person: "walter", amount: 1 },
       completesQuest: "down-to-the-station",
       questStep: "done",
       startsQuest: "what-walter-said",
@@ -135,6 +138,14 @@ export const margaretConversation: Conversation = {
         ethan("Probably not the worst day for that."),
         npc("Margaret", "Maybe not. But a diner feels wrong when nobody's in it."),
       ],
+    },
+    {
+      label: "Coffee.",
+      repeatable: true,
+      price: 1,
+      freeWhen: { person: "margaret", min: 2 },
+      trust: { person: "margaret", amount: 1, oncePerDay: true },
+      response: [ethan("Coffee.")],
     },
     {
       label: "Have people been talking about Mrs. Elrod?",

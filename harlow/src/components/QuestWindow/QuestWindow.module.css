@@ -80,6 +80,123 @@
   letter-spacing: 0.02em;
 }
 
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 10px 0 0;
+}
+
+.pageTab {
+  min-height: 44px;
+  padding: 8px 14px;
+  color: #6b4a32;
+  font-family: var(--font-typewriter);
+  font-size: 16px;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.pageTab[aria-selected="true"] {
+  color: #24150e;
+  border-bottom-color: #24150e;
+}
+
+.pageTab:focus-visible {
+  outline: 2px solid #5c3a22;
+  outline-offset: 2px;
+}
+
+.people {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 14px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person {
+  min-height: 44px;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  height: 100%;
+  padding: 8px;
+  background: rgba(255, 248, 230, 0.45);
+  border: 1px solid rgba(90, 55, 25, 0.18);
+}
+
+.polaroidWrap {
+  position: relative;
+  flex: 0 0 72px;
+  width: 72px;
+  height: 72px;
+}
+
+.polaroidWrap::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: -3px;
+  left: 20px;
+  width: 28px;
+  height: 10px;
+  background: rgba(214, 196, 150, 0.78);
+  border: 1px solid rgba(90, 70, 40, 0.18);
+  transform: rotate(-3deg);
+}
+
+.polaroid {
+  display: block;
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  object-position: center 18%;
+  padding: 4px 4px 10px;
+  box-sizing: border-box;
+  background: #f4efe4;
+  box-shadow: 0 2px 5px rgba(40, 20, 10, 0.28);
+  transform: rotate(var(--tilt));
+}
+
+.tiltA {
+  --tilt: -2deg;
+}
+
+.tiltB {
+  --tilt: 2deg;
+}
+
+.personCopy {
+  min-width: 0;
+}
+
+.personName {
+  margin: 0 0 3px;
+  color: #24150e;
+  font-family: var(--font-typewriter);
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.hand {
+  min-height: 1.35em;
+  margin: 0;
+  color: #2c1c12;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .pages {
   flex: 1 1 auto;
   min-height: 0;
@@ -301,6 +418,14 @@
 
   .pages {
     padding: 10px 16px 14px;
+  }
+
+  .people {
+    grid-template-columns: 1fr;
+  }
+
+  .pageTab {
+    flex: 1;
   }
 
   .entry,

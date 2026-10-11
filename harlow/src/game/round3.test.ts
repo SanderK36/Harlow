@@ -148,7 +148,11 @@ describe("Rachel at the Elrod house", () => {
 
     const stationLine =
       "I'm gonna head down to the station. See if I can get Walter to tell me anything.";
-    const walter = rachelElrodConversation.choices.find((choice) => choice.storyFlag === "rachelMet");
+    const walter = rachelElrodConversation.choices.find((choice) => {
+      const flags = choice.storyFlag;
+      const list = !flags ? [] : Array.isArray(flags) ? flags : [flags];
+      return list.includes("rachelMet");
+    });
     assert.equal(walter?.label, stationLine);
     assert.equal(walter?.requiresStoryFlag, "tapeSeen");
     assert.equal(walter?.completesQuest, "the-tape");
