@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 
 import ActionButton from "@/components/ActionButton/ActionButton";
+import ClueBoard from "@/components/QuestWindow/ClueBoard";
+import type { ClueConnectionId, ClueId } from "@/game/clues";
 import { useReducedMotion } from "@/components/DialogueScene/typewriter";
 import {
   jobDetails,
@@ -38,6 +40,11 @@ type QuestWindowProps = {
   metPeople: TrustPerson[];
   unseenPeople: TrustPerson[];
   onPeopleViewed: () => void;
+  clues: ClueId[];
+  connections: ClueConnectionId[];
+  unseenClues: ClueId[];
+  onCluesViewed: () => void;
+  onConnect: (a: ClueId, b: ClueId) => { ok: boolean; line: string };
   onClose: () => void;
 };
 
@@ -112,10 +119,16 @@ export default function QuestWindow({
   metPeople,
   unseenPeople,
   onPeopleViewed,
+  clues,
+  connections,
+  unseenClues,
+  onCluesViewed,
+  onConnect,
   onClose,
 }: QuestWindowProps) {
-  const [tab, setTab] = useState<"quests" | "people">("quests");
+  const [tab, setTab] = useState<"quests" | "clues" | "people">("quests");
   const [writing, setWriting] = useState<TrustPerson[]>([]);
+  const [writingClues, setWritingClues] = useState<ClueId[]>([]);
   const objectiveCtx = { inventory, storyFlags };
 
   function openPeople() {
@@ -124,6 +137,14 @@ export default function QuestWindow({
       onPeopleViewed();
     }
     setTab("people");
+  }
+
+  function openClues() {
+    if (tab !== "clues") {
+      setWritingClues(unseenClues);
+      onCluesViewed();
+    }
+    setTab("clues");
   }
   const active = quests.filter((quest) => quest.status === "active");
   const completed = quests.filter((quest) => quest.status === "completed");
@@ -160,6 +181,20 @@ export default function QuestWindow({
             <button
               type="button"
               role="tab"
+              id="notebook-tab-clues"
+              className={styles.pageTab}
+              aria-selected={tab === "clues"}
+              aria-controls="notebook-panel-clues"
+              onClick={openClues}
+            >
+              Clues
+              {unseenClues.length > 0 && tab !== "clues" && (
+                <span className={styles.inkDot} aria-hidden="true" />
+              )}
+            </button>
+            <button
+              type="button"
+              role="tab"
               id="notebook-tab-people"
               className={styles.pageTab}
               aria-selected={tab === "people"}
@@ -173,11 +208,30 @@ export default function QuestWindow({
 
         <div
           className={styles.pages}
-          id={tab === "quests" ? "notebook-panel-quests" : "notebook-panel-people"}
+          id={
+            tab === "quests"
+              ? "notebook-panel-quests"
+              : tab === "clues"
+                ? "notebook-panel-clues"
+                : "notebook-panel-people"
+          }
           role="tabpanel"
-          aria-labelledby={tab === "quests" ? "notebook-tab-quests" : "notebook-tab-people"}
+          aria-labelledby={
+            tab === "quests"
+              ? "notebook-tab-quests"
+              : tab === "clues"
+                ? "notebook-tab-clues"
+                : "notebook-tab-people"
+          }
         >
-          {tab === "people" ? (
+          {tab === "clues" ? (
+            <ClueBoard
+              clues={clues}
+              connections={connections}
+              writing={writingClues}
+              onConnect={onConnect}
+            />
+          ) : tab === "people" ? (
               <ul className={styles.people}>
                 {notebookPeople(metPeople).map((person, index) => {
                   const line = notebookLine(person, trust[person]);

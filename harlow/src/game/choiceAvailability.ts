@@ -1,3 +1,4 @@
+import { atticHotspotVisible, gateHotspotHidden, gazetteOnPorch } from "./clues";
 import type { Choice } from "./choices";
 import { TIRED_END } from "./lateNight";
 import {
@@ -41,11 +42,18 @@ export function isChoiceAvailable(choice: Choice, ctx: ChoiceContext) {
   if (choice.excludesStoryFlag && ctx.hasAnyFlag(choice.excludesStoryFlag)) return false;
   if (action === "makeCoffee" && coffeeErrandOpen(ctx.storyFlags)) return false;
 
-  if (!ctx.momTalked && (choice.travel || ["front-yard", "back-yard", "light-pole"].includes(choice.nextScene))) {
+  if (
+    action !== "lookAtGazette"
+    && !ctx.momTalked
+    && (choice.travel || ["front-yard", "back-yard", "light-pole"].includes(choice.nextScene))
+  ) {
     return false;
   }
   if (!ctx.momTalked && action === "relaxOnCouch") return false;
   if (!ctx.momTalked && sceneId === "front-yard") {
+    if (action === "lookAtGazette") {
+      return gazetteOnPorch(dayOfWeek, time, ctx.hasFlag("gazetteFound"));
+    }
     return ["enterGarage", "goBackYard", "goToStreets", "goHome"].includes(action);
   }
   if (action === "goToSleep") {
@@ -109,21 +117,18 @@ export function isChoiceAvailable(choice: Choice, ctx: ChoiceContext) {
     );
   }
   if (action === "talkToRachel") {
-    // Elrod: Rachel is only out 07:00–19:00 (matches her standing art).
-    if (sceneId === "elrod-house") {
-      return (
-        (
-          !ctx.hasFlag("rachelMet")
-          || (
-            ctx.hasFlag("walterStationTalk")
-            && isQuestActive(ctx.quests, "what-walter-said")
-          )
-        )
-        && time >= 420
-        && time < 1140
-      );
-    }
-    return false;
+    // Elrod: Rachel is out 07:00–19:00. She stays after What Walter Said
+    // so a return visit still has a line, and Ask about can reach her.
+    if (sceneId !== "elrod-house") return false;
+    if (time < 420 || time >= 1140) return false;
+    return (
+      !ctx.hasFlag("rachelMet")
+      || (
+        ctx.hasFlag("walterStationTalk")
+        && isQuestActive(ctx.quests, "what-walter-said")
+      )
+      || isQuestCompleted(ctx.quests, "what-walter-said")
+    );
   }
   if (action === "lookAtSanatoriumHill") {
     const night = time >= 1080 || time < 360;
@@ -147,6 +152,20 @@ export function isChoiceAvailable(choice: Choice, ctx: ChoiceContext) {
     return isNightTime(time) && !ctx.hasFlag("sanatoriumCigaretteSeen");
   }
   if (action === "lookAtElrodTape") return true;
+  if (action === "lookAtElrodGate") {
+    return ctx.hasFlag("margaretGossipHeard") && !gateHotspotHidden(time);
+  }
+  if (action === "lookInDadsBox") return atticHotspotVisible(ctx.storyFlags);
+  if (
+    action === "lookAtEmilyMusicBox"
+    || action === "lookAtEmilyPolaroid"
+    || action === "lookAtEmilyNote"
+  ) {
+    return ctx.momTalked;
+  }
+  if (action === "lookAtGazette") {
+    return gazetteOnPorch(dayOfWeek, time, ctx.hasFlag("gazetteFound"));
+  }
 
   if (choice.requirements?.flags && !ctx.hasAllFlags(choice.requirements.flags)) return false;
   if (choice.requirements?.excludesFlags && ctx.hasAnyFlag(choice.requirements.excludesFlags)) return false;

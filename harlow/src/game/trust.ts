@@ -308,7 +308,10 @@ export function buildNpcOpening(input: {
   returning: boolean;
   mode?: "replace" | "prepend";
   gossipHeard?: boolean;
+  /** Repeat-visit line is already the opening. Leave it, and skip gossip. */
+  skipGreeting?: boolean;
 }): { opening: StoryEntry[]; gossipShown: boolean } {
+  if (input.skipGreeting) return { opening: input.opening, gossipShown: false };
   const greeting = input.person
     ? returnGreeting(input.person, input.trust, input.returning)
     : null;

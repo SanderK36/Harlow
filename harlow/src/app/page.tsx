@@ -11,6 +11,7 @@ import SceneHotspot from "@/components/SceneHotspot";
 
 import GameStatus from "@/components/GameStatus/GameStatus";
 import ActionList from "@/components/ActionList/ActionList";
+import AskAboutList from "@/components/AskAboutList/AskAboutList";
 import StatsWindow from "@/components/StatsWindow/StatsWindow";
 import StoryLog from "@/components/StoryLog/StoryLog";
 import CharacterLine from "@/components/CharacterLine/CharacterLine";
@@ -158,6 +159,18 @@ export default function Home() {
     metPeople,
     unseenPeople,
     acknowledgePeople,
+    clues,
+    clueConnections,
+    unseenClues,
+    acknowledgeClues,
+    connectOnBoard,
+    askAboutOpen,
+    askTopics,
+    askedAbout,
+    conversationPerson,
+    beginAsk,
+    dismissAskAbout,
+    noteHoodedMan,
     momTalked,
     questNotification,
     questNotificationLabel,
@@ -231,6 +244,7 @@ export default function Home() {
   // finished thought moves on sooner.
   useEffect(() => {
     if (openingThoughtIndex === null) return;
+    if (openingThoughtIndex === 2) noteHoodedMan();
     const line = OPENING_THOUGHTS[openingThoughtIndex];
     const pace = textSpeedScale(textSettings.textSpeed);
     const delay =
@@ -238,7 +252,7 @@ export default function Home() {
       (openingThoughtIndex === 0 ? OPENING_THOUGHT_FIRST_EXTRA_MS : 0);
     const timer = window.setTimeout(advanceOpeningThoughtLater, delay);
     return () => window.clearTimeout(timer);
-  }, [openingThoughtIndex, textSettings.textSpeed]);
+  }, [openingThoughtIndex, textSettings.textSpeed, noteHoodedMan]);
 
   function showTvNews() {
     if (openingThoughtTimer.current !== null) {
@@ -664,7 +678,7 @@ export default function Home() {
             setShowQuestLog(true);
             harlowAudio().playSfx("page-turn");
           }}
-          notebookUpdated={unseenPeople.length > 0}
+          notebookUpdated={unseenPeople.length > 0 || unseenClues.length > 0}
         />
 
         <div
@@ -912,11 +926,22 @@ export default function Home() {
                 onFinish={finishConversation}
                 onSettled={onReplySettled}
                 choices={
-                  conversationActive && choicesWithoutHotspotActions.length > 0
-                    ? actionList
-                    : null
+                  conversationActive && askAboutOpen
+                    ? (
+                      <AskAboutList
+                        topics={askTopics}
+                        asked={conversationPerson ? askedAbout[conversationPerson] ?? [] : []}
+                        onAsk={beginAsk}
+                        onNeverMind={dismissAskAbout}
+                      />
+                    )
+                    : conversationActive && choicesWithoutHotspotActions.length > 0
+                      ? actionList
+                      : null
                 }
                 choiceKey={[
+                  askAboutOpen ? "ask" : "",
+                  askTopics.join("\n"),
                   choicesWithoutHotspotActions.map((choice) => choice.label).join("\n"),
                   storyFlags.rachelMet ? "rachelMet" : "",
                   storyFlags.walterStationTalk ? "walterStationTalk" : "",
@@ -977,6 +1002,11 @@ export default function Home() {
             metPeople={metPeople}
             unseenPeople={unseenPeople}
             onPeopleViewed={acknowledgePeople}
+            clues={clues}
+            connections={clueConnections}
+            unseenClues={unseenClues}
+            onCluesViewed={acknowledgeClues}
+            onConnect={connectOnBoard}
             onClose={() => {
               forgetPanel("quests");
               setShowQuestLog(false);

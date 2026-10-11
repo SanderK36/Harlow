@@ -1,3 +1,4 @@
+import { PLATES } from "../clues";
 import { type Conversation, narration, thought, npc, ethan } from "../story";
 import type { Scene } from "./types";
 import {
@@ -843,7 +844,53 @@ export const emilyRoom: Scene = {
     weather: rainArt("./images/locations/home/sisterRoomDay-rain.jpg"),
     weatherDayOnly: true,
   },
-  choices: [{ ...returnToUpstairsHallway, door: true }],
+  choices: [
+    {
+      label: "Look at the music box",
+      action: "lookAtEmilyMusicBox",
+      nextScene: "emily-room",
+      timeCost: 0,
+      closeup: {
+        image: PLATES.musicBox.image,
+        thought: PLATES.musicBox.thought,
+        label: PLATES.musicBox.label,
+        disableWeatherFilter: true,
+      },
+      setsFlags: ["emilyMusicBoxSeen"],
+      hotspots: [{ left: 6, top: 52, width: 20, height: 26 }],
+    },
+    {
+      label: "Look at the polaroid",
+      action: "lookAtEmilyPolaroid",
+      nextScene: "emily-room",
+      timeCost: 0,
+      closeup: {
+        image: PLATES.polaroid.image,
+        thought: PLATES.polaroid.thought,
+        label: PLATES.polaroid.label,
+        inscriptions: PLATES.polaroid.inscriptions,
+        disableWeatherFilter: true,
+      },
+      setsFlags: ["emilyPolaroidSeen"],
+      hotspots: [{ left: 66, top: 60, width: 18, height: 20 }],
+    },
+    {
+      label: "Look at the note",
+      action: "lookAtEmilyNote",
+      nextScene: "emily-room",
+      timeCost: 0,
+      closeup: {
+        image: PLATES.note.image,
+        thought: PLATES.note.thought,
+        label: PLATES.note.label,
+        inscriptions: PLATES.note.inscriptions,
+        disableWeatherFilter: true,
+      },
+      setsFlags: ["emilyNoteRead"],
+      hotspots: [{ left: 38, top: 44, width: 18, height: 16 }],
+    },
+    { ...returnToUpstairsHallway, door: true },
+  ],
 };
 
 export const attic: Scene = {
@@ -860,7 +907,24 @@ export const attic: Scene = {
     weather: rainArt("./images/locations/home/atticDay-rain.jpg"),
     weatherDayOnly: true,
   },
-  choices: [returnToUpstairsHallway],
+  choices: [
+    {
+      label: "Look in Dad's box",
+      action: "lookInDadsBox",
+      nextScene: "attic",
+      timeCost: 0,
+      closeup: {
+        image: PLATES.photo.image,
+        thought: PLATES.photo.thought,
+        label: PLATES.photo.label,
+        inscriptions: PLATES.photo.inscriptions,
+        disableWeatherFilter: true,
+      },
+      setsFlags: ["waltPhotoSeen"],
+      hotspots: [{ left: 36, top: 56, width: 28, height: 26 }],
+    },
+    returnToUpstairsHallway,
+  ],
 };
 
 export const basement: Scene = {

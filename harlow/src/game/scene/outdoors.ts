@@ -1,3 +1,4 @@
+import { PLATES } from "../clues";
 import { type Conversation, narration, thought, npc, ethan } from "../story";
 import type { Scene } from "./types";
 import { rainArt, RAIN, STORM, WET } from "./weather";
@@ -69,6 +70,20 @@ export const frontYard: Scene = {
       },
       setsFlags: ["sanatoriumSeenFromStreet"],
       startsQuest: "light-on-the-hill",
+    },
+    {
+      label: "Look at the paper",
+      action: "lookAtGazette",
+      nextScene: "front-yard",
+      timeCost: 0,
+      closeup: {
+        image: PLATES.gazette.image,
+        thought: PLATES.gazette.thought,
+        label: PLATES.gazette.label,
+        inscriptions: PLATES.gazette.inscriptions,
+      },
+      setsFlags: ["gazetteFound"],
+      hotspots: [{ left: 43, top: 64, width: 16, height: 14 }],
     },
     {
       label: "Go back inside",
@@ -333,6 +348,19 @@ export const elrodHouse: Scene = {
       action: "talkToRachel",
       nextScene: "elrod-house",
       timeCost: 0,
+    },
+    {
+      label: "Look at the gate",
+      action: "lookAtElrodGate",
+      nextScene: "elrod-house",
+      timeCost: 0,
+      closeup: {
+        image: PLATES.gate.image,
+        thought: PLATES.gate.thought,
+        label: PLATES.gate.label,
+      },
+      setsFlags: ["bootPrintSeen"],
+      hotspots: [{ left: 4, top: 48, width: 22, height: 30 }],
     },
     {
       label: "Look at the tape",
