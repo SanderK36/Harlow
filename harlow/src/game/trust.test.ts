@@ -21,8 +21,12 @@ import {
   HANDWRITING_MS,
   meetsTrust,
   migrateMet,
+  migratePeopleSeen,
   migrateTrust,
   notebookLine,
+  notebookPeople,
+  NOTEBOOK_NAME,
+  unseenNotebookPeople,
   pricedEffects,
   returnGreeting,
   shouldMarkRachelWaited,
@@ -301,22 +305,81 @@ describe("notebook lines", () => {
   it("uses Ethan's handwritten line for each level", () => {
     assert.equal(notebookLine("rachel", 2), "She tells me things. I owe her the same.");
     assert.equal(notebookLine("rachel", 1), "Still the girl from down the street. Still on my side.");
-    assert.equal(notebookLine("rachel", 0), "Rachel Bennett. Lives a few houses down. Remembers Emily.");
+    assert.equal(notebookLine("rachel", 0), "Lives a few houses down. Remembers Emily.");
     assert.equal(notebookLine("rachel", -1), "She asked. I didn't answer.");
     assert.equal(notebookLine("rachel", -2), "She's stopped asking.");
     assert.equal(notebookLine("linda", 2), "She almost said Emily's name today.");
     assert.equal(notebookLine("linda", 1), "She smiled. First time in a while.");
-    assert.equal(notebookLine("linda", 0), "Mom. Covering everything. Says she's fine.");
+    assert.equal(notebookLine("linda", 0), "Covering everything. Says she's fine.");
     assert.equal(notebookLine("linda", -1), "She changes the subject faster than I can bring it up.");
     assert.equal(notebookLine("linda", -2), "We live in the same house. That's about it.");
     assert.equal(notebookLine("walter", 2), "He looks at me like I might be useful.");
     assert.equal(notebookLine("walter", 1), "Walter listened. Didn't say much. Didn't throw me out either.");
-    assert.equal(notebookLine("walter", 0), "Walter Harrington. Sheriff. Knew Dad, back before Dad left.");
+    assert.equal(notebookLine("walter", 0), "Sheriff. Knew Dad, back before Dad left.");
     assert.equal(notebookLine("walter", -1), "He watched me leave. All the way to the corner.");
     assert.equal(notebookLine("walter", -2), "Walter's keeping an eye on me. I'd better keep one on him.");
-    assert.equal(notebookLine("margaret", 0), "Margaret runs the diner. Never takes anything down.");
+    assert.equal(notebookLine("margaret", 0), "Runs the diner. Never takes anything down.");
     assert.equal(notebookLine("margaret", 1), "She knows how I take my coffee.");
     assert.equal(notebookLine("margaret", 2), "Coffee's on the house. So is the gossip.");
+  });
+
+  it("puts the full name on the card and leaves it out of the trust-0 line", () => {
+    assert.equal(NOTEBOOK_NAME.rachel, "Rachel Bennett");
+    assert.equal(NOTEBOOK_NAME.linda, "Mom");
+    assert.equal(NOTEBOOK_NAME.walter, "Walter Harrington");
+    assert.equal(NOTEBOOK_NAME.margaret, "Margaret");
+    assert.equal(
+      `${NOTEBOOK_NAME.rachel}. ${notebookLine("rachel", 0)}`,
+      "Rachel Bennett. Lives a few houses down. Remembers Emily.",
+    );
+    assert.equal(
+      `${NOTEBOOK_NAME.walter}. ${notebookLine("walter", 0)}`,
+      "Walter Harrington. Sheriff. Knew Dad, back before Dad left.",
+    );
+    assert.equal(
+      `${NOTEBOOK_NAME.linda}. ${notebookLine("linda", 0)}`,
+      "Mom. Covering everything. Says she's fine.",
+    );
+    assert.equal(
+      `${NOTEBOOK_NAME.margaret}. ${notebookLine("margaret", 0)}`,
+      "Margaret. Runs the diner. Never takes anything down.",
+    );
+  });
+
+  it("always shows Mom, then people met outside the family", () => {
+    assert.deepEqual(notebookPeople([]), ["linda"]);
+    assert.deepEqual(notebookPeople(["rachel"]), ["linda", "rachel"]);
+    assert.deepEqual(notebookPeople(["linda", "rachel", "walter"]), ["linda", "rachel", "walter"]);
+    assert.deepEqual(notebookPeople(["margaret", "linda"]), ["linda", "margaret"]);
+  });
+
+  it("marks the notebook only after a trust step, not for a starting score", () => {
+    const started = defaultTrust();
+    const seenStart = migratePeopleSeen(null, started);
+    assert.equal(seenStart.margaret, 1);
+    assert.deepEqual(unseenNotebookPeople(notebookPeople([]), started, seenStart), []);
+
+    const migrated = migrateTrust({
+      quests: [{ id: "what-walter-said", status: "completed", step: "done" }],
+      storyFlags: { rachelTrusted: true },
+    });
+    const seenMigrated = migratePeopleSeen({}, migrated);
+    assert.equal(migrated.rachel, 1);
+    assert.deepEqual(
+      unseenNotebookPeople(notebookPeople(["linda", "rachel"]), migrated, seenMigrated),
+      [],
+    );
+
+    const afterStep = { ...seenMigrated, rachel: migrated.rachel + 1 };
+    const trustAfter = { ...migrated, rachel: migrated.rachel + 1 };
+    assert.deepEqual(
+      unseenNotebookPeople(notebookPeople(["rachel"]), trustAfter, seenMigrated),
+      ["rachel"],
+    );
+    assert.deepEqual(
+      unseenNotebookPeople(notebookPeople(["rachel"]), trustAfter, afterStep),
+      [],
+    );
   });
 
   it("writes a changed line across 600ms and skips that under reduced motion", () => {

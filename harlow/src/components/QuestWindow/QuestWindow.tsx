@@ -16,6 +16,7 @@ import {
 import {
   handwritingCount,
   notebookLine,
+  notebookPeople,
   notebookPortrait,
   NOTEBOOK_NAME,
   type TrustMap,
@@ -177,11 +178,8 @@ export default function QuestWindow({
           aria-labelledby={tab === "quests" ? "notebook-tab-quests" : "notebook-tab-people"}
         >
           {tab === "people" ? (
-            metPeople.length === 0 ? (
-              <p className={styles.empty}>Nothing written down yet.</p>
-            ) : (
               <ul className={styles.people}>
-                {metPeople.map((person, index) => {
+                {notebookPeople(metPeople).map((person, index) => {
                   const line = notebookLine(person, trust[person]);
                   const name = NOTEBOOK_NAME[person];
                   return (
@@ -191,13 +189,15 @@ export default function QuestWindow({
                     >
                       <article className={styles.card} aria-label={`${name}. ${line}`}>
                         <div className={styles.polaroidWrap}>
-                          <Image
-                            className={styles.polaroid}
-                            src={notebookPortrait(person)}
-                            alt=""
-                            width={72}
-                            height={72}
-                          />
+                          <div className={styles.polaroid}>
+                            <Image
+                              className={styles.photo}
+                              src={notebookPortrait(person)}
+                              alt=""
+                              width={64}
+                              height={58}
+                            />
+                          </div>
                         </div>
                         <div className={styles.personCopy} aria-hidden="true">
                           <h3 className={styles.personName}>{name}</h3>
@@ -208,7 +208,6 @@ export default function QuestWindow({
                   );
                 })}
               </ul>
-            )
           ) : (
           <>
           {active.length === 0 && completed.length === 0 && (

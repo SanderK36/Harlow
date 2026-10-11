@@ -61,7 +61,7 @@ const SPEAKER: Record<TrustPerson, string> = {
 export const NOTEBOOK_NAME: Record<TrustPerson, string> = {
   rachel: "Rachel Bennett",
   linda: "Mom",
-  walter: "Walter",
+  walter: "Walter Harrington",
   margaret: "Margaret",
 };
 
@@ -69,28 +69,28 @@ const NOTEBOOK_LINES: Record<TrustPerson, Record<number, string>> = {
   rachel: {
     2: "She tells me things. I owe her the same.",
     1: "Still the girl from down the street. Still on my side.",
-    0: "Rachel Bennett. Lives a few houses down. Remembers Emily.",
+    0: "Lives a few houses down. Remembers Emily.",
     [-1]: "She asked. I didn't answer.",
     [-2]: "She's stopped asking.",
   },
   linda: {
     2: "She almost said Emily's name today.",
     1: "She smiled. First time in a while.",
-    0: "Mom. Covering everything. Says she's fine.",
+    0: "Covering everything. Says she's fine.",
     [-1]: "She changes the subject faster than I can bring it up.",
     [-2]: "We live in the same house. That's about it.",
   },
   walter: {
     2: "He looks at me like I might be useful.",
     1: "Walter listened. Didn't say much. Didn't throw me out either.",
-    0: "Walter Harrington. Sheriff. Knew Dad, back before Dad left.",
+    0: "Sheriff. Knew Dad, back before Dad left.",
     [-1]: "He watched me leave. All the way to the corner.",
     [-2]: "Walter's keeping an eye on me. I'd better keep one on him.",
   },
   margaret: {
     2: "Coffee's on the house. So is the gossip.",
     1: "She knows how I take my coffee.",
-    0: "Margaret runs the diner. Never takes anything down.",
+    0: "Runs the diner. Never takes anything down.",
   },
 };
 
@@ -211,6 +211,42 @@ export function returnGreeting(
 export function notebookLine(person: TrustPerson, trust: number): string {
   const level = clampTrust(person, trust);
   return NOTEBOOK_LINES[person][level] ?? NOTEBOOK_LINES[person][0];
+}
+
+/**
+ * Mom is already in the notebook. Other people appear after Ethan meets them,
+ * in that order, so the page is never an empty list.
+ */
+export function notebookPeople(met: readonly TrustPerson[]): TrustPerson[] {
+  return ["linda", ...met.filter((person) => person !== "linda")];
+}
+
+/**
+ * Trust the notebook already treats as read. A missing note is the value
+ * trust already has: Margaret's +1, or Rachel's score from an old save.
+ * A number written down here is what Ethan last read, so a later step can
+ * still mark the page.
+ */
+export function migratePeopleSeen(
+  save: { peopleSeenTrust?: Partial<TrustMap> | null } | null | undefined,
+  trust: TrustMap,
+): Partial<TrustMap> {
+  const recorded = save?.peopleSeenTrust;
+  const seen: Partial<TrustMap> = {};
+  for (const person of TRUST_PEOPLE) {
+    const value = recorded?.[person];
+    seen[person] = typeof value === "number" ? value : trust[person];
+  }
+  return seen;
+}
+
+/** People whose notebook line changed after the last time the page was opened. */
+export function unseenNotebookPeople(
+  shown: readonly TrustPerson[],
+  trust: TrustMap,
+  seen: Partial<TrustMap>,
+): TrustPerson[] {
+  return shown.filter((person) => seen[person] !== trust[person]);
 }
 
 export function notebookPortrait(person: TrustPerson): string {

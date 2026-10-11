@@ -65,10 +65,13 @@ import {
   applyConversationTrust,
   buildNpcOpening,
   migrateMet,
+  migratePeopleSeen,
   migrateTrust,
+  notebookPeople,
   personFromOpening,
   pricedEffects,
   shouldMarkRachelWaited,
+  unseenNotebookPeople,
   type TrustMap,
   type TrustPerson,
 } from "@/game/trust";
@@ -235,7 +238,7 @@ export function useGame() {
   const metRef = useRef(metPeople);
   metRef.current = metPeople;
   const [peopleSeenTrust, setPeopleSeenTrust] = useState<Partial<TrustMap>>(
-    () => sessionSave?.peopleSeenTrust ?? {},
+    () => migratePeopleSeen(sessionSave, migrateTrust(sessionSave)),
   );
   const [trustGainedOnDay, setTrustGainedOnDay] = useState<Partial<Record<TrustPerson, number>>>(
     () => sessionSave?.trustGainedOnDay ?? {},
@@ -1235,7 +1238,7 @@ export function useGame() {
     setTrust(restoredTrust);
     metRef.current = restoredMet;
     setMetPeople(restoredMet);
-    setPeopleSeenTrust(save.peopleSeenTrust ?? {});
+    setPeopleSeenTrust(migratePeopleSeen(save, restoredTrust));
     const restoredGains = save.trustGainedOnDay ?? {};
     gainedOnDayRef.current = restoredGains;
     setTrustGainedOnDay(restoredGains);
@@ -1307,7 +1310,8 @@ export function useGame() {
     setTrust(freshTrust);
     metRef.current = [];
     setMetPeople([]);
-    setPeopleSeenTrust({});
+    const freshSeen = migratePeopleSeen(null, freshTrust);
+    setPeopleSeenTrust(freshSeen);
     gainedOnDayRef.current = {};
     setTrustGainedOnDay({});
     trustSpentRef.current = {};
@@ -1349,7 +1353,7 @@ export function useGame() {
       chapter: 1,
       trust: migrateTrust(null),
       met: [],
-      peopleSeenTrust: {},
+      peopleSeenTrust: freshSeen,
       trustGainedOnDay: {},
     });
   }
@@ -1386,12 +1390,12 @@ export function useGame() {
   function acknowledgePeople() {
     setPeopleSeenTrust((previous) => {
       const next = { ...previous };
-      for (const person of metRef.current) next[person] = trustRef.current[person];
+      for (const person of notebookPeople(metRef.current)) next[person] = trustRef.current[person];
       return next;
     });
   }
 
-  const unseenPeople = metPeople.filter((person) => peopleSeenTrust[person] !== trust[person]);
+  const unseenPeople = unseenNotebookPeople(notebookPeople(metPeople), trust, peopleSeenTrust);
   const availableTravelDestinations = travelDestinationIds({
     momTalked,
     job,
