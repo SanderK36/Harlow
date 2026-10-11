@@ -32,7 +32,7 @@ export default function AutosaveIndicator() {
           height="24"
           aria-hidden="true"
         >
-          <rect x="2.2" y="6" width="19.6" height="12" rx="1.6" fill="none" stroke="currentColor" strokeWidth="1.6" />
+          <rect x="2.2" y="6" width="19.6" height="12" rx="1.6" fill="#140c0a" stroke="currentColor" strokeWidth="1.6" />
           <circle cx="8" cy="12" r="2.1" fill="none" stroke="currentColor" strokeWidth="1.4" />
           <circle cx="16" cy="12" r="2.1" fill="none" stroke="currentColor" strokeWidth="1.4" />
           <path d="M8 12h8" stroke="currentColor" strokeWidth="1.2" />
