@@ -93,7 +93,7 @@
   margin: 0;
   color: #e0cfd0;
   font-family: var(--font-body);
-  font-size: 18px;
+  font-size: var(--reading-size);
   font-style: italic;
   line-height: 1.55;
 }
@@ -164,7 +164,7 @@
   }
 
   .text p {
-    font-size: 17px;
+    font-size: var(--reading-size);
   }
 
   .label {

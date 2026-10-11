@@ -14,7 +14,10 @@ import type { StoryEntry } from "@/game/story";
 import { dialogueFocus } from "@/game/dialogueFocus";
 import { getPortrait } from "@/game/portraits";
 import StoryLog from "@/components/StoryLog/StoryLog";
-import { prefersReducedMotion, revealDelay, useReducedMotion } from "./typewriter";
+import { markTextSeen } from "@/game/seenText";
+import { textRevealsInstantly, textSpeedScale } from "@/game/settings";
+import { useGameSettings } from "@/game/useSettings";
+import { prefersReducedMotion, revealDelay, useReducedMotion, useSeenLine } from "./typewriter";
 
 type DialogueLine = {
   speaker: string | null;
@@ -92,6 +95,7 @@ export default function DialogueScene({
 }: DialogueSceneProps) {
   const lines = toDialogueLines(entries);
   const reducedMotion = useReducedMotion();
+  const settings = useGameSettings();
   const [cursor, setCursor] = useState(0);
   const [revealed, setRevealed] = useState(0);
   const [knownLineCount, setKnownLineCount] = useState(lines.length);
@@ -104,9 +108,12 @@ export default function DialogueScene({
 
   const lineIndex = Math.min(cursor, Math.max(0, lines.length - 1));
   const line = lines[lineIndex];
+  const seenLine = useSeenLine(line?.text ?? "");
   const hasLine = line !== undefined;
   const fullLength = line?.text.length ?? 0;
-  const shown = reducedMotion ? fullLength : Math.min(revealed, fullLength);
+  const shown = textRevealsInstantly(settings, reducedMotion, seenLine)
+    ? fullLength
+    : Math.min(revealed, fullLength);
   const lineComplete = shown >= fullLength;
 
   // New lines arrived (or a new conversation started). Adjusting state while
@@ -150,6 +157,9 @@ export default function DialogueScene({
     if (!beatSettled) return;
     onSettledRef.current?.(lines.length);
   }, [beatSettled, lineIndex, lines.length]);
+  useEffect(() => {
+    if (lineComplete && line?.text) markTextSeen(line.text);
+  }, [line, lineComplete]);
   const partner = lines.find((entry) => entry.speaker && !isEthan(entry.speaker) && !isThought(entry.speaker))?.speaker ?? null;
 
   // Typewriter: reveal one character per tick.
@@ -157,10 +167,10 @@ export default function DialogueScene({
     if (!active || lineComplete || !line) return;
     const timer = window.setTimeout(
       () => setRevealed(shown + 1),
-      revealDelay(shown === 0 ? undefined : line.text[shown - 1])
+      revealDelay(shown === 0 ? undefined : line.text[shown - 1], textSpeedScale(settings.textSpeed)),
     );
     return () => window.clearTimeout(timer);
-  }, [active, line, lineComplete, shown]);
+  }, [active, line, lineComplete, settings.textSpeed, shown]);
 
   // Ethan's line has already been chosen by the player; once it has been
   // spoken, move on to the queued reply without asking for another click.

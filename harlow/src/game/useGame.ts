@@ -32,9 +32,18 @@ import { noticesAreHeld } from "@/game/notices";
 import { advanceGameTime, withCanonWeekday } from "@/game/time";
 import { isNightTime } from "@/game/utils";
 import {
+  planAutosave,
+  pulseAutosave,
+  questAutosaveNeeded,
+  type AutosaveRequest,
+} from "@/game/autosave";
+import { harlowAudio } from "@/game/audio";
+import {
+  readAutosave,
   readMostRecentSave,
   readSaveSlot,
   readSessionSave,
+  writeAutosave,
   writeSaveSlot,
   writeSessionSave,
 } from "@/game/save";
@@ -218,9 +227,25 @@ export function useGame() {
       hillThoughtShown.current = false;
     });
   }
-  function commitQuests(next: QuestProgress[]) {
+  const pendingAutosave = useRef<AutosaveRequest | null>(null);
+  function requestAutosave(partial: Partial<AutosaveRequest>) {
+    const current = pendingAutosave.current ?? { quest: false, sleep: false, sceneChanged: false };
+    pendingAutosave.current = {
+      quest: current.quest || Boolean(partial.quest),
+      sleep: current.sleep || Boolean(partial.sleep),
+      sceneChanged: current.sceneChanged || Boolean(partial.sceneChanged),
+    };
+  }
+  function clearAutosaveRequest() {
+    pendingAutosave.current = null;
+  }
+  function commitQuests(next: QuestProgress[], options?: { autosave?: boolean }) {
+    const previous = questsRef.current;
     questsRef.current = next;
     setQuests(next);
+    if (options?.autosave !== false && questAutosaveNeeded(previous, next)) {
+      requestAutosave({ quest: true });
+    }
     return next;
   }
   const [storyFlags, setStoryFlags] = useState<Partial<Record<StoryFlag, boolean>>>(
@@ -454,7 +479,26 @@ export function useGame() {
   // This is a temporary, per-tab resume point. It survives refreshes but is
   // automatically cleared when the browser tab is closed.
   useEffect(() => {
-    if (readSessionSave()) writeSessionSave(currentSave());
+    const save = currentSave();
+    if (readSessionSave()) writeSessionSave(save);
+    const request = pendingAutosave.current;
+    if (!request) return;
+    pendingAutosave.current = null;
+    const previous = readAutosave();
+    const plan = planAutosave({
+      request,
+      game: save.gameState,
+      previousSceneStamp: previous?.sceneStamp ?? null,
+    });
+    if (!plan.write) return;
+    const wrote = writeAutosave({
+      savedAt: new Date().toISOString(),
+      sceneStamp: plan.sceneStamp,
+      save,
+    });
+    if (!wrote) return;
+    if (request.quest) harlowAudio().playSfx("pen-scribble");
+    pulseAutosave();
   }, [currentSave]);
 
   function advanceTime(
@@ -507,6 +551,7 @@ export function useGame() {
     time: number,
     weather: Weather = gameState.weather,
     day: GameState["dayOfWeek"] = gameState.dayOfWeek,
+    options?: { footsteps?: boolean },
   ) {
     // Every `nextScene` in scene data must match a key in `scenes`.
     const nextScene = scenes[sceneId as keyof typeof scenes];
@@ -551,6 +596,11 @@ export function useGame() {
       time,
       location: nextScene.location,
     }));
+
+    if (nextScene.id !== currentScene.id) {
+      requestAutosave({ sceneChanged: true });
+      if (options?.footsteps) harlowAudio().playSfx("footsteps");
+    }
   }
 
   function openConversation() {
@@ -842,7 +892,9 @@ export function useGame() {
 
     window.setTimeout(() => {
       const nextGameState = advanceTime(choice.timeCost, false, false, choice.nextScene);
-      moveToScene(choice.nextScene, nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek);
+      moveToScene(choice.nextScene, nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek, {
+        footsteps: true,
+      });
       applyChoiceEffects(choice);
       setTravelingTo(null);
     }, TRAVEL_DURATION);
@@ -1052,7 +1104,10 @@ export function useGame() {
         ? TIRED_END - gameState.time
         : 1440 - gameState.time + TIRED_END;
       const nextGameState = advanceTime(minutesUntilSevenAm, false, true, "ethan-room");
-      moveToScene("ethan-room", nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek);
+      moveToScene("ethan-room", nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek, {
+        footsteps: false,
+      });
+      requestAutosave({ sleep: true });
       const rested = restAfterSleep(playerState);
       setPlayerState(rested);
       setCurrentEffects(statDeltas(playerState, rested));
@@ -1061,8 +1116,10 @@ export function useGame() {
     }
 
     if (choice.action === "leaveBusStop") {
-      const nextGameState = advanceTime(choice.timeCost, false, false, busStopReturnSceneId);
-      moveToScene(busStopReturnSceneId, nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek);
+    const nextGameState = advanceTime(choice.timeCost, false, false, busStopReturnSceneId);
+    moveToScene(busStopReturnSceneId, nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek, {
+      footsteps: true,
+    });
       return;
     }
 
@@ -1099,7 +1156,9 @@ export function useGame() {
       nextSceneId,
     );
 
-    moveToScene(nextSceneId, nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek);
+    moveToScene(nextSceneId, nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek, {
+      footsteps: !throughDoor && !choice.door && choice.timeCost > 0,
+    });
 
     if (selectedJob && !job && !jobQuestTarget) {
       const leadThought: Record<JobId, string> = {
@@ -1140,7 +1199,9 @@ export function useGame() {
     }
     setBusStopReturnSceneId(currentScene.id);
     const nextGameState = advanceTime(0, false, false, "bus-stop");
-    moveToScene("bus-stop", nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek);
+    moveToScene("bus-stop", nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek, {
+      footsteps: true,
+    });
   }
 
   function adminTravel(sceneId: string) {
@@ -1185,6 +1246,7 @@ export function useGame() {
   }
 
   function restoreSave(save: ReturnType<typeof readSaveSlot>) {
+    clearAutosaveRequest();
     const savedSceneId = save ? sceneAfterPickups(save.currentSceneId, save) : null;
     const savedScene = savedSceneId && scenes[savedSceneId as keyof typeof scenes];
 
@@ -1228,7 +1290,7 @@ export function useGame() {
     setMomJobConcernHeard(save.momJobConcernHeard ?? false);
     setJob(save.job ?? null);
     setJobQuestTarget(save.jobQuestTarget ?? null);
-    commitQuests(restoredQuests);
+    commitQuests(restoredQuests, { autosave: false });
     storyFlagsRef.current = restoredFlags;
     setStoryFlags(restoredFlags);
     setChapter(save.chapter ?? 1);
@@ -1278,6 +1340,7 @@ export function useGame() {
   }
 
   function startNewGameSession() {
+    clearAutosaveRequest();
     // A new game must not inherit the active session currently held in React
     // state. Build and save a fresh starting snapshot before showing the game.
     const freshGameState = { ...initialGameState };
@@ -1302,7 +1365,7 @@ export function useGame() {
     setMomJobConcernHeard(false);
     setJob(null);
     setJobQuestTarget(null);
-    commitQuests([{ id: "talk-to-mom", status: "active" }]);
+    commitQuests([{ id: "talk-to-mom", status: "active" }], { autosave: false });
     storyFlagsRef.current = {};
     setStoryFlags({});
     const freshTrust = migrateTrust(null);

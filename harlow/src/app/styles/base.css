@@ -19,6 +19,9 @@
   --font-body: var(--font-crimson), Georgia, "Times New Roman", serif;
   --font-ui: var(--font-oswald), "Arial Narrow", Arial, sans-serif;
   --font-typewriter: var(--font-special-elite), "Courier New", Courier, monospace;
+  --font-handwriting: var(--font-caveat), "Segoe Print", "Comic Sans MS", cursive;
+  /* Settings text size. S/M/L set this to 16/18/20. */
+  --reading-size: 18px;
 }
 
 * {

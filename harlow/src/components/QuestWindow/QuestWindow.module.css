@@ -218,9 +218,9 @@
 .empty {
   margin: 12px 0;
   color: #6b4a32;
-  font-family: var(--font-body);
-  font-size: 17px;
-  font-style: italic;
+  font-family: var(--font-handwriting);
+  font-size: 22px;
+  font-weight: 500;
 }
 
 .section {
@@ -290,10 +290,10 @@
 .note {
   margin: 0;
   color: #3d2818;
-  font-family: var(--font-body);
-  font-size: 16px;
-  font-style: italic;
-  line-height: 1.45;
+  font-family: var(--font-handwriting);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.2;
 }
 
 .entryDone {
@@ -331,10 +331,10 @@
 .noteDone {
   margin: 0;
   color: #5a4330;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-style: italic;
-  line-height: 1.25;
+  font-family: var(--font-handwriting);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.15;
   text-decoration: line-through;
   text-decoration-color: rgba(90, 50, 20, 0.4);
 }
@@ -343,9 +343,10 @@
   margin: 6px 0 0;
   padding: 8px 10px;
   color: #3d2818;
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.35;
+  font-family: var(--font-handwriting);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.2;
   background: rgba(255, 248, 230, 0.35);
   border: 1px dashed rgba(90, 55, 25, 0.3);
   border-radius: 4px;

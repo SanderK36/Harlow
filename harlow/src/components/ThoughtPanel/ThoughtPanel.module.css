@@ -89,7 +89,7 @@
 .line {
   display: block;
   font-family: var(--font-body);
-  font-size: clamp(18px, 1.9vw, 22px);
+  font-size: var(--reading-size);
   font-style: italic;
   font-weight: 400;
   line-height: 1.45;
@@ -183,7 +183,7 @@
   }
 
   .line {
-    font-size: 18px;
+    font-size: var(--reading-size);
   }
 }
 

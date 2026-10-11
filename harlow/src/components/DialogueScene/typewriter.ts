@@ -2,6 +2,9 @@
 
 import { useSyncExternalStore } from "react";
 
+import { hasSeenText, subscribeSeenText } from "@/game/seenText";
+import { useGameSettings } from "@/game/useSettings";
+
 // Base reveal speed, plus short beats after punctuation so lines read like speech.
 const CHARACTER_DELAY = 22;
 const SENTENCE_PAUSE = 240;
@@ -19,9 +22,21 @@ export function prefersReducedMotion() {
   return window.matchMedia(REDUCED_MOTION).matches;
 }
 
-/** Live `prefers-reduced-motion` flag (false during server rendering). */
+/** The player's reduced-motion choice, or the OS preference until they pick. */
 export function useReducedMotion() {
-  return useSyncExternalStore(subscribeToReducedMotion, prefersReducedMotion, () => false);
+  const settings = useGameSettings();
+  const system = useSyncExternalStore(subscribeToReducedMotion, prefersReducedMotion, () => false);
+  if (settings.reducedMotion !== null) return settings.reducedMotion;
+  return system;
+}
+
+/** True once this exact line has finished typing in a previous visit. */
+export function useSeenLine(text: string) {
+  return useSyncExternalStore(
+    subscribeSeenText,
+    () => hasSeenText(text),
+    () => false,
+  );
 }
 
 /**

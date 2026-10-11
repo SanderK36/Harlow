@@ -1,0 +1,42 @@
+.frame {
+  position: relative;
+  display: block;
+  margin: 0;
+  overflow: hidden;
+  background: #cbb892;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.inscription {
+  position: absolute;
+  margin: 0;
+  color: #1a120c;
+  line-height: 1.05;
+  pointer-events: none;
+}
+
+.headline {
+  font-family: var(--font-body);
+  font-size: clamp(26px, 4.6vw, 46px);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 0.95;
+}
+
+.caption {
+  font-family: var(--font-handwriting);
+  font-size: clamp(22px, 3.2vw, 34px);
+  font-weight: 500;
+}
+
+.note {
+  font-family: var(--font-handwriting);
+  font-size: clamp(26px, 4vw, 42px);
+  font-weight: 500;
+  line-height: 1.15;
+}

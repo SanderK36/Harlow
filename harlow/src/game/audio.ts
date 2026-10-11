@@ -1,15 +1,27 @@
 "use client";
 
+import type { AmbienceSlot } from "@/game/ambience";
+import { getSettings, subscribeSettings } from "@/game/settings";
+
 /**
- * Harlow's sound, mostly generated in the browser with the Web Audio API: a
- * steady rain bed (filtered noise), the rare roll of thunder, and a soft
- * hotspot tick. The one recorded sound is the door (public/sounds/door.mp3,
- * CC0, see public/sounds/CREDITS.md). Everything goes through one master gain
- * that the mute toggle controls; the choice is remembered in localStorage.
+ * Sound for Harlow. One master gain, then two buses: music (looping beds)
+ * and SFX (one-shots). Volumes come from the settings screen. Nothing starts
+ * until the player has clicked or pressed a key.
  *
- * There used to be a low drone too: two sines at 55 and 55.6 Hz beat against
- * each other 0.6 times a second, which came through as a thumping behind the
- * rain. It, the rain's slow volume wobble and the footstep thuds are gone.
+ * Rain, when the rain file is missing, is still the filtered-noise bed from
+ * before. Thunder falls back the same way. A missing file is ignored.
+ *
+ * Expected files (the owner supplies these; do not download stand-ins):
+ * public/sounds/ambience/rain.mp3 — steady close rain, loopable, no thunder
+ * public/sounds/ambience/night.mp3 — quiet small-town night, wind or insects, loopable
+ * public/sounds/ambience/sanatorium-drone.mp3 — low empty-building drone, loopable
+ * public/sounds/ambience/diner.mp3 — muffled diner room tone, loopable
+ * public/sounds/ambience/house.mp3 — quiet house, clock or radiator, loopable
+ * public/sounds/sfx/footsteps.mp3 — a few steps on a sidewalk
+ * public/sounds/door.mp3 — already in the repo (door open and shut)
+ * public/sounds/sfx/page-turn.mp3 — one paper page turning
+ * public/sounds/sfx/pen-scribble.mp3 — a short pen scratch
+ * public/sounds/sfx/thunder.mp3 — one roll of thunder
  */
 
 export type Ambience = {
@@ -18,10 +30,34 @@ export type Ambience = {
   weather: string;
 };
 
+export type SfxName = "footsteps" | "door" | "page-turn" | "pen-scribble" | "thunder";
+
+export const AMBIENCE_FILES: Record<AmbienceSlot, string> = {
+  rain: "/sounds/ambience/rain.mp3",
+  night: "/sounds/ambience/night.mp3",
+  "sanatorium-drone": "/sounds/ambience/sanatorium-drone.mp3",
+  diner: "/sounds/ambience/diner.mp3",
+  house: "/sounds/ambience/house.mp3",
+};
+
+export const SFX_FILES: Record<SfxName, string> = {
+  footsteps: "/sounds/sfx/footsteps.mp3",
+  door: "/sounds/door.mp3",
+  "page-turn": "/sounds/sfx/page-turn.mp3",
+  "pen-scribble": "/sounds/sfx/pen-scribble.mp3",
+  thunder: "/sounds/sfx/thunder.mp3",
+};
+
 const STORAGE_KEY = "harlow-sound";
-const MASTER_LEVEL = 0.8;
-const DOOR_SOUND_URL = "./sounds/door.mp3";
 const DOOR_LEVEL = 0.5;
+const SFX_LEVEL: Record<SfxName, number> = {
+  footsteps: 0.45,
+  door: DOOR_LEVEL,
+  "page-turn": 0.4,
+  "pen-scribble": 0.35,
+  thunder: 0.55,
+};
+const BED_LEVEL = 0.42;
 
 const RAIN_LEVEL: Record<string, number> = {
   Sunny: 0,
@@ -36,20 +72,32 @@ type Listener = (muted: boolean) => void;
 class HarlowAudio {
   private context: AudioContext | null = null;
   private master: GainNode | null = null;
+  private music: GainNode | null = null;
+  private sfx: GainNode | null = null;
   private noise: AudioBuffer | null = null;
   private rainGain: GainNode | null = null;
   private rainFilter: BiquadFilterNode | null = null;
   private muted = false;
   private wanted: Ambience | null = null;
+  private wantedSlot: AmbienceSlot | null = null;
+  private rainFileActive = false;
+  private slotToken = 0;
+  private beds = new Map<AmbienceSlot, GainNode>();
   private listeners = new Set<Listener>();
   private lastHover = 0;
-  private doorBuffer: AudioBuffer | null = null;
-  private doorLoading: Promise<AudioBuffer | null> | null = null;
   private doorSource: AudioBufferSourceNode | null = null;
+  private clipCache = new Map<string, AudioBuffer>();
+  private clipMiss = new Set<string>();
+  private clipLoading = new Map<string, Promise<AudioBuffer | null>>();
 
   constructor() {
     if (typeof window !== "undefined") {
-      this.muted = window.localStorage.getItem(STORAGE_KEY) === "off";
+      try {
+        this.muted = window.localStorage.getItem(STORAGE_KEY) === "off";
+      } catch {
+        this.muted = false;
+      }
+      subscribeSettings(() => this.applyGains());
     }
   }
 
@@ -66,11 +114,13 @@ class HarlowAudio {
 
   setMuted(muted: boolean) {
     this.muted = muted;
-    window.localStorage.setItem(STORAGE_KEY, muted ? "off" : "on");
-    if (!muted) this.unlock();
-    if (this.context && this.master) {
-      this.master.gain.setTargetAtTime(muted ? 0 : MASTER_LEVEL, this.context.currentTime, 0.12);
+    try {
+      window.localStorage.setItem(STORAGE_KEY, muted ? "off" : "on");
+    } catch {
+      // Private mode can refuse the write. The button still mutes this session.
     }
+    if (!muted) this.unlock();
+    this.applyGains();
     this.listeners.forEach((listener) => listener(muted));
   }
 
@@ -84,10 +134,17 @@ class HarlowAudio {
     if (this.context?.state === "suspended") void this.context.resume();
   }
 
-  /** Crossfade the beds to suit the scene; null fades them out (e.g. intro). */
+  /** Crossfade the generated rain to suit the weather. Null fades it out. */
   setAmbience(ambience: Ambience | null) {
     this.wanted = ambience;
     this.applyAmbience();
+  }
+
+  /** Crossfade the scene's looping file. A missing file stays silent. */
+  setAmbienceSlot(slot: AmbienceSlot | null) {
+    this.wantedSlot = slot;
+    if (!this.context) return;
+    void this.applySlot();
   }
 
   hover() {
@@ -101,23 +158,35 @@ class HarlowAudio {
     this.blip(420, 0.06, 0.09);
   }
 
+  /** A named one-shot. `door` and `thunder` keep their existing behavior. */
+  playSfx(name: SfxName) {
+    if (name === "door") {
+      this.door();
+      return;
+    }
+    if (name === "thunder") {
+      this.thunder(0.45);
+      return;
+    }
+    this.playFile(SFX_FILES[name], SFX_LEVEL[name]);
+  }
+
   /**
    * A door opening and swinging shut. A second door cuts the first one off
    * rather than playing over it, so quick clicks never stack.
    */
   door() {
     const context = this.ready();
-    if (!context || !this.master) return;
+    if (!context || !this.sfx) return;
     const requested = context.currentTime;
-    void this.loadDoor().then((buffer) => {
-      // Still loading after a beat: the moment has passed, so skip it.
-      if (!buffer || !this.master || this.muted || context.currentTime - requested > 0.35) return;
+    void this.loadClip(SFX_FILES.door).then((buffer) => {
+      if (!buffer || !this.sfx || this.muted || context.currentTime - requested > 0.35) return;
       this.doorSource?.stop();
       const source = context.createBufferSource();
       source.buffer = buffer;
       const gain = context.createGain();
       gain.gain.value = DOOR_LEVEL;
-      source.connect(gain).connect(this.master);
+      source.connect(gain).connect(this.sfx);
       source.onended = () => {
         if (this.doorSource === source) this.doorSource = null;
       };
@@ -126,61 +195,119 @@ class HarlowAudio {
     });
   }
 
-  /** A roll of thunder; `distance` 0 is overhead, 1 is far off. */
+  /** A roll of thunder. Uses the file when it is there, otherwise noise. */
   thunder(distance = 0.5) {
     const context = this.ready();
-    if (!context || !this.noise || !this.master) return;
-    const now = context.currentTime;
-    const source = context.createBufferSource();
-    source.buffer = this.noise;
-    source.loop = true;
-    source.playbackRate.value = 0.5;
-    const filter = context.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(420 - distance * 260, now);
-    filter.frequency.exponentialRampToValueAtTime(60, now + 4.5);
-    const gain = context.createGain();
-    const peak = 0.55 * (1 - distance * 0.6);
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(peak, now + 0.08 + distance * 0.5);
-    // A second swell, the way a roll rumbles on after the crack.
-    gain.gain.exponentialRampToValueAtTime(peak * 0.45, now + 0.9 + distance * 0.4);
-    gain.gain.exponentialRampToValueAtTime(peak * 0.7, now + 1.5 + distance * 0.4);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 5);
-    source.connect(filter).connect(gain).connect(this.master);
-    source.start(now);
-    source.stop(now + 5.2);
+    if (!context || !this.sfx) return;
+    void this.loadClip(SFX_FILES.thunder).then((buffer) => {
+      if (this.muted || !this.sfx) return;
+      if (buffer) {
+        this.playBuffer(buffer, SFX_LEVEL.thunder * (1 - distance * 0.35));
+        return;
+      }
+      this.playGeneratedThunder(distance);
+    });
   }
 
-  // ---------- internals ----------
+  private playFile(url: string, level: number) {
+    const context = this.ready();
+    if (!context || !this.sfx) return;
+    void this.loadClip(url).then((buffer) => {
+      if (!buffer || this.muted || !this.sfx) return;
+      this.playBuffer(buffer, level);
+    });
+  }
 
-  private loadDoor() {
-    if (this.doorBuffer) return Promise.resolve(this.doorBuffer);
+  private playBuffer(buffer: AudioBuffer, level: number) {
+    const context = this.context;
+    if (!context || !this.sfx || this.muted) return;
+    const source = context.createBufferSource();
+    source.buffer = buffer;
+    const gain = context.createGain();
+    gain.gain.value = level;
+    source.connect(gain).connect(this.sfx);
+    source.start();
+  }
+
+  private loadClip(url: string): Promise<AudioBuffer | null> {
+    const cached = this.clipCache.get(url);
+    if (cached) return Promise.resolve(cached);
+    if (this.clipMiss.has(url)) return Promise.resolve(null);
+    const pending = this.clipLoading.get(url);
+    if (pending) return pending;
     const context = this.context;
     if (!context) return Promise.resolve(null);
-    this.doorLoading ??= fetch(DOOR_SOUND_URL)
-      .then((response) => (response.ok ? response.arrayBuffer() : Promise.reject()))
-      .then((data) => context.decodeAudioData(data))
+    const loading = fetch(url)
+      .then((response) => (response.ok ? response.arrayBuffer() : Promise.reject(new Error("missing"))))
+      .then((data) => context.decodeAudioData(data.slice(0)))
       .then((buffer) => {
-        this.doorBuffer = buffer;
+        this.clipCache.set(url, buffer);
         return buffer;
       })
       .catch(() => {
-        // Let a later door try again (e.g. after a dropped connection).
-        this.doorLoading = null;
+        this.clipMiss.add(url);
         return null;
+      })
+      .finally(() => {
+        this.clipLoading.delete(url);
       });
-    return this.doorLoading;
+    this.clipLoading.set(url, loading);
+    return loading;
+  }
+
+  private async applySlot() {
+    const token = ++this.slotToken;
+    const slot = this.wantedSlot;
+    if (!this.context || !this.music) return;
+    if (slot) {
+      const buffer = await this.loadClip(AMBIENCE_FILES[slot]);
+      if (token !== this.slotToken || !this.context || !this.music) return;
+      if (buffer) this.ensureBed(slot, buffer);
+      this.rainFileActive = slot === "rain" && Boolean(buffer);
+    } else {
+      this.rainFileActive = false;
+    }
+    this.fadeBeds(slot);
+    this.applyAmbience();
+  }
+
+  private ensureBed(slot: AmbienceSlot, buffer: AudioBuffer) {
+    if (this.beds.has(slot) || !this.context || !this.music) return;
+    const source = this.context.createBufferSource();
+    source.buffer = buffer;
+    source.loop = true;
+    const gain = this.context.createGain();
+    gain.gain.value = 0;
+    source.connect(gain).connect(this.music);
+    source.start();
+    this.beds.set(slot, gain);
+  }
+
+  private fadeBeds(active: AmbienceSlot | null) {
+    if (!this.context) return;
+    const now = this.context.currentTime;
+    for (const [slot, gain] of this.beds) {
+      gain.gain.setTargetAtTime(slot === active ? BED_LEVEL : 0, now, 0.35);
+    }
   }
 
   private ready() {
     if (this.muted) return null;
-    // Never start sound before the player has interacted with the page.
     if (!this.context && navigator.userActivation && !navigator.userActivation.hasBeenActive) {
       return null;
     }
     this.unlock();
     return this.context;
+  }
+
+  private applyGains() {
+    const context = this.context;
+    if (!context || !this.master || !this.music || !this.sfx) return;
+    const settings = getSettings();
+    const now = context.currentTime;
+    this.master.gain.setTargetAtTime(this.muted ? 0 : settings.masterVolume, now, 0.08);
+    this.music.gain.setTargetAtTime(settings.musicVolume, now, 0.08);
+    this.sfx.gain.setTargetAtTime(settings.sfxVolume, now, 0.08);
   }
 
   private build() {
@@ -192,12 +319,13 @@ class HarlowAudio {
     this.context = context;
 
     this.master = context.createGain();
-    this.master.gain.value = this.muted ? 0 : MASTER_LEVEL;
     this.master.connect(context.destination);
+    this.music = context.createGain();
+    this.music.connect(this.master);
+    this.sfx = context.createGain();
+    this.sfx.connect(this.master);
+    this.applyGains();
 
-    // Eight seconds of pink-ish noise for rain and thunder. A short loop is
-    // heard as a repeating pattern, so it is long, and its tail is crossfaded
-    // into its head so the loop point has no seam.
     const rate = context.sampleRate;
     const fade = Math.floor(rate * 0.5);
     const length = rate * 8;
@@ -215,7 +343,6 @@ class HarlowAudio {
     this.noise = context.createBuffer(1, length, rate);
     this.noise.getChannelData(0).set(raw.subarray(0, length));
 
-    // Rain: noise through a band at a steady level (no pulsing).
     const rain = context.createBufferSource();
     rain.buffer = this.noise;
     rain.loop = true;
@@ -227,12 +354,12 @@ class HarlowAudio {
     rainHigh.frequency.value = 320;
     this.rainGain = context.createGain();
     this.rainGain.gain.value = 0;
-    rain.connect(rainHigh).connect(this.rainFilter).connect(this.rainGain).connect(this.master);
+    rain.connect(rainHigh).connect(this.rainFilter).connect(this.rainGain).connect(this.music);
     rain.start();
 
     this.applyAmbience();
-    // Fetch the door sound now, so the first door already has it.
-    void this.loadDoor();
+    void this.applySlot();
+    void this.loadClip(SFX_FILES.door);
   }
 
   private applyAmbience() {
@@ -242,13 +369,37 @@ class HarlowAudio {
     const ambience = this.wanted;
     const rain = ambience ? (RAIN_LEVEL[ambience.weather] ?? 0) : 0;
     const rainLevel = ambience ? rain * (ambience.indoor ? 0.22 : 0.34) : 0;
-    this.rainGain.gain.setTargetAtTime(rainLevel, now, 0.8);
+    this.rainGain.gain.setTargetAtTime(this.rainFileActive ? 0 : rainLevel, now, 0.8);
     this.rainFilter.frequency.setTargetAtTime(ambience?.indoor ? 900 : 3400, now, 0.5);
+  }
+
+  private playGeneratedThunder(distance: number) {
+    const context = this.context;
+    if (!context || !this.noise || !this.sfx) return;
+    const now = context.currentTime;
+    const source = context.createBufferSource();
+    source.buffer = this.noise;
+    source.loop = true;
+    source.playbackRate.value = 0.5;
+    const filter = context.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(420 - distance * 260, now);
+    filter.frequency.exponentialRampToValueAtTime(60, now + 4.5);
+    const gain = context.createGain();
+    const peak = 0.55 * (1 - distance * 0.6);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(peak, now + 0.08 + distance * 0.5);
+    gain.gain.exponentialRampToValueAtTime(peak * 0.45, now + 0.9 + distance * 0.4);
+    gain.gain.exponentialRampToValueAtTime(peak * 0.7, now + 1.5 + distance * 0.4);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 5);
+    source.connect(filter).connect(gain).connect(this.sfx);
+    source.start(now);
+    source.stop(now + 5.2);
   }
 
   private blip(frequency: number, level: number, length: number) {
     const context = this.ready();
-    if (!context || !this.master) return;
+    if (!context || !this.sfx) return;
     const now = context.currentTime;
     const oscillator = context.createOscillator();
     oscillator.type = "triangle";
@@ -257,7 +408,7 @@ class HarlowAudio {
     const gain = context.createGain();
     gain.gain.setValueAtTime(level, now);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + length);
-    oscillator.connect(gain).connect(this.master);
+    oscillator.connect(gain).connect(this.sfx);
     oscillator.start(now);
     oscillator.stop(now + length + 0.02);
   }

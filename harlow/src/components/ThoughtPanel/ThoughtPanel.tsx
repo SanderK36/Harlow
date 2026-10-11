@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 
 import styles from "./ThoughtPanel.module.css";
-import { revealDelay, useReducedMotion } from "@/components/DialogueScene/typewriter";
+import { revealDelay, useReducedMotion, useSeenLine } from "@/components/DialogueScene/typewriter";
+import { markTextSeen } from "@/game/seenText";
+import { textRevealsInstantly, textSpeedScale } from "@/game/settings";
+import { useGameSettings } from "@/game/useSettings";
 
 type ThoughtPanelProps = {
   /** Name on the plate, e.g. "Ethan" or "TV news". */
@@ -34,6 +37,8 @@ export default function ThoughtPanel({
   onAdvance,
 }: ThoughtPanelProps) {
   const reducedMotion = useReducedMotion();
+  const settings = useGameSettings();
+  const seenLine = useSeenLine(text);
   const [progress, setProgress] = useState({ text, revealed: 0 });
 
   // A new line restarts the reveal; adjusting state while rendering avoids
@@ -41,17 +46,23 @@ export default function ThoughtPanel({
   if (progress.text !== text) setProgress({ text, revealed: 0 });
 
   const revealed = progress.text === text ? progress.revealed : 0;
-  const shown = reducedMotion ? text.length : Math.min(revealed, text.length);
+  const shown = textRevealsInstantly(settings, reducedMotion, seenLine)
+    ? text.length
+    : Math.min(revealed, text.length);
   const complete = shown >= text.length;
+
+  useEffect(() => {
+    if (complete) markTextSeen(text);
+  }, [complete, text]);
 
   useEffect(() => {
     if (complete) return;
     const timer = window.setTimeout(
       () => setProgress({ text, revealed: shown + 1 }),
-      revealDelay(shown === 0 ? undefined : text[shown - 1], PACE)
+      revealDelay(shown === 0 ? undefined : text[shown - 1], PACE * textSpeedScale(settings.textSpeed)),
     );
     return () => window.clearTimeout(timer);
-  }, [complete, shown, text]);
+  }, [complete, settings.textSpeed, shown, text]);
 
   return (
     <div

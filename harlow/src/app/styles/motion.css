@@ -95,7 +95,12 @@
 
   .mainMenuContent {
     width: 100%;
-    padding: 40px 32px;
+    max-width: none;
+    padding: 36px 24px 72px;
+  }
+
+  .mainMenuContinueCard {
+    width: 100%;
   }
 
   .mainMenuShade {
@@ -157,7 +162,7 @@
   }
 
   .scene-info-panel .scene-caption-narration p {
-    font-size: 18px;
+    font-size: var(--reading-size);
   }
 
   .scene-info-stack .quest-notification {

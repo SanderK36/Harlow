@@ -6,7 +6,10 @@ import styles from "./Prologue.module.css";
 import dialogue from "@/components/DialogueScene/DialogueScene.module.css";
 import thoughtStyles from "@/components/ThoughtPanel/ThoughtPanel.module.css";
 import ActionButton from "@/components/ActionButton/ActionButton";
-import { revealDelay, useReducedMotion } from "@/components/DialogueScene/typewriter";
+import { revealDelay, useReducedMotion, useSeenLine } from "@/components/DialogueScene/typewriter";
+import { markTextSeen } from "@/game/seenText";
+import { textRevealsInstantly, textSpeedScale } from "@/game/settings";
+import { useGameSettings } from "@/game/useSettings";
 import { harlowAudio } from "@/game/audio";
 import {
   OUTDOOR_BEATS,
@@ -62,6 +65,7 @@ function isInteractive(target: EventTarget | null) {
  */
 export default function Prologue({ onDone }: PrologueProps) {
   const reducedMotion = useReducedMotion();
+  const settings = useGameSettings();
   const [position, setPosition] = useState<Position>({ node: 0, branch: [] });
   const [progress, setProgress] = useState({ key: "", revealed: 0 });
   const [strike, setStrike] = useState<Strike | null>(null);
@@ -83,8 +87,11 @@ export default function Prologue({ onDone }: PrologueProps) {
   const boxLine: ActiveLine | null = line ?? answering;
 
   const text = line?.text ?? "";
+  const seenLine = useSeenLine(text);
   const revealed = progress.key === lineKey ? progress.revealed : 0;
-  const shown = reducedMotion ? text.length : Math.min(revealed, text.length);
+  const shown = textRevealsInstantly(settings, reducedMotion, seenLine)
+    ? text.length
+    : Math.min(revealed, text.length);
   const lineComplete = !line || (!lineHidden && shown >= text.length);
   const strikeHolding = beat === "strike" && strike !== "dark";
 
@@ -139,10 +146,17 @@ export default function Prologue({ onDone }: PrologueProps) {
     const pause = line.kind === "say" && line.pause?.after === shown ? line.pause.ms : null;
     const timer = window.setTimeout(
       () => setProgress({ key: lineKey, revealed: shown + 1 }),
-      pause ?? revealDelay(previous, line.kind === "thought" ? THOUGHT_PACE : 1),
+      pause ?? revealDelay(
+        previous,
+        (line.kind === "thought" ? THOUGHT_PACE : 1) * textSpeedScale(settings.textSpeed),
+      ),
     );
     return () => window.clearTimeout(timer);
-  }, [leaving, line, lineComplete, lineHidden, lineKey, shown, text]);
+  }, [leaving, line, lineComplete, lineHidden, lineKey, settings.textSpeed, shown, text]);
+
+  useEffect(() => {
+    if (lineComplete && text) markTextSeen(text);
+  }, [lineComplete, text]);
 
   // Ethan's picked reply moves on to the answer by itself.
   useEffect(() => {

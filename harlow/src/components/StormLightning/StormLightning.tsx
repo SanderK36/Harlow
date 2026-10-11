@@ -3,6 +3,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 
 import { harlowAudio } from "@/game/audio";
+import { isReducedMotionNow } from "@/game/settings";
 import type { Weather } from "@/game/types";
 import styles from "./StormLightning.module.css";
 
@@ -29,7 +30,6 @@ export default function StormLightning({ weather, indoor, active }: StormLightni
 
   useEffect(() => {
     if (!active || !storm) return;
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const timers: number[] = [];
     let nextId = 0;
 
@@ -41,7 +41,7 @@ export default function StormLightning({ weather, indoor, active }: StormLightni
           if (!document.hidden) {
             const distance = Math.random() * 0.9;
             const strength = storm.strength * (indoor ? 0.55 : 1) * (1 - distance * 0.4);
-            if (!reduceMotion) {
+            if (!isReducedMotionNow()) {
               nextId += 1;
               setStrike({ id: nextId, strength });
               timers.push(window.setTimeout(() => setStrike(null), 1100));

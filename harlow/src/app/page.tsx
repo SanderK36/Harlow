@@ -32,13 +32,25 @@ import { isQuestActive } from "@/game/quests";
 import { useGame } from "@/game/useGame";
 import { storyEntryApplies } from "@/game/story";
 import { DINER_BOARD_HINT, isExteriorScene, RAIN_WEATHER, sanatoriumNarration } from "@/game/scenes";
-import { clearSessionSave, readSessionSave } from "@/game/save";
+import {
+  clearSessionSave,
+  clearStoredGames,
+  readMostRecentSave,
+  readSessionSave,
+  type SavedGame,
+} from "@/game/save";
+import { ambienceSlotForScene } from "@/game/ambience";
 import { harlowAudio } from "@/game/audio";
+import { textSpeedScale } from "@/game/settings";
+import { useGameSettings } from "@/game/useSettings";
 import Atmosphere from "@/components/Atmosphere/Atmosphere";
 import StormLightning from "@/components/StormLightning/StormLightning";
 import CloseupOverlay from "@/components/CloseupOverlay/CloseupOverlay";
 import CaptionPlacer from "@/components/CaptionPlacer/CaptionPlacer";
 import MainMenu from "@/components/MainMenu/MainMenu";
+import PauseMenu from "@/components/PauseMenu/PauseMenu";
+import SettingsScreen from "@/components/SettingsScreen/SettingsScreen";
+import AutosaveIndicator from "@/components/AutosaveIndicator/AutosaveIndicator";
 import PlaytestControls from "@/components/PlaytestControls/PlaytestControls";
 import type { Choice } from "@/game/choices";
 import { choiceAffordance } from "@/game/statLabels";
@@ -71,6 +83,11 @@ export default function Home() {
   // Restore the session until the player explicitly chooses a screen.
   // Returning to the menu must override the session detected on refresh.
   const [hasStarted, setHasStarted] = useState<boolean | null>(null);
+  const [continueSave, setContinueSave] = useState<SavedGame | null>(null);
+  const [pauseOpen, setPauseOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [saveWindowOpen, setSaveWindowOpen] = useState(false);
+  const textSettings = useGameSettings();
   const resumedSession = useSyncExternalStore(
     subscribeToSession,
     hasActiveSession,
@@ -161,11 +178,18 @@ export default function Home() {
     mapButtonRef.current?.focus();
   }
 
+  useEffect(() => {
+    // After paint, so the server HTML stays save-free and the hook lint stays quiet.
+    const timer = window.setTimeout(() => setContinueSave(readMostRecentSave()), 0);
+    return () => window.clearTimeout(timer);
+  }, [hasStarted, resumedSession]);
+
   function continueGame() {
     if (loadMostRecentGame()) setHasStarted(true);
   }
 
   function startNewGame() {
+    clearStoredGames();
     if (openingThoughtTimer.current !== null) {
       window.clearTimeout(openingThoughtTimer.current);
       openingThoughtTimer.current = null;
@@ -208,13 +232,13 @@ export default function Home() {
   useEffect(() => {
     if (openingThoughtIndex === null) return;
     const line = OPENING_THOUGHTS[openingThoughtIndex];
+    const pace = textSpeedScale(textSettings.textSpeed);
     const delay =
-      OPENING_THOUGHT_BASE_MS +
-      line.length * OPENING_THOUGHT_PER_CHARACTER_MS +
+      (OPENING_THOUGHT_BASE_MS + line.length * OPENING_THOUGHT_PER_CHARACTER_MS) * pace +
       (openingThoughtIndex === 0 ? OPENING_THOUGHT_FIRST_EXTRA_MS : 0);
     const timer = window.setTimeout(advanceOpeningThoughtLater, delay);
     return () => window.clearTimeout(timer);
-  }, [openingThoughtIndex]);
+  }, [openingThoughtIndex, textSettings.textSpeed]);
 
   function showTvNews() {
     if (openingThoughtTimer.current !== null) {
@@ -297,23 +321,56 @@ export default function Home() {
     panelStack.current = panelStack.current.filter((entry) => entry.id !== id);
   }
 
-  // Escape closes the topmost inventory or quest panel and returns focus
-  // to the button that opened it.
+  // Escape closes the top panel. With nothing else open, it pauses.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      if (closeup || showChapterEnd || doorTransition !== "idle") return;
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      if (pauseOpen || settingsOpen || saveWindowOpen) return;
+      if (closeup || showChapterEnd || doorTransition !== "idle" || showProductionSplash) return;
+      if (showTravel) return;
+      if (showStats) {
+        setShowStats(false);
+        return;
+      }
+      if (showCharacterDirectory) {
+        setShowCharacterDirectory(false);
+        return;
+      }
+      if (activeShop) {
+        setActiveShop(null);
+        return;
+      }
       const top = panelStack.current.at(-1);
-      if (!top) return;
+      if (top) {
+        event.preventDefault();
+        panelStack.current = panelStack.current.slice(0, -1);
+        if (top.id === "inventory") setShowInventory(false);
+        else setShowQuestLog(false);
+        top.opener.focus();
+        return;
+      }
       event.preventDefault();
-      panelStack.current = panelStack.current.slice(0, -1);
-      if (top.id === "inventory") setShowInventory(false);
-      else setShowQuestLog(false);
-      top.opener.focus();
+      setPauseOpen(true);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [closeup, showChapterEnd, doorTransition, setShowInventory]);
+  }, [
+    activeShop,
+    closeup,
+    doorTransition,
+    pauseOpen,
+    saveWindowOpen,
+    setActiveShop,
+    setShowCharacterDirectory,
+    setShowInventory,
+    setShowStats,
+    settingsOpen,
+    showChapterEnd,
+    showCharacterDirectory,
+    showProductionSplash,
+    showStats,
+    showTravel,
+  ]);
 
   const inGame = Boolean(hasStarted ?? resumedSession);
   const sceneIsIndoor = !(
@@ -324,14 +381,20 @@ export default function Home() {
   // Rain follows the weather and whether Ethan is inside.
   // The intro film carries its own soundtrack, so the beds wait for it.
   useEffect(() => {
-    harlowAudio().setAmbience(
-      inGame && !showProductionSplash
-        ? { indoor: sceneIsIndoor, weather: gameState.weather }
-        : null,
-    );
-  }, [inGame, showProductionSplash, sceneIsIndoor, gameState.weather]);
+    const audio = harlowAudio();
+    if (inGame && !showProductionSplash) {
+      audio.setAmbience({ indoor: sceneIsIndoor, weather: gameState.weather });
+      audio.setAmbienceSlot(ambienceSlotForScene(currentScene.id, gameState.weather, gameState.time));
+    } else {
+      audio.setAmbience(null);
+      audio.setAmbienceSlot(null);
+    }
+  }, [inGame, showProductionSplash, sceneIsIndoor, gameState.weather, gameState.time, currentScene.id]);
 
-  useEffect(() => () => harlowAudio().setAmbience(null), []);
+  useEffect(() => () => {
+    harlowAudio().setAmbience(null);
+    harlowAudio().setAmbienceSlot(null);
+  }, []);
 
   useEffect(() => {
     if (!newDayAnnouncement) {
@@ -550,7 +613,13 @@ export default function Home() {
   const boardHint = showDinerBoardHint && visual.scene.id === "diner-inside";
 
   if (!(hasStarted ?? resumedSession)) {
-    return <MainMenu onNewGame={startNewGame} onContinue={continueGame} />;
+    return (
+      <MainMenu
+        continueSave={continueSave}
+        onNewGame={startNewGame}
+        onContinue={continueGame}
+      />
+    );
   }
 
   return (
@@ -575,9 +644,10 @@ export default function Home() {
 
         <GameMenu
           onOpenCharacters={() => setShowCharacterDirectory(true)}
-          onMainMenu={returnToMainMenu}
+          onOpenPause={() => setPauseOpen(true)}
           onSave={saveGame}
           onLoad={loadGame}
+          onSaveWindowChange={setSaveWindowOpen}
         />
 
         <GameStatus
@@ -592,6 +662,7 @@ export default function Home() {
           onQuestsClick={(opener) => {
             rememberPanel("quests", opener);
             setShowQuestLog(true);
+            harlowAudio().playSfx("page-turn");
           }}
           notebookUpdated={unseenPeople.length > 0}
         />
@@ -999,6 +1070,21 @@ export default function Home() {
             aria-hidden="true"
           />
         )}
+
+        {pauseOpen && (
+          <PauseMenu
+            suspended={settingsOpen}
+            onResume={() => setPauseOpen(false)}
+            onSettings={() => setSettingsOpen(true)}
+            onMainMenu={() => {
+              setPauseOpen(false);
+              setSettingsOpen(false);
+              returnToMainMenu();
+            }}
+          />
+        )}
+        {settingsOpen && <SettingsScreen onBack={() => setSettingsOpen(false)} />}
+        <AutosaveIndicator />
 
         {newDayAnnouncement && (
           <div

@@ -234,8 +234,8 @@
     animation: none;
   }
 
-  .mainMenuArtwork,
-  .mainMenuContent {
+  html:not([data-motion="full"]) .mainMenuArtwork,
+  html:not([data-motion="full"]) .mainMenuContent {
     animation: none;
   }
 }
