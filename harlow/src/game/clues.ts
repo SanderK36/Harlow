@@ -142,13 +142,13 @@ export function clueNote(id: ClueId, flags?: { emilyFileOpened?: boolean }): str
   return CLUE_DEFS[id].note;
 }
 
-/** After the drawer, the closed file is on his desk only while Walter is out (before 08:00, from 16:00). */
+/** After the drawer, the closed file is on his desk only at dusk: 16:00 up to 18:00. */
 export function emilyFolderOnDesk(
   time: number,
   flags: { fileDrawerSeen?: boolean; emilyFileOpened?: boolean },
 ): boolean {
   if (!flags.fileDrawerSeen || flags.emilyFileOpened) return false;
-  return time < 8 * 60 || time >= 16 * 60;
+  return time >= 16 * 60 && time < 18 * 60;
 }
 
 export function collectClue(owned: readonly ClueId[], id: ClueId): { clues: ClueId[]; added: boolean } {

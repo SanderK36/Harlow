@@ -447,12 +447,20 @@ describe("chapter finds", () => {
       "Out of the drawer. On his desk. He still has her file.",
     );
     assert.equal(
+      isChoiceAvailable(folder!, availability({ time: 16 * 60, scene: "sheriff-office", flags: { fileDrawerSeen: true } })),
+      true,
+    );
+    assert.equal(
       isChoiceAvailable(folder!, availability({ time: 17 * 60, scene: "sheriff-office", flags: { fileDrawerSeen: true } })),
       true,
     );
     assert.equal(
+      isChoiceAvailable(folder!, availability({ time: 18 * 60, scene: "sheriff-office", flags: { fileDrawerSeen: true } })),
+      false,
+    );
+    assert.equal(
       isChoiceAvailable(folder!, availability({ time: 7 * 60, scene: "sheriff-office", flags: { fileDrawerSeen: true } })),
-      true,
+      false,
     );
     assert.equal(
       isChoiceAvailable(folder!, availability({ time: 10 * 60, scene: "sheriff-office", flags: { fileDrawerSeen: true } })),
