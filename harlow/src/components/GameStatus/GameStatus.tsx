@@ -52,7 +52,7 @@ export default function GameStatus({
         <div className={styles.portraitSection}>
           <img
             className={styles.portrait}
-            src="/images/characters/ethan_parker/ethanParker.jpg"
+            src="/images/characters/ethanParker/ethanParker.jpg"
             alt=""
           />
 

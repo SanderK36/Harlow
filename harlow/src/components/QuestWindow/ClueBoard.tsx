@@ -8,6 +8,7 @@ import { handwritingCount } from "@/game/trust";
 import {
   CLUE_CONNECTIONS,
   CLUE_DEFS,
+  clueNote,
   type ClueConnectionId,
   type ClueId,
 } from "@/game/clues";
@@ -20,6 +21,7 @@ type ClueBoardProps = {
   clues: ClueId[];
   connections: ClueConnectionId[];
   writing: ClueId[];
+  emilyFileOpened?: boolean;
   onConnect: (a: ClueId, b: ClueId) => ConnectOutcome;
 };
 
@@ -48,7 +50,13 @@ function CluePhoto({ src }: { src?: string }) {
  * Corkboard of the clues Ethan has pinned. Drag from one to another, or
  * select one and then the next. A real pair keeps a red thread.
  */
-export default function ClueBoard({ clues, connections, writing, onConnect }: ClueBoardProps) {
+export default function ClueBoard({
+  clues,
+  connections,
+  writing,
+  emilyFileOpened = false,
+  onConnect,
+}: ClueBoardProps) {
   const boardRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Partial<Record<ClueId, HTMLButtonElement | null>>>({});
   const [centers, setCenters] = useState<Partial<Record<ClueId, Point>>>({});
@@ -210,6 +218,7 @@ export default function ClueBoard({ clues, connections, writing, onConnect }: Cl
         <ul className={styles.clueGrid}>
           {clues.map((id) => {
             const clue = CLUE_DEFS[id];
+            const note = clueNote(id, { emilyFileOpened });
             const pinned = !clue.image;
             return (
               <li key={id}>
@@ -221,7 +230,7 @@ export default function ClueBoard({ clues, connections, writing, onConnect }: Cl
                   data-clue={id}
                   className={`${pinned ? styles.pinned : styles.polaroidCard} ${selected === id ? styles.clueSelected : ""}`}
                   aria-pressed={selected === id}
-                  aria-label={`${clue.name}. ${clue.note}`}
+                  aria-label={`${clue.name}. ${note}`}
                   onPointerDown={(event) => onPointerDown(id, event)}
                   onPointerMove={onPointerMove}
                   onPointerUp={onPointerUp}
@@ -236,7 +245,7 @@ export default function ClueBoard({ clues, connections, writing, onConnect }: Cl
                   )}
                   <span className={styles.clueCopy}>
                     <span className={styles.clueName}>{clue.name}</span>
-                    <NoteLine text={clue.note} animate={writing.includes(id)} />
+                    <NoteLine text={note} animate={writing.includes(id)} />
                   </span>
                 </button>
               </li>

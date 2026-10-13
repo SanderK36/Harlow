@@ -1,6 +1,7 @@
 import type { SceneCharacter } from "@/game/scenes";
 import { RAIN_WEATHER, SANATORIUM_ONE_WINDOW, sanatoriumShowsOneWindow, type Scene } from "@/game/scenes";
 import { elrodRachelPlate, isRainPlate } from "@/game/scenePlate";
+import { emilyFolderOnDesk } from "@/game/clues";
 import type { QuestProgress, StoryFlag } from "@/game/quests";
 import type { Weather } from "@/game/types";
 import { isNightTime } from "@/game/utils";
@@ -94,15 +95,19 @@ export function resolveSceneArt(input: {
     : royRainy
       ? "./images/locations/scrapyard/bigRoyWorkingRainy.png"
     : rayRainy
-      ? "./images/locations/gas_station/rayMercerGasStationRainy.png"
+      ? "./images/locations/gasStation/rayMercerGasStationRainy.png"
     : walterRainy
-      ? "./images/locations/police_station/walterHarringtonOfficeRain.jpg"
+      ? "./images/locations/policeStation/walterHarringtonOfficeRain.jpg"
+    : scene.id === "sheriff-office"
+      && emilyFolderOnDesk(time, input.storyFlags)
+      && !input.activeCharacter
+      ? "./images/locations/policeStation/emilyFolderOnDeskClosed.png"
     : elrodWithRachel || elrodRachel
       ? weather === "Thunderstorm"
-        ? "./images/locations/neighbourhood/elrod_house/elrodHouseRachelOutsideThunder.png"
+        ? "./images/locations/neighbourhood/elrodHouse/elrodHouseRachelOutsideThunder.png"
         : RAIN_WEATHER.includes(weather)
-          ? "./images/locations/neighbourhood/elrod_house/elrodHouseRachelOutsideRainy.png"
-          : "./images/locations/neighbourhood/elrod_house/elrodHouseRachelOutsideDay.png"
+          ? "./images/locations/neighbourhood/elrodHouse/elrodHouseRachelOutsideRainy.png"
+          : "./images/locations/neighbourhood/elrodHouse/elrodHouseRachelOutsideDay.png"
     : ((isNightTime(time) && input.activeCharacter?.nightImage
         ? input.activeCharacter.nightImage
         : input.activeCharacter?.image) ?? emptySceneImage);

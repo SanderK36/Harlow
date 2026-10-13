@@ -52,19 +52,19 @@ function getItemImage(item: string) {
       return "/images/items/crowbar.png";
 
     case "steel maiden":
-      return "/images/locations/needle_groove/shop/steelMaiden.png";
+      return "/images/locations/needleGroove/shop/steelMaiden.png";
 
     case "high volts":
-      return "/images/locations/needle_groove/shop/highVolts.png";
+      return "/images/locations/needleGroove/shop/highVolts.png";
 
     case "leopard hazard":
-      return "/images/locations/needle_groove/shop/leopardHazard.png";
+      return "/images/locations/needleGroove/shop/leopardHazard.png";
 
     case "puppet masters":
-      return "/images/locations/needle_groove/shop/puppetMasters.png";
+      return "/images/locations/needleGroove/shop/puppetMasters.png";
 
     case "ricky valentine":
-      return "/images/locations/needle_groove/shop/rickyValentine.png";
+      return "/images/locations/needleGroove/shop/rickyValentine.png";
 
     default:
       return null;

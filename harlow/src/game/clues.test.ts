@@ -10,6 +10,7 @@ import {
   atticHotspotVisible,
   bootPrintHotspotHidden,
   bootPrintImage,
+  clueNote,
   collectClue,
   connectionBetween,
   gazetteOnPorch,
@@ -38,7 +39,7 @@ import {
 import { attic, emilyRoom, momConversation } from "./scene/home.ts";
 import { elrodBackyard, frontYard, rachelFrontYardConversation } from "./scene/outdoors.ts";
 import { sanatoriumRoom2 } from "./scene/sanatorium.ts";
-import { walterConversation } from "./scene/town.ts";
+import { sheriffOffice, walterConversation } from "./scene/town.ts";
 import { defaultTrust, type TrustMap } from "./trust.ts";
 import type { GameState } from "./types.ts";
 
@@ -434,6 +435,41 @@ describe("chapter finds", () => {
     const music = emilyRoom.choices.find((choice) => choice.action === "lookAtEmilyMusicBox");
     const polaroid = emilyRoom.choices.find((choice) => choice.action === "lookAtEmilyPolaroid");
     const note = emilyRoom.choices.find((choice) => choice.action === "lookAtEmilyNote");
+    const folder = sheriffOffice.choices.find((choice) => choice.action === "lookAtEmilyFolder");
+    assert.equal(folder?.closeup?.thought, "He'd kill me if he walked in right now.");
+    assert.match(folder?.closeup?.image ?? "", /emilyFolderOnDeskClosedUpClose\.png$/);
+    assert.match(folder?.closeup?.next?.image ?? "", /emilyFolderOnDeskOpenUpClose\.png$/);
+    assert.equal(folder?.closeup?.next?.thought, "PARKER, E. He had it out.");
+    assert.deepEqual(folder?.closeup?.next?.setsFlags, ["emilyFileOpened"]);
+    assert.equal(clueNote("parker-e"), "Her file. Closed ten years. Still in Walter's drawer.");
+    assert.equal(
+      clueNote("parker-e", { emilyFileOpened: true }),
+      "Out of the drawer. On his desk. He still has her file.",
+    );
+    assert.equal(
+      isChoiceAvailable(folder!, availability({ time: 17 * 60, scene: "sheriff-office", flags: { fileDrawerSeen: true } })),
+      true,
+    );
+    assert.equal(
+      isChoiceAvailable(folder!, availability({ time: 7 * 60, scene: "sheriff-office", flags: { fileDrawerSeen: true } })),
+      true,
+    );
+    assert.equal(
+      isChoiceAvailable(folder!, availability({ time: 10 * 60, scene: "sheriff-office", flags: { fileDrawerSeen: true } })),
+      false,
+    );
+    assert.equal(
+      isChoiceAvailable(folder!, availability({ time: 17 * 60, scene: "sheriff-office", flags: {} })),
+      false,
+    );
+    assert.equal(
+      isChoiceAvailable(folder!, availability({
+        time: 17 * 60,
+        scene: "sheriff-office",
+        flags: { fileDrawerSeen: true, emilyFileOpened: true },
+      })),
+      false,
+    );
     assert.equal(music?.closeup?.thought, EMILY_THOUGHTS.musicBox);
     assert.equal(polaroid?.closeup?.thought, EMILY_THOUGHTS.polaroid);
     assert.equal(polaroid?.closeup?.inscriptions?.[0]?.text, "Em & Ethan, summer '71");

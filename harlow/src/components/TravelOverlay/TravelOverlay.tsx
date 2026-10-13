@@ -21,7 +21,7 @@ export default function TravelOverlay({
   const isRainy = rainy || RAIN_WEATHER.includes(weather);
   const image =
     method === "work"
-      ? "/images/locations/needle_groove/ethanWorking.jpg"
+      ? "/images/locations/needleGroove/ethanWorking.jpg"
       : method === "bus"
       ? isRainy
         ? "/images/travel/busTravelRainy.png"

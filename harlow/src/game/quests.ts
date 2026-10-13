@@ -46,6 +46,8 @@ export type StoryFlag =
   | "rachelMet"
   | "walterStationTalk"
   | "fileDrawerSeen"
+  /** Later visit: Ethan opened the closed file on Walter's desk. */
+  | "emilyFileOpened"
   | "rachelTrusted"
   | "rachelKnowsHood"
   | "rachelKnowsFile"

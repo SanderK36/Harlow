@@ -245,6 +245,7 @@ export default function QuestWindow({
               clues={clues}
               connections={connections}
               writing={writingClues}
+              emilyFileOpened={Boolean(storyFlags.emilyFileOpened)}
               onConnect={onConnect}
             />
           ) : tab === "people" ? (

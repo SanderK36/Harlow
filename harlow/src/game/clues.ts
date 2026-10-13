@@ -54,7 +54,7 @@ export const CLUE_DEFS: Record<ClueId, ClueDef> = {
     id: "boot-print",
     name: "Boot print",
     note: "A boot print by the porch steps. Pine needles in the mud.",
-    image: "/images/locations/neighbourhood/elrod_house/elrodHouseBackyardFootprintSunny.png",
+    image: "/images/locations/neighbourhood/elrodHouse/elrodHouseBackyardFootprintSunny.png",
   },
   "walt-and-me": {
     id: "walt-and-me",
@@ -115,6 +115,7 @@ export type ClueSave = {
 const FLAG_CLUES: Record<string, ClueId> = {
   posterFound: "faded-poster",
   fileDrawerSeen: "parker-e",
+  emilyFileOpened: "parker-e",
   sanatoriumCigaretteSeen: "cigarette",
   bootPrintSeen: "boot-print",
   waltPhotoSeen: "walt-and-me",
@@ -131,6 +132,23 @@ export function isConnectionId(value: string): value is ClueConnectionId {
 
 export function clueForFlag(flag: string): ClueId | null {
   return FLAG_CLUES[flag] ?? null;
+}
+
+/** Placeholder until Dialogues rewrites the line. The drawer note stays until he opens it. */
+export const EMILY_FILE_OPENED_NOTE = "Out of the drawer. On his desk. He still has her file.";
+
+export function clueNote(id: ClueId, flags?: { emilyFileOpened?: boolean }): string {
+  if (id === "parker-e" && flags?.emilyFileOpened) return EMILY_FILE_OPENED_NOTE;
+  return CLUE_DEFS[id].note;
+}
+
+/** After the drawer, the closed file is on his desk only while Walter is out (before 08:00, from 16:00). */
+export function emilyFolderOnDesk(
+  time: number,
+  flags: { fileDrawerSeen?: boolean; emilyFileOpened?: boolean },
+): boolean {
+  if (!flags.fileDrawerSeen || flags.emilyFileOpened) return false;
+  return time < 8 * 60 || time >= 16 * 60;
 }
 
 export function collectClue(owned: readonly ClueId[], id: ClueId): { clues: ClueId[]; added: boolean } {
@@ -196,8 +214,8 @@ const WET_WEATHER = new Set(["Rainy", "Heavy rain", "Thunderstorm"]);
 /** Sunny plate unless the yard is wet. The corkboard keeps the sunny print. */
 export function bootPrintImage(weather: string): string {
   return WET_WEATHER.has(weather)
-    ? "/images/locations/neighbourhood/elrod_house/elrodHouseBackyardFootprintRainy.png"
-    : "/images/locations/neighbourhood/elrod_house/elrodHouseBackyardFootprintSunny.png";
+    ? "/images/locations/neighbourhood/elrodHouse/elrodHouseBackyardFootprintRainy.png"
+    : "/images/locations/neighbourhood/elrodHouse/elrodHouseBackyardFootprintSunny.png";
 }
 
 /** Dad's box is not in the attic until Emily's note has been read. */
@@ -333,7 +351,7 @@ export const PLATES = {
     inscriptions: NEWSPAPER_INSCRIPTIONS,
   },
   bootPrint: {
-    image: "/images/locations/neighbourhood/elrod_house/elrodHouseBackyardFootprintSunny.png",
+    image: "/images/locations/neighbourhood/elrodHouse/elrodHouseBackyardFootprintSunny.png",
     thought: CLUE_DEFS["boot-print"].note,
     label: "Boot print",
   },

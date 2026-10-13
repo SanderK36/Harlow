@@ -2,42 +2,42 @@
 export function getPortrait(character: string) {
   switch (character.toLowerCase()) {
     case "ethan":
-      return "/images/characters/ethan_parker/ethanParker.jpg";
+      return "/images/characters/ethanParker/ethanParker.jpg";
 
     case "linda":
-      return "/images/characters/linda_parker/lindaParker.png";
+      return "/images/characters/lindaParker/lindaParker.png";
 
     case "marlene":
-      return "/images/characters/marlene_whitaker/marleneWhitaker.png";
+      return "/images/characters/marleneWhitaker/marleneWhitaker.png";
 
     case "johnny":
-      return "/images/characters/johnny_dalton/johnnyDalton.png";
+      return "/images/characters/johnnyDalton/johnnyDalton.png";
 
     case "walter":
-      return "/images/characters/walter_harrington/walterHarrington.jpg";
+      return "/images/characters/walterHarrington/walterHarrington.jpg";
 
     case "margaret":
-      return "/images/characters/margaret_sullivan/margaretSullivan.png";
+      return "/images/characters/margaretSullivan/margaretSullivan.png";
 
     case "earl":
-      return "/images/characters/earl_givens/earlGivens.png";
+      return "/images/characters/earlGivens/earlGivens.png";
 
     case "big roy":
-      return "/images/characters/big_roy/bigRoy.png";
+      return "/images/characters/bigRoy/bigRoy.png";
 
     case "ray":
-      return "/images/characters/ray_mercer/rayMercer.png";
+      return "/images/characters/rayMercer/rayMercer.png";
 
     case "tommy":
-      return "/images/characters/tommy_vance/tommyVance.png";
+      return "/images/characters/tommyVance/tommyVance.png";
 
     case "rachel":
-      return "/images/characters/rachel_bennett/rachelBennett.png";
+      return "/images/characters/rachelBennett/rachelBennett.png";
 
     case "emily":
-      return "/images/characters/emily_parker/emilyParker.png";
+      return "/images/characters/emilyParker/emilyParker.png";
 
     default:
-      return "/images/characters/ethan_parker/ethanParker.jpg";
+      return "/images/characters/ethanParker/ethanParker.jpg";
   }
 }

@@ -2,9 +2,9 @@ import { RAIN_WEATHER, type Scene } from "@/game/scenes";
 import type { Weather } from "@/game/types";
 import { isNightTime } from "@/game/utils";
 
-const ELROD_RACHEL_DAY = "./images/locations/neighbourhood/elrod_house/elrodHouseRachelOutsideDay.png";
-const ELROD_RACHEL_RAIN = "./images/locations/neighbourhood/elrod_house/elrodHouseRachelOutsideRainy.png";
-const ELROD_RACHEL_THUNDER = "./images/locations/neighbourhood/elrod_house/elrodHouseRachelOutsideThunder.png";
+const ELROD_RACHEL_DAY = "./images/locations/neighbourhood/elrodHouse/elrodHouseRachelOutsideDay.png";
+const ELROD_RACHEL_RAIN = "./images/locations/neighbourhood/elrodHouse/elrodHouseRachelOutsideRainy.png";
+const ELROD_RACHEL_THUNDER = "./images/locations/neighbourhood/elrodHouse/elrodHouseRachelOutsideThunder.png";
 
 /**
  * Rachel is painted into the daytime Elrod plates until 19:00.
@@ -40,10 +40,10 @@ export function sceneWeatherPlate(scene: Scene, time: number, weather: Weather) 
 const CHARACTER_RAIN_PLATES = new Set([
   "/images/locations/home/momMorningKitchenRain.jpg",
   "/images/locations/scrapyard/bigRoyWorkingRainy.png",
-  "/images/locations/gas_station/rayMercerGasStationRainy.png",
-  "/images/locations/police_station/walterHarringtonOfficeRain.jpg",
-  "/images/locations/neighbourhood/elrod_house/elrodHouseRachelOutsideRainy.png",
-  "/images/locations/neighbourhood/elrod_house/elrodHouseRachelOutsideThunder.png",
+  "/images/locations/gasStation/rayMercerGasStationRainy.png",
+  "/images/locations/policeStation/walterHarringtonOfficeRain.jpg",
+  "/images/locations/neighbourhood/elrodHouse/elrodHouseRachelOutsideRainy.png",
+  "/images/locations/neighbourhood/elrodHouse/elrodHouseRachelOutsideThunder.png",
 ]);
 
 /**

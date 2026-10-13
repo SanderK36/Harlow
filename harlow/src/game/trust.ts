@@ -252,13 +252,13 @@ export function unseenNotebookPeople(
 export function notebookPortrait(person: TrustPerson): string {
   switch (person) {
     case "rachel":
-      return "/images/characters/rachel_bennett/rachelBennett.png";
+      return "/images/characters/rachelBennett/rachelBennett.png";
     case "linda":
-      return "/images/characters/linda_parker/lindaParker.png";
+      return "/images/characters/lindaParker/lindaParker.png";
     case "walter":
-      return "/images/characters/walter_harrington/walterHarrington.jpg";
+      return "/images/characters/walterHarrington/walterHarrington.jpg";
     case "margaret":
-      return "/images/characters/margaret_sullivan/margaretSullivan.png";
+      return "/images/characters/margaretSullivan/margaretSullivan.png";
   }
 }
 

@@ -76,12 +76,12 @@ export const walterConversation: Conversation = {
       startsQuest: "what-walter-said",
       leadQuest: "what-walter-said",
       closeup: {
-        image: "./images/locations/police_station/filingCabinetOpen.png",
+        image: "./images/locations/policeStation/filingCabinetOpen.png",
         thought: "PARKER, E. — 1972. Closed ten years. Still in his drawer.",
         label: "Open filing drawer",
         setsFlags: ["fileDrawerSeen"],
         next: {
-          image: "./images/locations/police_station/filingCabinetClosed.png",
+          image: "./images/locations/policeStation/filingCabinetClosed.png",
           thought: "He shut it with his boot. Like it was nothing.",
           label: "Closed filing drawer",
         },
@@ -222,14 +222,14 @@ export const policeStation: Scene = {
   ],
   location: "Police Station",
   image: {
-    day: "./images/locations/police_station/policeStationDay.jpg",
-    night: "./images/locations/police_station/policeStationNight.jpg",
+    day: "./images/locations/policeStation/policeStationDay.jpg",
+    night: "./images/locations/policeStation/policeStationNight.jpg",
     weather: {
-      Rainy: "./images/locations/police_station/policeStationOutsideRainy.png",
+      Rainy: "./images/locations/policeStation/policeStationOutsideRainy.png",
       "Heavy rain":
-        "./images/locations/police_station/policeStationOutsideRainy.png",
+        "./images/locations/policeStation/policeStationOutsideRainy.png",
       Thunderstorm:
-        "./images/locations/police_station/policeStationOutsideRainy.png",
+        "./images/locations/policeStation/policeStationOutsideRainy.png",
     },
   },
   choices: [
@@ -252,10 +252,10 @@ export const policeStationInside: Scene = {
   ],
   location: "Police Station Inside",
   image: {
-    day: "./images/locations/police_station/policeStationInsideDay.png",
-    night: "./images/locations/police_station/policeStationInsideNight.png",
+    day: "./images/locations/policeStation/policeStationInsideDay.png",
+    night: "./images/locations/policeStation/policeStationInsideNight.png",
     weather: rainArt(
-      "./images/locations/police_station/policeStationInsideRainy.png",
+      "./images/locations/policeStation/policeStationInsideRainy.png",
     ),
     weatherDayOnly: true,
   },
@@ -294,12 +294,12 @@ export const sheriffOffice: Scene = {
   location: "Sheriff's office",
 
   image: {
-    day: "./images/locations/police_station/walterOfficeDay.png",
-    night: "./images/locations/police_station/walterOfficeNight.png",
+    day: "./images/locations/policeStation/walterOfficeDay.png",
+    night: "./images/locations/policeStation/walterOfficeNight.png",
     weather: {
-      Rainy: "./images/locations/police_station/walterOfficeRain.png",
-      "Heavy rain": "./images/locations/police_station/walterOfficeRain.png",
-      Thunderstorm: "./images/locations/police_station/walterOfficeRain.png",
+      Rainy: "./images/locations/policeStation/walterOfficeRain.png",
+      "Heavy rain": "./images/locations/policeStation/walterOfficeRain.png",
+      Thunderstorm: "./images/locations/policeStation/walterOfficeRain.png",
     },
     weatherDayOnly: true,
   },
@@ -309,7 +309,7 @@ export const sheriffOffice: Scene = {
       name: "Walter Harrington",
       from: 480,
       until: 960,
-      image: "./images/locations/police_station/walterHarringtonOffice.jpg",
+      image: "./images/locations/policeStation/walterHarringtonOffice.jpg",
     },
   ],
   conversation: walterConversation,
@@ -326,6 +326,25 @@ export const sheriffOffice: Scene = {
       action: "talkToWalter",
       nextScene: "sheriff-office",
       timeCost: 0,
+    },
+    {
+      // Spare plate emilyFolderOnDeskOpen.png stays in this folder, unused.
+      label: "Folder",
+      action: "lookAtEmilyFolder",
+      nextScene: "sheriff-office",
+      timeCost: 0,
+      hotspots: [{ left: 35, top: 44, width: 30, height: 32 }],
+      closeup: {
+        image: "./images/locations/policeStation/emilyFolderOnDeskClosedUpClose.png",
+        thought: "He'd kill me if he walked in right now.",
+        label: "Closed file",
+        next: {
+          image: "./images/locations/policeStation/emilyFolderOnDeskOpenUpClose.png",
+          thought: "PARKER, E. He had it out.",
+          label: "Open file",
+          setsFlags: ["emilyFileOpened"],
+        },
+      },
     },
   ],
 };

@@ -555,8 +555,8 @@ export const livingRoomRelaxing: Scene = {
   ],
   location: "Living room",
   image: {
-    day: "./images/characters/ethan_parker/ethanRelaxing.png",
-    night: "./images/characters/ethan_parker/ethanRelaxingNight.png",
+    day: "./images/characters/ethanParker/ethanRelaxing.png",
+    night: "./images/characters/ethanParker/ethanRelaxingNight.png",
   },
   choices: [
     {

@@ -324,11 +324,11 @@ export const elrodHouse: Scene = {
   ],
   location: "Elrod House",
   image: {
-    day: "./images/locations/neighbourhood/elrod_house/elrodHouseDay.png",
-    night: "./images/locations/neighbourhood/elrod_house/elrodHouseNight.png",
+    day: "./images/locations/neighbourhood/elrodHouse/elrodHouseDay.png",
+    night: "./images/locations/neighbourhood/elrodHouse/elrodHouseNight.png",
     weather: rainArt(
-      "./images/locations/neighbourhood/elrod_house/elrodHouseRainy.png",
-      "./images/locations/neighbourhood/elrod_house/elrodHouseThunder.png",
+      "./images/locations/neighbourhood/elrodHouse/elrodHouseRainy.png",
+      "./images/locations/neighbourhood/elrodHouse/elrodHouseThunder.png",
     ),
     // Both weather plates are daytime. After dark the night plate wins.
     weatherDayOnly: true,
@@ -389,11 +389,11 @@ export const elrodBackyard: Scene = {
   ],
   location: "Elrod House",
   image: {
-    day: "./images/locations/neighbourhood/elrod_house/elrodHouseBackyardDay.png",
-    night: "./images/locations/neighbourhood/elrod_house/elrodHouseBackyardNight.png",
+    day: "./images/locations/neighbourhood/elrodHouse/elrodHouseBackyardDay.png",
+    night: "./images/locations/neighbourhood/elrodHouse/elrodHouseBackyardNight.png",
     weather: rainArt(
-      "./images/locations/neighbourhood/elrod_house/elrodHouseBackyardRainy.png",
-      "./images/locations/neighbourhood/elrod_house/elrodHouseBackyardThunder.png",
+      "./images/locations/neighbourhood/elrodHouse/elrodHouseBackyardRainy.png",
+      "./images/locations/neighbourhood/elrodHouse/elrodHouseBackyardThunder.png",
     ),
     // The rain and thunder plates are daytime. After dark the night plate wins.
     weatherDayOnly: true,

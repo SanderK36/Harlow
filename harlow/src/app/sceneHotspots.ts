@@ -65,6 +65,7 @@ export const hotspotLabels: Record<string, string> = {
   lookAtElrodTape: "Police tape",
   goElrodBackyard: "Backyard",
   lookAtElrodBootPrint: "Porch steps",
+  lookAtEmilyFolder: "Folder",
   lookAtDinerBulletin: "Bulletin board",
   lookAtSanatoriumHill: "The hill",
   lookAtSanatoriumCigarette: "Look at the ash",
