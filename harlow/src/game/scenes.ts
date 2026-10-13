@@ -15,6 +15,7 @@ export {
 } from "./scene/home";
 export {
   DINER_BOARD_HINT,
+  elrodBackyard,
   elrodHouse,
   frontYard,
   lightPole,

@@ -192,9 +192,9 @@ export const sanatoriumRoom2: Scene = {
         thought: "Still burning. Someone was just here.",
         label: "Cigarette",
         next: {
-          image: "./images/sanatorium/sanatoriumHallwayNightFigure.png",
+          image: "./images/locations/sanatorium/sanatoriumMainFloorNightShadow.png",
           thought: "Someone's here.",
-          label: "Someone in the hall",
+          label: "Someone in the lobby",
         },
       },
       setsFlags: ["sanatoriumCigaretteSeen", "chapter1Complete"],

@@ -63,6 +63,8 @@ export const hotspotLabels: Record<string, string> = {
   goElrodHouse: "Elrod house",
   talkToRachel: "Rachel",
   lookAtElrodTape: "Police tape",
+  goElrodBackyard: "Backyard",
+  lookAtElrodBootPrint: "Porch steps",
   lookAtDinerBulletin: "Bulletin board",
   lookAtSanatoriumHill: "The hill",
   lookAtSanatoriumCigarette: "Look at the ash",
@@ -83,6 +85,7 @@ const sanatoriumHotspotActions: Record<string, string[]> = {
 
 const ADMIN_SCENE_NAMES: Record<string, string> = {
   "elrod-house": "Elrod house",
+  "elrod-backyard": "Backyard",
   "ethan-room": "Ethan's room",
   "front-yard": "Front yard",
   street: "Street",
@@ -118,6 +121,7 @@ export const OUTDOOR_SCENE_IDS = new Set([
   "cementary-backside",
   "sanatorium-entrance",
   "elrod-house",
+  "elrod-backyard",
 ]);
 
 /** Which cursor a hotspot gets: look, go, talk or take (see globals.css). */

@@ -19,6 +19,7 @@ import {
   resolveAskAbout,
 } from "@/game/askAbout";
 import {
+  bootPrintImage,
   collectClue,
   clueForFlag,
   migrateClues,
@@ -1077,7 +1078,11 @@ export function useGame() {
     if (choice.closeup) {
       enqueueCloseup(
         {
-          image: plateUrl(choice.closeup.image),
+          image: plateUrl(
+            choice.action === "lookAtElrodBootPrint"
+              ? bootPrintImage(gameState.weather)
+              : choice.closeup.image,
+          ),
           video: choice.closeup.video ? plateUrl(choice.closeup.video) : undefined,
           thought: choice.closeup.thought,
           label: choice.closeup.label,

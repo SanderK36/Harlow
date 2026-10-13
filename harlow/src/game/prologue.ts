@@ -38,20 +38,18 @@ export type PrologueNode =
   | ({ beat: PrologueBeat } & PrologueLine)
   | { beat: PrologueBeat; kind: "choice"; options: PrologueChoice[] };
 
-const IMAGE_ROOT = "/images/intro";
-
 /** Which picture each layer shows. "street" is reused after the strike. */
 export const PROLOGUE_IMAGES = {
-  comic: `${IMAGE_ROOT}/EthanPickingUpComic.jpg`,
-  reading: `${IMAGE_ROOT}/EthanInBedReading.jpg`,
-  bed: `${IMAGE_ROOT}/EthanInBedRedAndBlue.jpg`,
-  window: `${IMAGE_ROOT}/EthanLookingAtWindow.jpg`,
-  stairs: `${IMAGE_ROOT}/ethanWalkingDownTheStairs.jpg`,
-  porch: `${IMAGE_ROOT}/EthanWalkingOut.jpg`,
-  walter: `${IMAGE_ROOT}/ethanTalkingToWalter.jpg`,
-  behind: `${IMAGE_ROOT}/ethanLookingBehind.jpg`,
-  street: `${IMAGE_ROOT}/emptyStreet.jpg`,
-  killer: `${IMAGE_ROOT}/lightningKiller.jpg`,
+  comic: "/images/intro/ethanPickingUpComic.jpg",
+  reading: "/images/intro/ethanInBedReading.jpg",
+  bed: "/images/intro/ethanInBedRedAndBlue.jpg",
+  window: "/images/intro/ethanLookingAtWindow.jpg",
+  stairs: "/images/intro/ethanWalkingDownTheStairs.jpg",
+  porch: "/images/intro/ethanWalkingOut.jpg",
+  walter: "/images/intro/ethanTalkingToWalter.jpg",
+  behind: "/images/intro/ethanLookingBehind.jpg",
+  street: "/images/intro/emptyStreet.jpg",
+  killer: "/images/intro/lightningKiller.jpg",
 } as const;
 
 export const PROLOGUE_VIDEOS = {

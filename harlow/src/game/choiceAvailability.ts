@@ -1,4 +1,4 @@
-import { atticHotspotVisible, gateHotspotHidden, gazetteOnPorch } from "./clues";
+import { atticHotspotVisible, bootPrintHotspotHidden, gazetteOnPorch } from "./clues";
 import type { Choice } from "./choices";
 import { TIRED_END } from "./lateNight";
 import {
@@ -152,8 +152,8 @@ export function isChoiceAvailable(choice: Choice, ctx: ChoiceContext) {
     return isNightTime(time) && !ctx.hasFlag("sanatoriumCigaretteSeen");
   }
   if (action === "lookAtElrodTape") return true;
-  if (action === "lookAtElrodGate") {
-    return ctx.hasFlag("margaretGossipHeard") && !gateHotspotHidden(time);
+  if (action === "lookAtElrodBootPrint") {
+    return ctx.hasFlag("margaretGossipHeard") && !bootPrintHotspotHidden(time);
   }
   if (action === "lookInDadsBox") return atticHotspotVisible(ctx.storyFlags);
   if (

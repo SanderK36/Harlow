@@ -22,9 +22,9 @@ const SPEAKER: Record<TrustPerson, string> = {
   margaret: "Margaret",
 };
 
-const BOOT_PROMPT = "Somebody left a boot print by Mrs. Elrod's gate.";
-const WALT_WALTER = "I found a picture of you and Dad. Miller Lake, '64.";
-const WALT_LINDA = "I found a picture of Dad and Walter at Miller Lake.";
+const BOOT_PROMPT = "Somebody left a boot print by Mrs. Elrod's back steps.";
+const WALT_WALTER = "I found a picture of you and Dad. Miller Lake, '64. His face is scratched out.";
+const WALT_LINDA = "I found a picture of Dad and Walter at Miller Lake. His face is scratched out.";
 
 export type TrustBand = "high" | "mid" | "low";
 
@@ -88,7 +88,7 @@ function bootLines(person: "rachel" | "walter", band: TrustBand): StoryEntry[] {
   if (band === "high") {
     return [
       ethan(BOOT_PROMPT),
-      npc(speaker, "You were by that gate?"),
+      npc(speaker, "You were in her backyard?"),
       ethan("Just looking."),
       npc(speaker, "Then keep it to yourself. I mean it, kid."),
     ];

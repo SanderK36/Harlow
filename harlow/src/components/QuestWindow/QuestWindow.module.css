@@ -482,7 +482,7 @@
   padding: 16px 12px 18px;
   background-color: #7a4a28;
   background-image:
-    url("/images/ui/corkboardTexture.png"),
+    url("/images/ui/corkboard.png"),
     radial-gradient(ellipse at 18% 12%, rgba(255, 214, 160, 0.2), transparent 42%),
     repeating-linear-gradient(90deg, rgba(80, 36, 12, 0.16) 0 2px, transparent 2px 6px),
     repeating-linear-gradient(0deg, rgba(60, 28, 10, 0.12) 0 1px, transparent 1px 5px),

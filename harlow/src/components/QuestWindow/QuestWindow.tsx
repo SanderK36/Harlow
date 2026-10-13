@@ -28,6 +28,9 @@ import type { DayOfWeek, Month } from "@/game/types";
 
 import styles from "./QuestWindow.module.css";
 
+/** Painted notebook plate. Missing file keeps the CSS paper. */
+const QUEST_LOG_BACKGROUND = "/images/ui/questLogBackground.png";
+
 type QuestWindowProps = {
   quests: QuestProgress[];
   job: JobId | null;
@@ -129,7 +132,15 @@ export default function QuestWindow({
   const [tab, setTab] = useState<"quests" | "clues" | "people">("quests");
   const [writing, setWriting] = useState<TrustPerson[]>([]);
   const [writingClues, setWritingClues] = useState<ClueId[]>([]);
+  const [logPlate, setLogPlate] = useState(false);
   const objectiveCtx = { inventory, storyFlags };
+
+  useEffect(() => {
+    const probe = new window.Image();
+    probe.onload = () => setLogPlate(true);
+    probe.onerror = () => setLogPlate(false);
+    probe.src = QUEST_LOG_BACKGROUND;
+  }, []);
 
   function openPeople() {
     if (tab !== "people") {
@@ -159,6 +170,11 @@ export default function QuestWindow({
         aria-modal="true"
         aria-labelledby="quest-log-title"
         onMouseDown={(event) => event.stopPropagation()}
+        style={logPlate ? {
+          backgroundImage: `url("${QUEST_LOG_BACKGROUND}")`,
+          backgroundSize: "100% 100%",
+          backgroundPosition: "center",
+        } : undefined}
       >
         <header className={styles.header}>
           <p className={styles.caseLabel}>E. Parker</p>

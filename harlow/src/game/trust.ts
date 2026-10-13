@@ -252,13 +252,13 @@ export function unseenNotebookPeople(
 export function notebookPortrait(person: TrustPerson): string {
   switch (person) {
     case "rachel":
-      return "/images/characters/RachelBennet/RachelBennet.png";
+      return "/images/characters/rachel_bennett/rachelBennett.png";
     case "linda":
-      return "/images/characters/LindaParker/LindaParker.png";
+      return "/images/characters/linda_parker/lindaParker.png";
     case "walter":
-      return "/images/characters/WalterHarrington/WalterHarrington.jpg";
+      return "/images/characters/walter_harrington/walterHarrington.jpg";
     case "margaret":
-      return "/images/characters/MargaretSullivan/maragetSullivan.png";
+      return "/images/characters/margaret_sullivan/margaretSullivan.png";
   }
 }
 
@@ -294,7 +294,7 @@ export function margaretGossipLines(): StoryEntry[] {
   return [
     npc(
       "Margaret",
-      "Mrs. Elrod sat right there Tuesday. Said somebody kept leaving her gate open at night. I told her it was the wind.",
+      "Mrs. Elrod sat right there. Said she heard footsteps in her yard, the night before she was killed. I thought she was imagining it.",
     ),
     ethan("Did she tell Walter?"),
     npc("Margaret", "Honey, she told everybody. Nobody listened."),

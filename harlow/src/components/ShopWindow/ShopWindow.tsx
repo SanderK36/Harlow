@@ -17,7 +17,7 @@ const shops = {
       {
         name: "Cigarettes",
         price: 5,
-        image: "/images/items/Cigarettes.png",
+        image: "/images/items/cigarettes.png",
       },
       {
         name: "Beer",
@@ -32,27 +32,27 @@ const shops = {
       {
         name: "Steel Maiden",
         price: 8,
-        image: "/images/locations/NeedleGroove/shop/SteelMaiden.png",
+        image: "/images/locations/needle_groove/shop/steelMaiden.png",
       },
       {
         name: "High Volts",
         price: 9,
-        image: "/images/locations/NeedleGroove/shop/HighVolts.png",
+        image: "/images/locations/needle_groove/shop/highVolts.png",
       },
       {
         name: "Leopard Hazard",
         price: 10,
-        image: "/images/locations/NeedleGroove/shop/LeopardHazard.png",
+        image: "/images/locations/needle_groove/shop/leopardHazard.png",
       },
       {
         name: "Puppet Masters",
         price: 9,
-        image: "/images/locations/NeedleGroove/shop/PuppetMasters.png",
+        image: "/images/locations/needle_groove/shop/puppetMasters.png",
       },
       {
         name: "Ricky Valentine",
         price: 11,
-        image: "/images/locations/NeedleGroove/shop/RickyValentine.png",
+        image: "/images/locations/needle_groove/shop/rickyValentine.png",
       },
     ],
   },

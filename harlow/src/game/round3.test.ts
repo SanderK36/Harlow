@@ -225,7 +225,7 @@ describe("interim rain follows the plate", () => {
     assert.equal(isRainPlate(stop, busStop, "Rainy"), false);
     assert.match(stopDay, /busStopRain\.png$/);
     assert.equal(isRainPlate(stopDay, busStop, "Rainy"), true);
-    assert.match(house, /ElrodHouseRainy\.png$/);
+    assert.match(house, /elrodHouseRainy\.png$/);
     assert.equal(isRainPlate(house, elrodHouse, "Rainy"), true);
   });
 });

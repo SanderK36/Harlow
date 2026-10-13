@@ -37,7 +37,7 @@ export const CLUE_DEFS: Record<ClueId, ClueDef> = {
     id: "faded-poster",
     name: "Faded Poster",
     note: "Emily's face on Margaret's board. Ten years, and nobody took it down.",
-    image: "/images/misc/EmilyMissingPoster.png",
+    image: "/images/misc/emilyMissingPoster.png",
   },
   "parker-e": {
     id: "parker-e",
@@ -53,20 +53,20 @@ export const CLUE_DEFS: Record<ClueId, ClueDef> = {
   "boot-print": {
     id: "boot-print",
     name: "Boot print",
-    note: "A boot print by her gate. Pine needles in the mud.",
-    image: "/images/neighbourhood/ElrodHouse/elrodGateCloseup.png",
+    note: "A boot print by the porch steps. Pine needles in the mud.",
+    image: "/images/locations/neighbourhood/elrod_house/elrodHouseBackyardFootprintSunny.png",
   },
   "walt-and-me": {
     id: "walt-and-me",
     name: "Walt & me",
-    note: "Dad and Walter. Miller Lake, '64.",
-    image: "/images/misc/photoDadAndWalter.png",
+    note: "Miller Lake, '64. Walter's already a cop. Dad's face is scratched out.",
+    image: "/images/misc/oldPhotoWalterFishing.png",
   },
   "the-gazette": {
     id: "the-gazette",
     name: "The Gazette",
     note: "Front page. \"Stay calm.\" Sure.",
-    image: "/images/misc/newspaperGazette.png",
+    image: "/images/misc/newspaperElrod.png",
   },
 };
 
@@ -186,9 +186,18 @@ export function waltAskUnlocked(connections: readonly ClueConnectionId[]): boole
   return connections.includes("walt-parker");
 }
 
-/** The gate close-up is hidden from 03:00 until 07:00. */
-export function gateHotspotHidden(time: number): boolean {
+/** The boot print by the porch steps is hidden from 03:00 until 07:00. */
+export function bootPrintHotspotHidden(time: number): boolean {
   return time >= 3 * 60 && time < 7 * 60;
+}
+
+const WET_WEATHER = new Set(["Rainy", "Heavy rain", "Thunderstorm"]);
+
+/** Sunny plate unless the yard is wet. The corkboard keeps the sunny print. */
+export function bootPrintImage(weather: string): string {
+  return WET_WEATHER.has(weather)
+    ? "/images/locations/neighbourhood/elrod_house/elrodHouseBackyardFootprintRainy.png"
+    : "/images/locations/neighbourhood/elrod_house/elrodHouseBackyardFootprintSunny.png";
 }
 
 /** Dad's box is not in the attic until Emily's note has been read. */
@@ -267,11 +276,11 @@ export function migrateClues(save: ClueSave | null | undefined): {
   };
 }
 
-export const CORK_TEXTURE = "/images/ui/corkboardTexture.png";
+export const CORK_TEXTURE = "/images/ui/corkboard.png";
 
 export const NEWSPAPER = {
-  image: "/images/misc/newspaperGazette.png",
-  headline: "LOCAL WIDOW FOUND DEAD",
+  image: "/images/misc/newspaperElrod.png",
+  headline: "ELDERLY WOMAN FOUND DEAD IN HER HOME",
   subline: "Police ask residents to stay calm",
   body: "Mrs. Elrod was found dead in her home early Saturday. Sheriff Walter Harrington called the death \"under investigation\" and asked residents to stay calm and keep their doors locked.",
 };
@@ -307,7 +316,7 @@ export const EMILY_THOUGHTS = {
   musicBox: "She'd had it since she was little. Still wound it every night. It still plays.",
   polaroid: "Summer '71. I was too slow, so she carried me. She always did.",
   note: "Her handwriting. Ten years, and I never found it. Dad's box... the attic.",
-  photo: "Dad and Walter. I'd forgotten they were friends.",
+  photo: "Walter was already a cop. Dad's face is scratched out.",
 } as const;
 
 export const EMILY_OVERLAYS = {
@@ -323,10 +332,10 @@ export const PLATES = {
     label: "The Harlow Gazette",
     inscriptions: NEWSPAPER_INSCRIPTIONS,
   },
-  gate: {
-    image: "/images/neighbourhood/ElrodHouse/elrodGateCloseup.png",
+  bootPrint: {
+    image: "/images/locations/neighbourhood/elrod_house/elrodHouseBackyardFootprintSunny.png",
     thought: CLUE_DEFS["boot-print"].note,
-    label: "The gate",
+    label: "Boot print",
   },
   musicBox: {
     image: "/images/misc/emilyMusicBox.png",
@@ -334,7 +343,7 @@ export const PLATES = {
     label: "Music box",
   },
   polaroid: {
-    image: "/images/misc/emilyPolaroid.png",
+    image: "/images/misc/oldEmilyEthanPhoto.png",
     thought: EMILY_THOUGHTS.polaroid,
     label: "Polaroid",
     inscriptions: [
@@ -349,7 +358,7 @@ export const PLATES = {
     ],
   },
   note: {
-    image: "/images/misc/emilyNote.png",
+    image: "/images/misc/emilyLetter.png",
     thought: EMILY_THOUGHTS.note,
     label: "Emily's note",
     inscriptions: [
@@ -364,9 +373,9 @@ export const PLATES = {
     ],
   },
   photo: {
-    image: "/images/misc/photoDadAndWalter.png",
+    image: "/images/misc/oldPhotoWalterFishing.png",
     thought: EMILY_THOUGHTS.photo,
-    label: "Dad and Walter",
+    label: "Walt & me",
     inscriptions: [
       {
         id: "caption",
@@ -378,9 +387,9 @@ export const PLATES = {
       },
     ],
   },
-  hallwayFigure: {
-    image: "/images/sanatorium/sanatoriumHallwayNightFigure.png",
+  lobbyFigure: {
+    image: "/images/locations/sanatorium/sanatoriumMainFloorNightShadow.png",
     thought: "Someone's here.",
-    label: "Someone in the hall",
+    label: "Someone in the lobby",
   },
 };

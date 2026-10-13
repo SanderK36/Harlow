@@ -89,20 +89,20 @@ export function resolveSceneArt(input: {
   // behind swaps to its empty variant rather than showing them twice.
   const sceneImage = momInKitchen
     ? RAIN_WEATHER.includes(weather)
-      ? "./images/locations/home/momMorningKitchen-rain.jpg"
+      ? "./images/locations/home/momMorningKitchenRain.jpg"
       : "./images/locations/home/momMorningKitchen.png"
     : royRainy
       ? "./images/locations/scrapyard/bigRoyWorkingRainy.png"
     : rayRainy
       ? "./images/locations/gas_station/rayMercerGasStationRainy.png"
     : walterRainy
-      ? "./images/locations/police_station/WalterHarringtonOfficeRain.jpg"
+      ? "./images/locations/police_station/walterHarringtonOfficeRain.jpg"
     : elrodWithRachel || elrodRachel
       ? weather === "Thunderstorm"
-        ? "./images/locations/neighbourhood/ElrodHouse/ElrodHouseRachelOutsideThunder.png"
+        ? "./images/locations/neighbourhood/elrod_house/elrodHouseRachelOutsideThunder.png"
         : RAIN_WEATHER.includes(weather)
-          ? "./images/locations/neighbourhood/ElrodHouse/ElrodHouseRachelOutsideRainy.png"
-          : "./images/locations/neighbourhood/ElrodHouse/ElrodHouseRachelOutsideDay.png"
+          ? "./images/locations/neighbourhood/elrod_house/elrodHouseRachelOutsideRainy.png"
+          : "./images/locations/neighbourhood/elrod_house/elrodHouseRachelOutsideDay.png"
     : ((isNightTime(time) && input.activeCharacter?.nightImage
         ? input.activeCharacter.nightImage
         : input.activeCharacter?.image) ?? emptySceneImage);

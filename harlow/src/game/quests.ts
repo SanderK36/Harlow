@@ -164,9 +164,9 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
     id: "the-gate",
     title: "The Gate",
     objectives: {
-      default: "Somebody kept leaving her gate open.",
-      print: "A boot print. Pine needles in the mud.",
-      done: "Pine needles by her gate. Nobody listened.",
+      default: "Footsteps in her yard. The night before.",
+      print: "A boot print by the porch steps. Pine needles.",
+      done: "Pine needles by her steps. The gate faces the woods.",
     },
   },
   "emilys-room": {
@@ -174,7 +174,7 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
     title: "Emily's Room",
     objectives: {
       default: "Her room. Nobody's touched it.",
-      done: "Dad and Walter. I'd forgotten they were friends.",
+      done: "Walter was already a cop. Dad's face is scratched out.",
     },
   },
 };
