@@ -78,6 +78,8 @@ const SCENE_DISTANCE: Record<string, number> = {
   "garage-bench": 4,
   "garage-bench-empty": 4,
   "elrod-house": 8,
+  // One step past the front of the house, so a tired Ethan can still come back.
+  "elrod-backyard": 9,
   "needle-and-groove": 8,
   "gas-station": 8,
   scrapyard: 8,

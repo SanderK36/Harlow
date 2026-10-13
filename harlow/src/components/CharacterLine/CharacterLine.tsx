@@ -28,7 +28,7 @@ export default function CharacterLine({
       }`}
     >
       <img
-        src="/images/characters/EthanParker/EthanParker.jpg"
+        src="/images/characters/ethanParker/ethanParker.jpg"
         alt="Ethan Parker"
         className={styles.portrait}
       />

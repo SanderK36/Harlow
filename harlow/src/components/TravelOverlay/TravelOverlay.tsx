@@ -21,18 +21,18 @@ export default function TravelOverlay({
   const isRainy = rainy || RAIN_WEATHER.includes(weather);
   const image =
     method === "work"
-      ? "/images/locations/NeedleGroove/ethan_working.jpg"
+      ? "/images/locations/needleGroove/ethanWorking.jpg"
       : method === "bus"
       ? isRainy
-        ? "/images/Travel/busTravelRainy.png"
+        ? "/images/travel/busTravelRainy.png"
         : isNight
-        ? "/images/Travel/busTravelNight.png"
-        : "/images/Travel/busTravelDay.png"
+        ? "/images/travel/busTravelNight.png"
+        : "/images/travel/busTravelDay.png"
       : isRainy
-        ? "/images/Travel/walkingRainy.png"
+        ? "/images/travel/walkingRainy.png"
         : isNight
-          ? "/images/Travel/walkingNight.jpg"
-          : "/images/Travel/walkingDay.jpg";
+          ? "/images/travel/walkingNight.jpg"
+          : "/images/travel/walkingDay.jpg";
   // The only walk plate is a dry night street. By day it is lifted so 8am
   // does not read as midnight; rain tints whatever plate is showing.
   const plateClass = [

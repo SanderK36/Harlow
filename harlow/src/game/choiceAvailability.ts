@@ -1,4 +1,4 @@
-import { atticHotspotVisible, gateHotspotHidden, gazetteOnPorch } from "./clues";
+import { atticHotspotVisible, bootPrintHotspotHidden, emilyFolderOnDesk, gazetteOnPorch } from "./clues";
 import type { Choice } from "./choices";
 import { TIRED_END } from "./lateNight";
 import {
@@ -84,6 +84,7 @@ export function isChoiceAvailable(choice: Choice, ctx: ChoiceContext) {
     return ctx.job === "needle-groove" && time >= 600 && time < 1140;
   }
   if (action === "talkToWalter") return time >= 480 && time < 960;
+  if (action === "lookAtEmilyFolder") return emilyFolderOnDesk(time, ctx.storyFlags);
   if (action === "talkToMargaret") return time >= 420 && time < 900;
   if (action === "talkToEarl") return time >= 480 && time < 1020;
   if (action === "talkToBigRoy") return time >= 420 && time < 900;
@@ -152,8 +153,8 @@ export function isChoiceAvailable(choice: Choice, ctx: ChoiceContext) {
     return isNightTime(time) && !ctx.hasFlag("sanatoriumCigaretteSeen");
   }
   if (action === "lookAtElrodTape") return true;
-  if (action === "lookAtElrodGate") {
-    return ctx.hasFlag("margaretGossipHeard") && !gateHotspotHidden(time);
+  if (action === "lookAtElrodBootPrint") {
+    return ctx.hasFlag("margaretGossipHeard") && !bootPrintHotspotHidden(time);
   }
   if (action === "lookInDadsBox") return atticHotspotVisible(ctx.storyFlags);
   if (

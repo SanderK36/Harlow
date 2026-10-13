@@ -1,7 +1,7 @@
 import { RAIN_WEATHER } from "@/game/scene/weather";
 import { isNightTime } from "@/game/utils";
 
-/** Looping beds. Each one is a file under public/sounds/ambience/. */
+/** Looping beds. Each one is a file in public/sounds/. */
 export type AmbienceSlot = "rain" | "night" | "sanatorium-drone" | "diner" | "house";
 
 const RAIN = new Set<string>(RAIN_WEATHER);

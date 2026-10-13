@@ -76,12 +76,12 @@ export const walterConversation: Conversation = {
       startsQuest: "what-walter-said",
       leadQuest: "what-walter-said",
       closeup: {
-        image: "./images/locations/police_station/filingCabinetOpen.png",
+        image: "./images/locations/policeStation/filingCabinetOpen.png",
         thought: "PARKER, E. — 1972. Closed ten years. Still in his drawer.",
         label: "Open filing drawer",
         setsFlags: ["fileDrawerSeen"],
         next: {
-          image: "./images/locations/police_station/filingCabinetClosed.png",
+          image: "./images/locations/policeStation/filingCabinetClosed.png",
           thought: "He shut it with his boot. Like it was nothing.",
           label: "Closed filing drawer",
         },
@@ -222,14 +222,14 @@ export const policeStation: Scene = {
   ],
   location: "Police Station",
   image: {
-    day: "./images/locations/police_station/police_station_day.jpg",
-    night: "./images/locations/police_station/police_station_night.jpg",
+    day: "./images/locations/policeStation/policeStationDay.jpg",
+    night: "./images/locations/policeStation/policeStationNight.jpg",
     weather: {
-      Rainy: "./images/locations/police_station/policeStationOutsideRainy.png",
+      Rainy: "./images/locations/policeStation/policeStationOutsideRainy.png",
       "Heavy rain":
-        "./images/locations/police_station/policeStationOutsideRainy.png",
+        "./images/locations/policeStation/policeStationOutsideRainy.png",
       Thunderstorm:
-        "./images/locations/police_station/policeStationOutsideRainy.png",
+        "./images/locations/policeStation/policeStationOutsideRainy.png",
     },
   },
   choices: [
@@ -252,10 +252,10 @@ export const policeStationInside: Scene = {
   ],
   location: "Police Station Inside",
   image: {
-    day: "./images/locations/police_station/policeStationInsideDay.png",
-    night: "./images/locations/police_station/policeStationInsideNight.png",
+    day: "./images/locations/policeStation/policeStationInsideDay.png",
+    night: "./images/locations/policeStation/policeStationInsideNight.png",
     weather: rainArt(
-      "./images/locations/police_station/policeStationInsideRainy.png",
+      "./images/locations/policeStation/policeStationInsideRainy.png",
     ),
     weatherDayOnly: true,
   },
@@ -294,12 +294,12 @@ export const sheriffOffice: Scene = {
   location: "Sheriff's office",
 
   image: {
-    day: "./images/locations/police_station/walterOfficeDay.png",
-    night: "./images/locations/police_station/walterOfficeNight.png",
+    day: "./images/locations/policeStation/walterOfficeDay.png",
+    night: "./images/locations/policeStation/walterOfficeNight.png",
     weather: {
-      Rainy: "./images/locations/police_station/walterOfficeRain.png",
-      "Heavy rain": "./images/locations/police_station/walterOfficeRain.png",
-      Thunderstorm: "./images/locations/police_station/walterOfficeRain.png",
+      Rainy: "./images/locations/policeStation/walterOfficeRain.png",
+      "Heavy rain": "./images/locations/policeStation/walterOfficeRain.png",
+      Thunderstorm: "./images/locations/policeStation/walterOfficeRain.png",
     },
     weatherDayOnly: true,
   },
@@ -309,7 +309,7 @@ export const sheriffOffice: Scene = {
       name: "Walter Harrington",
       from: 480,
       until: 960,
-      image: "./images/locations/police_station/WalterHarringtonOffice.jpg",
+      image: "./images/locations/policeStation/walterHarringtonOffice.jpg",
     },
   ],
   conversation: walterConversation,
@@ -326,6 +326,25 @@ export const sheriffOffice: Scene = {
       action: "talkToWalter",
       nextScene: "sheriff-office",
       timeCost: 0,
+    },
+    {
+      // Spare plate emilyFolderOnDeskOpen.png stays in this folder, unused.
+      label: "Folder",
+      action: "lookAtEmilyFolder",
+      nextScene: "sheriff-office",
+      timeCost: 0,
+      hotspots: [{ left: 35, top: 44, width: 30, height: 32 }],
+      closeup: {
+        image: "./images/locations/policeStation/emilyFolderOnDeskClosedUpClose.png",
+        thought: "He'd kill me if he walked in right now.",
+        label: "Closed file",
+        next: {
+          image: "./images/locations/policeStation/emilyFolderOnDeskOpenUpClose.png",
+          thought: "PARKER, E. He had it out.",
+          label: "Open file",
+          setsFlags: ["emilyFileOpened"],
+        },
+      },
     },
   ],
 };
@@ -346,12 +365,12 @@ export const cementary: Scene = {
   ],
   location: "Cemetery",
   image: {
-    day: "./images/locations/Cementary/cementaryDay.png",
-    night: "./images/locations/Cementary/cementaryNight.png",
+    day: "./images/locations/cemetery/cemeteryDay.png",
+    night: "./images/locations/cemetery/cemeteryNight.png",
     weather: {
-      Rainy: "./images/locations/Cementary/cementaryRain.png",
-      "Heavy rain": "./images/locations/Cementary/cementaryRain.png",
-      Thunderstorm: "./images/locations/Cementary/cementaryLightning.png",
+      Rainy: "./images/locations/cemetery/cemeteryRain.png",
+      "Heavy rain": "./images/locations/cemetery/cemeteryRain.png",
+      Thunderstorm: "./images/locations/cemetery/cemeteryLightning.png",
     },
   },
   choices: [
@@ -379,8 +398,8 @@ export const cementaryInside: Scene = {
   ],
   location: "Cemetery",
   image: {
-    day: "./images/locations/Cementary/cementaryInsideDay.png",
-    night: "./images/locations/Cementary/cementaryInsideNight.png",
+    day: "./images/locations/cemetery/cemeteryInsideDay.png",
+    night: "./images/locations/cemetery/cemeteryInsideNight.png",
   },
   choices: [
     {
@@ -408,13 +427,13 @@ export const cementaryBackside: Scene = {
   ],
   location: "Cemetery",
   image: {
-    day: "./images/locations/Cementary/cementaryBacksideDay.png",
-    night: "./images/locations/Cementary/cementaryBacksideNight.png",
+    day: "./images/locations/cemetery/cemeteryBacksideDay.png",
+    night: "./images/locations/cemetery/cemeteryBacksideNight.png",
     weather: {
-      Rainy: "./images/locations/Cementary/cementaryBacksideRain.png",
-      "Heavy rain": "./images/locations/Cementary/cementaryBacksideRain.png",
+      Rainy: "./images/locations/cemetery/cemeteryBacksideRain.png",
+      "Heavy rain": "./images/locations/cemetery/cemeteryBacksideRain.png",
       Thunderstorm:
-        "./images/locations/Cementary/cementaryBacksideLightning.png",
+        "./images/locations/cemetery/cemeteryBacksideLightning.png",
     },
   },
   choices: [
@@ -440,8 +459,8 @@ export const hospital: Scene = {
   ],
   location: "Hospital",
   image: {
-    day: "./images/locations/hospital/HospitalDay.jpg",
-    night: "./images/locations/hospital/HospitalNight.jpg",
+    day: "./images/locations/hospital/hospitalDay.jpg",
+    night: "./images/locations/hospital/hospitalNight.jpg",
   },
   choices: [
     {
@@ -592,11 +611,11 @@ export const busStop: Scene = {
   ],
   location: "Bus Stop",
   image: {
-    day: "./images/Travel/busStop.png",
-    night: "./images/Travel/busStopNight.png",
+    day: "./images/travel/busStop.png",
+    night: "./images/travel/busStopNight.png",
     weather: rainArt(
-      "./images/Travel/busStopRain.png",
-      "./images/Travel/busStopThunder.png",
+      "./images/travel/busStopRain.png",
+      "./images/travel/busStopThunder.png",
     ),
     // Both weather plates are daytime. After dark the night plate wins,
     // and the interim filter carries the rain.
@@ -655,7 +674,7 @@ export const motelInside: Scene = {
   location: "Motel",
   image: {
     day: "./images/locations/motel/motelInsideDay.png",
-    night: "./images/locations/motel/MotelInsideNight.png",
+    night: "./images/locations/motel/motelInsideNight.png",
   },
   characters: [
     {
@@ -729,8 +748,8 @@ export const diner: Scene = {
     day: "./images/locations/diner/dinerDay.png",
     night: "./images/locations/diner/dinerNight.png",
     weather: rainArt(
-      "./images/locations/diner/dinerDay-rain.jpg",
-      "./images/locations/diner/dinerDay-thunder.jpg",
+      "./images/locations/diner/dinerDayRain.jpg",
+      "./images/locations/diner/dinerDayThunder.jpg",
     ),
     weatherDayOnly: true,
   },
@@ -763,7 +782,7 @@ export const dinerInside: Scene = {
       name: "Margaret Sullivan",
       from: 420,
       until: 900,
-      image: "./images/locations/diner/maragetSullivanAtWork.png",
+      image: "./images/locations/diner/margaretSullivanAtWork.png",
     },
   ],
   choices: [
@@ -781,7 +800,7 @@ export const dinerInside: Scene = {
       excludesStoryFlag: "posterFound",
       hotspots: [{ left: 8, top: 18, width: 14, height: 42 }],
       closeup: {
-        image: "./images/misc/EmilyMissingPoster.png",
+        image: "./images/misc/emilyMissingPoster.png",
         thought: "Emily Parker. Seventeen. October 1972. Ten years.",
         label: "Missing poster",
       },

@@ -341,9 +341,9 @@ describe("walks and the rainy front yard", () => {
 
     const rachelRain = elrodRachelPlate(10 * 60 + 35, "Rainy");
     const rachelStorm = elrodRachelPlate(10 * 60 + 35, "Thunderstorm");
-    assert.match(rachelRain ?? "", /ElrodHouseRachelOutsideRainy\.png$/);
-    assert.match(rachelStorm ?? "", /ElrodHouseRachelOutsideThunder\.png$/);
-    assert.match(elrodRachelPlate(10 * 60 + 35, "Heavy rain") ?? "", /ElrodHouseRachelOutsideRainy\.png$/);
+    assert.match(rachelRain ?? "", /elrodHouseRachelOutsideRainy\.png$/);
+    assert.match(rachelStorm ?? "", /elrodHouseRachelOutsideThunder\.png$/);
+    assert.match(elrodRachelPlate(10 * 60 + 35, "Heavy rain") ?? "", /elrodHouseRachelOutsideRainy\.png$/);
     assert.equal(elrodRachelPlate(18 * 60 + 30, "Rainy"), null);
     assert.equal(elrodRachelPlate(18 * 60 + 30, "Thunderstorm"), null);
     assert.equal(isRainPlate(rachelRain ?? "", elrodHouse, "Rainy"), true);
@@ -352,11 +352,11 @@ describe("walks and the rainy front yard", () => {
     const emptyDay = sceneWeatherPlate(elrodHouse, 10 * 60 + 35, "Rainy");
     const emptyStorm = sceneWeatherPlate(elrodHouse, 10 * 60 + 35, "Thunderstorm");
     const emptyNight = sceneWeatherPlate(elrodHouse, 18 * 60 + 30, "Rainy");
-    assert.match(emptyDay, /ElrodHouseRainy\.png$/);
+    assert.match(emptyDay, /elrodHouseRainy\.png$/);
     assert.equal(isRainPlate(emptyDay, elrodHouse, "Rainy"), true);
-    assert.match(emptyStorm, /ElrodHouseThunder\.png$/);
+    assert.match(emptyStorm, /elrodHouseThunder\.png$/);
     assert.equal(isRainPlate(emptyStorm, elrodHouse, "Thunderstorm"), true);
-    assert.match(emptyNight, /ElrodHouseNight\.png$/);
+    assert.match(emptyNight, /elrodHouseNight\.png$/);
     assert.equal(isRainPlate(emptyNight, elrodHouse, "Rainy"), false);
   });
 

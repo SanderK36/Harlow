@@ -285,7 +285,7 @@ describe("return greetings", () => {
     const lines = gossip.opening.flatMap((entry) => entry.type === "conversation" ? [entry.text] : []);
     assert.deepEqual(lines, [
       "There he is. Sit, this one's on me. And you didn't hear this from me…",
-      "Mrs. Elrod sat right there Tuesday. Said somebody kept leaving her gate open at night. I told her it was the wind.",
+      "Mrs. Elrod sat right there. Said she heard footsteps in her yard, the night before she was killed. I thought she was imagining it.",
       "Did she tell Walter?",
       "Honey, she told everybody. Nobody listened.",
     ]);

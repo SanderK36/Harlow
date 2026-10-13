@@ -105,12 +105,12 @@ export const needleAndGroove: Scene = {
   ],
   location: "Needle & Groove",
   image: {
-    day: "./images/locations/NeedleGroove/vinylShopDay.jpg",
-    night: "./images/locations/NeedleGroove/vinylShopNight.jpg",
+    day: "./images/locations/needleGroove/vinylShopDay.jpg",
+    night: "./images/locations/needleGroove/vinylShopNight.jpg",
     weather: {
-      Rainy: "./images/locations/NeedleGroove/vinylShopRainy.png",
-      "Heavy rain": "./images/locations/NeedleGroove/vinylShopRainy.png",
-      Thunderstorm: "./images/locations/NeedleGroove/vinylShopRainy.png",
+      Rainy: "./images/locations/needleGroove/vinylShopRainy.png",
+      "Heavy rain": "./images/locations/needleGroove/vinylShopRainy.png",
+      Thunderstorm: "./images/locations/needleGroove/vinylShopRainy.png",
     },
   },
   choices: [
@@ -133,15 +133,15 @@ export const needleAndGrooveInside: Scene = {
   ],
   location: "Needle & Groove",
   image: {
-    day: "./images/locations/NeedleGroove/needleGrooveEmpty.png",
-    night: "./images/locations/NeedleGroove/needleGrooveEmpty.png",
+    day: "./images/locations/needleGroove/needleGrooveEmpty.png",
+    night: "./images/locations/needleGroove/needleGrooveEmpty.png",
   },
   characters: [
     {
       name: "Johnny Dalton",
       from: 480,
       until: 840,
-      image: "./images/locations/NeedleGroove/johnnyDaltonCounter.png",
+      image: "./images/locations/needleGroove/johnnyDaltonCounter.png",
     },
   ],
   choices: [
@@ -189,14 +189,14 @@ export const needleAndGrooveBackroom: Scene = {
   ],
   location: "Needle & Groove",
   image: {
-    day: "./images/locations/NeedleGroove/vinylShopBackroom.png",
-    night: "./images/locations/NeedleGroove/vinylShopBackroom.png",
+    day: "./images/locations/needleGroove/vinylShopBackroom.png",
+    night: "./images/locations/needleGroove/vinylShopBackroom.png",
   },
   characters: [
     {
       name: "Johnny Dalton",
       from: 840,
-      image: "./images/locations/NeedleGroove/JohnnyBackroom.png",
+      image: "./images/locations/needleGroove/johnnyBackroom.png",
     },
   ],
   choices: [
@@ -288,11 +288,11 @@ export const gasStation: Scene = {
   location: "Gas Station",
 
   image: {
-    day: "./images/locations/gas_station/GasStationDay.jpg",
-    night: "./images/locations/gas_station/GasStationNight.jpg",
+    day: "./images/locations/gasStation/gasStationDay.jpg",
+    night: "./images/locations/gasStation/gasStationNight.jpg",
     weather: rainArt(
-      "./images/locations/gas_station/GasStationDay-rain.jpg",
-      "./images/locations/gas_station/GasStationDay-thunder.jpg",
+      "./images/locations/gasStation/gasStationDayRain.jpg",
+      "./images/locations/gasStation/gasStationDayThunder.jpg",
     ),
     weatherDayOnly: true,
   },
@@ -326,10 +326,10 @@ export const gasStationInside: Scene = {
   location: "Gas Station Inside",
 
   image: {
-    day: "./images/locations/gas_station/GasStationInsideDay.png",
-    night: "./images/locations/gas_station/GasStationInsideNight.png",
+    day: "./images/locations/gasStation/gasStationInsideDay.png",
+    night: "./images/locations/gasStation/gasStationInsideNight.png",
     weather: rainArt(
-      "./images/locations/gas_station/GasStationInsideRainy.png",
+      "./images/locations/gasStation/gasStationInsideRainy.png",
     ),
     weatherDayOnly: true,
   },
@@ -339,8 +339,8 @@ export const gasStationInside: Scene = {
       name: "Ray Mercer",
       from: 540,
       until: 1380,
-      image: "./images/locations/gas_station/rayMercerGasStation.png",
-      nightImage: "./images/locations/gas_station/rayMercerGasStationNight.png",
+      image: "./images/locations/gasStation/rayMercerGasStation.png",
+      nightImage: "./images/locations/gasStation/rayMercerGasStationNight.png",
       // Rain art for Ray when present is swapped in page.tsx.
     },
   ],
@@ -446,10 +446,10 @@ export const gasStationGarage: Scene = {
   ],
   location: "Gas Station Garage",
   image: {
-    day: "./images/locations/gas_station/gasStationGarageDay.png",
-    night: "./images/locations/gas_station/gasStationGarageNight.png",
+    day: "./images/locations/gasStation/gasStationGarageDay.png",
+    night: "./images/locations/gasStation/gasStationGarageNight.png",
     weather: rainArt(
-      "./images/locations/gas_station/gasStationGarageRainy.png",
+      "./images/locations/gasStation/gasStationGarageRainy.png",
     ),
     weatherDayOnly: true,
   },
@@ -458,7 +458,7 @@ export const gasStationGarage: Scene = {
       name: "Tommy Vance",
       from: 480,
       until: 1020,
-      image: "./images/locations/gas_station/TommyVanceWorking.png",
+      image: "./images/locations/gasStation/tommyVanceWorking.png",
     },
   ],
   conversation: tommyConversation,
@@ -577,12 +577,12 @@ export const scrapyard: Scene = {
   ],
   location: "Scrapyard",
   image: {
-    day: "./images/locations/scrapyard/ScrapyardDay.png",
-    night: "./images/locations/scrapyard/Scrapyardnight.png",
+    day: "./images/locations/scrapyard/scrapyardDay.png",
+    night: "./images/locations/scrapyard/scrapyardNight.png",
     weather: {
-      Rainy: "./images/locations/scrapyard/ScrapyardRainy.png",
-      "Heavy rain": "./images/locations/scrapyard/ScrapyardRainy.png",
-      Thunderstorm: "./images/locations/scrapyard/ScrapyardThunder.png",
+      Rainy: "./images/locations/scrapyard/scrapyardRainy.png",
+      "Heavy rain": "./images/locations/scrapyard/scrapyardRainy.png",
+      Thunderstorm: "./images/locations/scrapyard/scrapyardThunder.png",
     },
   },
   choices: [
@@ -608,9 +608,9 @@ export const scrapyardInside: Scene = {
   ],
   location: "Scrapyard",
   image: {
-    day: "./images/locations/scrapyard/ScrapyardInsideDay.png",
-    night: "./images/locations/scrapyard/ScrapyardInsideNight.png",
-    weather: rainArt("./images/locations/scrapyard/ScrapyardInsideRainy.png"),
+    day: "./images/locations/scrapyard/scrapyardInsideDay.png",
+    night: "./images/locations/scrapyard/scrapyardInsideNight.png",
+    weather: rainArt("./images/locations/scrapyard/scrapyardInsideRainy.png"),
     weatherDayOnly: true,
   },
   characters: [

@@ -63,6 +63,8 @@ export type Choice = {
       label?: string;
       disableWeatherFilter?: boolean;
       inscriptions?: import("@/components/ImageText/imageText").Inscription[];
+      /** Set when this follow-up closeup is shown, not when the first one opens. */
+      setsFlags?: import("./quests").StoryFlag[];
     };
   };
   /** Hidden once any listed story flag is set. */

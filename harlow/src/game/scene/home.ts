@@ -91,7 +91,7 @@ export const upstairsHallway: Scene = {
   image: {
     day: "./images/locations/home/homeHallwayUpstairsDay.jpg",
     night: "./images/locations/home/homeHallwayUpstairsNight.png",
-    weather: rainArt("./images/locations/home/homeHallwayUpstairsDay-rain.jpg"),
+    weather: rainArt("./images/locations/home/homeHallwayUpstairsDayRain.jpg"),
     weatherDayOnly: true,
   },
   choices: [
@@ -146,7 +146,7 @@ export const upstairsHallwayAtticOpen: Scene = {
     day: "./images/locations/home/homeHallwayUpstairsDayAtticStairs.png",
     night: "./images/locations/home/homeHallwayUpstairsNightAtticStairs.png",
     weather: rainArt(
-      "./images/locations/home/homeHallwayUpstairsDayAtticStairs-rain.jpg",
+      "./images/locations/home/homeHallwayUpstairsDayAtticStairsRain.jpg",
     ),
     weatherDayOnly: true,
   },
@@ -207,7 +207,7 @@ export const madeCoffee: Scene = {
   image: {
     day: "./images/locations/home/kitchenDay.png",
     night: "./images/locations/home/kitchenNight.png",
-    weather: rainArt("./images/locations/home/kitchenDay-rain.jpg"),
+    weather: rainArt("./images/locations/home/kitchenDayRain.jpg"),
     weatherDayOnly: true,
   },
 };
@@ -489,7 +489,7 @@ export const livingRoom: Scene = {
   image: {
     day: "./images/locations/home/livingRoomDay.png",
     night: "./images/locations/home/livingRoomNight.png",
-    weather: rainArt("./images/locations/home/livingRoomDay-rain.jpg"),
+    weather: rainArt("./images/locations/home/livingRoomDayRain.jpg"),
     weatherDayOnly: true,
   },
   characters: [
@@ -498,14 +498,14 @@ export const livingRoom: Scene = {
       from: 540,
       until: 1080,
       days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-      image: "./images/locations/home/LindaParkerHome.jpg",
+      image: "./images/locations/home/lindaParkerHome.jpg",
     },
     {
       name: "Linda",
       from: 540,
       until: 1320,
       days: ["Saturday", "Sunday"],
-      image: "./images/locations/home/LindaParkerHome.jpg",
+      image: "./images/locations/home/lindaParkerHome.jpg",
     },
   ],
 
@@ -555,8 +555,8 @@ export const livingRoomRelaxing: Scene = {
   ],
   location: "Living room",
   image: {
-    day: "./images/characters/EthanParker/EthanRelaxing.png",
-    night: "./images/characters/EthanParker/EthanRelaxinNight.png",
+    day: "./images/characters/ethanParker/ethanRelaxing.png",
+    night: "./images/characters/ethanParker/ethanRelaxingNight.png",
   },
   choices: [
     {
@@ -585,7 +585,7 @@ export const kitchen: Scene = {
   image: {
     day: "./images/locations/home/kitchenDay.png",
     night: "./images/locations/home/kitchenNight.png",
-    weather: rainArt("./images/locations/home/kitchenDay-rain.jpg"),
+    weather: rainArt("./images/locations/home/kitchenDayRain.jpg"),
     weatherDayOnly: true,
   },
 
@@ -700,7 +700,7 @@ export const bathroom: Scene = {
   image: {
     day: "./images/locations/home/bathroomDay.png",
     night: "./images/locations/home/bathroomNight.png",
-    weather: rainArt("./images/locations/home/bathroomDay-rain.jpg"),
+    weather: rainArt("./images/locations/home/bathroomDayRain.jpg"),
     weatherDayOnly: true,
   },
 
@@ -782,7 +782,7 @@ export const ethanRoomDesk: Scene = {
   image: {
     day: "./images/locations/home/ethanDeskDay.png",
     night: "./images/locations/home/ethanDeskNight.png",
-    weather: rainArt("./images/locations/home/ethanDeskDay-rain.jpg"),
+    weather: rainArt("./images/locations/home/ethanDeskDayRain.jpg"),
     weatherDayOnly: true,
   },
   choices: [
@@ -817,8 +817,8 @@ export const momRoom: Scene = {
   location: "Mom's room",
   image: {
     day: "./images/locations/home/motherRoomDay.png",
-    night: "./images/locations/home/MotherRoomNight.png",
-    weather: rainArt("./images/locations/home/motherRoomDay-rain.jpg"),
+    night: "./images/locations/home/motherRoomNight.png",
+    weather: rainArt("./images/locations/home/motherRoomDayRain.jpg"),
     weatherDayOnly: true,
   },
   choices: [{ ...returnToUpstairsHallway, door: true }],
@@ -841,7 +841,7 @@ export const emilyRoom: Scene = {
   image: {
     day: "./images/locations/home/sisterRoomDay.png",
     night: "./images/locations/home/sisterRoomNight.png",
-    weather: rainArt("./images/locations/home/sisterRoomDay-rain.jpg"),
+    weather: rainArt("./images/locations/home/sisterRoomDayRain.jpg"),
     weatherDayOnly: true,
   },
   choices: [
@@ -903,8 +903,8 @@ export const attic: Scene = {
   location: "Attic",
   image: {
     day: "./images/locations/home/atticDay.png",
-    night: "./images/locations/home/AtticNight.png",
-    weather: rainArt("./images/locations/home/atticDay-rain.jpg"),
+    night: "./images/locations/home/atticNight.png",
+    weather: rainArt("./images/locations/home/atticDayRain.jpg"),
     weatherDayOnly: true,
   },
   choices: [
@@ -939,7 +939,7 @@ export const basement: Scene = {
   image: {
     day: "./images/locations/home/basementDay.png",
     night: "./images/locations/home/basementNight.png",
-    weather: rainArt("./images/locations/home/basementDay-rain.jpg"),
+    weather: rainArt("./images/locations/home/basementDayRain.jpg"),
     weatherDayOnly: true,
   },
   choices: [returnToHallway],
@@ -1018,7 +1018,7 @@ export const ethanRoomDeskEmpty: Scene = {
   image: {
     day: "./images/locations/home/ethanDeskEmptyDay.png",
     night: "./images/locations/home/ethanDeskEmptyNight.png",
-    weather: rainArt("./images/locations/home/ethanDeskEmptyDay-rain.jpg"),
+    weather: rainArt("./images/locations/home/ethanDeskEmptyDayRain.jpg"),
     weatherDayOnly: true,
   },
   choices: [

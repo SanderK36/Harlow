@@ -19,6 +19,7 @@ import {
   resolveAskAbout,
 } from "@/game/askAbout";
 import {
+  bootPrintImage,
   collectClue,
   clueForFlag,
   migrateClues,
@@ -309,7 +310,7 @@ export function useGame() {
   const [showDinerBoardHint, setShowDinerBoardHint] = useState(false);
   const [chapter, setChapter] = useState(sessionSave?.chapter ?? 1);
   const [closeup, setCloseup] = useState<CloseupContent | null>(null);
-  const closeupQueue = useRef<CloseupContent[]>([]);
+  const closeupQueue = useRef<(CloseupContent & { flags?: StoryFlag[] })[]>([]);
   const pendingCloseup = useRef<{
     first: CloseupContent;
     next?: CloseupContent;
@@ -419,9 +420,14 @@ export function useGame() {
 
   /** A find can pin a clue and move a sidequest. Neither one gates the main story. */
   function absorbDiscoveries(flags: StoryFlag[]) {
+    const hadParkerFile = cluesRef.current.includes("parker-e");
     for (const flag of flags) {
       const clueId = clueForFlag(flag);
       if (clueId) grantClue(clueId);
+    }
+    if (flags.includes("emilyFileOpened") && hadParkerFile) {
+      setCluesSeen((previous) => previous.filter((id) => id !== "parker-e"));
+      harlowAudio().playSfx("pen-scribble");
     }
     const looked = flags.some((flag) =>
       flag === "emilyMusicBoxSeen" || flag === "emilyPolaroidSeen" || flag === "emilyNoteRead",
@@ -442,7 +448,7 @@ export function useGame() {
     }
   }
 
-  function enqueueCloseup(first: CloseupContent, next?: CloseupContent) {
+  function enqueueCloseup(first: CloseupContent, next?: CloseupContent & { flags?: StoryFlag[] }) {
     closeupQueue.current = next ? [next] : [];
     closeupRef.current = first;
     pauseNoticesForOverlay();
@@ -463,6 +469,7 @@ export function useGame() {
     if (queued) {
       closeupRef.current = queued;
       setCloseup(queued);
+      if (queued.flags?.length) applyFlags(queued.flags);
       return;
     }
     closeupRef.current = null;
@@ -1077,7 +1084,11 @@ export function useGame() {
     if (choice.closeup) {
       enqueueCloseup(
         {
-          image: plateUrl(choice.closeup.image),
+          image: plateUrl(
+            choice.action === "lookAtElrodBootPrint"
+              ? bootPrintImage(gameState.weather)
+              : choice.closeup.image,
+          ),
           video: choice.closeup.video ? plateUrl(choice.closeup.video) : undefined,
           thought: choice.closeup.thought,
           label: choice.closeup.label,
@@ -1091,6 +1102,7 @@ export function useGame() {
               label: choice.closeup.next.label,
               disableWeatherFilter: choice.closeup.next.disableWeatherFilter,
               inscriptions: choice.closeup.next.inscriptions,
+              flags: choice.closeup.next.setsFlags,
             }
           : undefined,
       );

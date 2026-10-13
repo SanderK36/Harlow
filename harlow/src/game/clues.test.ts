@@ -8,9 +8,11 @@ import {
   NEWSPAPER,
   WRONG_CONNECTION_LINES,
   atticHotspotVisible,
+  bootPrintHotspotHidden,
+  bootPrintImage,
+  clueNote,
   collectClue,
   connectionBetween,
-  gateHotspotHidden,
   gazetteOnPorch,
   migrateClues,
   tryConnect,
@@ -35,9 +37,9 @@ import {
   type StoryFlag,
 } from "./quests.ts";
 import { attic, emilyRoom, momConversation } from "./scene/home.ts";
-import { elrodHouse, frontYard, rachelFrontYardConversation } from "./scene/outdoors.ts";
+import { elrodBackyard, frontYard, rachelFrontYardConversation } from "./scene/outdoors.ts";
 import { sanatoriumRoom2 } from "./scene/sanatorium.ts";
-import { walterConversation } from "./scene/town.ts";
+import { sheriffOffice, walterConversation } from "./scene/town.ts";
 import { defaultTrust, type TrustMap } from "./trust.ts";
 import type { GameState } from "./types.ts";
 
@@ -285,19 +287,19 @@ describe("sidequests", () => {
   it("starts The Gate from the gossip and finishes it when either person is asked", () => {
     const started = startTheGate([{ id: "the-tape", status: "active" }]);
     assert.equal(started.started, true);
-    assert.equal(questObjective(started.quests[1]), "Somebody kept leaving her gate open.");
+    assert.equal(questObjective(started.quests[1]), "Footsteps in her yard. The night before.");
     assert.equal(started.quests.some((quest) => quest.id === "light-on-the-hill"), false);
 
     const printed = advanceGatePrint(started.quests);
     assert.equal(
       questObjective(printed.find((quest) => quest.id === "the-gate")!),
-      "A boot print. Pine needles in the mud.",
+      "A boot print by the porch steps. Pine needles.",
     );
     const done = finishGate(printed);
     assert.equal(done.completed, true);
     assert.equal(
       questObjective(done.quests.find((quest) => quest.id === "the-gate")!),
-      "Pine needles by her gate. Nobody listened.",
+      "Pine needles by her steps. The gate faces the woods.",
     );
     assert.equal(done.quests.filter((quest) => quest.id === "the-tape").length, 1);
     assert.equal(finishGate(done.quests).completed, false);
@@ -338,24 +340,33 @@ describe("sidequests", () => {
       isChoiceAvailable(box!, availability({ scene: "attic", flags: { emilyNoteRead: true } })),
       true,
     );
-    assert.equal(box?.closeup?.thought, "Dad and Walter. I'd forgotten they were friends.");
+    assert.equal(box?.closeup?.thought, "Walter was already a cop. Dad's face is scratched out.");
     assert.equal(box?.closeup?.inscriptions?.[0]?.text, "Walt & me, Miller Lake '64");
   });
 
-  it("hides the gate hotspot from 03:00 until 07:00", () => {
-    const gate = elrodHouse.choices.find((choice) => choice.action === "lookAtElrodGate");
-    assert.equal(gate?.label, "Look at the gate");
-    assert.equal(gateHotspotHidden(3 * 60), true);
-    assert.equal(gateHotspotHidden(7 * 60 - 1), true);
-    assert.equal(gateHotspotHidden(2 * 60 + 59), false);
-    assert.equal(gateHotspotHidden(7 * 60), false);
+  it("hides the boot print by the porch steps from 03:00 until 07:00", () => {
+    const print = elrodBackyard.choices.find((choice) => choice.action === "lookAtElrodBootPrint");
+    assert.equal(print?.label, "Look by the steps");
+    assert.match(print?.closeup?.image ?? "", /elrodHouseBackyardFootprintSunny\.png$/);
+    assert.match(bootPrintImage("Rainy"), /elrodHouseBackyardFootprintRainy\.png$/);
+    assert.match(bootPrintImage("Thunderstorm"), /elrodHouseBackyardFootprintRainy\.png$/);
+    assert.match(bootPrintImage("Sunny"), /elrodHouseBackyardFootprintSunny\.png$/);
+    assert.equal(bootPrintHotspotHidden(3 * 60), true);
+    assert.equal(bootPrintHotspotHidden(7 * 60 - 1), true);
+    assert.equal(bootPrintHotspotHidden(2 * 60 + 59), false);
+    assert.equal(bootPrintHotspotHidden(7 * 60), false);
     const flags = { margaretGossipHeard: true } as const;
-    assert.equal(isChoiceAvailable(gate!, availability({ time: 3 * 60, flags })), false);
-    assert.equal(isChoiceAvailable(gate!, availability({ time: 4 * 60, flags })), false);
-    assert.equal(isChoiceAvailable(gate!, availability({ time: 7 * 60 - 1, flags })), false);
-    assert.equal(isChoiceAvailable(gate!, availability({ time: 7 * 60, flags })), true);
-    assert.equal(isChoiceAvailable(gate!, availability({ time: 2 * 60 + 59, flags })), true);
-    assert.equal(isChoiceAvailable(gate!, availability({ time: 10 * 60 })), false);
+    const scene = "elrod-backyard";
+    assert.equal(isChoiceAvailable(print!, availability({ scene, time: 3 * 60, flags })), false);
+    assert.equal(isChoiceAvailable(print!, availability({ scene, time: 4 * 60, flags })), false);
+    assert.equal(isChoiceAvailable(print!, availability({ scene, time: 7 * 60 - 1, flags })), false);
+    assert.equal(isChoiceAvailable(print!, availability({ scene, time: 7 * 60, flags })), true);
+    assert.equal(isChoiceAvailable(print!, availability({ scene, time: 2 * 60 + 59, flags })), true);
+    assert.equal(isChoiceAvailable(print!, availability({ scene, time: 10 * 60 })), false);
+    assert.equal(
+      elrodBackyard.choices.some((choice) => choice.action === "leaveElrodBackyard"),
+      true,
+    );
   });
 });
 
@@ -403,12 +414,13 @@ describe("save migration", () => {
 });
 
 describe("chapter finds", () => {
-  it("prints the Gazette on the porch and ends the hill on the hallway figure", () => {
+  it("prints the Gazette on the porch and ends the hill in the lobby", () => {
     const paper = frontYard.choices.find((choice) => choice.action === "lookAtGazette");
     assert.equal(paper?.closeup?.inscriptions?.[0]?.text, NEWSPAPER.headline);
     assert.equal(paper?.closeup?.inscriptions?.[1]?.text, "Police ask residents to stay calm");
     assert.equal(paper?.closeup?.inscriptions?.[2]?.text, NEWSPAPER.body);
-    assert.match(paper?.closeup?.image ?? "", /misc\/newspaperGazette\.png$/);
+    assert.match(paper?.closeup?.image ?? "", /misc\/newspaperElrod\.png$/);
+    assert.equal(paper?.closeup?.inscriptions?.[0]?.text, "ELDERLY WOMAN FOUND DEAD IN HER HOME");
     assert.equal(gazetteOnPorch("Saturday", 7 * 60 + 30, false), true);
     assert.equal(gazetteOnPorch("Saturday", 12 * 60, false), false);
     assert.equal(gazetteOnPorch("Sunday", 8 * 60, false), false);
@@ -416,12 +428,56 @@ describe("chapter finds", () => {
     const ash = sanatoriumRoom2.choices.find((choice) => choice.action === "lookAtSanatoriumCigarette");
     assert.equal(ash?.closeup?.thought, "Still burning. Someone was just here.");
     assert.equal(ash?.closeup?.next?.thought, "Someone's here.");
-    assert.match(ash?.closeup?.next?.image ?? "", /sanatoriumHallwayNightFigure\.png$/);
+    assert.match(ash?.closeup?.next?.image ?? "", /sanatoriumMainFloorNightShadow\.png$/);
+    assert.equal(ash?.closeup?.next?.label, "Someone in the lobby");
     assert.equal(ash?.nextScene, "sanatorium-room-2");
 
     const music = emilyRoom.choices.find((choice) => choice.action === "lookAtEmilyMusicBox");
     const polaroid = emilyRoom.choices.find((choice) => choice.action === "lookAtEmilyPolaroid");
     const note = emilyRoom.choices.find((choice) => choice.action === "lookAtEmilyNote");
+    const folder = sheriffOffice.choices.find((choice) => choice.action === "lookAtEmilyFolder");
+    assert.equal(folder?.closeup?.thought, "He'd kill me if he walked in right now.");
+    assert.match(folder?.closeup?.image ?? "", /emilyFolderOnDeskClosedUpClose\.png$/);
+    assert.match(folder?.closeup?.next?.image ?? "", /emilyFolderOnDeskOpenUpClose\.png$/);
+    assert.equal(folder?.closeup?.next?.thought, "PARKER, E. He had it out.");
+    assert.deepEqual(folder?.closeup?.next?.setsFlags, ["emilyFileOpened"]);
+    assert.equal(clueNote("parker-e"), "Her file. Closed ten years. Still in Walter's drawer.");
+    assert.equal(
+      clueNote("parker-e", { emilyFileOpened: true }),
+      "Out of the drawer. On his desk. He still has her file.",
+    );
+    assert.equal(
+      isChoiceAvailable(folder!, availability({ time: 16 * 60, scene: "sheriff-office", flags: { fileDrawerSeen: true } })),
+      true,
+    );
+    assert.equal(
+      isChoiceAvailable(folder!, availability({ time: 17 * 60, scene: "sheriff-office", flags: { fileDrawerSeen: true } })),
+      true,
+    );
+    assert.equal(
+      isChoiceAvailable(folder!, availability({ time: 18 * 60, scene: "sheriff-office", flags: { fileDrawerSeen: true } })),
+      false,
+    );
+    assert.equal(
+      isChoiceAvailable(folder!, availability({ time: 7 * 60, scene: "sheriff-office", flags: { fileDrawerSeen: true } })),
+      false,
+    );
+    assert.equal(
+      isChoiceAvailable(folder!, availability({ time: 10 * 60, scene: "sheriff-office", flags: { fileDrawerSeen: true } })),
+      false,
+    );
+    assert.equal(
+      isChoiceAvailable(folder!, availability({ time: 17 * 60, scene: "sheriff-office", flags: {} })),
+      false,
+    );
+    assert.equal(
+      isChoiceAvailable(folder!, availability({
+        time: 17 * 60,
+        scene: "sheriff-office",
+        flags: { fileDrawerSeen: true, emilyFileOpened: true },
+      })),
+      false,
+    );
     assert.equal(music?.closeup?.thought, EMILY_THOUGHTS.musicBox);
     assert.equal(polaroid?.closeup?.thought, EMILY_THOUGHTS.polaroid);
     assert.equal(polaroid?.closeup?.inscriptions?.[0]?.text, "Em & Ethan, summer '71");

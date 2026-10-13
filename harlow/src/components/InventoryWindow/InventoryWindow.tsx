@@ -29,42 +29,42 @@ function getItemImage(item: string) {
   // mapping here (or return null to display it without an image).
   switch (item.toLowerCase()) {
     case "house key":
-      return "/images/items/HouseKey.png";
+      return "/images/items/houseKey.png";
 
     case "cigarettes":
-      return "/images/items/Cigarettes.png";
+      return "/images/items/cigarettes.png";
 
     case "flashlight":
-      return "/images/items/Flashlight.png";
+      return "/images/items/flashlight.png";
 
     case "coffee":
-      return "/images/items/HarlowCoffee.png";
+      return "/images/items/harlowCoffee.png";
 
     case "missing poster":
-      return "/images/misc/EmilyMissingPoster.png";
+      return "/images/misc/emilyMissingPoster.png";
     case "knife":
-      return "/images/items/Knife.png";
+      return "/images/items/knife.png";
 
     case "beer":
       return "/images/items/beer.png";
 
     case "sturdy crowbar":
-      return "/images/items/Crowbar.png";
+      return "/images/items/crowbar.png";
 
     case "steel maiden":
-      return "/images/locations/NeedleGroove/shop/SteelMaiden.png";
+      return "/images/locations/needleGroove/shop/steelMaiden.png";
 
     case "high volts":
-      return "/images/locations/NeedleGroove/shop/HighVolts.png";
+      return "/images/locations/needleGroove/shop/highVolts.png";
 
     case "leopard hazard":
-      return "/images/locations/NeedleGroove/shop/LeopardHazard.png";
+      return "/images/locations/needleGroove/shop/leopardHazard.png";
 
     case "puppet masters":
-      return "/images/locations/NeedleGroove/shop/PuppetMasters.png";
+      return "/images/locations/needleGroove/shop/puppetMasters.png";
 
     case "ricky valentine":
-      return "/images/locations/NeedleGroove/shop/RickyValentine.png";
+      return "/images/locations/needleGroove/shop/rickyValentine.png";
 
     default:
       return null;

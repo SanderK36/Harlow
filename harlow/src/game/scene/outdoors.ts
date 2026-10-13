@@ -28,7 +28,7 @@ export const frontYard: Scene = {
 
   image: {
     day: "./images/locations/home/homeDayTime.jpg",
-    night: "./images/locations/home/HomeNightTime.jpg",
+    night: "./images/locations/home/homeNightTime.jpg",
     weather: {
       Rainy: "./images/locations/home/homeOutsideRainy.png",
       "Heavy rain": "./images/locations/home/homeOutsideRainy.png",
@@ -324,11 +324,11 @@ export const elrodHouse: Scene = {
   ],
   location: "Elrod House",
   image: {
-    day: "./images/locations/neighbourhood/ElrodHouse/ElrodHouseDay.png",
-    night: "./images/locations/neighbourhood/ElrodHouse/ElrodHouseNight.png",
+    day: "./images/locations/neighbourhood/elrodHouse/elrodHouseDay.png",
+    night: "./images/locations/neighbourhood/elrodHouse/elrodHouseNight.png",
     weather: rainArt(
-      "./images/locations/neighbourhood/ElrodHouse/ElrodHouseRainy.png",
-      "./images/locations/neighbourhood/ElrodHouse/ElrodHouseThunder.png",
+      "./images/locations/neighbourhood/elrodHouse/elrodHouseRainy.png",
+      "./images/locations/neighbourhood/elrodHouse/elrodHouseThunder.png",
     ),
     // Both weather plates are daytime. After dark the night plate wins.
     weatherDayOnly: true,
@@ -350,17 +350,10 @@ export const elrodHouse: Scene = {
       timeCost: 0,
     },
     {
-      label: "Look at the gate",
-      action: "lookAtElrodGate",
-      nextScene: "elrod-house",
-      timeCost: 0,
-      closeup: {
-        image: PLATES.gate.image,
-        thought: PLATES.gate.thought,
-        label: PLATES.gate.label,
-      },
-      setsFlags: ["bootPrintSeen"],
-      hotspots: [{ left: 4, top: 48, width: 22, height: 30 }],
+      label: "Go around back",
+      action: "goElrodBackyard",
+      nextScene: "elrod-backyard",
+      timeCost: 2,
     },
     {
       label: "Look at the tape",
@@ -383,6 +376,47 @@ export const elrodHouse: Scene = {
       action: "leaveElrodHouse",
       nextScene: "street",
       timeCost: 10,
+    },
+  ],
+};
+
+export const elrodBackyard: Scene = {
+  id: "elrod-backyard",
+  story: [
+    narration("You come around back. Porch steps, and a gate in the fence toward the woods."),
+    thought("Mud. Pine needles in it.", { weather: WET }),
+    thought("That gate doesn't face the street. It faces the trees."),
+  ],
+  location: "Elrod House",
+  image: {
+    day: "./images/locations/neighbourhood/elrodHouse/elrodHouseBackyardDay.png",
+    night: "./images/locations/neighbourhood/elrodHouse/elrodHouseBackyardNight.png",
+    weather: rainArt(
+      "./images/locations/neighbourhood/elrodHouse/elrodHouseBackyardRainy.png",
+      "./images/locations/neighbourhood/elrodHouse/elrodHouseBackyardThunder.png",
+    ),
+    // The rain and thunder plates are daytime. After dark the night plate wins.
+    weatherDayOnly: true,
+  },
+  choices: [
+    {
+      label: "Look by the steps",
+      action: "lookAtElrodBootPrint",
+      nextScene: "elrod-backyard",
+      timeCost: 0,
+      closeup: {
+        image: PLATES.bootPrint.image,
+        thought: PLATES.bootPrint.thought,
+        label: PLATES.bootPrint.label,
+      },
+      setsFlags: ["bootPrintSeen"],
+      hotspots: [{ left: 4, top: 46, width: 26, height: 40 }],
+    },
+    {
+      label: "Back to the front",
+      action: "leaveElrodBackyard",
+      nextScene: "elrod-house",
+      timeCost: 2,
     },
   ],
 };

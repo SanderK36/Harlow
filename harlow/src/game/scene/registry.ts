@@ -21,7 +21,7 @@ import {
   upstairsHallway,
   upstairsHallwayAtticOpen,
 } from "./home";
-import { backYard, elrodHouse, frontYard, lightPole, street } from "./outdoors";
+import { backYard, elrodBackyard, elrodHouse, frontYard, lightPole, street } from "./outdoors";
 import {
   gasStation,
   gasStationGarage,
@@ -95,6 +95,7 @@ export const scenes = {
   "front-yard": frontYard,
   street,
   "elrod-house": elrodHouse,
+  "elrod-backyard": elrodBackyard,
   "light-pole": lightPole,
   "back-yard": backYard,
   "living-room": livingRoom,

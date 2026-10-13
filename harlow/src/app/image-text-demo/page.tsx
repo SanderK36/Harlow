@@ -28,7 +28,7 @@ export default function ImageTextDemoPage() {
         <section>
           <h2>Photograph</h2>
           <ImageText
-            src="/images/characters/EthanParker/EthanParker.jpg"
+            src="/images/characters/ethanParker/ethanParker.jpg"
             alt="A photograph of Ethan Parker"
             inscriptions={[caption]}
           />
