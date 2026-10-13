@@ -17,6 +17,7 @@ import StoryLog from "@/components/StoryLog/StoryLog";
 import CharacterLine from "@/components/CharacterLine/CharacterLine";
 import DialogueScene from "@/components/DialogueScene/DialogueScene";
 import ThoughtPanel from "@/components/ThoughtPanel/ThoughtPanel";
+import DayCard from "@/components/DayCard/DayCard";
 import OpeningSequence from "@/components/OpeningSequence/OpeningSequence";
 import TravelOverlay from "@/components/TravelOverlay/TravelOverlay";
 import TownMap from "@/components/TownMap/TownMap";
@@ -30,6 +31,7 @@ import { useReducedMotion } from "@/components/DialogueScene/typewriter";
 import { isNightTime } from "@/game/utils";
 import { isTiredWindow } from "@/game/lateNight";
 import { isQuestActive } from "@/game/quests";
+import { dayCardLine, homeNightWeather } from "@/game/chapter1";
 import { useGame } from "@/game/useGame";
 import { storyEntryApplies } from "@/game/story";
 import { DINER_BOARD_HINT, isExteriorScene, RAIN_WEATHER, sanatoriumNarration } from "@/game/scenes";
@@ -141,7 +143,6 @@ export default function Home() {
     doorTransition,
     adminTravel,
     wait,
-    waitingLocked,
     travelingTo,
     showTravel,
     setShowTravel,
@@ -155,6 +156,9 @@ export default function Home() {
     showChapterEnd,
     dismissChapterEnd,
     storyFlags,
+    phonePhase,
+    figureActive,
+    catchEntrance,
     trust,
     metPeople,
     unseenPeople,
@@ -391,33 +395,34 @@ export default function Home() {
     isExteriorScene(currentScene.id) || OUTDOOR_SCENE_IDS.has(currentScene.id)
   );
   const sceneIsNight = isNightTime(gameState.time);
+  const displayWeather = homeNightWeather(
+    gameState.weather,
+    currentScene.id,
+    gameState.time,
+    Boolean(storyFlags.nightCallClear),
+  );
+  const displayGameState = displayWeather === gameState.weather
+    ? gameState
+    : { ...gameState, weather: displayWeather };
 
   // Rain follows the weather and whether Ethan is inside.
   // The intro film carries its own soundtrack, so the beds wait for it.
   useEffect(() => {
     const audio = harlowAudio();
     if (inGame && !showProductionSplash) {
-      audio.setAmbience({ indoor: sceneIsIndoor, weather: gameState.weather });
-      audio.setAmbienceSlot(ambienceSlotForScene(currentScene.id, gameState.weather, gameState.time));
+      const weather = phonePhase === "talk" ? "Rainy" : displayWeather;
+      audio.setAmbience({ indoor: sceneIsIndoor, weather });
+      audio.setAmbienceSlot(ambienceSlotForScene(currentScene.id, weather, gameState.time));
     } else {
       audio.setAmbience(null);
       audio.setAmbienceSlot(null);
     }
-  }, [inGame, showProductionSplash, sceneIsIndoor, gameState.weather, gameState.time, currentScene.id]);
+  }, [inGame, showProductionSplash, sceneIsIndoor, displayWeather, phonePhase, gameState.time, currentScene.id]);
 
   useEffect(() => () => {
     harlowAudio().setAmbience(null);
     harlowAudio().setAmbienceSlot(null);
   }, []);
-
-  useEffect(() => {
-    if (!newDayAnnouncement) {
-      return;
-    }
-
-    const dismissTimer = window.setTimeout(dismissNewDayAnnouncement, 3400);
-    return () => window.clearTimeout(dismissTimer);
-  }, [newDayAnnouncement, dismissNewDayAnnouncement]);
 
   const isLateNight = isTiredWindow(gameState.time);
 
@@ -474,7 +479,7 @@ export default function Home() {
   const art = resolveSceneArt({
     scene: currentScene,
     time: gameState.time,
-    weather: gameState.weather,
+    weather: displayWeather,
     dayOfWeek: gameState.dayOfWeek,
     storyFlags,
     activeCharacter,
@@ -664,9 +669,9 @@ export default function Home() {
           onSaveWindowChange={setSaveWindowOpen}
         />
 
-        <GameStatus
+          <GameStatus
           player={playerState}
-          gameState={gameState}
+          gameState={displayGameState}
           notices={statNotices}
           onStatsClick={() => setShowStats(true)}
           onInventoryClick={(opener) => {
@@ -739,8 +744,14 @@ export default function Home() {
             {visual.interimRain && visualOutdoors && (
               <div className="scene-rain-glass" aria-hidden="true" />
             )}
+            {phonePhase && (
+              <div className="phone-dim" aria-hidden="true">
+                <div className="phone-dim-hole" />
+              </div>
+            )}
+            {figureActive && <div className="figure-vignette" aria-hidden="true" />}
             <StormLightning
-              weather={gameState.weather}
+              weather={displayWeather}
               indoor={sceneIsIndoor}
               active={!showProductionSplash}
             />
@@ -748,7 +759,9 @@ export default function Home() {
             <div className="scene-spotlight" aria-hidden="true">
               <div className="scene-spotlight-hole" />
             </div>
-            {!(showOpeningThought || showVinylThought || tvNewsLine !== null) &&
+            {!(showOpeningThought || showVinylThought || tvNewsLine !== null)
+              && !phonePhase
+              && !figureActive &&
               visual.hotspots.flatMap((sceneHotspot) =>
                 (sceneHotspot.hotspots ?? [undefined]).map((region, index) => {
                   const hint = choiceAffordance(sceneHotspot);
@@ -817,7 +830,7 @@ export default function Home() {
                         storyEntryApplies(
                           entry,
                           gameState.time,
-                          gameState.weather,
+                          displayWeather,
                           gameState.dayOfWeek,
                         ),
                     )
@@ -917,12 +930,13 @@ export default function Home() {
           )}
           {hasConversationOverlay && (
             <div
-              className={`conversation-overlay${conversationActive ? " conversation-overlay-active" : ""}`}
+              className={`conversation-overlay${conversationActive ? " conversation-overlay-active" : ""}${catchEntrance ? " conversation-overlay-instant" : ""}`}
               aria-hidden={!conversationActive}
             >
               <DialogueScene
                 entries={conversation}
                 active={conversationActive}
+                staticCaller={phonePhase === "talk"}
                 onFinish={finishConversation}
                 onSettled={onReplySettled}
                 choices={
@@ -1032,7 +1046,6 @@ export default function Home() {
 
         {showPlaytestControls && (
           <PlaytestControls
-            waitingLocked={waitingLocked}
             onWait={wait}
             showAdminTravel={showAdminTravel}
             onToggleAdminTravel={() => setShowAdminTravel((visible) => !visible)}
@@ -1051,7 +1064,7 @@ export default function Home() {
             rain={
               closeup.disableWeatherFilter
                 ? null
-                : RAIN_WEATHER.includes(gameState.weather)
+                : RAIN_WEATHER.includes(displayWeather)
                   ? sceneIsIndoor
                     ? "interior"
                     : "exterior"
@@ -1087,7 +1100,7 @@ export default function Home() {
             location={travelingTo.location}
             method={travelingTo.method}
             isNight={travelingTo.isNight}
-            weather={gameState.weather}
+            weather={displayWeather}
             rainy={travelingTo.rainy}
           />
         )}
@@ -1117,20 +1130,14 @@ export default function Home() {
         <AutosaveIndicator />
 
         {newDayAnnouncement && (
-          <div
-            className="new-day-screen"
-            role="status"
-            aria-live="polite"
-            aria-labelledby="new-day-title"
-          >
-            <div className="new-day-screen-content">
-              <p>Morning has come</p>
-              <h2 id="new-day-title">{newDayAnnouncement.dayOfWeek}</h2>
-              <span>
-                {newDayAnnouncement.currentMonth} {newDayAnnouncement.dayNumber}
-              </span>
-            </div>
-          </div>
+          <DayCard
+            line={dayCardLine(
+              newDayAnnouncement.dayOfWeek,
+              newDayAnnouncement.currentMonth,
+              newDayAnnouncement.dayNumber,
+            )}
+            onDone={dismissNewDayAnnouncement}
+          />
         )}
       </div>
     </main>

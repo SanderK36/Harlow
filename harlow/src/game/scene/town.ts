@@ -390,6 +390,61 @@ export const cementary: Scene = {
   ],
 };
 
+export const walterAtStoneConversation: Conversation = {
+  opening: [
+    ethan("Didn't know you came here."),
+    npc("Walter", "Every Sunday. Somebody should."),
+  ],
+  choices: [
+    {
+      label: "Listen.",
+      requiresTrust: { person: "walter", min: 2 },
+      response: [
+        npc("Walter", "Your dad would've looked harder. I should've–"),
+        npc("Walter", "Go home, kid. Please."),
+      ],
+      storyFlag: ["everySundayHeard", "oldFriendsDone"],
+      completesQuest: "old-friends",
+      questStep: "done",
+      endsConversation: true,
+    },
+    {
+      label: "Listen.",
+      requiresTrust: { person: "walter", min: 1, max: 1 },
+      response: [
+        npc("Walter", "She used to wave at my cruiser. Every time."),
+        npc("Walter", "Some things don't stay closed, Ethan."),
+      ],
+      storyFlag: ["everySundayHeard", "oldFriendsDone"],
+      completesQuest: "old-friends",
+      questStep: "done",
+      endsConversation: true,
+    },
+    {
+      label: "Listen.",
+      requiresTrust: { person: "walter", min: 0, max: 0 },
+      response: [
+        npc("Walter", "Just paying respects. That allowed?"),
+      ],
+      storyFlag: ["everySundayHeard", "oldFriendsDone"],
+      completesQuest: "old-friends",
+      questStep: "done",
+      endsConversation: true,
+    },
+    {
+      label: "Listen.",
+      requiresTrust: { person: "walter", max: -1 },
+      response: [
+        npc("Walter", "Go home, kid."),
+      ],
+      storyFlag: ["everySundayHeard", "oldFriendsDone"],
+      completesQuest: "old-friends",
+      questStep: "done",
+      endsConversation: true,
+    },
+  ],
+};
+
 export const cementaryInside: Scene = {
   id: "cementary-inside",
   story: [
@@ -401,7 +456,43 @@ export const cementaryInside: Scene = {
     day: "./images/locations/cemetery/cemeteryInsideDay.png",
     night: "./images/locations/cemetery/cemeteryInsideNight.png",
   },
+  characters: [
+    {
+      name: "Walter Harrington",
+      from: 14 * 60,
+      until: 17 * 60,
+      minDay: 3,
+      requiresFlags: ["waltParkerLinked"],
+      excludesFlags: ["oldFriendsDone"],
+    },
+  ],
+  conversation: walterAtStoneConversation,
   choices: [
+    {
+      label: "Talk to Walter",
+      action: "talkToWalterAtStone",
+      nextScene: "cementary-inside",
+      timeCost: 0,
+    },
+    {
+      label: "Emily's stone",
+      action: "lookAtEmilyStone",
+      nextScene: "cementary-inside",
+      timeCost: 0,
+      closeup: {
+        image: "./images/locations/cemetery/cemeteryInsideDay.png",
+        thought: "No second date. Mom wouldn't let them carve one.",
+        label: "Emily's stone",
+        next: {
+          image: "./images/locations/cemetery/cemeteryInsideDay.png",
+          thought: "Fresh. Somebody was here today.",
+          label: "Fresh flowers",
+          setsFlags: ["freshFlowersSeen", "emilyStoneSeen"],
+        },
+      },
+      completesQuest: "emilys-stone",
+      questStep: "done",
+    },
     {
       label: "Walk toward the back",
       action: "goCemeteryBackside",
@@ -555,6 +646,18 @@ export const earlConversation: Conversation = {
       ],
       endsConversation: true,
     },
+    {
+      label: "Show him the boot print.",
+      requiresAnyClue: ["boot-print", "man-in-a-hood"],
+      excludesStoryFlag: "room6Heard",
+      response: [
+        npc("Earl", "Fella checked in Friday. Paid cash, no name I'd believe. Boots caked in mud. Tracked it all over my carpet."),
+        ethan("Which room?"),
+        npc("Earl", "Six. Don't knock. He doesn't like it."),
+      ],
+      storyFlag: "room6Heard",
+      endsConversation: true,
+    },
   ],
 };
 
@@ -697,6 +800,12 @@ export const motelInside: Scene = {
       action: "goToMotelRoom",
       nextScene: "motel-room-203",
       timeCost: 1,
+    },
+    {
+      label: "Room 6",
+      action: "lookAtRoom6",
+      nextScene: "motel-inside",
+      timeCost: 0,
     },
     {
       label: "Go outside",

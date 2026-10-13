@@ -6,6 +6,7 @@ import { preload } from "react-dom";
 import styles from "./OpeningSequence.module.css";
 import { useReducedMotion } from "@/components/DialogueScene/typewriter";
 import Prologue from "@/components/Prologue/Prologue";
+import { sidePanelDate, titleCardDate } from "@/game/chapter1";
 import { PROLOGUE_IMAGES } from "@/game/prologue";
 
 type OpeningSequenceProps = {
@@ -25,7 +26,6 @@ type OpeningSequenceProps = {
 
 type Phase = "splash" | "splashOut" | "prologue" | "title" | "titleOut";
 
-const YEAR = 1982;
 // The studio's .mov first; browsers that won't take a QuickTime file (Chrome
 // reports it can't) fall through to the same H.264/AAC streams in an .mp4.
 const SPLASH_SOURCES = [
@@ -165,7 +165,8 @@ export default function OpeningSequence({
     preload(PROLOGUE_IMAGES.comic, { as: "image", fetchPriority: "low" });
     preload(PROLOGUE_IMAGES.reading, { as: "image", fetchPriority: "low" });
   }
-  const date = `${dayOfWeek}, ${month} ${dayNumber}, ${YEAR}`;
+  const cornerDate = sidePanelDate(dayOfWeek, month, dayNumber);
+  const date = titleCardDate(dayOfWeek, month, dayNumber);
 
   return (
     <div
@@ -226,6 +227,7 @@ export default function OpeningSequence({
 
       {(phase === "title" || phase === "titleOut") && (
         <div className={styles.titleCard} role="status" aria-label={`Harlow. ${date}, ${formatClock(time)}, ${location}.`}>
+          <p className={styles.cornerDate}>{cornerDate}</p>
           <div className={styles.rain} aria-hidden="true" />
           <div className={styles.vignette} aria-hidden="true" />
           <div className={styles.titleContent} aria-hidden="true">

@@ -7,17 +7,25 @@ import {
 
 export const HILL_THOUGHT = "There's a light up on the hill. Nobody goes up there.";
 
-/** Night in the front yard, once both prerequisite quests are done. */
+/**
+ * Night in the front yard, once both prerequisite quests are done,
+ * the boot print has pointed him at the hill, and it is at least
+ * Sunday evening. An already-started quest is left alone.
+ */
 export function shouldNoticeHill(
   sceneId: string,
   time: number,
   questList: QuestProgress[],
   flags: Partial<Record<StoryFlag, boolean>>,
+  dayNumber: number,
 ) {
   const night = time >= 1080 || time < 360;
+  const eveningOfDay2 = dayNumber > 3 || (dayNumber === 3 && time >= 1080);
   return (
     sceneId === "front-yard"
     && night
+    && eveningOfDay2
+    && Boolean(flags.bootPrintSeen)
     && isQuestCompleted(questList, "what-walter-said")
     && isQuestCompleted(questList, "faded-poster")
     && !flags.sanatoriumSeenFromStreet

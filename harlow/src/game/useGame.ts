@@ -37,7 +37,29 @@ import {
   type ArmedConversationCloseup,
 } from "@/game/conversationCloseup";
 import { plateUrl, sceneWeatherPlate } from "@/game/scenePlate";
+import {
+  daytimeFigureDue,
+  endingFrames,
+  FIGURE_FOLLOW,
+  FIGURE_STAY,
+  FIGURE_THOUGHT,
+  flagsForConnections,
+  folderLook,
+  FOLDER_CAUGHT_LINES,
+  hillDarkDue,
+  HILL_DARK_TONIGHT,
+  nightCallRings,
+  PHONE_ANSWER_LINES,
+  PHONE_ANSWER_THOUGHT,
+  PHONE_IGNORE_THOUGHT,
+  PHONE_SILENCE_MS,
+  PHONE_THOUGHT,
+  PINE_NEEDLE_LINES,
+  porchNeedlesDue,
+  syncChapterQuests,
+} from "@/game/chapter1";
 import { hillCheckScene, HILL_THOUGHT, shouldNoticeHill } from "@/game/hill";
+import { timeHint, WAITING_TIRED_HINT } from "@/game/timeHints";
 import {
   actionMinutes,
   isTiredWindow,
@@ -110,6 +132,16 @@ import {
 import { useDoorTransition } from "@/game/useDoorTransition";
 import { useNoticeQueue } from "@/game/useNoticeQueue";
 
+const PHONE_RING_CHOICES: Choice[] = [
+  { label: "Answer it", action: "answerNightCall", nextScene: "hallway", timeCost: 0 },
+  { label: "Let it ring", action: "ignoreNightCall", nextScene: "hallway", timeCost: 0 },
+];
+
+const FIGURE_CHOICES: Choice[] = [
+  { label: "Follow him", action: "followDaytimeFigure", nextScene: "elrod-backyard", timeCost: 0 },
+  { label: "Stay put", action: "stayDaytimeFigure", nextScene: "elrod-backyard", timeCost: 0 },
+];
+
 const CONVERSATION_ACTIONS = new Set([
   // Add an action name here when a scene choice should open its conversation data.
   "talkToMom",
@@ -122,6 +154,7 @@ const CONVERSATION_ACTIONS = new Set([
   "talkToRay",
   "talkToTommy",
   "talkToRachel",
+  "talkToWalterAtStone",
 ]);
 
 const NPC_REPLY_DELAY = 450;
@@ -157,7 +190,7 @@ export function useGame() {
     const flags = sessionSave?.storyFlags ?? (
       sessionSave?.momJobConcernHeard ? { momJobConcern: true } : {}
     );
-    if (shouldNoticeHill(sceneId, time, migrated, flags)) return HILL_THOUGHT;
+    if (shouldNoticeHill(sceneId, time, migrated, flags, loaded.dayNumber)) return HILL_THOUGHT;
     return getSceneThought(sceneId, time, weather, day);
   });
   const [currentEffects, setCurrentEffects] = useState<StoryEntry[]>([]);
@@ -234,8 +267,14 @@ export function useGame() {
     const flags = sessionSave?.storyFlags ?? (
       sessionSave?.momJobConcernHeard ? { momJobConcern: true } : {}
     );
-    if (!shouldNoticeHill(sceneId, time, migrated, flags)) return migrated;
-    return startQuest(migrated, "light-on-the-hill");
+    const dayNumber = withCanonWeekday(sessionSave?.gameState ?? initialGameState).dayNumber;
+    const connections = migrateClues(sessionSave).connections;
+    const linked = flagsForConnections(flags, connections);
+    let next = migrated;
+    if (shouldNoticeHill(sceneId, time, next, linked, dayNumber)) {
+      next = startQuest(next, "light-on-the-hill");
+    }
+    return syncChapterQuests(next, dayNumber, connections);
   });
   // React applies setQuests after this handler returns. A second update in the
   // same click must read this list, not the quests from the last render.
@@ -263,22 +302,34 @@ export function useGame() {
     pendingAutosave.current = null;
   }
   function commitQuests(next: QuestProgress[], options?: { autosave?: boolean }) {
+    const synced = syncChapterQuests(next, dayRef.current, connectionsRef.current);
     const previous = questsRef.current;
-    questsRef.current = next;
-    setQuests(next);
-    if (options?.autosave !== false && questAutosaveNeeded(previous, next)) {
+    questsRef.current = synced;
+    setQuests(synced);
+    if (options?.autosave !== false && questAutosaveNeeded(previous, synced)) {
       requestAutosave({ quest: true });
     }
-    return next;
+    return synced;
   }
   const [storyFlags, setStoryFlags] = useState<Partial<Record<StoryFlag, boolean>>>(
-    () => sessionSave?.storyFlags ?? (
-      sessionSave?.momJobConcernHeard ? { momJobConcern: true } : {}
+    () => flagsForConnections(
+      sessionSave?.storyFlags ?? (
+        sessionSave?.momJobConcernHeard ? { momJobConcern: true } : {}
+      ),
+      migrateClues(sessionSave).connections,
     ),
   );
   // Updated in the same turn as setStoryFlags so a choice list built later
   // in that turn still sees rachelMet and the other flags.
   const storyFlagsRef = useRef(storyFlags);
+  const dayRef = useRef(gameState.dayNumber);
+  dayRef.current = gameState.dayNumber;
+  const phoneIntercept = useRef(false);
+  const phoneResumeSleep = useRef(false);
+  const afterConversationRef = useRef<(() => void) | null>(null);
+  const [phonePhase, setPhonePhase] = useState<null | "ring" | "talk">(null);
+  const [figureActive, setFigureActive] = useState(false);
+  const [catchEntrance, setCatchEntrance] = useState(false);
   const [trust, setTrust] = useState<TrustMap>(() => migrateTrust(sessionSave));
   const trustRef = useRef(trust);
   trustRef.current = trust;
@@ -512,7 +563,7 @@ export function useGame() {
       if (next !== before) started = options.startsQuest;
     }
     // Last prerequisite can finish while Ethan is already in the yard.
-    if (shouldNoticeHill(currentScene.id, gameState.time, next, storyFlags)) {
+    if (shouldNoticeHill(currentScene.id, gameState.time, next, storyFlags, gameState.dayNumber)) {
       next = startQuest(next, "light-on-the-hill");
       startedHill = true;
     }
@@ -581,6 +632,91 @@ export function useGame() {
     pulseAutosave();
   }, [currentSave]);
 
+  function clearDayFlags() {
+    const next = { ...storyFlagsRef.current };
+    let changed = false;
+    for (const flag of ["folderLockedToday", "rachelFolderCover"] as const) {
+      if (next[flag]) {
+        delete next[flag];
+        changed = true;
+      }
+    }
+    if (!changed) return;
+    storyFlagsRef.current = next;
+    setStoryFlags(next);
+  }
+
+  const phoneMorning = useRef<GameState | null>(null);
+
+  function beginPhone(state: GameState) {
+    phoneIntercept.current = false;
+    const hallway = scenes.hallway;
+    phoneMorning.current = phoneResumeSleep.current ? { ...state, time: 7 * 60 } : null;
+    setCurrentScene(hallway);
+    setGameState({ ...state, time: 2 * 60, location: hallway.location });
+    dayRef.current = state.dayNumber;
+    setPhonePhase("ring");
+    setFigureActive(false);
+    setCurrentThought(PHONE_THOUGHT);
+    setCurrentEffects([]);
+  }
+
+  function continueSleepAfterCall() {
+    const morning = phoneMorning.current;
+    phoneMorning.current = null;
+    phoneResumeSleep.current = false;
+    if (!morning) return;
+    dayRef.current = morning.dayNumber;
+    setGameState({ ...morning, location: scenes["ethan-room"].location });
+    moveToScene(scenes["ethan-room"].id, morning.time, morning.weather, morning.dayOfWeek);
+    const rested = restAfterSleep(playerState);
+    setPlayerState(rested);
+    setCurrentEffects(statDeltas(playerState, rested));
+    setNewDayAnnouncement(morning);
+  }
+
+  function finishNightCall(answered: boolean) {
+    applyFlags("nightCallHeard");
+    if (answered) {
+      applyFlags("nightCallClear");
+      harlowAudio().setAmbience({ indoor: true, weather: "Cloudy" });
+    }
+    setPhonePhase(null);
+    const resume = phoneResumeSleep.current;
+    const thought = answered ? PHONE_ANSWER_THOUGHT : PHONE_IGNORE_THOUGHT;
+    const wait = answered ? PHONE_SILENCE_MS : 0;
+    window.setTimeout(() => {
+      setCurrentThought(thought);
+      if (resume) window.setTimeout(continueSleepAfterCall, 2200);
+    }, wait);
+  }
+
+  function noticeArrivals(sceneId: string, time: number, dayNumber: number) {
+    const flags = storyFlagsRef.current;
+    if (porchNeedlesDue({ sceneId, dayNumber, time, seen: Boolean(flags.porchNeedlesSeen) })) {
+      applyFlags("porchNeedlesSeen");
+      setCurrentThought(PINE_NEEDLE_LINES[0]);
+      window.setTimeout(() => setCurrentThought(PINE_NEEDLE_LINES[1]), 2800);
+      return;
+    }
+    if (hillDarkDue({ sceneId, dayNumber, time, heard: Boolean(flags.hillDarkTonight) })) {
+      applyFlags("hillDarkTonight");
+      setCurrentThought(HILL_DARK_TONIGHT);
+      return;
+    }
+    if (daytimeFigureDue({
+      sceneId,
+      dayNumber,
+      time,
+      bootPrintSeen: Boolean(flags.bootPrintSeen),
+      seen: Boolean(flags.daytimeFigureSeen),
+    })) {
+      applyFlags("daytimeFigureSeen");
+      setFigureActive(true);
+      setCurrentThought(FIGURE_THOUGHT);
+    }
+  }
+
   function advanceTime(
     minutes: number,
     completingMomQuest = false,
@@ -590,7 +726,6 @@ export function useGame() {
     // Keep time changes in one place so thoughts and day/night images stay synced.
     // Waiting is the only action capped at 03:30. A walk spends its full cost,
     // including the 40 minutes home from the sanatorium.
-    void bypassExhaustionLock;
     const timeToAdvance = actionMinutes(
       gameState.time,
       minutes,
@@ -598,15 +733,37 @@ export function useGame() {
       completingMomQuest,
     );
     const nextGameState = advanceGameTime(gameState, timeToAdvance);
+    const toScene = destinationSceneId ?? currentScene.id;
+    const rings = nightCallRings({
+      heard: Boolean(storyFlagsRef.current.nightCallHeard),
+      fromTime: gameState.time,
+      toTime: nextGameState.time,
+      fromDay: gameState.dayNumber,
+      toDay: nextGameState.dayNumber,
+      fromScene: currentScene.id,
+      toScene,
+    });
+    const played = rings ? { ...nextGameState, time: 2 * 60 } : nextGameState;
+    if (rings) {
+      phoneIntercept.current = true;
+      if (bypassExhaustionLock) phoneResumeSleep.current = true;
+    }
+    dayRef.current = played.dayNumber;
+    if (played.dayNumber !== gameState.dayNumber) {
+      clearDayFlags();
+      commitQuests(questsRef.current);
+    }
 
-    setGameState(nextGameState);
+    setGameState(played);
+    if (rings) return played;
     // A walk leaves the yard before the new time is "spent" there. Notice the
     // hill on the scene Ethan arrives in, not the one he is walking out of.
     const hillNow = shouldNoticeHill(
       hillCheckScene(currentScene.id, destinationSceneId),
-      nextGameState.time,
+      played.time,
       questsRef.current,
       storyFlags,
+      played.dayNumber,
     );
     // The line lands first. openHillQuest adds the quest on this same update,
     // so the look action is not on screen before the sentence.
@@ -623,7 +780,7 @@ export function useGame() {
     );
     if (hillNow) openHillQuest();
 
-    return nextGameState;
+    return played;
   }
 
   function moveToScene(
@@ -640,6 +797,18 @@ export function useGame() {
       return;
     }
 
+    if (phoneIntercept.current) {
+      beginPhone({
+        ...gameState,
+        time,
+        weather,
+        dayOfWeek: day,
+        dayNumber: dayRef.current,
+        location: scenes.hallway.location,
+      });
+      return;
+    }
+
     if (sceneId === "hospital-reception" && currentScene.id !== sceneId) {
       setMarleneActive(false);
     }
@@ -647,7 +816,7 @@ export function useGame() {
     setCurrentScene(nextScene);
     setCurrentEffects([]);
 
-    const hillNow = shouldNoticeHill(sceneId, time, questsRef.current, storyFlags);
+    const hillNow = shouldNoticeHill(sceneId, time, questsRef.current, storyFlags, dayRef.current);
     // The look action stays hidden until this line has been said.
     // A time change in this same click may already have shown it.
     if (hillNow || !hillThoughtShown.current) {
@@ -659,6 +828,7 @@ export function useGame() {
       );
     }
     if (hillNow) openHillQuest();
+    noticeArrivals(sceneId, time, dayRef.current);
 
     if (
       sceneId === "diner-inside"
@@ -689,13 +859,11 @@ export function useGame() {
     const selectedConversation =
       currentScene.id === "kitchen" && !momTalked
         ? momDeathConversation
-        : currentScene.id === "front-yard"
-          ? rachelFrontYardConversation
-          : currentScene.id === "elrod-house"
-            ? storyFlags.walterStationTalk
-              ? rachelFrontYardConversation
-              : rachelElrodConversation
-            : currentScene.conversation;
+        : currentScene.id === "elrod-house"
+          ? storyFlags.walterStationTalk
+            ? rachelFrontYardConversation
+            : rachelElrodConversation
+          : currentScene.conversation;
     const asEmployee =
       !!selectedConversation?.jobOpening && selectedConversation.jobOpening.job === job;
     const baseOpening = asEmployee
@@ -731,6 +899,10 @@ export function useGame() {
       inventory: playerState.inventory,
       trust: trustRef.current,
       money: playerState.money,
+      sceneId: currentScene.id,
+      time: gameState.time,
+      dayNumber: gameState.dayNumber,
+      clues: cluesRef.current,
     };
     const gossipWaiting = Boolean(
       person === "margaret"
@@ -780,11 +952,15 @@ export function useGame() {
     // Drop the lock immediately so the scene choices return while the
     // dialogue layer finishes fading. Notices wait until that layer is gone.
     conversationActiveRef.current = false;
+    setCatchEntrance(false);
+    const after = afterConversationRef.current;
+    afterConversationRef.current = null;
     window.setTimeout(() => {
       setConversation([]);
       setActiveConversation(null);
       setUsedConversationChoices([]);
       pumpNotices();
+      after?.();
     }, 300);
   }
 
@@ -803,11 +979,11 @@ export function useGame() {
     setCurrentEffects(statDeltas(playerState, next));
   }
 
-  function showLateNightActionThought() {
+  function showLateNightActionThought(message = "That can wait till morning. I'm beat.") {
     if (lateNightThoughtTimer.current !== null) {
       window.clearTimeout(lateNightThoughtTimer.current);
     }
-    setLateNightActionThought("That can wait till morning. I'm beat.");
+    setLateNightActionThought(message);
     lateNightThoughtTimer.current = window.setTimeout(() => {
       setLateNightActionThought(null);
       lateNightThoughtTimer.current = null;
@@ -1027,7 +1203,12 @@ export function useGame() {
     });
 
     window.setTimeout(() => {
-      advanceTime(shiftMinutes);
+      const next = advanceTime(shiftMinutes);
+      if (phoneIntercept.current) {
+        beginPhone({ ...next, location: scenes.hallway.location });
+        setTravelingTo(null);
+        return;
+      }
       setPlayerState((previous) => ({ ...previous, money: previous.money + shiftPay }));
       setCurrentEffects([{ type: "effect", stat: "money", amount: shiftPay }]);
       setTravelingTo(null);
@@ -1039,6 +1220,55 @@ export function useGame() {
     // (`nextScene`, `itemToAdd`, `effects`) over adding action-specific cases.
     // Nothing else can be chosen while a door transition is playing.
     if (doorBusy.current && !throughDoor) return;
+
+    if ("action" in choice && choice.action === "answerNightCall") {
+      setPhonePhase("talk");
+      harlowAudio().setAmbience({ indoor: true, weather: "Rainy" });
+      setCatchEntrance(false);
+      setConversationPerson(null);
+      setActiveConversation({ opening: PHONE_ANSWER_LINES, choices: [] });
+      setConversation(PHONE_ANSWER_LINES);
+      setConversationEnding(true);
+      setConversationActive(true);
+      conversationActiveRef.current = true;
+      afterConversationRef.current = () => {
+        harlowAudio().playSfx("door");
+        finishNightCall(true);
+      };
+      return;
+    }
+    if ("action" in choice && choice.action === "ignoreNightCall") {
+      finishNightCall(false);
+      return;
+    }
+    if ("action" in choice && choice.action === "followDaytimeFigure") {
+      setFigureActive(false);
+      applyFlags("trailFollowed");
+      setCurrentThought(FIGURE_FOLLOW);
+      return;
+    }
+    if ("action" in choice && choice.action === "stayDaytimeFigure") {
+      setFigureActive(false);
+      setCurrentThought(FIGURE_STAY);
+      return;
+    }
+
+    if (!("response" in choice)) {
+      const hint = timeHint({
+        action: choice.action,
+        sceneId: currentScene.id,
+        time: gameState.time,
+        dayOfWeek: gameState.dayOfWeek,
+        job,
+        flags: storyFlagsRef.current,
+        quests: questsRef.current,
+        knifeTaken: scrapyardKnifePickedUp,
+      });
+      if (hint) {
+        showLateNightActionThought(hint);
+        return;
+      }
+    }
 
     if (!canTakeLateNightAction(choice)) {
       showLateNightActionThought();
@@ -1067,6 +1297,59 @@ export function useGame() {
     }
     if (choice.requirements?.excludesFlags && hasAnyFlag(choice.requirements.excludesFlags)) {
       return;
+    }
+
+    if (choice.action === "lookAtRoom6") {
+      setCurrentThought("Don't knock. He doesn't like it.");
+      return;
+    }
+    if (choice.action === "lookAtEmilyFolder") {
+      const look = folderLook({
+        time: gameState.time,
+        fileDrawerSeen: storyFlagsRef.current.fileDrawerSeen,
+        emilyFileOpened: storyFlagsRef.current.emilyFileOpened,
+        folderLockedToday: storyFlagsRef.current.folderLockedToday,
+        rachelFolderCover: storyFlagsRef.current.rachelFolderCover,
+      });
+      if (look === "caught") {
+        const nextTrust = applyConversationTrust(
+          {
+            trust: trustRef.current,
+            spent: trustSpentRef.current,
+            gainedOnDay: gainedOnDayRef.current,
+          },
+          { person: "walter", amount: -1 },
+          gameState.dayNumber,
+        );
+        trustRef.current = nextTrust.trust;
+        trustSpentRef.current = nextTrust.spent;
+        gainedOnDayRef.current = nextTrust.gainedOnDay;
+        setTrust(nextTrust.trust);
+        setTrustGainedOnDay(nextTrust.gainedOnDay);
+        applyFlags("folderLockedToday");
+        setCatchEntrance(true);
+        setConversationPerson("walter");
+        setActiveConversation({ opening: FOLDER_CAUGHT_LINES, choices: [] });
+        setConversation(FOLDER_CAUGHT_LINES);
+        setConversationEnding(true);
+        setConversationActive(true);
+        conversationActiveRef.current = true;
+        afterConversationRef.current = () => {
+          setCatchEntrance(false);
+          const lobby = scenes["police-station-inside"];
+          if (lobby) {
+            setCurrentScene(lobby);
+            setGameState((previous) => ({ ...previous, location: lobby.location }));
+          }
+        };
+        return;
+      }
+      if (look === "open" && storyFlagsRef.current.rachelFolderCover) {
+        const nextFlags = { ...storyFlagsRef.current };
+        delete nextFlags.rachelFolderCover;
+        storyFlagsRef.current = nextFlags;
+        setStoryFlags(nextFlags);
+      }
     }
 
     // The dark hallway needs a light before any transition starts.
@@ -1106,6 +1389,9 @@ export function useGame() {
             }
           : undefined,
       );
+    }
+    if (choice.action === "lookAtSanatoriumCigarette") {
+      closeupQueue.current = endingFrames(cluesRef.current);
     }
     if (choice.setsFlags) applyFlags(choice.setsFlags);
 
@@ -1229,6 +1515,12 @@ export function useGame() {
         ? TIRED_END - gameState.time
         : 1440 - gameState.time + TIRED_END;
       const nextGameState = advanceTime(minutesUntilSevenAm, false, true, "ethan-room");
+      if (phoneIntercept.current) {
+        moveToScene("hallway", nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek, {
+          footsteps: false,
+        });
+        return;
+      }
       moveToScene("ethan-room", nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek, {
         footsteps: false,
       });
@@ -1384,13 +1676,20 @@ export function useGame() {
 
     setGameState(alignedState);
     setPlayerState(save.playerState);
-    const restoredFlags = save.storyFlags ?? (save.momJobConcernHeard ? { momJobConcern: true } : {});
+    const restoredClues = migrateClues(save);
+    dayRef.current = alignedState.dayNumber;
+    connectionsRef.current = restoredClues.connections;
+    const restoredFlags = flagsForConnections(
+      save.storyFlags ?? (save.momJobConcernHeard ? { momJobConcern: true } : {}),
+      restoredClues.connections,
+    );
     let restoredQuests = migrateQuestsFromLegacy(save);
     const restoredHill = shouldNoticeHill(
       savedScene.id,
       alignedState.time,
       restoredQuests,
       restoredFlags,
+      alignedState.dayNumber,
     );
     if (restoredHill) restoredQuests = startQuest(restoredQuests, "light-on-the-hill");
 
@@ -1430,7 +1729,6 @@ export function useGame() {
     gainedOnDayRef.current = restoredGains;
     setTrustGainedOnDay(restoredGains);
     trustSpentRef.current = {};
-    const restoredClues = migrateClues(save);
     cluesRef.current = restoredClues.clues;
     setClues(restoredClues.clues);
     connectionsRef.current = restoredClues.connections;
@@ -1463,6 +1761,12 @@ export function useGame() {
     setUsedConversationChoices([]);
     setTravelingTo(null);
     setNewDayAnnouncement(null);
+    setPhonePhase(null);
+    setFigureActive(false);
+    setCatchEntrance(false);
+    phoneIntercept.current = false;
+    phoneResumeSleep.current = false;
+    phoneMorning.current = null;
     return true;
   }
 
@@ -1543,6 +1847,13 @@ export function useGame() {
     setUsedConversationChoices([]);
     setTravelingTo(null);
     setNewDayAnnouncement(null);
+    setPhonePhase(null);
+    setFigureActive(false);
+    setCatchEntrance(false);
+    phoneIntercept.current = false;
+    phoneResumeSleep.current = false;
+    phoneMorning.current = null;
+    dayRef.current = freshGameState.dayNumber;
 
     return writeSessionSave({
       version: 1,
@@ -1572,9 +1883,24 @@ export function useGame() {
   const activeCharacter = findActiveCharacter(currentScene.characters, {
     time: gameState.time,
     day: gameState.dayOfWeek,
+    dayNumber: gameState.dayNumber,
     marleneActive,
     hasFlag,
   });
+
+  function sceneChoiceListed(choice: Choice) {
+    if (isChoiceAvailable(choice)) return true;
+    return timeHint({
+      action: choice.action,
+      sceneId: currentScene.id,
+      time: gameState.time,
+      dayOfWeek: gameState.dayOfWeek,
+      job,
+      flags: storyFlags,
+      quests,
+      knifeTaken: scrapyardKnifePickedUp,
+    }) !== null;
+  }
 
   const activeChoices = replyPending || conversationEnding ? [] : conversationActive
     ? (activeConversation?.choices ?? []).filter((choice) =>
@@ -1590,13 +1916,21 @@ export function useGame() {
           inventory: playerState.inventory,
           trust,
           money: playerState.money,
+          sceneId: currentScene.id,
+          time: gameState.time,
+          dayNumber: gameState.dayNumber,
+          clues,
         }),
       )
       .map((choice) => {
         const effects = pricedEffects(choice, trust);
         return effects === choice.effects ? choice : { ...choice, effects };
       })
-    : currentScene.choices.filter(isChoiceAvailable);
+    : phonePhase === "ring"
+      ? PHONE_RING_CHOICES
+      : figureActive
+        ? FIGURE_CHOICES
+        : currentScene.choices.filter(sceneChoiceListed);
 
   const askTopics = conversationActive && conversationPerson
     ? askTopicsFor(conversationPerson, clues, clueConnections)
@@ -1622,6 +1956,10 @@ export function useGame() {
         connectionsRef.current = result.connections;
         setClueConnections(result.connections);
         harlowAudio().playSfx("pen-scribble");
+        if (result.connections.includes("walt-parker")) {
+          applyFlags("waltParkerLinked");
+          commitQuests(questsRef.current);
+        }
       }
       setCurrentThought(result.thought);
       return { ok: true as const, line: result.thought };
@@ -1682,6 +2020,7 @@ export function useGame() {
     jobQuestTarget,
     quests,
     hasFlag,
+    dayNumber: gameState.dayNumber,
   });
 
   const noteHoodedMan = useCallback(() => {
@@ -1742,6 +2081,9 @@ export function useGame() {
     beginAsk,
     dismissAskAbout,
     noteHoodedMan,
+    phonePhase,
+    figureActive,
+    catchEntrance,
     closeup,
     dismissCloseup,
     showChapterEnd,
@@ -1765,10 +2107,13 @@ export function useGame() {
     // Sleep still jumps to 07:00. Waiting uses the same 03:30 lock as the buttons.
     wait: (minutes: number) => {
       if (isWaitingLocked(gameState.time)) {
-        showLateNightActionThought();
+        showLateNightActionThought(WAITING_TIRED_HINT);
         return;
       }
-      advanceTime(waitingMinutesAllowed(gameState.time, minutes));
+      const next = advanceTime(waitingMinutesAllowed(gameState.time, minutes));
+      if (phoneIntercept.current) {
+        beginPhone({ ...next, location: scenes.hallway.location });
+      }
     },
     useInventoryItem: (item: string) => {
       const fearReduction = item === "Beer" ? 10 : item === "Cigarettes" ? 5 : 0;

@@ -28,7 +28,11 @@ export type QuestId =
   | "faded-poster"
   | "light-on-the-hill"
   | "the-gate"
-  | "emilys-room";
+  | "emilys-room"
+  | "old-friends"
+  | "emilys-stone"
+  | "before-everything"
+  | "rachel-remembers";
 
 export type QuestStatus = "active" | "completed";
 
@@ -85,7 +89,33 @@ export type StoryFlag =
   | "emilyNoteRead"
   | "waltPhotoSeen"
   /** Saturday's Harlow Gazette, picked up off the porch step. */
-  | "gazetteFound";
+  | "gazetteFound"
+  /** Corkboard link Walt & me + PARKER, E. Old Friends can start. */
+  | "waltParkerLinked"
+  /** Sunday morning pine needles by the Parkers' door. */
+  | "porchNeedlesSeen"
+  /** Saturday night. The hill is only dark; the quest waits for Sunday. */
+  | "hillDarkTonight"
+  /** The 02:00 call on the first night. Once, whether he answered or not. */
+  | "nightCallHeard"
+  /** He answered. No rain at home until morning. */
+  | "nightCallClear"
+  /** Hair tie beside the sanatorium cigarette. */
+  | "hairTieFound"
+  /** Emily's headstone, day 2. */
+  | "emilyStoneSeen"
+  | "freshFlowersSeen"
+  | "everySundayHeard"
+  | "woodsRoadTold"
+  | "dad1966Told"
+  | "daytimeFigureSeen"
+  | "trailFollowed"
+  | "room6Heard"
+  /** Walter walked in on the folder. Locked until the next day. */
+  | "folderLockedToday"
+  /** Rachel bought one look at the folder. */
+  | "rachelFolderCover"
+  | "oldFriendsDone";
 
 export type QuestDef = {
   id: QuestId;
@@ -177,6 +207,38 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
     objectives: {
       default: "Her room. Nobody's touched it.",
       done: "Walter was already a cop. Dad's face is scratched out.",
+    },
+  },
+  "old-friends": {
+    id: "old-friends",
+    title: "Old Friends",
+    objectives: {
+      default: "Walter and Dad. The cemetery, Sunday afternoon.",
+      done: "Every Sunday. Somebody should.",
+    },
+  },
+  "emilys-stone": {
+    id: "emilys-stone",
+    title: "Emily's Stone",
+    objectives: {
+      default: "Her stone. No second date.",
+      done: "Fresh flowers. Not from Mom.",
+    },
+  },
+  "before-everything": {
+    id: "before-everything",
+    title: "Before Everything",
+    objectives: {
+      default: "Ask Mom why Dad left.",
+      done: "Spring of '66. Or all she'll say.",
+    },
+  },
+  "rachel-remembers": {
+    id: "rachel-remembers",
+    title: "Rachel Remembers",
+    objectives: {
+      default: "Rachel was ten. She saw something.",
+      done: "The woods road. Walking up.",
     },
   },
 };

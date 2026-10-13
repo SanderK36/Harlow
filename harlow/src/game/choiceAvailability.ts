@@ -1,4 +1,5 @@
-import { atticHotspotVisible, bootPrintHotspotHidden, emilyFolderOnDesk, gazetteOnPorch } from "./clues";
+import { folderLook, rachelDrawn } from "./chapter1";
+import { atticHotspotVisible, bootPrintHotspotHidden, gazetteOnPorch } from "./clues";
 import type { Choice } from "./choices";
 import { TIRED_END } from "./lateNight";
 import {
@@ -84,7 +85,30 @@ export function isChoiceAvailable(choice: Choice, ctx: ChoiceContext) {
     return ctx.job === "needle-groove" && time >= 600 && time < 1140;
   }
   if (action === "talkToWalter") return time >= 480 && time < 960;
-  if (action === "lookAtEmilyFolder") return emilyFolderOnDesk(time, ctx.storyFlags);
+  if (action === "talkToWalterAtStone") {
+    return (
+      sceneId === "cementary-inside"
+      && ctx.gameState.dayNumber >= 3
+      && time >= 14 * 60
+      && time < 17 * 60
+      && ctx.hasFlag("waltParkerLinked")
+      && !ctx.hasFlag("oldFriendsDone")
+    );
+  }
+  if (action === "lookAtEmilyStone") {
+    return sceneId === "cementary-inside" && ctx.gameState.dayNumber >= 3 && !ctx.hasFlag("emilyStoneSeen");
+  }
+  if (action === "lookAtRoom6") return ctx.hasFlag("room6Heard");
+  if (action === "lookAtEmilyFolder") {
+    const look = folderLook({
+      time,
+      fileDrawerSeen: ctx.storyFlags.fileDrawerSeen,
+      emilyFileOpened: ctx.storyFlags.emilyFileOpened,
+      folderLockedToday: ctx.storyFlags.folderLockedToday,
+      rachelFolderCover: ctx.storyFlags.rachelFolderCover,
+    });
+    return look === "open" || look === "caught";
+  }
   if (action === "talkToMargaret") return time >= 420 && time < 900;
   if (action === "talkToEarl") return time >= 480 && time < 1020;
   if (action === "talkToBigRoy") return time >= 420 && time < 900;
@@ -118,18 +142,14 @@ export function isChoiceAvailable(choice: Choice, ctx: ChoiceContext) {
     );
   }
   if (action === "talkToRachel") {
-    // Elrod: Rachel is out 07:00–19:00. She stays after What Walter Said
-    // so a return visit still has a line, and Ask about can reach her.
+    // Elrod: 07:00–18:00, and only while she is actually on the porch.
     if (sceneId !== "elrod-house") return false;
-    if (time < 420 || time >= 1140) return false;
-    return (
-      !ctx.hasFlag("rachelMet")
-      || (
-        ctx.hasFlag("walterStationTalk")
-        && isQuestActive(ctx.quests, "what-walter-said")
-      )
-      || isQuestCompleted(ctx.quests, "what-walter-said")
-    );
+    return rachelDrawn({
+      time,
+      rachelMet: ctx.hasFlag("rachelMet"),
+      walterStationTalk: ctx.hasFlag("walterStationTalk"),
+      quests: ctx.quests,
+    });
   }
   if (action === "lookAtSanatoriumHill") {
     const night = time >= 1080 || time < 360;

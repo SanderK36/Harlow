@@ -8,12 +8,16 @@ export function findActiveCharacter(
   ctx: {
     time: number;
     day: DayOfWeek;
+    dayNumber: number;
     marleneActive: boolean;
     hasFlag: (flag: StoryFlag) => boolean;
   },
 ) {
   return characters?.find((character) => {
     if (character.name === "Marlene" && !ctx.marleneActive) {
+      return false;
+    }
+    if (character.minDay !== undefined && ctx.dayNumber < character.minDay) {
       return false;
     }
     if (character.days && !character.days.includes(ctx.day)) {

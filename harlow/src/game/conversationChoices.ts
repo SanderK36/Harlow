@@ -1,3 +1,4 @@
+import type { ClueId } from "@/game/clues";
 import type { ConversationChoice } from "@/game/story";
 import {
   isQuestActive,
@@ -23,6 +24,10 @@ export type ConversationChoiceContext = {
   inventory: string[];
   trust?: TrustMap;
   money?: number;
+  sceneId?: string;
+  time?: number;
+  dayNumber?: number;
+  clues?: readonly ClueId[];
 };
 
 function flagList(flags: StoryFlag | StoryFlag[] | undefined) {
@@ -88,6 +93,11 @@ export function conversationChoiceVisible(
     && (!choice.requiresItem || ctx.inventory.includes(choice.requiresItem))
     && (!choice.excludesItem || !ctx.inventory.includes(choice.excludesItem))
     && (!choice.requiresQuestActive || isQuestActive(ctx.quests, choice.requiresQuestActive))
+    && (!choice.sceneId || choice.sceneId === ctx.sceneId)
+    && (choice.minDay === undefined || (ctx.dayNumber ?? 0) >= choice.minDay)
+    && (choice.from === undefined || (ctx.time ?? -1) >= choice.from)
+    && (choice.until === undefined || (ctx.time ?? 9999) < choice.until)
+    && (!choice.requiresAnyClue || choice.requiresAnyClue.some((id) => ctx.clues?.includes(id)))
     && canAffordPricedChoice(choice, trust, money)
     && (choice.repeatable || choice.endsConversation || !ctx.usedLabels.includes(choice.label))
   );

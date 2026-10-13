@@ -18,6 +18,8 @@ export type CloseupContent = {
   disableWeatherFilter?: boolean;
   /** Headline, caption, or note drawn on the picture. */
   inscriptions?: Inscription[];
+  /** Two crops, side by side. The thought stays under the frame. */
+  split?: { left: string; right: string };
 };
 
 type CloseupOverlayProps = {
@@ -59,6 +61,16 @@ export default function CloseupOverlay({ closeup, onDismiss, rain = null, rainNi
       <p className={styles.hint}>Click or press Space</p>
       <div className={styles.frame} onClick={(event) => event.stopPropagation()}>
         <div className={styles.art}>
+          {closeup.split ? (
+            <div className={styles.split}>
+              <div className={styles.splitPane}>
+                <img src={closeup.split.left} alt="" className={styles.splitLeft} />
+              </div>
+              <div className={styles.splitPane}>
+                <img src={closeup.split.right} alt="" className={styles.splitRight} />
+              </div>
+            </div>
+          ) : (
           <PlateImage
             src={closeup.image}
             alt={closeup.label ?? "Closeup"}
@@ -76,8 +88,9 @@ export default function CloseupOverlay({ closeup, onDismiss, rain = null, rainNi
             }`}
             onClick={onDismiss}
           />
-          {rain === "exterior" && <div className={styles.overcast} aria-hidden="true" />}
-          {rain === "exterior" && <div className={styles.rainGlass} aria-hidden="true" />}
+          )}
+          {rain === "exterior" && !closeup.split && <div className={styles.overcast} aria-hidden="true" />}
+          {rain === "exterior" && !closeup.split && <div className={styles.rainGlass} aria-hidden="true" />}
         </div>
         <p className={styles.thought}>{closeup.thought}</p>
       </div>

@@ -27,6 +27,7 @@ function ids(partial: {
   jobQuestTarget?: "needle-groove" | "gas-station" | "scrapyard" | null;
   quests?: QuestProgress[];
   flags?: StoryFlag[];
+  dayNumber?: number;
 } = {}) {
   const flags = new Set(partial.flags ?? []);
   return travelDestinationIds({
@@ -35,6 +36,7 @@ function ids(partial: {
     jobQuestTarget: partial.jobQuestTarget ?? null,
     quests: partial.quests ?? [],
     hasFlag: (flag) => flags.has(flag),
+    dayNumber: partial.dayNumber,
   });
 }
 
@@ -186,10 +188,18 @@ describe("map pins", () => {
     assert.equal(pin(list, "needle-and-groove").thought, CLOSED_LOCATION_THOUGHTS["needle-and-groove"]);
     assert.equal(pin(list, "gas-station").thought, CLOSED_LOCATION_THOUGHTS["gas-station"]);
     assert.equal(pin(list, "scrapyard").thought, CLOSED_LOCATION_THOUGHTS.scrapyard);
-    assert.equal(pin(list, "motel").thought, CLOSED_LOCATION_THOUGHTS.motel);
+    assert.equal(pin(list, "motel").open, true);
+    assert.equal(pin(list, "motel").thought, null);
     assert.equal(pin(list, "cementary").thought, CLOSED_LOCATION_THOUGHTS.cementary);
-    assert.equal(pin(list, "motel").open, false);
     assert.equal(pin(list, "cementary").open, false);
+    const sunday = views({
+      originId: "street",
+      time: 10 * 60,
+      momTalked: true,
+      availableIds: ids({ momTalked: true, dayNumber: 3 }),
+    });
+    assert.equal(pin(sunday, "cementary").open, true);
+    assert.equal(pin(sunday, "motel").open, true);
   });
 
   it("lets only the trip home through from 03:00 until 07:00", () => {
@@ -289,12 +299,12 @@ describe("map pins", () => {
     assert.equal(arriveAt, 18 * 60 + 20);
     assert.equal(hillCheckScene("diner", walkHome.nextScene), "front-yard");
     assert.equal(
-      shouldNoticeHill(hillCheckScene("diner", walkHome.nextScene), arriveAt, hillReady, {}),
+      shouldNoticeHill(hillCheckScene("diner", walkHome.nextScene), arriveAt, hillReady, { bootPrintSeen: true }, 3),
       true,
     );
-    assert.equal(shouldNoticeHill("diner", arriveAt, hillReady, {}), false);
+    assert.equal(shouldNoticeHill("diner", arriveAt, hillReady, { bootPrintSeen: true }, 3), false);
     assert.equal(
-      shouldNoticeHill(hillCheckScene("front-yard", "diner"), arriveAt, hillReady, {}),
+      shouldNoticeHill(hillCheckScene("front-yard", "diner"), arriveAt, hillReady, { bootPrintSeen: true }, 3),
       false,
     );
     assert.equal(actionMinutes(3 * 60 + 32, walkHome.timeCost, true), walkHome.timeCost);

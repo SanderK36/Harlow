@@ -17,6 +17,8 @@ export type SceneCharacter = {
   requiresFlags?: StoryFlag[];
   /** Hidden once any listed story flag is set. */
   excludesFlags?: StoryFlag[];
+  /** Hidden until this October dayNumber. Sunday the 3rd is 3. */
+  minDay?: number;
 };
 
 export type Scene = {

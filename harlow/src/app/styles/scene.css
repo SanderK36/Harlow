@@ -517,7 +517,24 @@
     radial-gradient(circle at 50% 35%, rgba(150, 96, 60, 0.2), transparent 42%),
     rgba(8, 4, 5, 0.94);
   pointer-events: none;
-  animation: newDayScreenFade 3.4s ease-in-out forwards;
+  animation: newDayCard 2.7s ease forwards;
+}
+
+.new-day-screen-cut {
+  animation: none;
+}
+
+.new-day-screen h2 {
+  margin: 0;
+  max-width: 18ch;
+  color: #fff4f4;
+  font-family: var(--font-display);
+  font-size: clamp(28px, 5.4vw, 64px);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  line-height: 1.25;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 /* Chapter end fades in and stays. The morning card uses new-day-screen,
@@ -661,6 +678,16 @@
   letter-spacing: 0.06em;
 }
 
+@keyframes newDayCard {
+  0%, 74% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
 @keyframes newDayScreenFade {
   0%, 100% {
     opacity: 0;
@@ -703,6 +730,61 @@
   opacity: 1;
   pointer-events: auto;
   animation: conversationOverlayEnter 300ms ease-out both;
+}
+
+/* Walter is already in the room. The portrait still slides; the veil does not fade. */
+.conversation-overlay-instant,
+.conversation-overlay-instant.conversation-overlay-active {
+  transition: none;
+  animation: none;
+}
+
+/* 02:00: the hallway drops to 85% except the phone on the left wall. */
+.phone-dim {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  border-radius: 14px;
+  pointer-events: none;
+}
+
+.phone-dim-hole {
+  position: absolute;
+  top: 30%;
+  left: 5%;
+  width: 15%;
+  height: 28%;
+  border-radius: 10px;
+  box-shadow: 0 0 0 200vmax rgba(0, 0, 0, 0.15);
+}
+
+.figure-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: 14px;
+  background: radial-gradient(ellipse at center, transparent 38%, rgba(0, 0, 0, 0.72) 100%);
+  opacity: 0;
+  pointer-events: none;
+  animation: figureVignette 3s ease forwards;
+}
+
+@keyframes figureVignette {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .new-day-screen,
+  .figure-vignette {
+    animation: none;
+  }
+
+  .figure-vignette {
+    opacity: 1;
+  }
 }
 
 @keyframes conversationOverlayEnter {

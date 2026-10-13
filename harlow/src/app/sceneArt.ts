@@ -1,6 +1,7 @@
 import type { SceneCharacter } from "@/game/scenes";
 import { RAIN_WEATHER, SANATORIUM_ONE_WINDOW, sanatoriumShowsOneWindow, type Scene } from "@/game/scenes";
 import { elrodRachelPlate, isRainPlate } from "@/game/scenePlate";
+import { rachelDrawn } from "@/game/chapter1";
 import { emilyFolderOnDesk } from "@/game/clues";
 import type { QuestProgress, StoryFlag } from "@/game/quests";
 import type { Weather } from "@/game/types";
@@ -35,16 +36,14 @@ export function resolveSceneArt(input: {
   // and again for the post-Walter follow-up. Her rain and thunder plates are
   // daylit too, so after dark the night plate shows.
   // During her talk the empty house is the backdrop so she isn't on screen twice.
-  const walterFollowUpActive =
-    input.storyFlags.walterStationTalk
-    && input.quests.some(
-      (quest) => quest.id === "what-walter-said" && quest.status === "active",
-    );
   const elrodWithRachel =
     scene.id === "elrod-house"
-    && (!input.storyFlags.rachelMet || walterFollowUpActive)
-    && time >= 420
-    && time < 1140;
+    && rachelDrawn({
+      time,
+      rachelMet: input.storyFlags.rachelMet,
+      walterStationTalk: input.storyFlags.walterStationTalk,
+      quests: input.quests,
+    });
   const elrodRachel = elrodWithRachel
     ? elrodRachelPlate(time, weather)
     : null;

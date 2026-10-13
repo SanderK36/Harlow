@@ -172,13 +172,17 @@ export const rachelElrodConversation: Conversation = {
   ],
 };
 
+/**
+ * What Walter Said, played on the Elrod porch once Ethan has been to the station.
+ * The old front-yard branch never had a Talk button; the porch is where she waits.
+ */
 export const rachelFrontYardConversation: Conversation = {
   opening: [npc("Rachel", "Been out here an hour. What'd Walter say?")],
   returnGreeting: "prepend",
   choices: [
     {
       label: "I told him about the hooded man.",
-      excludesStoryFlag: "rachelShutOut",
+      excludesStoryFlag: ["rachelShutOut", "rachelKnowsHood"],
       response: [
         ethan("I told him about the hooded man."),
         npc("Rachel", "You saw what?!"),
@@ -213,7 +217,7 @@ export const rachelFrontYardConversation: Conversation = {
     {
       label: "There was a file. PARKER, E. Still in his drawer.",
       requiresStoryFlag: "fileDrawerSeen",
-      excludesStoryFlag: "rachelShutOut",
+      excludesStoryFlag: ["rachelShutOut", "rachelKnowsFile"],
       response: [
         ethan("There was a file. PARKER, E. Still in his drawer."),
         npc(
@@ -259,6 +263,46 @@ export const rachelFrontYardConversation: Conversation = {
         ethan("Not now, Rach."),
         npc("Rachel", "Fine. But I'm not dropping this, Ethan."),
       ],
+      endsConversation: true,
+    },
+    {
+      label: "I should've told you.",
+      requiresStoryFlag: "rachelShutOut",
+      requiresQuestActive: "rachel-remembers",
+      response: [
+        ethan("I should've told you."),
+        npc("Rachel", "Yeah. You should've."),
+        npc("Rachel", "Last time I saw her, she was on the woods road. Walking up, not down. I yelled her name. She didn't turn around."),
+        npc("Rachel", "I never told Walter. I was ten. I thought she'd be back by breakfast."),
+      ],
+      trust: { person: "rachel", amount: 1 },
+      storyFlag: "woodsRoadTold",
+      completesQuest: "rachel-remembers",
+      questStep: "done",
+      endsConversation: true,
+    },
+    {
+      label: "The woods road.",
+      excludesStoryFlag: "rachelShutOut",
+      requiresQuestActive: "rachel-remembers",
+      response: [
+        npc("Rachel", "Last time I saw her, she was on the woods road. Walking up, not down. I yelled her name. She didn't turn around."),
+        npc("Rachel", "I never told Walter. I was ten. I thought she'd be back by breakfast."),
+      ],
+      storyFlag: "woodsRoadTold",
+      completesQuest: "rachel-remembers",
+      questStep: "done",
+      endsConversation: true,
+    },
+    {
+      label: "Leave Walter to me.",
+      requiresStoryFlag: "fileDrawerSeen",
+      excludesStoryFlag: ["emilyFileOpened", "rachelFolderCover"],
+      requiresTrust: { person: "rachel", min: 1 },
+      response: [
+        npc("Rachel", "Leave Walter to me. You get five minutes."),
+      ],
+      storyFlag: "rachelFolderCover",
       endsConversation: true,
     },
   ],
@@ -337,7 +381,7 @@ export const elrodHouse: Scene = {
     {
       name: "Rachel Bennett",
       from: 420,
-      until: 1140,
+      until: 1080,
       excludesFlags: ["rachelMet"],
     },
   ],

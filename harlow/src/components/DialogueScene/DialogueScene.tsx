@@ -38,6 +38,8 @@ type DialogueSceneProps = {
    *  Receives how many lines are in the log, so a close-up armed for a later
    *  reply cannot open on an earlier settled beat. */
   onSettled?: (lineCount: number) => void;
+  /** The caller has no face: an empty frame, faint static, nameplate "—". */
+  staticCaller?: boolean;
 };
 
 // Ethan's own (already chosen) line steps aside on its own for the NPC reply.
@@ -92,6 +94,7 @@ export default function DialogueScene({
   choiceKey = "",
   onFinish,
   onSettled,
+  staticCaller = false,
 }: DialogueSceneProps) {
   const lines = toDialogueLines(entries);
   const reducedMotion = useReducedMotion();
@@ -291,9 +294,11 @@ export default function DialogueScene({
   return (
     <div ref={stageRef} className={styles.stage}>
       <div className={styles.cast} aria-hidden="true">
-        {partner && (
+        {(staticCaller || partner) && (
           <div
             className={`${styles.portrait} ${styles.partnerPortrait} ${
+              staticCaller ? styles.staticFrame : ""
+            } ${
               focus === "thought"
                 ? styles.portraitThought
                 : focus === "partner"
@@ -301,13 +306,17 @@ export default function DialogueScene({
                   : styles.portraitIdle
             }`}
           >
-            <Image
-              src={getPortrait(partner)}
-              alt=""
-              fill
-              sizes="(max-width: 640px) 45vw, 360px"
-              loading="eager"
-            />
+            {staticCaller ? (
+              <span className={styles.staticNoise} />
+            ) : (
+              <Image
+                src={getPortrait(partner ?? "Ethan")}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 45vw, 360px"
+                loading="eager"
+              />
+            )}
           </div>
         )}
         <div
@@ -335,14 +344,18 @@ export default function DialogueScene({
           line.speaker && focus !== "thought" ? "" : styles.boxNarration
         }`}
       >
-        {line.speaker && (
+        {(line.speaker || staticCaller) && (
           <div
-            key={`${lineIndex}-${line.speaker}`}
+            key={`${lineIndex}-${line.speaker ?? "caller"}`}
             className={`${styles.namePlate} ${speakerIsEthan ? styles.namePlateEthan : ""} ${
               focus === "thought" ? styles.namePlateThought : ""
             }`}
           >
-            {focus === "thought" ? "Ethan · Inner thought" : line.speaker}
+            {focus === "thought"
+              ? "Ethan · Inner thought"
+              : staticCaller && !speakerIsEthan
+                ? "—"
+                : line.speaker}
           </div>
         )}
 
