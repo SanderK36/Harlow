@@ -31,7 +31,15 @@ import { useReducedMotion } from "@/components/DialogueScene/typewriter";
 import { isNightTime } from "@/game/utils";
 import { isTiredWindow } from "@/game/lateNight";
 import { isQuestActive } from "@/game/quests";
-import { dayCardLine, homeNightWeather } from "@/game/chapter1";
+import {
+  CEMETERY_LUNCH,
+  cemeteryCrossVisible,
+  cemeteryLunchDue,
+  dayCardLine,
+  displayedClock,
+  emilyDayCount,
+  homeNightWeather,
+} from "@/game/chapter1";
 import { useGame } from "@/game/useGame";
 import { storyEntryApplies } from "@/game/story";
 import { DINER_BOARD_HINT, isExteriorScene, RAIN_WEATHER, sanatoriumNarration } from "@/game/scenes";
@@ -107,6 +115,7 @@ export default function Home() {
   );
   const showPlaytestControls = process.env.NODE_ENV !== "production" || playtestDebug;
   const [showProductionSplash, setShowProductionSplash] = useState(false);
+  const [mapNote, setMapNote] = useState<string | null>(null);
   // Index into OPENING_THOUGHTS while Ethan's first thoughts play, else null.
   const [openingThoughtIndex, setOpeningThoughtIndex] = useState<number | null>(null);
   const showOpeningThought = openingThoughtIndex !== null;
@@ -156,6 +165,7 @@ export default function Home() {
     showChapterEnd,
     dismissChapterEnd,
     storyFlags,
+    markCemeteryLunch,
     phonePhase,
     figureActive,
     catchEntrance,
@@ -401,9 +411,10 @@ export default function Home() {
     gameState.time,
     Boolean(storyFlags.nightCallClear),
   );
-  const displayGameState = displayWeather === gameState.weather
-    ? gameState
-    : { ...gameState, weather: displayWeather };
+  const displayGameState = {
+    ...(displayWeather === gameState.weather ? gameState : { ...gameState, weather: displayWeather }),
+    time: displayedClock(gameState.time, phonePhase !== null),
+  };
 
   // Rain follows the weather and whether Ethan is inside.
   // The intro film carries its own soundtrack, so the beds wait for it.
@@ -593,7 +604,17 @@ export default function Home() {
         Boolean(choice.leadQuest)
         && !quests.some((quest) => quest.id === choice.leadQuest)
       }
-      onOpenMap={() => setShowTravel(true)}
+      onOpenMap={() => {
+        const due = cemeteryLunchDue({
+          dayNumber: gameState.dayNumber,
+          time: gameState.time,
+          momTalked,
+          heard: Boolean(storyFlags.cemeteryLunchHeard),
+        });
+        setMapNote(due ? CEMETERY_LUNCH : null);
+        if (due) markCemeteryLunch();
+        setShowTravel(true);
+      }}
       mapButtonRef={mapButtonRef}
       canTravel={isExteriorScene(currentScene.id)}
       playerMoney={playerState.money}
@@ -641,8 +662,10 @@ export default function Home() {
     );
   }
 
+  const nightUi = isNightTime(gameState.time) && !textSettings.highContrast;
+
   return (
-    <main className="game">
+    <main className="game" data-night-ui={nightUi ? "on" : undefined}>
       {showProductionSplash && (
         <OpeningSequence
           dayOfWeek={gameState.dayOfWeek}
@@ -744,6 +767,7 @@ export default function Home() {
             {visual.interimRain && visualOutdoors && (
               <div className="scene-rain-glass" aria-hidden="true" />
             )}
+            {nightUi && <div className="night-scene-vignette" aria-hidden="true" />}
             {phonePhase && (
               <div className="phone-dim" aria-hidden="true">
                 <div className="phone-dim-hole" />
@@ -1036,11 +1060,21 @@ export default function Home() {
             availableIds={travelDestinations}
             money={playerState.money}
             night={isNightTime(gameState.time)}
+            openingThought={mapNote}
+            cemeteryCross={cemeteryCrossVisible({
+              dayNumber: gameState.dayNumber,
+              time: gameState.time,
+              momTalked,
+            })}
             onTravel={(choice) => {
               setShowTravel(false);
+              setMapNote(null);
               handleChoice(choice);
             }}
-            onClose={closeMap}
+            onClose={() => {
+              setMapNote(null);
+              closeMap();
+            }}
           />
         )}
 
@@ -1133,6 +1167,10 @@ export default function Home() {
           <DayCard
             line={dayCardLine(
               newDayAnnouncement.dayOfWeek,
+              newDayAnnouncement.currentMonth,
+              newDayAnnouncement.dayNumber,
+            )}
+            count={emilyDayCount(
               newDayAnnouncement.currentMonth,
               newDayAnnouncement.dayNumber,
             )}

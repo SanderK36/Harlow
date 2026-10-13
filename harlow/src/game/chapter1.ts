@@ -5,9 +5,9 @@ import {
   type QuestProgress,
   type StoryFlag,
 } from "@/game/quests";
-import { narration, ethan, type StoryEntry } from "@/game/story";
+import { narration, ethan, npc, type StoryEntry } from "@/game/story";
 import { shouldNoticeHill } from "@/game/hill";
-import type { Weather } from "@/game/types";
+import type { Month, Weather } from "@/game/types";
 
 /** Chapter 1 opens Saturday, October 2, 1982. Day 2 is Sunday, October 3. */
 export const OPENING_DAY_NUMBER = 2;
@@ -28,6 +28,38 @@ export function titleCardDate(dayOfWeek: string, month: string, dayNumber: numbe
 /** Full-screen morning card. "SUNDAY, OCTOBER 3, 1982". */
 export function dayCardLine(dayOfWeek: string, month: string, dayNumber: number) {
   return `${dayOfWeek}, ${month} ${dayNumber}, ${OPENING_YEAR}`.toUpperCase();
+}
+
+const MONTH_INDEX: Record<Month, number> = {
+  January: 0,
+  February: 1,
+  March: 2,
+  April: 3,
+  May: 4,
+  June: 5,
+  July: 6,
+  August: 7,
+  September: 8,
+  October: 9,
+  November: 10,
+  December: 11,
+};
+
+/** Emily vanished October 2, 1972. That date is day 0. */
+const EMILY_VANISHED_UTC = Date.UTC(1972, 9, 2);
+
+export function daysSinceEmilyVanished(month: Month, dayNumber: number, year = OPENING_YEAR) {
+  const then = Date.UTC(year, MONTH_INDEX[month], dayNumber);
+  return Math.round((then - EMILY_VANISHED_UTC) / 86_400_000);
+}
+
+function grouped(value: number) {
+  return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+/** "Day 3,652" under a title card. Counts up with the in-game date. */
+export function emilyDayCount(month: Month, dayNumber: number, year = OPENING_YEAR) {
+  return `Day ${grouped(daysSinceEmilyVanished(month, dayNumber, year))}`;
 }
 
 /** Calendar dayNumber 3 is Sunday, October 3 — chapter day 2. Later days stay open. */
@@ -86,6 +118,11 @@ export function isHomeScene(sceneId: string) {
 }
 
 export const NIGHT_CALL_MINUTE = 2 * 60;
+
+/** While the phone is ringing or being answered, the clock stays at 02:00. */
+export function displayedClock(time: number, phoneOpen: boolean) {
+  return phoneOpen ? NIGHT_CALL_MINUTE : time;
+}
 
 /**
  * The first night's 02:00 is Sunday morning (dayNumber 3).
@@ -234,6 +271,100 @@ export const FOLDER_CAUGHT_LINES: StoryEntry[] = [
   ethan("I was just–"),
   { type: "conversation", character: "Walter", text: "Out. Now." },
 ];
+
+export const FOLDER_SNOOP_PAUSE_MS = 1000;
+
+export const FOLDER_SNOOP_LINES: StoryEntry[] = [
+  {
+    type: "conversation",
+    character: "Walter",
+    text: "Your sister used to snoop too, kid.",
+    pauseAfter: FOLDER_SNOOP_PAUSE_MS,
+  },
+  { type: "conversation", character: "Walter", text: "Go home." },
+];
+
+export function folderSnoopDue(input: { caughtBefore: boolean; heard: boolean }) {
+  return input.caughtBefore && !input.heard;
+}
+
+export const LINDA_PHONE_LINES: StoryEntry[] = [
+  npc("Linda", "Did the phone ring last night? I dreamed it rang."),
+  ethan("Wrong number."),
+  npc("Linda", "At two in the morning?"),
+  npc("Linda", "...Lock the door when you go out, honey."),
+];
+
+/** Sunday morning in the kitchen, after the 02:00 call. Once. */
+export function lindaPhoneDue(input: {
+  sceneId: string;
+  dayNumber: number;
+  time: number;
+  heardCall: boolean;
+  heard: boolean;
+}) {
+  return (
+    input.sceneId === "kitchen"
+    && input.dayNumber === 3
+    && input.time >= 450
+    && input.time < 540
+    && input.heardCall
+    && !input.heard
+  );
+}
+
+export const RACHEL_DAY2_LINES: StoryEntry[] = [
+  npc("Rachel", "Couldn't sleep. Kept thinking I heard her gate."),
+  npc("Rachel", "It's been taped shut since Saturday, Ethan."),
+];
+
+/** First talk with Rachel on Sunday. Once. */
+export function rachelDay2Due(input: { dayNumber: number; heard: boolean }) {
+  return input.dayNumber === 3 && !input.heard;
+}
+
+export const MARGARET_DAY2_LINES: StoryEntry[] = [
+  npc("Margaret", "Sheriff says stay calm. So I'm calm. I'm calm with the shotgun under the register."),
+  npc("Margaret", "More coffee? It's the only thing in this town that's still hot."),
+];
+
+/** First talk with Margaret on Sunday. Once. */
+export function margaretDay2Due(input: { dayNumber: number; heard: boolean }) {
+  return input.dayNumber === 3 && !input.heard;
+}
+
+export const EARL_CASH_LINE =
+  "Don't look at me like that. Cash is cash. I'm not the one who asks questions in this town. That's Walter's job, and look how that's going.";
+
+/** The next time Earl is talked to after Room 6. Once. */
+export function earlCashDue(input: { room6Heard: boolean; heard: boolean }) {
+  return input.room6Heard && !input.heard;
+}
+
+export const CEMETERY_LUNCH =
+  "Sunday. Mom used to drag me to the cemetery after lunch. Somebody probably still goes.";
+
+/**
+ * Sunday after lunch, once, while the cemetery is on the map.
+ * That is the Sunday thread: Mom has been talked to, so the pin can open.
+ */
+export function cemeteryLunchDue(input: {
+  dayNumber: number;
+  time: number;
+  momTalked: boolean;
+  heard: boolean;
+}) {
+  return input.dayNumber === 3 && input.time >= 13 * 60 && input.momTalked && !input.heard;
+}
+
+/** Pencil cross beside the cemetery pin. Stays up for the rest of that afternoon. */
+export function cemeteryCrossVisible(input: {
+  dayNumber: number;
+  time: number;
+  momTalked: boolean;
+}) {
+  return input.dayNumber === 3 && input.time >= 13 * 60 && input.momTalked;
+}
 
 export const FOLDER_LOCKED_LINE = "Not a chance, kid.";
 export const FOLDER_RINGS_LINE = "His desk. Nothing on it but coffee rings.";

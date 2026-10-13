@@ -8,7 +8,15 @@ const HOLD_MS = 2000;
 const FADE_MS = 700;
 
 /** Full-screen morning line. Types on, holds, then fades. A hard cut when motion is reduced. */
-export default function DayCard({ line, onDone }: { line: string; onDone: () => void }) {
+export default function DayCard({
+  line,
+  count,
+  onDone,
+}: {
+  line: string;
+  count: string;
+  onDone: () => void;
+}) {
   const reduced = useReducedMotion();
   const [shown, setShown] = useState(reduced ? line.length : 0);
 
@@ -37,7 +45,10 @@ export default function DayCard({ line, onDone }: { line: string; onDone: () => 
       aria-live="polite"
       aria-labelledby="new-day-title"
     >
-      <h2 id="new-day-title">{line.slice(0, shown)}</h2>
+      <div>
+        <h2 id="new-day-title">{line.slice(0, shown)}</h2>
+        <p className="new-day-count">{count}</p>
+      </div>
     </div>
   );
 }

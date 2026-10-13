@@ -434,6 +434,36 @@
   line-height: 1.4;
 }
 
+/* Night paper on the scene caption. Off while high contrast is on. */
+.game[data-night-ui="on"] .scene-info-panel {
+  color: #2a1c14;
+  background: #d9cfb8;
+  border-color: rgba(70, 52, 32, 0.38);
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 248, 230, 0.45);
+}
+
+.game[data-night-ui="on"] .scene-info-panel::before {
+  background: linear-gradient(90deg, transparent, rgba(70, 48, 28, 0.45), transparent);
+}
+
+.game[data-night-ui="on"] .scene-info-panel .scene-caption-narration p,
+.game[data-night-ui="on"] .scene-caption-thought p {
+  color: #2a1c14;
+  text-shadow: none;
+}
+
+/* A light edge around the picture, about 12% black. */
+.night-scene-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: 14px;
+  background: radial-gradient(ellipse at center, transparent 52%, rgba(0, 0, 0, 0.12) 100%);
+  pointer-events: none;
+}
+
 /* The SCENE box never shrinks to dodge a hotspot. It moves, or it drops
    below the art. Narration grows in height; it is not clipped. */
 @media (min-width: 641px) {
@@ -535,6 +565,15 @@
   line-height: 1.25;
   text-align: center;
   text-transform: uppercase;
+}
+
+.new-day-count {
+  margin: 16px 0 0;
+  color: rgba(255, 244, 244, 0.82);
+  font-family: var(--font-typewriter);
+  font-size: clamp(13px, 1.6vw, 18px);
+  letter-spacing: 0.08em;
+  text-align: center;
 }
 
 /* Chapter end fades in and stays. The morning card uses new-day-screen,

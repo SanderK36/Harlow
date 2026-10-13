@@ -47,8 +47,19 @@ import {
   FIGURE_STAY,
   FIGURE_THOUGHT,
   flagsForConnections,
+  cemeteryLunchDue,
+  earlCashDue,
   folderLook,
+  folderSnoopDue,
   FOLDER_CAUGHT_LINES,
+  FOLDER_SNOOP_LINES,
+  lindaPhoneDue,
+  LINDA_PHONE_LINES,
+  margaretDay2Due,
+  MARGARET_DAY2_LINES,
+  rachelDay2Due,
+  RACHEL_DAY2_LINES,
+  EARL_CASH_LINE,
   hillDarkDue,
   hillPrintMissedDue,
   HILL_DARK_TONIGHT,
@@ -98,7 +109,7 @@ import {
   writeSessionSave,
 } from "@/game/save";
 import type { Choice, GameChoice } from "@/game/choices";
-import type { Conversation, ConversationChoice, StoryEntry } from "@/game/story";
+import { npc, type Conversation, type ConversationChoice, type StoryEntry } from "@/game/story";
 import {
   advanceGatePrint,
   completeQuest,
@@ -703,6 +714,11 @@ export function useGame() {
     }, wait);
   }
 
+  function markCemeteryLunch() {
+    if (storyFlagsRef.current.cemeteryLunchHeard) return;
+    applyFlags("cemeteryLunchHeard");
+  }
+
   function showHillPrintHint(sceneId: string, time: number, dayNumber: number) {
     const flags = storyFlagsRef.current;
     if (!hillPrintMissedDue({
@@ -1007,6 +1023,39 @@ export function useGame() {
       const gate = startTheGate(questsRef.current);
       if (gate.started) applyQuestHooks({ startsQuest: "the-gate" });
     }
+    let spoken = built.opening;
+    const heard = storyFlagsRef.current;
+    if (lindaPhoneDue({
+      sceneId: currentScene.id,
+      dayNumber: gameState.dayNumber,
+      time: gameState.time,
+      heardCall: Boolean(heard.nightCallHeard),
+      heard: Boolean(heard.lindaPhoneHeard),
+    })) {
+      spoken = [...LINDA_PHONE_LINES, ...spoken];
+      applyFlags("lindaPhoneHeard");
+    } else if (person === "rachel" && rachelDay2Due({
+      dayNumber: gameState.dayNumber,
+      heard: Boolean(heard.rachelDay2Talk),
+    })) {
+      spoken = [...RACHEL_DAY2_LINES, ...spoken];
+      applyFlags("rachelDay2Talk");
+    } else if (person === "margaret" && margaretDay2Due({
+      dayNumber: gameState.dayNumber,
+      heard: Boolean(heard.margaretShotgun),
+    })) {
+      spoken = [...MARGARET_DAY2_LINES, ...spoken];
+      applyFlags("margaretShotgun");
+    } else if (
+      currentScene.id === "motel-inside"
+      && earlCashDue({
+        room6Heard: Boolean(heard.room6Heard),
+        heard: Boolean(heard.earlCashHeard),
+      })
+    ) {
+      spoken = [npc("Earl", EARL_CASH_LINE)];
+      applyFlags("earlCashHeard");
+    }
     trustSpentRef.current = {};
 
     conversationActiveRef.current = true;
@@ -1015,7 +1064,7 @@ export function useGame() {
     setConversationEnding(false);
     setOpenedAsEmployee(asEmployee);
     setUsedConversationChoices([]);
-    setConversation(built.opening);
+    setConversation(spoken);
     setConversationActive(true);
   }
 
@@ -1410,11 +1459,16 @@ export function useGame() {
         gainedOnDayRef.current = nextTrust.gainedOnDay;
         setTrust(nextTrust.trust);
         setTrustGainedOnDay(nextTrust.gainedOnDay);
-        applyFlags("folderLockedToday");
+        const snoop = folderSnoopDue({
+          caughtBefore: Boolean(storyFlagsRef.current.folderCaught),
+          heard: Boolean(storyFlagsRef.current.folderSnoopHeard),
+        });
+        const caughtLines = snoop ? FOLDER_SNOOP_LINES : FOLDER_CAUGHT_LINES;
+        applyFlags(snoop ? ["folderSnoopHeard", "folderLockedToday"] : ["folderCaught", "folderLockedToday"]);
         setCatchEntrance(true);
         setConversationPerson("walter");
-        setActiveConversation({ opening: FOLDER_CAUGHT_LINES, choices: [] });
-        setConversation(FOLDER_CAUGHT_LINES);
+        setActiveConversation({ opening: caughtLines, choices: [] });
+        setConversation(caughtLines);
         setConversationEnding(true);
         setConversationActive(true);
         conversationActiveRef.current = true;
@@ -2165,6 +2219,7 @@ export function useGame() {
     jobQuestTarget,
     quests,
     storyFlags,
+    markCemeteryLunch,
     chapter,
     trust,
     metPeople,

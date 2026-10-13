@@ -279,6 +279,28 @@
   font-style: italic;
 }
 
+/* Night, 18:00–06:00: the box is darker paper. High contrast leaves this off. */
+:global(.game[data-night-ui="on"]) .box {
+  color: #2a1c14;
+  background: #d9cfb8;
+  border-color: rgba(70, 52, 32, 0.38);
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 248, 230, 0.45);
+}
+
+:global(.game[data-night-ui="on"]) .box::before {
+  background: linear-gradient(90deg, transparent, rgba(70, 48, 28, 0.45), transparent);
+}
+
+:global(.game[data-night-ui="on"]) .line {
+  text-shadow: none;
+}
+
+:global(.game[data-night-ui="on"]) .lineNarration {
+  color: #3a2a20;
+}
+
 .unrevealed {
   color: transparent;
   text-shadow: none;

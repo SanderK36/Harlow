@@ -206,6 +206,14 @@
   overflow-wrap: break-word;
 }
 
+.handScript {
+  font-family: var(--font-handwriting);
+  font-size: 22px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
 .pages {
   flex: 1 1 auto;
   min-height: 0;

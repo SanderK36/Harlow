@@ -6,14 +6,15 @@ import { preload } from "react-dom";
 import styles from "./OpeningSequence.module.css";
 import { useReducedMotion } from "@/components/DialogueScene/typewriter";
 import Prologue from "@/components/Prologue/Prologue";
-import { sidePanelDate, titleCardDate } from "@/game/chapter1";
+import { emilyDayCount, sidePanelDate, titleCardDate } from "@/game/chapter1";
+import type { Month } from "@/game/types";
 import { PROLOGUE_IMAGES } from "@/game/prologue";
 
 type OpeningSequenceProps = {
   /** e.g. "Monday" */
   dayOfWeek: string;
   /** e.g. "October" */
-  month: string;
+  month: Month;
   dayNumber: number;
   /** Minutes after midnight. */
   time: number;
@@ -167,6 +168,7 @@ export default function OpeningSequence({
   }
   const cornerDate = sidePanelDate(dayOfWeek, month, dayNumber);
   const date = titleCardDate(dayOfWeek, month, dayNumber);
+  const since = emilyDayCount(month, dayNumber);
 
   return (
     <div
@@ -226,7 +228,7 @@ export default function OpeningSequence({
       {phase === "prologue" && <Prologue onDone={() => setPhase("title")} />}
 
       {(phase === "title" || phase === "titleOut") && (
-        <div className={styles.titleCard} role="status" aria-label={`Harlow. ${date}, ${formatClock(time)}, ${location}.`}>
+        <div className={styles.titleCard} role="status" aria-label={`Harlow. ${date}. ${since}. ${formatClock(time)}, ${location}.`}>
           <p className={styles.cornerDate}>{cornerDate}</p>
           <div className={styles.rain} aria-hidden="true" />
           <div className={styles.vignette} aria-hidden="true" />
@@ -234,6 +236,7 @@ export default function OpeningSequence({
             <h1 className={styles.title}>Harlow</h1>
             <span className={styles.rule} />
             <p className={styles.date}>{date}</p>
+            <p className={styles.since}>{since}</p>
             <p className={styles.place}>
               {formatClock(time)}
               <span className={styles.dot}>·</span>

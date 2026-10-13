@@ -163,6 +163,15 @@
   animation: lineIn 1100ms ease 1500ms both;
 }
 
+.since {
+  margin: 12px 0 0;
+  color: rgba(232, 214, 196, 0.8);
+  font-family: var(--font-typewriter);
+  font-size: clamp(12px, 1.35vw, 16px);
+  letter-spacing: 0.08em;
+  animation: lineIn 1100ms ease 1750ms both;
+}
+
 .place {
   margin: 12px 0 0;
   color: rgba(236, 214, 206, 0.78);

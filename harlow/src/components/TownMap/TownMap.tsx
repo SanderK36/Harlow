@@ -23,6 +23,10 @@ type TownMapProps = {
   availableIds: readonly string[];
   money: number;
   night: boolean;
+  /** Shown once when the map opens. */
+  openingThought?: string | null;
+  /** Pencil cross beside the cemetery pin. No label. */
+  cemeteryCross?: boolean;
   onTravel: (choice: Choice) => void;
   onClose: () => void;
 };
@@ -83,6 +87,8 @@ export default function TownMap({
   availableIds,
   money,
   night,
+  openingThought = null,
+  cemeteryCross = false,
   onTravel,
   onClose,
 }: TownMapProps) {
@@ -93,7 +99,7 @@ export default function TownMap({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
-  const [thought, setThought] = useState<string | null>(null);
+  const [thought, setThought] = useState<string | null>(openingThought);
 
   const pins = mapPinViews({
     originId,
@@ -251,6 +257,26 @@ export default function TownMap({
                     }
                     onClick={(event) => activate(pin, event)}
                   >
+                    {pin.id === "cementary" && cemeteryCross && (
+                      <span className={styles.pencilCross} aria-hidden="true">
+                        <svg viewBox="0 0 16 16">
+                          <path
+                            d="M8.2 1.6c.3 2.1-.4 4.2.1 6.4.4 2.1-.2 4.2.2 6.2"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.35"
+                            strokeLinecap="round"
+                          />
+                          <path
+                            d="M2.4 7.2c2.2.4 4.1-.3 6.2.2 2 .4 3.6-.1 5.2.5"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.35"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </span>
+                    )}
                     <PinGlyph here={pin.here} closed={!pin.open && !pin.here} />
                     <span className={`${styles.name} ${nameClass(pin.labelSide)}`}>{pin.label}</span>
                     {pin.here && <span className={styles.hereLabel}>You are here</span>}

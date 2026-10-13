@@ -3,7 +3,23 @@ import { describe, it } from "node:test";
 
 import { conversationChoiceVisible } from "./conversationChoices.ts";
 import {
+  CEMETERY_LUNCH,
+  cemeteryCrossVisible,
+  cemeteryLunchDue,
   dayCardLine,
+  daysSinceEmilyVanished,
+  displayedClock,
+  EARL_CASH_LINE,
+  earlCashDue,
+  emilyDayCount,
+  FOLDER_SNOOP_LINES,
+  folderSnoopDue,
+  LINDA_PHONE_LINES,
+  lindaPhoneDue,
+  MARGARET_DAY2_LINES,
+  margaretDay2Due,
+  RACHEL_DAY2_LINES,
+  rachelDay2Due,
   daytimeFigureDue,
   emilyDoorAjarDue,
   endingFrames,
@@ -96,6 +112,88 @@ describe("opening date", () => {
     assert.equal(sidePanelDate("Saturday", "October", 2), "Saturday, October 2");
     assert.equal(titleCardDate("Saturday", "October", 2), "Saturday, October 2, 1982");
     assert.equal(dayCardLine("Sunday", "October", 3), "SUNDAY, OCTOBER 3, 1982");
+  });
+
+  it("counts the days since Emily vanished, with October 2 1972 as day 0", () => {
+    assert.equal(daysSinceEmilyVanished("October", 2), 3652);
+    assert.equal(daysSinceEmilyVanished("October", 3), 3653);
+    assert.equal(emilyDayCount("October", 2), "Day 3,652");
+    assert.equal(emilyDayCount("October", 3), "Day 3,653");
+    assert.equal(daysSinceEmilyVanished("October", 4), 3654);
+  });
+});
+
+describe("flavour lines", () => {
+  it("has Linda ask about the phone on Sunday morning in the kitchen", () => {
+    const due = {
+      sceneId: "kitchen",
+      dayNumber: 3,
+      time: 8 * 60,
+      heardCall: true,
+      heard: false,
+    };
+    assert.equal(lindaPhoneDue(due), true);
+    assert.equal(lindaPhoneDue({ ...due, heardCall: false }), false);
+    assert.equal(lindaPhoneDue({ ...due, sceneId: "living-room" }), false);
+    assert.equal(lindaPhoneDue({ ...due, time: 14 * 60 }), false);
+    assert.equal(lindaPhoneDue({ ...due, heard: true }), false);
+    assert.deepEqual(LINDA_PHONE_LINES.map((line) => line.type === "conversation" ? line.text : ""), [
+      "Did the phone ring last night? I dreamed it rang.",
+      "Wrong number.",
+      "At two in the morning?",
+      "...Lock the door when you go out, honey.",
+    ]);
+  });
+
+  it("gives Rachel and Margaret one Sunday talk, and Earl the visit after Room 6", () => {
+    assert.equal(rachelDay2Due({ dayNumber: 3, heard: false }), true);
+    assert.equal(rachelDay2Due({ dayNumber: 2, heard: false }), false);
+    assert.equal(RACHEL_DAY2_LINES[0]?.type === "conversation" && RACHEL_DAY2_LINES[0].text, "Couldn't sleep. Kept thinking I heard her gate.");
+    assert.equal(RACHEL_DAY2_LINES[1]?.type === "conversation" && RACHEL_DAY2_LINES[1].text, "It's been taped shut since Saturday, Ethan.");
+    assert.equal(margaretDay2Due({ dayNumber: 3, heard: false }), true);
+    assert.equal(margaretDay2Due({ dayNumber: 3, heard: true }), false);
+    assert.equal(
+      MARGARET_DAY2_LINES[0]?.type === "conversation" && MARGARET_DAY2_LINES[0].text,
+      "Sheriff says stay calm. So I'm calm. I'm calm with the shotgun under the register.",
+    );
+    assert.equal(
+      MARGARET_DAY2_LINES[1]?.type === "conversation" && MARGARET_DAY2_LINES[1].text,
+      "More coffee? It's the only thing in this town that's still hot.",
+    );
+    assert.equal(earlCashDue({ room6Heard: true, heard: false }), true);
+    assert.equal(earlCashDue({ room6Heard: false, heard: false }), false);
+    assert.equal(earlCashDue({ room6Heard: true, heard: true }), false);
+    assert.equal(
+      EARL_CASH_LINE,
+      "Don't look at me like that. Cash is cash. I'm not the one who asks questions in this town. That's Walter's job, and look how that's going.",
+    );
+  });
+
+  it("changes Walter's line the second time he catches Ethan at the folder", () => {
+    assert.equal(folderSnoopDue({ caughtBefore: false, heard: false }), false);
+    assert.equal(folderSnoopDue({ caughtBefore: true, heard: false }), true);
+    assert.equal(folderSnoopDue({ caughtBefore: true, heard: true }), false);
+    assert.equal(FOLDER_SNOOP_LINES[0]?.type === "conversation" && FOLDER_SNOOP_LINES[0].text, "Your sister used to snoop too, kid.");
+    assert.equal(FOLDER_SNOOP_LINES[0]?.type === "conversation" && FOLDER_SNOOP_LINES[0].pauseAfter, 1000);
+    assert.equal(FOLDER_SNOOP_LINES[1]?.type === "conversation" && FOLDER_SNOOP_LINES[1].text, "Go home.");
+  });
+
+  it("mentions the cemetery on the Sunday map after lunch, once", () => {
+    const due = { dayNumber: 3, time: 13 * 60, momTalked: true, heard: false };
+    assert.equal(cemeteryLunchDue(due), true);
+    assert.equal(cemeteryLunchDue({ ...due, time: 12 * 60 + 59 }), false);
+    assert.equal(cemeteryLunchDue({ ...due, momTalked: false }), false);
+    assert.equal(cemeteryLunchDue({ ...due, heard: true }), false);
+    assert.equal(cemeteryLunchDue({ ...due, dayNumber: 4 }), false);
+    assert.equal(CEMETERY_LUNCH, "Sunday. Mom used to drag me to the cemetery after lunch. Somebody probably still goes.");
+    assert.equal(cemeteryCrossVisible({ dayNumber: 3, time: 13 * 60, momTalked: true }), true);
+    assert.equal(cemeteryCrossVisible({ dayNumber: 3, time: 13 * 60, momTalked: false }), false);
+  });
+
+  it("holds the clock at 02:00 until the phone call is finished", () => {
+    assert.equal(displayedClock(7 * 60, true), 2 * 60);
+    assert.equal(displayedClock(2 * 60, true), 2 * 60);
+    assert.equal(displayedClock(7 * 60, false), 7 * 60);
   });
 });
 

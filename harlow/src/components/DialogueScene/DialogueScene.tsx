@@ -22,6 +22,7 @@ import { prefersReducedMotion, revealDelay, useReducedMotion, useSeenLine } from
 type DialogueLine = {
   speaker: string | null;
   text: string;
+  pauseAfter?: number;
 };
 
 type DialogueSceneProps = {
@@ -54,7 +55,7 @@ export function closingReadTime(text: string) {
 function toDialogueLines(entries: StoryEntry[]): DialogueLine[] {
   return entries.flatMap((entry): DialogueLine[] => {
     if (entry.type === "conversation") {
-      return [{ speaker: entry.character, text: entry.text }];
+      return [{ speaker: entry.character, text: entry.text, pauseAfter: entry.pauseAfter }];
     }
     if (entry.type === "narration") {
       return [{ speaker: null, text: entry.text }];
@@ -178,13 +179,16 @@ export default function DialogueScene({
   // Ethan's line has already been chosen by the player; once it has been
   // spoken, move on to the queued reply without asking for another click.
   useEffect(() => {
-    if (!active || !lineComplete || !hasQueuedLines || !speakerIsEthan) return;
+    if (!active || !lineComplete || !hasQueuedLines) return;
+    const held = line?.pauseAfter;
+    if (!speakerIsEthan && held == null) return;
+    const delay = reducedMotion ? 0 : held ?? ETHAN_AUTO_ADVANCE;
     const timer = window.setTimeout(() => {
       setCursor(lineIndex + 1);
       setRevealed(0);
-    }, reducedMotion ? 0 : ETHAN_AUTO_ADVANCE);
+    }, delay);
     return () => window.clearTimeout(timer);
-  }, [active, hasQueuedLines, lineComplete, lineIndex, reducedMotion, speakerIsEthan]);
+  }, [active, hasQueuedLines, lineComplete, lineIndex, line?.pauseAfter, reducedMotion, speakerIsEthan]);
 
   // A closing choice whose last line is Ethan's own leaves on its own, the
   // same way his chosen lines step aside for a reply.
@@ -289,7 +293,7 @@ export default function DialogueScene({
 
   if (!line) return null;
 
-  const awaitingContinue = lineComplete && hasQueuedLines && !speakerIsEthan;
+  const awaitingContinue = lineComplete && hasQueuedLines && !speakerIsEthan && line?.pauseAfter == null;
 
   return (
     <div ref={stageRef} className={styles.stage}>

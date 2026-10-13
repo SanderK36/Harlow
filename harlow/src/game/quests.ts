@@ -115,6 +115,20 @@ export type StoryFlag =
   | "room6Heard"
   /** Walter walked in on the folder. Locked until the next day. */
   | "folderLockedToday"
+  /** He has been caught at the folder at least once. */
+  | "folderCaught"
+  /** The second time Walter caught him. */
+  | "folderSnoopHeard"
+  /** Linda asked about the 02:00 call, Sunday morning. */
+  | "lindaPhoneHeard"
+  /** Rachel's first talk on Sunday. */
+  | "rachelDay2Talk"
+  /** Margaret, once on Sunday. */
+  | "margaretShotgun"
+  /** Earl, the visit after Room 6. */
+  | "earlCashHeard"
+  /** Sunday afternoon map, once. */
+  | "cemeteryLunchHeard"
   /** Rachel bought one look at the folder. */
   | "rachelFolderCover"
   | "oldFriendsDone"

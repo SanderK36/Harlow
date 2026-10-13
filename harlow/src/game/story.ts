@@ -24,6 +24,8 @@ export type StoryEntry =
       type: "conversation";
       character: string;
       text: string;
+      /** Hold after this line, then show the next without a click. */
+      pauseAfter?: number;
     }
   | {
       type: "effect";
