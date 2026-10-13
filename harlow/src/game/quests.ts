@@ -115,7 +115,15 @@ export type StoryFlag =
   | "folderLockedToday"
   /** Rachel bought one look at the folder. */
   | "rachelFolderCover"
-  | "oldFriendsDone";
+  | "oldFriendsDone"
+  /** Sunday night, upstairs. Her door is open. Locks nothing. */
+  | "emilyDoorAjar"
+  /** The music-box lid line, once, after the door. */
+  | "emilyMusicBoxLid"
+  /** He went inside the sanatorium. The gravel walk home never plays. */
+  | "sanatoriumEntered"
+  /** Footsteps on the road home, once. */
+  | "gravelFootsteps";
 
 export type QuestDef = {
   id: QuestId;

@@ -5,14 +5,17 @@ import { conversationChoiceVisible } from "./conversationChoices.ts";
 import {
   dayCardLine,
   daytimeFigureDue,
+  emilyDoorAjarDue,
   endingFrames,
   endingThoughts,
   folderLook,
+  gravelWalkDue,
   hillDarkDue,
   homeNightWeather,
   isHomeScene,
   nightCallRings,
   porchNeedlesDue,
+  PINE_NEEDLE_LINES,
   rachelDrawn,
   sidePanelDate,
   syncChapterQuests,
@@ -277,6 +280,43 @@ describe("optional quests", () => {
   });
 });
 
+describe("night two and the road home", () => {
+  it("uses the porch line about the steps", () => {
+    assert.equal(PINE_NEEDLE_LINES[1], "Nobody walks up our steps from the woods.");
+  });
+
+  it("opens Emily's door once, upstairs, after 20:00 on day 2", () => {
+    const due = {
+      sceneId: "hallway-upstairs",
+      dayNumber: 3,
+      time: 20 * 60,
+      seen: false,
+    };
+    assert.equal(emilyDoorAjarDue(due), true);
+    assert.equal(emilyDoorAjarDue({ ...due, time: 20 * 60 - 1 }), false);
+    assert.equal(emilyDoorAjarDue({ ...due, dayNumber: 2 }), false);
+    assert.equal(emilyDoorAjarDue({ ...due, dayNumber: 4 }), false);
+    assert.equal(emilyDoorAjarDue({ ...due, sceneId: "emily-room" }), false);
+    assert.equal(emilyDoorAjarDue({ ...due, seen: true }), false);
+  });
+
+  it("plays gravel footsteps only on the way home before he goes in", () => {
+    const home = {
+      fromScene: "sanatorium",
+      toScene: "front-yard",
+      hillActive: true,
+      entered: false,
+      heard: false,
+    };
+    assert.equal(gravelWalkDue(home), true);
+    assert.equal(gravelWalkDue({ ...home, entered: true }), false);
+    assert.equal(gravelWalkDue({ ...home, heard: true }), false);
+    assert.equal(gravelWalkDue({ ...home, hillActive: false }), false);
+    assert.equal(gravelWalkDue({ ...home, fromScene: "sanatorium-entrance" }), false);
+    assert.equal(gravelWalkDue({ ...home, toScene: "diner" }), false);
+  });
+});
+
 describe("ending order", () => {
   it("puts the hair tie, then the figure, then one line per optional clue", () => {
     const frames = endingFrames([
@@ -288,7 +328,7 @@ describe("ending order", () => {
       "trail-up-the-hill",
     ]);
     assert.deepEqual(frames.map((frame) => frame.thought), [
-      "Next to the cigarette. A hair tie. Little blue flowers.",
+      "Next to the cigarette. A hair tie. Pink, little flowers.",
       "That's hers.",
       "Ten years. Somebody kept it ten years.",
       "Someone's here.",

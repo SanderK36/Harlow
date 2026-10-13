@@ -39,6 +39,9 @@ import {
 import { plateUrl, sceneWeatherPlate } from "@/game/scenePlate";
 import {
   daytimeFigureDue,
+  emilyDoorAjarDue,
+  EMILY_BOX_THOUGHT,
+  EMILY_DOOR_THOUGHT,
   endingFrames,
   FIGURE_FOLLOW,
   FIGURE_STAY,
@@ -48,6 +51,11 @@ import {
   FOLDER_CAUGHT_LINES,
   hillDarkDue,
   HILL_DARK_TONIGHT,
+  GRAVEL_LINE_MS,
+  GRAVEL_LINES,
+  GRAVEL_TAIL_MS,
+  gravelWalkDue,
+  HILL_LIGHT_OUT,
   nightCallRings,
   PHONE_ANSWER_LINES,
   PHONE_ANSWER_THOUGHT,
@@ -330,6 +338,8 @@ export function useGame() {
   const [phonePhase, setPhonePhase] = useState<null | "ring" | "talk">(null);
   const [figureActive, setFigureActive] = useState(false);
   const [catchEntrance, setCatchEntrance] = useState(false);
+  const [gravelHold, setGravelHold] = useState(false);
+  const gravelTimers = useRef<number[]>([]);
   const [trust, setTrust] = useState<TrustMap>(() => migrateTrust(sessionSave));
   const trustRef = useRef(trust);
   trustRef.current = trust;
@@ -704,6 +714,16 @@ export function useGame() {
       setCurrentThought(HILL_DARK_TONIGHT);
       return;
     }
+    if (emilyDoorAjarDue({
+      sceneId,
+      dayNumber,
+      time,
+      seen: Boolean(flags.emilyDoorAjar),
+    })) {
+      applyFlags("emilyDoorAjar");
+      setCurrentThought(EMILY_DOOR_THOUGHT);
+      return;
+    }
     if (daytimeFigureDue({
       sceneId,
       dayNumber,
@@ -715,6 +735,29 @@ export function useGame() {
       setFigureActive(true);
       setCurrentThought(FIGURE_THOUGHT);
     }
+  }
+
+  function clearGravel() {
+    for (const id of gravelTimers.current) window.clearTimeout(id);
+    gravelTimers.current = [];
+    harlowAudio().stopFootsteps();
+    setGravelHold(false);
+  }
+
+  function beginGravel() {
+    clearGravel();
+    applyFlags("gravelFootsteps");
+    setGravelHold(true);
+    setCurrentThought(GRAVEL_LINES[0]);
+    harlowAudio().loopFootsteps();
+    gravelTimers.current = [
+      window.setTimeout(() => setCurrentThought(GRAVEL_LINES[1]), GRAVEL_LINE_MS),
+      window.setTimeout(() => {
+        setCurrentThought(GRAVEL_LINES[2]);
+        setGravelHold(false);
+      }, GRAVEL_LINE_MS * 2),
+      window.setTimeout(() => harlowAudio().stopFootsteps(), GRAVEL_LINE_MS * 2 + GRAVEL_TAIL_MS),
+    ];
   }
 
   function advanceTime(
@@ -779,6 +822,19 @@ export function useGame() {
         ),
     );
     if (hillNow) openHillQuest();
+    const stayed = !destinationSceneId || destinationSceneId === currentScene.id;
+    if (
+      stayed
+      && emilyDoorAjarDue({
+        sceneId: currentScene.id,
+        dayNumber: played.dayNumber,
+        time: played.time,
+        seen: Boolean(storyFlagsRef.current.emilyDoorAjar),
+      })
+    ) {
+      applyFlags("emilyDoorAjar");
+      setCurrentThought(EMILY_DOOR_THOUGHT);
+    }
 
     return played;
   }
@@ -1180,11 +1236,20 @@ export function useGame() {
       rainy: RAIN_WEATHER.includes(gameState.weather),
     });
 
+    const originId = currentScene.id;
     window.setTimeout(() => {
       const nextGameState = advanceTime(choice.timeCost, false, false, choice.nextScene);
+      const gravel = gravelWalkDue({
+        fromScene: originId,
+        toScene: choice.nextScene,
+        hillActive: isQuestActive(questsRef.current, "light-on-the-hill"),
+        entered: Boolean(storyFlagsRef.current.sanatoriumEntered),
+        heard: Boolean(storyFlagsRef.current.gravelFootsteps),
+      }) && !phoneIntercept.current;
       moveToScene(choice.nextScene, nextGameState.time, nextGameState.weather, nextGameState.dayOfWeek, {
-        footsteps: true,
+        footsteps: !gravel,
       });
+      if (gravel) beginGravel();
       applyChoiceEffects(choice);
       setTravelingTo(null);
     }, TRAVEL_DURATION);
@@ -1365,6 +1430,10 @@ export function useGame() {
     }
 
     if (choice.closeup) {
+      const lid = choice.action === "lookAtEmilyMusicBox"
+        && storyFlagsRef.current.emilyDoorAjar
+        && !storyFlagsRef.current.emilyMusicBoxLid;
+      if (lid) applyFlags("emilyMusicBoxLid");
       enqueueCloseup(
         {
           image: plateUrl(
@@ -1373,10 +1442,13 @@ export function useGame() {
               : choice.closeup.image,
           ),
           video: choice.closeup.video ? plateUrl(choice.closeup.video) : undefined,
-          thought: choice.closeup.thought,
+          thought: lid ? EMILY_BOX_THOUGHT : choice.closeup.thought,
           label: choice.closeup.label,
           disableWeatherFilter: choice.closeup.disableWeatherFilter,
           inscriptions: choice.closeup.inscriptions,
+          windowLight: choice.action === "lookAtSanatoriumHill"
+            ? { thought: HILL_LIGHT_OUT }
+            : undefined,
         },
         choice.closeup.next
           ? {
@@ -1441,6 +1513,7 @@ export function useGame() {
     }
 
     if (choice.action === "enterSanatorium") {
+      applyFlags("sanatoriumEntered");
       if (!hasFlag("sanatoriumEntranceFear")) {
         applyFlags("sanatoriumEntranceFear");
         setPlayerState((previous) => applyEffects(previous, { fear: 10 }));
@@ -1767,6 +1840,7 @@ export function useGame() {
     phoneIntercept.current = false;
     phoneResumeSleep.current = false;
     phoneMorning.current = null;
+    clearGravel();
     return true;
   }
 
@@ -1853,6 +1927,7 @@ export function useGame() {
     phoneIntercept.current = false;
     phoneResumeSleep.current = false;
     phoneMorning.current = null;
+    clearGravel();
     dayRef.current = freshGameState.dayNumber;
 
     return writeSessionSave({
@@ -1931,13 +2006,14 @@ export function useGame() {
       : figureActive
         ? FIGURE_CHOICES
         : currentScene.choices.filter(sceneChoiceListed);
+  const choicesWhileGravel = gravelHold ? [] : activeChoices;
 
   const askTopics = conversationActive && conversationPerson
     ? askTopicsFor(conversationPerson, clues, clueConnections)
     : [];
   const choicesForScene = conversationActive && !replyPending && !conversationEnding && askTopics.length > 0
-    ? [...activeChoices, { label: ASK_ABOUT_LABEL, response: [] as StoryEntry[], repeatable: true }]
-    : activeChoices;
+    ? [...choicesWhileGravel, { label: ASK_ABOUT_LABEL, response: [] as StoryEntry[], repeatable: true }]
+    : choicesWhileGravel;
 
   function acknowledgeClues() {
     setCluesSeen(cluesRef.current);
@@ -2031,14 +2107,17 @@ export function useGame() {
     gameState,
     playerState,
     currentScene,
-    currentThought: presentedThought({
-      lateNight: isLateNight(),
-      momTalked,
-      sceneId: currentScene.id,
-      dayNumber: gameState.dayNumber,
-      openingDay: initialGameState.dayNumber,
-      thought: currentThought,
-    }),
+    currentThought: (GRAVEL_LINES as readonly string[]).includes(currentThought ?? "")
+      || currentThought === EMILY_DOOR_THOUGHT
+      ? currentThought
+      : presentedThought({
+        lateNight: isLateNight(),
+        momTalked,
+        sceneId: currentScene.id,
+        dayNumber: gameState.dayNumber,
+        openingDay: initialGameState.dayNumber,
+        thought: currentThought,
+      }),
     currentEffects,
     lateNightActionThought,
     newDayAnnouncement,

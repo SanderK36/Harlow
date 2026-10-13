@@ -91,6 +91,8 @@ class HarlowAudio {
   private listeners = new Set<Listener>();
   private lastHover = 0;
   private doorSource: AudioBufferSourceNode | null = null;
+  private footSource: AudioBufferSourceNode | null = null;
+  private footToken = 0;
   private clipCache = new Map<string, AudioBuffer>();
   private clipMiss = new Set<string>();
   private clipLoading = new Map<string, Promise<AudioBuffer | null>>();
@@ -182,6 +184,36 @@ class HarlowAudio {
       return;
     }
     this.playFile(SFX_FILES[name], SFX_LEVEL[name]);
+  }
+
+  /** Gravel behind Ethan. loops footsteps.mp3 until stopFootsteps. */
+  loopFootsteps() {
+    const token = ++this.footToken;
+    const context = this.ready();
+    if (!context || !this.sfx) return;
+    void this.loadClip(SFX_FILES.footsteps).then((buffer) => {
+      if (token !== this.footToken || !buffer || !this.sfx || !this.context) return;
+      this.footSource?.stop();
+      const source = this.context.createBufferSource();
+      source.buffer = buffer;
+      source.loop = true;
+      const gain = this.context.createGain();
+      gain.gain.value = SFX_LEVEL.footsteps;
+      source.connect(gain).connect(this.sfx);
+      source.start();
+      this.footSource = source;
+    });
+  }
+
+  stopFootsteps() {
+    this.footToken += 1;
+    const source = this.footSource;
+    this.footSource = null;
+    try {
+      source?.stop();
+    } catch {
+      // Already stopped.
+    }
   }
 
   /**

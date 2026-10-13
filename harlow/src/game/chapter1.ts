@@ -147,7 +147,7 @@ export function homeNightWeather(
 
 export const PINE_NEEDLE_LINES = [
   "Pine needles. In the mud by our door.",
-  "No pines on our street.",
+  "Nobody walks up our steps from the woods.",
 ] as const;
 
 /** First front-yard visit on Sunday morning. Later days do not catch up. */
@@ -259,7 +259,7 @@ export function flagsForConnections(
 }
 
 export const HAIR_TIE_THOUGHTS = [
-  "Next to the cigarette. A hair tie. Little blue flowers.",
+  "Next to the cigarette. A hair tie. Pink, little flowers.",
   "That's hers.",
   "Ten years. Somebody kept it ten years.",
 ] as const;
@@ -326,4 +326,62 @@ export function endingFrames(clues: readonly ClueId[]): EndingFrame[] {
 
 export function connectionStartsOldFriends(id: ClueConnectionId) {
   return id === "walt-parker";
+}
+
+export const EMILY_DOOR_THOUGHT = "Her door's open. I closed it.";
+export const EMILY_BOX_THOUGHT = "The lid's up. Somebody opened it and didn't wind it.";
+
+const UPSTAIRS_HALLS = new Set(["hallway-upstairs", "hallway-upstairs-attic-open"]);
+
+/**
+ * Night 2 is Sunday after 20:00 (dayNumber 3). The upstairs hall only.
+ * Later nights do not catch up. Seeing the door locks nothing.
+ */
+export function emilyDoorAjarDue(input: {
+  sceneId: string;
+  dayNumber: number;
+  time: number;
+  seen: boolean;
+}) {
+  return (
+    UPSTAIRS_HALLS.has(input.sceneId)
+    && input.dayNumber === 3
+    && input.time >= 20 * 60
+    && !input.seen
+  );
+}
+
+export const HILL_LIGHT_OUT = "It went out. Like it saw me looking.";
+/** The glow stays lit, then cuts. The thought follows half a second later. */
+export const HILL_LIGHT_ON_MS = 2000;
+export const HILL_LIGHT_THOUGHT_DELAY_MS = 500;
+
+export const GRAVEL_LINES = [
+  "Footsteps. Behind me, in the gravel.",
+  "They stop when I stop.",
+  "Don't turn around. Just walk.",
+] as const;
+
+export const GRAVEL_LINE_MS = 2600;
+/** Footsteps keep going a moment after the last line, then stop. */
+export const GRAVEL_TAIL_MS = 1600;
+
+/**
+ * First trip home from the sanatorium road, while Light on the Hill is still
+ * active, if he has not gone inside. Going in skips this for good.
+ */
+export function gravelWalkDue(input: {
+  fromScene: string;
+  toScene: string;
+  hillActive: boolean;
+  entered: boolean;
+  heard: boolean;
+}) {
+  return (
+    input.fromScene === "sanatorium"
+    && input.toScene === "front-yard"
+    && input.hillActive
+    && !input.entered
+    && !input.heard
+  );
 }
