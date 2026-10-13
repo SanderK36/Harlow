@@ -1446,6 +1446,9 @@ export function useGame() {
           label: choice.closeup.label,
           disableWeatherFilter: choice.closeup.disableWeatherFilter,
           inscriptions: choice.closeup.inscriptions,
+          fallbackImage: choice.closeup.fallbackImage
+            ? plateUrl(choice.closeup.fallbackImage)
+            : undefined,
           windowLight: choice.action === "lookAtSanatoriumHill"
             ? { thought: HILL_LIGHT_OUT }
             : undefined,

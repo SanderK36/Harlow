@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 import { isChoiceAvailable, type ChoiceContext } from "./choiceAvailability.ts";
 import {
   CLUE_DEFS,
+  EMILY_STONE_INSCRIPTION,
   EMILY_THOUGHTS,
   NEWSPAPER,
   WRONG_CONNECTION_LINES,
@@ -39,7 +40,7 @@ import {
 import { attic, emilyRoom, momConversation } from "./scene/home.ts";
 import { elrodBackyard, frontYard, rachelFrontYardConversation } from "./scene/outdoors.ts";
 import { sanatoriumRoom2 } from "./scene/sanatorium.ts";
-import { sheriffOffice, walterConversation } from "./scene/town.ts";
+import { cementaryInside, sheriffOffice, walterConversation } from "./scene/town.ts";
 import { defaultTrust, type TrustMap } from "./trust.ts";
 import type { GameState } from "./types.ts";
 
@@ -559,5 +560,14 @@ describe("chapter finds", () => {
       }),
       false,
     );
+  });
+
+  it("carves Emily's name onto the stone plate, and onto the fallback plate", () => {
+    const stone = cementaryInside.choices.find((choice) => choice.action === "lookAtEmilyStone");
+    assert.equal(stone?.closeup?.image, "./images/locations/cemetery/emilyStone.png");
+    assert.equal(stone?.closeup?.fallbackImage, "./images/locations/cemetery/cemeteryInsideDay.png");
+    assert.equal(stone?.closeup?.inscriptions?.[0]?.text, "EMILY PARKER · 1955 –");
+    assert.equal(stone?.closeup?.inscriptions?.[0]?.kind, "engraved");
+    assert.equal(stone?.closeup?.inscriptions?.[0], EMILY_STONE_INSCRIPTION);
   });
 });

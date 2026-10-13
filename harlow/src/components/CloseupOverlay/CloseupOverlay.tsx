@@ -22,6 +22,8 @@ export type CloseupContent = {
   inscriptions?: Inscription[];
   /** Two crops, side by side. The thought stays under the frame. */
   split?: { left: string; right: string };
+  /** Used when `image` is not on disk yet. The overlay stays. */
+  fallbackImage?: string;
   /**
    * A separate glow over the lit window. It cuts out; the follow-up thought
    * arrives half a second later. No fade, including under reduced motion.
@@ -97,7 +99,9 @@ export default function CloseupOverlay({ closeup, onDismiss, rain = null, rainNi
             </div>
           ) : (
           <PlateImage
+            key={closeup.image}
             src={closeup.image}
+            fallbackSrc={closeup.fallbackImage}
             alt={closeup.label ?? "Closeup"}
             inscriptions={closeup.inscriptions}
             imageClassName={`${styles.image}${

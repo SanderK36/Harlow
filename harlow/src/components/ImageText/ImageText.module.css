@@ -56,6 +56,20 @@
   line-height: 1.35;
 }
 
+.engraved {
+  font-family: var(--font-body);
+  font-size: clamp(15px, 2.6vw, 28px);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1.15;
+  text-align: center;
+  text-indent: 0.16em;
+  color: rgba(36, 28, 22, 0.9);
+  text-shadow:
+    0 1px 0 rgba(255, 236, 214, 0.55),
+    0 -1px 1px rgba(0, 0, 0, 0.55);
+}
+
 .missing {
   display: flex;
   flex-direction: column;
@@ -85,7 +99,8 @@
 .missing .subline,
 .missing .body,
 .missing .caption,
-.missing .note {
+.missing .note,
+.missing .engraved {
   position: static;
   width: auto;
   color: #f4e6d0;

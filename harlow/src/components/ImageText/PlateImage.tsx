@@ -9,6 +9,8 @@ import type { Inscription } from "./imageText";
 type PlateImageProps = {
   src: string;
   alt: string;
+  /** Shown, with the same overlay, when `src` fails to load. */
+  fallbackSrc?: string;
   inscriptions?: Inscription[];
   imageClassName?: string;
   onClick?: () => void;
@@ -21,12 +23,22 @@ type PlateImageProps = {
 export default function PlateImage({
   src,
   alt,
+  fallbackSrc,
   inscriptions,
   imageClassName,
   onClick,
 }: PlateImageProps) {
+  const [shown, setShown] = useState(src);
   const [missing, setMissing] = useState(false);
   const words = inscriptions ?? [];
+
+  function onPlateError() {
+    if (fallbackSrc && shown !== fallbackSrc) {
+      setShown(fallbackSrc);
+      return;
+    }
+    setMissing(true);
+  }
 
   if (missing) {
     return (
@@ -43,11 +55,11 @@ export default function PlateImage({
   if (words.length > 0) {
     return (
       <ImageText
-        src={src}
+        src={shown}
         alt={alt}
         inscriptions={words}
         imageClassName={imageClassName}
-        onError={() => setMissing(true)}
+        onError={onPlateError}
         onClick={onClick}
       />
     );
@@ -56,10 +68,10 @@ export default function PlateImage({
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={src}
+      src={shown}
       alt={alt}
       className={imageClassName}
-      onError={() => setMissing(true)}
+      onError={onPlateError}
       onClick={onClick}
     />
   );

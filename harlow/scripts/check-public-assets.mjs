@@ -13,7 +13,10 @@ const publicDir = path.join(harlowRoot, "public");
 const srcDir = path.join(harlowRoot, "src");
 
 /** Referenced on purpose, and safe when the file has not been delivered yet. */
-const OPTIONAL = new Set(["images/ui/questLogBackground.png"]);
+const OPTIONAL = new Set([
+  "images/ui/questLogBackground.png",
+  "images/locations/cemetery/emilyStone.png",
+]);
 
 const QUOTED = /["'`]([^"'`\n]+\.(?:png|jpe?g|webp|gif|svg|mp3|wav|ogg|mp4|mov))["'`]/g;
 

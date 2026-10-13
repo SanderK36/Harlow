@@ -20,6 +20,12 @@ describe("text on images", () => {
     assert.equal(caption.blend, "multiply");
     assert.equal(note.blend, "multiply");
     assert.notEqual(caption.rotate, note.rotate);
+
+    const engraved = inscriptionPresentation("engraved");
+    assert.equal(engraved.font, "body");
+    assert.equal(engraved.fontFamily, "var(--font-body)");
+    assert.equal(engraved.blend, "multiply");
+    assert.equal(engraved.rotate, 0);
   });
 
   it("demo covers a newspaper headline, a photo caption, and a note", () => {

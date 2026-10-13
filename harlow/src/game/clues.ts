@@ -1,4 +1,15 @@
 import type { Inscription } from "@/components/ImageText/imageText";
+
+/** Cut into the stone. The painting stays blank; this overlay is the inscription. */
+export const EMILY_STONE_INSCRIPTION: Inscription = {
+  id: "emily-parker",
+  kind: "engraved",
+  text: "EMILY PARKER · 1955 –",
+  top: 46,
+  left: 8,
+  width: 84,
+  rotate: 0,
+};
 import type { TrustPerson } from "@/game/trust";
 
 /**

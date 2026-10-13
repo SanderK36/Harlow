@@ -7,6 +7,7 @@ import {
 } from "../story";
 import type { Scene } from "./types";
 import { rainArt, RAIN, STORM } from "./weather";
+import { EMILY_STONE_INSCRIPTION } from "../clues";
 
 export const walterConversation: Conversation = {
   opening: [npc("Walter", "Ethan. Figured you'd turn up.")],
@@ -480,9 +481,11 @@ export const cementaryInside: Scene = {
       nextScene: "cementary-inside",
       timeCost: 0,
       closeup: {
-        image: "./images/locations/cemetery/cemeteryInsideDay.png",
+        image: "./images/locations/cemetery/emilyStone.png",
+        fallbackImage: "./images/locations/cemetery/cemeteryInsideDay.png",
         thought: "No second date. Mom wouldn't let them carve one.",
         label: "Emily's stone",
+        inscriptions: [EMILY_STONE_INSCRIPTION],
         next: {
           image: "./images/locations/cemetery/cemeteryInsideDay.png",
           thought: "Fresh. Somebody was here today.",
