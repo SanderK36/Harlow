@@ -50,7 +50,9 @@ import {
   folderLook,
   FOLDER_CAUGHT_LINES,
   hillDarkDue,
+  hillPrintMissedDue,
   HILL_DARK_TONIGHT,
+  HILL_PRINT_MISSED,
   GRAVEL_LINE_MS,
   GRAVEL_LINES,
   GRAVEL_TAIL_MS,
@@ -701,6 +703,21 @@ export function useGame() {
     }, wait);
   }
 
+  function showHillPrintHint(sceneId: string, time: number, dayNumber: number) {
+    const flags = storyFlagsRef.current;
+    if (!hillPrintMissedDue({
+      sceneId,
+      dayNumber,
+      time,
+      quests: questsRef.current,
+      flags,
+      heard: Boolean(flags.hillPrintHint),
+    })) return false;
+    applyFlags("hillPrintHint");
+    setCurrentThought(HILL_PRINT_MISSED);
+    return true;
+  }
+
   function noticeArrivals(sceneId: string, time: number, dayNumber: number) {
     const flags = storyFlagsRef.current;
     if (porchNeedlesDue({ sceneId, dayNumber, time, seen: Boolean(flags.porchNeedlesSeen) })) {
@@ -714,6 +731,7 @@ export function useGame() {
       setCurrentThought(HILL_DARK_TONIGHT);
       return;
     }
+    if (showHillPrintHint(sceneId, time, dayNumber)) return;
     if (emilyDoorAjarDue({
       sceneId,
       dayNumber,
@@ -823,6 +841,7 @@ export function useGame() {
     );
     if (hillNow) openHillQuest();
     const stayed = !destinationSceneId || destinationSceneId === currentScene.id;
+    if (stayed) showHillPrintHint(currentScene.id, played.time, played.dayNumber);
     if (
       stayed
       && emilyDoorAjarDue({

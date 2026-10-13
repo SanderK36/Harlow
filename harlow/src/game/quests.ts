@@ -96,6 +96,8 @@ export type StoryFlag =
   | "porchNeedlesSeen"
   /** Saturday night. The hill is only dark; the quest waits for Sunday. */
   | "hillDarkTonight"
+  /** Sunday evening. The hill stayed dark because the boot print is still missing. */
+  | "hillPrintHint"
   /** The 02:00 call on the first night. Once, whether he answered or not. */
   | "nightCallHeard"
   /** He answered. No rain at home until morning. */

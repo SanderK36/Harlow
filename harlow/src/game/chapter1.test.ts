@@ -11,6 +11,8 @@ import {
   folderLook,
   gravelWalkDue,
   hillDarkDue,
+  hillPrintMissedDue,
+  HILL_PRINT_MISSED,
   homeNightWeather,
   isHomeScene,
   nightCallRings,
@@ -171,6 +173,31 @@ describe("hill gate", () => {
   it("does not restart a hill quest that is already underway", () => {
     const started: QuestProgress[] = [...ready, { id: "light-on-the-hill", status: "active" }];
     assert.equal(shouldNoticeHill("front-yard", 19 * 60, started, print, 3), false);
+  });
+
+  it("names Elrod's yard on Sunday evening when only the boot print is missing", () => {
+    const blocked = {
+      sceneId: "front-yard",
+      dayNumber: 3,
+      time: 18 * 60,
+      quests: ready,
+      flags: {},
+      heard: false,
+    };
+    assert.equal(hillPrintMissedDue(blocked), true);
+    assert.equal(
+      HILL_PRINT_MISSED,
+      "The hill's dark. Maybe I missed something in Mrs. Elrod's yard.",
+    );
+    assert.equal(hillPrintMissedDue({ ...blocked, flags: print }), false);
+    assert.equal(hillPrintMissedDue({ ...blocked, heard: true }), false);
+    assert.equal(hillPrintMissedDue({ ...blocked, dayNumber: 2 }), false);
+    assert.equal(hillPrintMissedDue({ ...blocked, dayNumber: 4 }), false);
+    assert.equal(hillPrintMissedDue({ ...blocked, time: 17 * 60 }), false);
+    assert.equal(hillPrintMissedDue({ ...blocked, sceneId: "street" }), false);
+    assert.equal(hillPrintMissedDue({ ...blocked, quests: [] }), false);
+    const started: QuestProgress[] = [...ready, { id: "light-on-the-hill", status: "active" }];
+    assert.equal(hillPrintMissedDue({ ...blocked, quests: started }), false);
   });
 });
 

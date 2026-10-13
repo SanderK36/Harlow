@@ -6,6 +6,7 @@ import {
   type StoryFlag,
 } from "@/game/quests";
 import { narration, ethan, type StoryEntry } from "@/game/story";
+import { shouldNoticeHill } from "@/game/hill";
 import type { Weather } from "@/game/types";
 
 /** Chapter 1 opens Saturday, October 2, 1982. Day 2 is Sunday, October 3. */
@@ -167,6 +168,9 @@ export function porchNeedlesDue(input: {
 
 export const HILL_DARK_TONIGHT = "The hill's dark tonight.";
 
+export const HILL_PRINT_MISSED =
+  "The hill's dark. Maybe I missed something in Mrs. Elrod's yard.";
+
 /** Saturday evening in the yard, before the hill quest is allowed to start. */
 export function hillDarkDue(input: {
   sceneId: string;
@@ -179,6 +183,28 @@ export function hillDarkDue(input: {
     && input.dayNumber === OPENING_DAY_NUMBER
     && input.time >= 18 * 60
     && !input.heard
+  );
+}
+
+/**
+ * Sunday evening in the yard. Light on the Hill would start, except the
+ * boot print is still missing. Once.
+ */
+export function hillPrintMissedDue(input: {
+  sceneId: string;
+  dayNumber: number;
+  time: number;
+  quests: QuestProgress[];
+  flags: Partial<Record<StoryFlag, boolean>>;
+  heard: boolean;
+}) {
+  if (input.heard || input.dayNumber !== 3 || input.flags.bootPrintSeen) return false;
+  return shouldNoticeHill(
+    input.sceneId,
+    input.time,
+    input.quests,
+    { ...input.flags, bootPrintSeen: true },
+    input.dayNumber,
   );
 }
 
