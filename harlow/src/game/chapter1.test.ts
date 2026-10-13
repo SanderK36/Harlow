@@ -411,6 +411,10 @@ describe("time hints", () => {
       "Too dark back there. I'd step right on it.",
     );
     assert.equal(
+      hint("lookAtElrodBootPrint", { time: 4 * 60, flags: ["hillPrintHint"] }),
+      "Too dark back there. I'd step right on it.",
+    );
+    assert.equal(
       hint("lookAtEmilyFolder", { time: 18 * 60, flags: ["fileDrawerSeen"] }),
       "His desk. Nothing on it but coffee rings.",
     );

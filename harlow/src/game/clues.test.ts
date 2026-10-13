@@ -369,6 +369,17 @@ describe("sidequests", () => {
       true,
     );
   });
+
+  it("opens the boot print without Margaret's gossip after the hill hint", () => {
+    const print = elrodBackyard.choices.find((choice) => choice.action === "lookAtElrodBootPrint");
+    const scene = "elrod-backyard";
+    const flags = { hillPrintHint: true } as const;
+    assert.equal(isChoiceAvailable(print!, availability({ scene, time: 10 * 60, flags })), true);
+    assert.equal(isChoiceAvailable(print!, availability({ scene, time: 2 * 60, flags })), true);
+    assert.equal(isChoiceAvailable(print!, availability({ scene, time: 3 * 60, flags })), false);
+    assert.equal(isChoiceAvailable(print!, availability({ scene, time: 7 * 60 - 1, flags })), false);
+    assert.equal(isChoiceAvailable(print!, availability({ scene, time: 7 * 60, flags })), true);
+  });
 });
 
 describe("save migration", () => {

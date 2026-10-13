@@ -59,7 +59,7 @@ export function timeHint(input: TimeHintInput): string | null {
     action === "lookAtElrodBootPrint"
     && time >= 3 * 60
     && time < 7 * 60
-    && flags.margaretGossipHeard
+    && (flags.margaretGossipHeard || flags.hillPrintHint)
     && !flags.bootPrintSeen
   ) {
     return "Too dark back there. I'd step right on it.";

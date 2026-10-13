@@ -174,7 +174,9 @@ export function isChoiceAvailable(choice: Choice, ctx: ChoiceContext) {
   }
   if (action === "lookAtElrodTape") return true;
   if (action === "lookAtElrodBootPrint") {
-    return ctx.hasFlag("margaretGossipHeard") && !bootPrintHotspotHidden(time);
+    const told =
+      ctx.hasFlag("margaretGossipHeard") || ctx.hasFlag("hillPrintHint");
+    return told && !bootPrintHotspotHidden(time);
   }
   if (action === "lookInDadsBox") return atticHotspotVisible(ctx.storyFlags);
   if (
