@@ -1,6 +1,7 @@
 "use client";
 
 import type { AmbienceSlot } from "@/game/ambience";
+import { RAIN_WEATHER } from "@/game/scene/weather";
 import { getSettings, subscribeSettings } from "@/game/settings";
 
 /**
@@ -11,18 +12,19 @@ import { getSettings, subscribeSettings } from "@/game/settings";
  * Rain, when the rain file is missing, is still the filtered-noise bed from
  * before. Thunder falls back the same way. A missing file is ignored.
  *
- * Expected files (the owner supplies these; do not download stand-ins):
- * public/sounds/ambience/rain.mp3 — steady close rain, loopable, no thunder
- * public/sounds/ambience/night.mp3 — quiet small-town night, wind or insects, loopable
- * public/sounds/ambience/sanatorium-drone.mp3 — low empty-building drone, loopable
- * public/sounds/ambience/diner.mp3 — muffled diner room tone, loopable
- * public/sounds/ambience/house.mp3 — quiet house, clock or radiator, loopable
- * public/sounds/sfx/footsteps.mp3 — a few steps on a sidewalk
- * public/sounds/door.mp3 — already in the repo (door open and shut)
- * public/sounds/sfx/page-turn.mp3 — one paper page turning
- * public/sounds/sfx/pen-scribble.mp3 — a short pen scratch
- * public/sounds/sfx/thunder.mp3 — one roll of thunder
+ * Files live flat in public/sounds/, under the names the owner committed.
+ * Outdoor rain is rainOutsideAlt.mp3. Indoor rain is rainInside.mp3.
+ * Wet footsteps are footstepsWet.mp3 when the weather is rain.
  */
+
+const RAIN_INSIDE_FILE = "/sounds/rainInside.mp3";
+const FOOTSTEPS_WET_FILE = "/sounds/footstepsWet.mp3";
+/** Indoor rain under a room bed (diner, house, sanatorium). Alone, it uses BED_LEVEL. */
+const INDOOR_RAIN_UNDER_ROOM = 0.26;
+
+function isRainWeather(weather: string) {
+  return (RAIN_WEATHER as readonly string[]).includes(weather);
+}
 
 export type Ambience = {
   /** Outdoors the rain is bright and close; indoors it is muffled. */
@@ -33,19 +35,19 @@ export type Ambience = {
 export type SfxName = "footsteps" | "door" | "page-turn" | "pen-scribble" | "thunder";
 
 export const AMBIENCE_FILES: Record<AmbienceSlot, string> = {
-  rain: "/sounds/ambience/rain.mp3",
-  night: "/sounds/ambience/night.mp3",
-  "sanatorium-drone": "/sounds/ambience/sanatorium-drone.mp3",
-  diner: "/sounds/ambience/diner.mp3",
-  house: "/sounds/ambience/house.mp3",
+  rain: "/sounds/rainOutsideAlt.mp3",
+  night: "/sounds/nightOutdoors.mp3",
+  "sanatorium-drone": "/sounds/sanatoriumDrone.mp3",
+  diner: "/sounds/dinerAmbience.mp3",
+  house: "/sounds/quietHouse.mp3",
 };
 
 export const SFX_FILES: Record<SfxName, string> = {
-  footsteps: "/sounds/sfx/footsteps.mp3",
+  footsteps: "/sounds/footsteps.mp3",
   door: "/sounds/door.mp3",
-  "page-turn": "/sounds/sfx/page-turn.mp3",
-  "pen-scribble": "/sounds/sfx/pen-scribble.mp3",
-  thunder: "/sounds/sfx/thunder.mp3",
+  "page-turn": "/sounds/pageTurn.mp3",
+  "pen-scribble": "/sounds/pen.mp3",
+  thunder: "/sounds/thunder.mp3",
 };
 
 const STORAGE_KEY = "harlow-sound";
@@ -77,6 +79,9 @@ class HarlowAudio {
   private noise: AudioBuffer | null = null;
   private rainGain: GainNode | null = null;
   private rainFilter: BiquadFilterNode | null = null;
+  private indoorRainGain: GainNode | null = null;
+  private indoorRainFileActive = false;
+  private indoorRainToken = 0;
   private muted = false;
   private wanted: Ambience | null = null;
   private wantedSlot: AmbienceSlot | null = null;
@@ -138,6 +143,9 @@ class HarlowAudio {
   setAmbience(ambience: Ambience | null) {
     this.wanted = ambience;
     this.applyAmbience();
+    if (!this.context) return;
+    this.fadeBeds(this.audibleSlot(this.wantedSlot));
+    void this.syncIndoorRain();
   }
 
   /** Crossfade the scene's looping file. A missing file stays silent. */
@@ -166,6 +174,11 @@ class HarlowAudio {
     }
     if (name === "thunder") {
       this.thunder(0.45);
+      return;
+    }
+    if (name === "footsteps") {
+      const wet = this.wanted ? isRainWeather(this.wanted.weather) : false;
+      this.playFile(wet ? FOOTSTEPS_WET_FILE : SFX_FILES.footsteps, SFX_LEVEL.footsteps);
       return;
     }
     this.playFile(SFX_FILES[name], SFX_LEVEL[name]);
@@ -267,8 +280,60 @@ class HarlowAudio {
     } else {
       this.rainFileActive = false;
     }
-    this.fadeBeds(slot);
+    this.fadeBeds(this.audibleSlot(slot));
     this.applyAmbience();
+    void this.syncIndoorRain();
+  }
+
+  /** Outdoor rain file stays down while Ethan is inside; rainInside takes over. */
+  private audibleSlot(slot: AmbienceSlot | null): AmbienceSlot | null {
+    if (slot === "rain" && this.wanted?.indoor) return null;
+    return slot;
+  }
+
+  private wantsIndoorRain() {
+    return Boolean(this.wanted?.indoor && isRainWeather(this.wanted.weather));
+  }
+
+  private async syncIndoorRain() {
+    const token = ++this.indoorRainToken;
+    if (!this.context || !this.music) return;
+    if (!this.wantsIndoorRain()) {
+      this.indoorRainFileActive = false;
+      this.fadeIndoorRain(0);
+      this.applyAmbience();
+      return;
+    }
+    const buffer = await this.loadClip(RAIN_INSIDE_FILE);
+    if (token !== this.indoorRainToken || !this.context || !this.music) return;
+    if (!this.wantsIndoorRain()) {
+      this.indoorRainFileActive = false;
+      this.fadeIndoorRain(0);
+      this.applyAmbience();
+      return;
+    }
+    if (buffer) this.ensureIndoorRain(buffer);
+    this.indoorRainFileActive = Boolean(buffer);
+    const layered = this.wantedSlot !== null && this.wantedSlot !== "rain";
+    this.fadeIndoorRain(buffer ? (layered ? INDOOR_RAIN_UNDER_ROOM : BED_LEVEL) : 0);
+    this.applyAmbience();
+  }
+
+  private ensureIndoorRain(buffer: AudioBuffer) {
+    if (this.indoorRainGain || !this.context || !this.music) return;
+    const source = this.context.createBufferSource();
+    source.buffer = buffer;
+    source.loop = true;
+    const gain = this.context.createGain();
+    gain.gain.value = 0;
+    source.connect(gain).connect(this.music);
+    source.start();
+    this.indoorRainGain = gain;
+  }
+
+  private fadeIndoorRain(level: number) {
+    if (!this.context || !this.indoorRainGain) return;
+    this.indoorRainGain.gain.setTargetAtTime(level, this.context.currentTime, 0.35);
   }
 
   private ensureBed(slot: AmbienceSlot, buffer: AudioBuffer) {
@@ -369,7 +434,9 @@ class HarlowAudio {
     const ambience = this.wanted;
     const rain = ambience ? (RAIN_LEVEL[ambience.weather] ?? 0) : 0;
     const rainLevel = ambience ? rain * (ambience.indoor ? 0.22 : 0.34) : 0;
-    this.rainGain.gain.setTargetAtTime(this.rainFileActive ? 0 : rainLevel, now, 0.8);
+    const usingRainFile =
+      this.indoorRainFileActive || (this.rainFileActive && !ambience?.indoor);
+    this.rainGain.gain.setTargetAtTime(usingRainFile ? 0 : rainLevel, now, 0.8);
     this.rainFilter.frequency.setTargetAtTime(ambience?.indoor ? 900 : 3400, now, 0.5);
   }
 

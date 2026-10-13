@@ -1,9 +1,8 @@
 /**
  * Case-sensitive check that every public image/sound path quoted in src
- * exists under harlow/public. Optional plates and owner-supplied sounds
- * may be missing; the game already ignores those files.
- *
- * Every sound file that is present must be referenced.
+ * exists under harlow/public. The quest-log plate may be missing; the
+ * notebook keeps its CSS paper. Every sound file that is present must
+ * be referenced.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -14,18 +13,7 @@ const publicDir = path.join(harlowRoot, "public");
 const srcDir = path.join(harlowRoot, "src");
 
 /** Referenced on purpose, and safe when the file has not been delivered yet. */
-const OPTIONAL = new Set([
-  "images/ui/questLogBackground.png",
-  "sounds/ambience/rain.mp3",
-  "sounds/ambience/night.mp3",
-  "sounds/ambience/sanatorium-drone.mp3",
-  "sounds/ambience/diner.mp3",
-  "sounds/ambience/house.mp3",
-  "sounds/sfx/footsteps.mp3",
-  "sounds/sfx/page-turn.mp3",
-  "sounds/sfx/pen-scribble.mp3",
-  "sounds/sfx/thunder.mp3",
-]);
+const OPTIONAL = new Set(["images/ui/questLogBackground.png"]);
 
 const QUOTED = /["'`]([^"'`\n]+\.(?:png|jpe?g|webp|gif|svg|mp3|wav|ogg|mp4|mov))["'`]/g;
 
