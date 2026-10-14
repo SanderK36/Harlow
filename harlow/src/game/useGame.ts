@@ -937,6 +937,8 @@ export function useGame() {
       fromScene,
       gateStarted: gateHasStarted(),
       seen: Boolean(flags.streetStalkerSeen),
+      bootPrintSeen: Boolean(flags.bootPrintSeen),
+      figureSeen: Boolean(flags.daytimeFigureSeen),
     })) {
       applyFlags("streetStalkerSeen");
       noteStalker(dayNumber, time);

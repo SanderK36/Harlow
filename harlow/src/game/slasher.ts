@@ -1,4 +1,4 @@
-import { daytimeFigureDue, isHomeScene, PHONE_SILENCE_MS } from "@/game/chapter1";
+import { daytimeFigureDue, isChapterDay2, isHomeScene, PHONE_SILENCE_MS } from "@/game/chapter1";
 import { ethan, npc, type StoryEntry } from "@/game/story";
 import { isExteriorScene } from "@/game/scene/travel";
 import type { StoryFlag } from "@/game/quests";
@@ -145,13 +145,39 @@ export function stalkerAllowed(input: StalkerContext) {
  * Sighting 1. The first time he steps outside after The Gate has started.
  * "Across the street" is that arrival, not a later walk between outdoor scenes.
  */
+const WOODS_FROM = 15 * 60;
+const WOODS_UNTIL = 17 * 60;
+
+/**
+ * The woods figure owns Sunday 15:00–17:00 until he has been seen.
+ * A street sighting in that window waits, so the two beats do not land together.
+ */
+export function streetCollidesWithWoods(input: {
+  dayNumber: number;
+  time: number;
+  bootPrintSeen: boolean;
+  figureSeen: boolean;
+}) {
+  if (input.figureSeen || !input.bootPrintSeen) return false;
+  if (!isChapterDay2(input.dayNumber)) return false;
+  return input.time >= WOODS_FROM && input.time < WOODS_UNTIL;
+}
+
 export function streetStalkerDue(input: StalkerContext & {
   fromScene: string;
   gateStarted: boolean;
   seen: boolean;
+  bootPrintSeen?: boolean;
+  figureSeen?: boolean;
 }) {
   if (input.seen || !input.gateStarted) return false;
   if (!wentOutside(input.fromScene, input.sceneId)) return false;
+  if (streetCollidesWithWoods({
+    dayNumber: input.dayNumber,
+    time: input.time,
+    bootPrintSeen: Boolean(input.bootPrintSeen),
+    figureSeen: Boolean(input.figureSeen),
+  })) return false;
   return stalkerAllowed(input);
 }
 
@@ -165,24 +191,23 @@ export function sheetStalkerDue(input: StalkerContext & { seen: boolean }) {
 }
 
 /**
- * Sighting 3 is the existing Elrod-woods beat. On Sunday it waits out the
- * two-hour gap and spends a sighting. A later day still shows him, and
- * does not add to the counter.
+ * Sighting 3 is the existing Elrod-woods beat. The two-hour gap and the
+ * sighting cap do not hide him: Sunday 15:00–17:00 still shows him if he
+ * has not been seen, and that visit still spends a sighting (capped at 3).
+ * A later day still shows him, and does not add to the counter.
  */
 export function woodsFigureDue(input: StalkerContext & {
   bootPrintSeen: boolean;
   seen: boolean;
 }) {
   if (input.inConversation) return false;
-  if (!daytimeFigureDue({
+  return daytimeFigureDue({
     sceneId: input.sceneId,
     dayNumber: input.dayNumber,
     time: input.time,
     bootPrintSeen: input.bootPrintSeen,
     seen: input.seen,
-  })) return false;
-  if (input.dayNumber === 3) return stalkerAllowed(input);
-  return true;
+  });
 }
 
 export function woodsSightingCounts(input: StalkerContext & {
@@ -369,46 +394,46 @@ export function escapeSteps(choice: "hide" | "run", reducedMotion: boolean): Esc
 }
 
 export function emilyGraveStoneImage(weather: string, time: number) {
-  if (isNightTime(time)) return "./images/locations/cemetery/emilyGraveStoneNight.png";
-  if (weather === "Thunderstorm") return "./images/locations/cemetery/emilyGraveStoneThunder.png";
+  if (isNightTime(time)) return "/images/locations/cemetery/emilyGraveStoneNight.png";
+  if (weather === "Thunderstorm") return "/images/locations/cemetery/emilyGraveStoneThunder.png";
   if (weather === "Rainy" || weather === "Heavy rain") {
-    return "./images/locations/cemetery/emilyGraveStoneRainy.png";
+    return "/images/locations/cemetery/emilyGraveStoneRainy.png";
   }
-  return "./images/locations/cemetery/emilyGraveStoneSunny.png";
+  return "/images/locations/cemetery/emilyGraveStoneSunny.png";
 }
 
 export function elrodShadowPlate(weather: string, time: number) {
   if (isNightTime(time)) {
-    return "./images/locations/neighbourhood/elrodHouse/elrodHouseBackyardNightShadowInWood.png";
+    return "/images/locations/neighbourhood/elrodHouse/elrodHouseBackyardNightShadowInWood.png";
   }
   if (weather === "Thunderstorm") {
-    return "./images/locations/neighbourhood/elrodHouse/elrodHouseBackyardThunderShadowInWood.png";
+    return "/images/locations/neighbourhood/elrodHouse/elrodHouseBackyardThunderShadowInWood.png";
   }
   if (weather === "Rainy" || weather === "Heavy rain") {
-    return "./images/locations/neighbourhood/elrodHouse/elrodHouseBackyardRainyShadowInWood.png";
+    return "/images/locations/neighbourhood/elrodHouse/elrodHouseBackyardRainyShadowInWood.png";
   }
-  return "./images/locations/neighbourhood/elrodHouse/elrodHouseBackyardDayShadowInWood.png";
+  return "/images/locations/neighbourhood/elrodHouse/elrodHouseBackyardDayShadowInWood.png";
 }
 
-export const WALTER_AT_STONE = "./images/misc/walterAtEmilyGrave.png";
+export const WALTER_AT_STONE = "/images/misc/walterAtEmilyGrave.png";
 
 /** Plates the lake still needs. Existing art stands in until they arrive. */
 export const MILLER_PLATES = {
-  shore: "./images/locations/millerLake/millerLakeSunny.png",
-  shoreNight: "./images/locations/millerLake/millerLakeNight.png",
-  shoreRain: "./images/locations/millerLake/millerLakeRainy.png",
-  shoreThunder: "./images/locations/millerLake/millerLakeThunder.png",
-  camp: "./images/locations/millerLake/millerCamp.png",
-  cabin: "./images/locations/millerLake/millerCabin.png",
-  dock: "./images/locations/millerLake/millerDock.png",
-  tackle: "./images/locations/millerLake/millerTackle.png",
+  shore: "/images/locations/millerLake/millerLakeSunny.png",
+  shoreNight: "/images/locations/millerLake/millerLakeNight.png",
+  shoreRain: "/images/locations/millerLake/millerLakeRainy.png",
+  shoreThunder: "/images/locations/millerLake/millerLakeThunder.png",
+  camp: "/images/locations/millerLake/millerCamp.png",
+  cabin: "/images/locations/millerLake/millerCabin.png",
+  dock: "/images/locations/millerLake/millerDock.png",
+  tackle: "/images/locations/millerLake/millerTackle.png",
   book: "/images/misc/algebraBook.png",
 } as const;
 
 export const MILLER_FALLBACK = {
-  shore: "./images/misc/flashbackEthanPovForest.png",
-  camp: "./images/misc/flashbackEthanPovForest.png",
-  cabin: "./images/locations/sanatorium/sanatoriumRoom1Day.png",
-  dock: "./images/locations/cemetery/cemeteryBacksideDay.png",
-  tackle: "./images/misc/oldPhotoWalterFishing.png",
+  shore: "/images/misc/flashbackEthanPovForest.png",
+  camp: "/images/misc/flashbackEthanPovForest.png",
+  cabin: "/images/locations/sanatorium/sanatoriumRoom1Day.png",
+  dock: "/images/locations/cemetery/cemeteryBacksideDay.png",
+  tackle: "/images/misc/oldPhotoWalterFishing.png",
 } as const;

@@ -19,6 +19,8 @@ import {
   MILLER_CAMP,
   MILLER_CHECK,
   MILLER_DOCK,
+  MILLER_FALLBACK,
+  MILLER_PLATES,
   MILLER_RECENT,
   NAME_WHISPER_THOUGHT,
   NIGHT_WHISPER_LINES,
@@ -30,6 +32,7 @@ import {
   STALKER_MAX,
   STREET_STALKER_GONE,
   STREET_STALKER_THOUGHT,
+  WALTER_AT_STONE,
   TIMED_CHOICE_BUTTON_MIN_PX,
   TIMED_CHOICE_MS,
   TIMED_CHOICE_STEPS,
@@ -157,7 +160,9 @@ describe("the watcher", () => {
     assert.equal(woodsFigureDue(woods), true);
     assert.equal(woodsSightingCounts(woods), true);
     assert.equal(woodsFigureDue({ ...woods, time: 14 * 60 }), false);
-    assert.equal(woodsFigureDue({ ...woods, lastAt: 3 * 1440 + 14 * 60 }), false);
+    assert.equal(woodsFigureDue({ ...woods, lastAt: 3 * 1440 + 14 * 60 }), true);
+    assert.equal(woodsSightingCounts({ ...woods, lastAt: 3 * 1440 + 14 * 60, sightings: STALKER_MAX }), true);
+    assert.equal(nextStalkerCount(STALKER_MAX), STALKER_MAX);
     assert.equal(woodsFigureDue({ ...woods, dayNumber: 4, time: 15 * 60 }), true);
     assert.equal(woodsSightingCounts({ ...woods, dayNumber: 4 }), false);
     assert.equal(restoredStalkerCount(undefined, {
@@ -166,6 +171,39 @@ describe("the watcher", () => {
       daytimeFigureSeen: true,
     }), 3);
     assert.equal(restoredStalkerCount(1, { daytimeFigureSeen: true }), 1);
+  });
+
+  it("delays the street sighting while the unseen woods figure owns 15:00–17:00", () => {
+    const street = {
+      ...quiet,
+      fromScene: "diner-inside",
+      sceneId: "diner",
+      dayNumber: 3,
+      time: 15 * 60,
+      gateStarted: true,
+      seen: false,
+      bootPrintSeen: true,
+      figureSeen: false,
+      lastAt: null,
+    };
+    assert.equal(streetStalkerDue(street), false);
+    assert.equal(streetStalkerDue({ ...street, time: 17 * 60 }), true);
+    assert.equal(streetStalkerDue({ ...street, time: 15 * 60 - 1 }), true);
+    assert.equal(streetStalkerDue({ ...street, figureSeen: true }), true);
+    assert.equal(streetStalkerDue({ ...street, bootPrintSeen: false }), true);
+    assert.equal(streetStalkerDue({ ...street, dayNumber: 2 }), true);
+    const woods = {
+      ...quiet,
+      sceneId: "elrod-backyard",
+      dayNumber: 3,
+      time: 15 * 60,
+      bootPrintSeen: true,
+      seen: false,
+      lastAt: 3 * 1440 + 14 * 60,
+      sightings: STALKER_MAX,
+    };
+    assert.equal(woodsFigureDue(woods), true);
+    assert.equal(woodsSightingCounts(woods), true);
   });
 });
 
@@ -286,5 +324,24 @@ describe("delivered plates", () => {
     assert.match(elrodShadowPlate("Sunny", 20 * 60), /elrodHouseBackyardNightShadowInWood\.png$/);
     assert.equal(STALKER_FIGURE, "/images/ui/stalkerFigure.png");
     assert.match(HOODED_FALLBACK, /sanatoriumMainFloorNightShadow\.png$/);
+    const plates = [
+      STALKER_FIGURE,
+      HOODED_FALLBACK,
+      WALTER_AT_STONE,
+      ...Object.values(MILLER_PLATES),
+      ...Object.values(MILLER_FALLBACK),
+      emilyGraveStoneImage("Sunny", 10 * 60),
+      emilyGraveStoneImage("Rainy", 10 * 60),
+      emilyGraveStoneImage("Thunderstorm", 10 * 60),
+      emilyGraveStoneImage("Sunny", 20 * 60),
+      elrodShadowPlate("Sunny", 16 * 60),
+      elrodShadowPlate("Rainy", 16 * 60),
+      elrodShadowPlate("Thunderstorm", 16 * 60),
+      elrodShadowPlate("Sunny", 20 * 60),
+    ];
+    for (const plate of plates) {
+      assert.equal(plate.startsWith("./"), false, plate);
+      assert.equal(plate.startsWith("/images/"), true, plate);
+    }
   });
 });

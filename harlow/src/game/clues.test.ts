@@ -575,7 +575,7 @@ describe("chapter finds", () => {
 
   it("carves Emily's name onto the stone plate, and onto the fallback plate", () => {
     const stone = cementaryInside.choices.find((choice) => choice.action === "lookAtEmilyStone");
-    assert.equal(stone?.closeup?.image, "./images/locations/cemetery/emilyGraveStoneSunny.png");
+    assert.equal(stone?.closeup?.image, "/images/locations/cemetery/emilyGraveStoneSunny.png");
     assert.equal(stone?.closeup?.fallbackImage, "./images/locations/cemetery/cemeteryInsideDay.png");
     assert.equal(stone?.closeup?.inscriptions?.[0]?.text, "EMILY PARKER · 1955 –");
     assert.equal(stone?.closeup?.inscriptions?.[0]?.kind, "engraved");
