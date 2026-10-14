@@ -1,3 +1,4 @@
+import { CEMETERY_DARK, cemeteryTripIsDark } from "./chapter1";
 import type { Choice } from "./choices";
 import { isTiredWindow, lateNightChoiceAllowed } from "./lateNight";
 import {
@@ -59,6 +60,8 @@ export type MapContext = {
   momTalked: boolean;
   lightOnTheHillActive: boolean;
   availableIds: readonly string[];
+  /** Sunday (day 3) closes the cemetery after dark. Other days ignore it. */
+  dayNumber?: number;
 };
 
 export type MapPinView = {
@@ -94,10 +97,18 @@ export function mapTripChoice(
   return choices.find((choice) => choice.nextScene === destinationId) ?? null;
 }
 
+/** Sunday arrival would be after dark, or it already is. */
+export function cemeteryClosedAfterDark(pinId: string, ctx: MapContext) {
+  if (pinId !== "cementary" || ctx.dayNumber == null) return false;
+  const walk = mapTripChoice(ctx.originId, pinId, "walk", ctx.availableIds);
+  return cemeteryTripIsDark(ctx.dayNumber, ctx.time, walk?.timeCost ?? 0);
+}
+
 /** Open when travelDestinationIds lists it and lateNightChoiceAllowed agrees. */
 export function mapPinOpen(pinId: string, ctx: MapContext) {
   if (pinId === ctx.originId) return false;
   if (!ctx.momTalked) return false;
+  if (cemeteryClosedAfterDark(pinId, ctx)) return false;
   if (!ctx.availableIds.includes(pinId)) return false;
   const walk = mapTripChoice(ctx.originId, pinId, "walk", ctx.availableIds);
   if (!walk) return false;
@@ -112,6 +123,7 @@ export function closedPinThought(pinId: string, ctx: MapContext): string | null 
   if (pinId === ctx.originId) return null;
   if (mapPinOpen(pinId, ctx)) return null;
   if (!ctx.momTalked) return MOM_MAP_THOUGHT;
+  if (cemeteryClosedAfterDark(pinId, ctx)) return CEMETERY_DARK;
   if (isTiredWindow(ctx.time) && pinId !== "front-yard") return LATE_NIGHT_MAP_THOUGHT;
   return CLOSED_LOCATION_THOUGHTS[pinId] ?? null;
 }

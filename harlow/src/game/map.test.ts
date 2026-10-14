@@ -45,6 +45,7 @@ function views(partial: Partial<MapContext> & { availableIds?: readonly string[]
   return mapPinViews({
     originId: partial.originId ?? "street",
     time: partial.time ?? 10 * 60,
+    dayNumber: partial.dayNumber,
     momTalked: partial.momTalked ?? true,
     lightOnTheHillActive: partial.lightOnTheHillActive ?? false,
     availableIds,
@@ -195,11 +196,21 @@ describe("map pins", () => {
     const sunday = views({
       originId: "street",
       time: 10 * 60,
+      dayNumber: 3,
       momTalked: true,
       availableIds: ids({ momTalked: true, dayNumber: 3 }),
     });
     assert.equal(pin(sunday, "cementary").open, true);
     assert.equal(pin(sunday, "motel").open, true);
+    const sundayNight = views({
+      originId: "street",
+      time: 19 * 60,
+      dayNumber: 3,
+      momTalked: true,
+      availableIds: ids({ momTalked: true, dayNumber: 3 }),
+    });
+    assert.equal(pin(sundayNight, "cementary").open, false);
+    assert.equal(pin(sundayNight, "cementary").thought, "Not after dark. Not here.");
   });
 
   it("lets only the trip home through from 03:00 until 07:00", () => {

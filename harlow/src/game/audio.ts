@@ -93,6 +93,8 @@ class HarlowAudio {
   private doorSource: AudioBufferSourceNode | null = null;
   private footSource: AudioBufferSourceNode | null = null;
   private footToken = 0;
+  private receiverSource: AudioBufferSourceNode | null = null;
+  private receiverToken = 0;
   private clipCache = new Map<string, AudioBuffer>();
   private clipMiss = new Set<string>();
   private clipLoading = new Map<string, Promise<AudioBuffer | null>>();
@@ -184,6 +186,42 @@ class HarlowAudio {
       return;
     }
     this.playFile(SFX_FILES[name], SFX_LEVEL[name]);
+  }
+
+  /**
+   * Rain heard in the phone, not the room. Quiet and low-passed.
+   * A second call while it is already playing leaves it running.
+   */
+  playReceiverRain() {
+    if (this.receiverSource) return;
+    const token = ++this.receiverToken;
+    const context = this.ready();
+    if (!context || !this.sfx) return;
+    void this.loadClip(AMBIENCE_FILES.rain).then((buffer) => {
+      if (token !== this.receiverToken || !buffer || !this.sfx || !this.context) return;
+      const source = this.context.createBufferSource();
+      source.buffer = buffer;
+      source.loop = true;
+      const filter = this.context.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.value = 480;
+      const gain = this.context.createGain();
+      gain.gain.value = 0.08;
+      source.connect(filter).connect(gain).connect(this.sfx);
+      source.start();
+      this.receiverSource = source;
+    });
+  }
+
+  stopReceiverRain() {
+    this.receiverToken += 1;
+    const source = this.receiverSource;
+    this.receiverSource = null;
+    try {
+      source?.stop();
+    } catch {
+      // Already stopped.
+    }
   }
 
   /** Gravel behind Ethan. loops footsteps.mp3 until stopFootsteps. */

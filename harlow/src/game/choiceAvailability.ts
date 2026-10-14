@@ -1,3 +1,4 @@
+import { findActiveCharacter } from "./activeCharacter";
 import { folderLook, rachelDrawn } from "./chapter1";
 import { atticHotspotVisible, bootPrintHotspotHidden, gazetteOnPorch } from "./clues";
 import type { Choice } from "./choices";
@@ -10,8 +11,34 @@ import {
   type QuestProgress,
   type StoryFlag,
 } from "./quests";
+import { scenes } from "./scenes";
 import type { GameState } from "./types";
 import { isNightTime } from "./utils";
+
+/** Talk actions follow the NPC standing in the scene, not a second clock. */
+const NPC_FOR_TALK: Record<string, string> = {
+  talkToMom: "Linda",
+  talkToJohnny: "Johnny Dalton",
+  talkToWalter: "Walter Harrington",
+  talkToWalterAtStone: "Walter Harrington",
+  talkToMargaret: "Margaret Sullivan",
+  talkToEarl: "Earl",
+  talkToBigRoy: "Big Roy",
+  talkToRay: "Ray Mercer",
+  talkToTommy: "Tommy Vance",
+  talkToMarlene: "Marlene",
+};
+
+function npcIsHere(name: string, ctx: ChoiceContext) {
+  const scene = scenes[ctx.currentSceneId as keyof typeof scenes];
+  return findActiveCharacter(scene?.characters, {
+    time: ctx.gameState.time,
+    day: ctx.gameState.dayOfWeek,
+    dayNumber: ctx.gameState.dayNumber,
+    marleneActive: ctx.marleneActive,
+    hasFlag: ctx.hasFlag,
+  })?.name === name;
+}
 
 const BEDTIME_START = 1320;
 
@@ -67,33 +94,9 @@ export function isChoiceAvailable(choice: Choice, ctx: ChoiceContext) {
     return sceneId === "living-room";
   }
 
-  if (action === "talkToMom") {
-    const weekend = dayOfWeek === "Saturday" || dayOfWeek === "Sunday";
-    if (sceneId === "kitchen") {
-      return (time >= 450 && time < 540)
-        || (weekend && time >= 720 && time < 1140);
-    }
-    if (sceneId === "living-room") {
-      return weekend
-        ? time >= 540 && time < 1320
-        : time >= 540 && time < 1080;
-    }
-    return false;
-  }
-  if (action === "talkToJohnny") return time >= 480 && time < 840;
+  if (NPC_FOR_TALK[action]) return npcIsHere(NPC_FOR_TALK[action], ctx);
   if (action === "workNeedleGrooveShift") {
     return ctx.job === "needle-groove" && time >= 600 && time < 1140;
-  }
-  if (action === "talkToWalter") return time >= 480 && time < 960;
-  if (action === "talkToWalterAtStone") {
-    return (
-      sceneId === "cementary-inside"
-      && ctx.gameState.dayNumber >= 3
-      && time >= 14 * 60
-      && time < 17 * 60
-      && ctx.hasFlag("waltParkerLinked")
-      && !ctx.hasFlag("oldFriendsDone")
-    );
   }
   if (action === "lookAtEmilyStone") {
     return sceneId === "cementary-inside" && ctx.gameState.dayNumber >= 3 && !ctx.hasFlag("emilyStoneSeen");
@@ -109,14 +112,9 @@ export function isChoiceAvailable(choice: Choice, ctx: ChoiceContext) {
     });
     return look === "open" || look === "caught";
   }
-  if (action === "talkToMargaret") return time >= 420 && time < 900;
-  if (action === "talkToEarl") return time >= 480 && time < 1020;
-  if (action === "talkToBigRoy") return time >= 420 && time < 900;
-  if (action === "talkToRay") return time >= 540 && time < 1380;
-  if (action === "talkToTommy") return time >= 480 && time < 1020;
   if (action === "openShop") return time >= 540 && time < 1380;
   if (action === "goToMarleneCounter") return !ctx.marleneActive;
-  if (action === "talkToMarlene" || action === "leaveMarleneCounter") return ctx.marleneActive;
+  if (action === "leaveMarleneCounter") return ctx.marleneActive;
   if (ctx.marleneActive && (action === "leaveHospital" || action === "goToHospitalRoom")) return false;
   if (action === "pickUpCigarettes") return !ctx.deskCigarettesPickedUp;
   // Roy works in the scrapyard from 07:00 to 15:00, so Ethan cannot

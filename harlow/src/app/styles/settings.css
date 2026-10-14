@@ -33,6 +33,15 @@ html[data-contrast="high"] .scene-info-panel {
   border-color: #ffffff;
 }
 
+html[data-contrast="high"] .scene-info-panel {
+  color: #ffffff;
+  background: #000000;
+}
+
+html[data-contrast="high"] .scene-caption-thought p {
+  color: #ffffff;
+}
+
 html[data-motion="reduce"] .mainMenuArtwork,
 html[data-motion="reduce"] .mainMenuContent,
 html[data-motion="reduce"] .scene-image,

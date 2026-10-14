@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { conversationChoiceVisible } from "./conversationChoices.ts";
+import { choiceAffordance } from "./statLabels.ts";
 import type { ConversationChoice } from "./story.ts";
 import {
   momConversation,
@@ -28,6 +29,7 @@ import {
   NOTEBOOK_NAME,
   unseenNotebookPeople,
   pricedEffects,
+  pricedLabel,
   returnGreeting,
   shouldMarkRachelWaited,
   type TrustLedger,
@@ -152,17 +154,20 @@ describe("trust gates", () => {
   });
 
   it("hides a priced coffee Ethan cannot buy, and keeps it once it is free", () => {
-    const order = margaretConversation.choices.find((choice) => choice.label === "Coffee.");
+    const order = margaretConversation.choices.find((choice) => choice.label === "Coffee ($1)");
     assert.ok(order);
     const base = {
       storyFlags: {},
       quests: [],
       job: null,
       jobQuestTarget: null,
-      usedLabels: ["Coffee."],
+      usedLabels: ["Coffee ($1)"],
       openedAsEmployee: false,
       inventory: [] as string[],
     };
+    assert.equal(pricedLabel(order, defaultTrust()), "Coffee ($1)");
+    assert.equal(pricedLabel(order, { ...defaultTrust(), margaret: 2 }), "Coffee.");
+    assert.equal(choiceAffordance({ ...order, effects: { money: -1 } }), "");
     assert.equal(canAffordPricedChoice(order, defaultTrust(), 0), false);
     assert.equal(
       conversationChoiceVisible(order, { ...base, trust: defaultTrust(), money: 0 }),
@@ -441,7 +446,7 @@ describe("chapter 1 trust choices", () => {
       { person: "walter", amount: 1 },
     );
 
-    const order = margaretConversation.choices.find((choice) => choice.label === "Coffee.");
+    const order = margaretConversation.choices.find((choice) => choice.label === "Coffee ($1)");
     assert.deepEqual(order?.trust, { person: "margaret", amount: 1, oncePerDay: true });
     assert.equal(order?.price, 1);
     assert.deepEqual(order?.freeWhen, { person: "margaret", min: 2 });

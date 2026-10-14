@@ -332,6 +332,19 @@ export function buildNpcOpening(input: {
   return { opening: [...withGreeting, ...margaretGossipLines()], gossipShown: true };
 }
 
+/** Button text. "Coffee ($1)" until Margaret's trust makes it free. */
+export function pricedLabel(
+  choice: { label: string; price?: number; freeWhen?: TrustCondition },
+  trust: TrustMap,
+) {
+  if (choice.price == null || !choice.freeWhen || !meetsTrust(trust, choice.freeWhen)) {
+    return choice.label;
+  }
+  const stripped = choice.label.replace(/\s*\(\$[^)]+\)\s*$/, "").trim();
+  if (!stripped) return choice.label;
+  return stripped.endsWith(".") ? stripped : `${stripped}.`;
+}
+
 /** Money a priced reply actually takes. Margaret's coffee is free at +2. */
 export function pricedEffects(
   choice: { price?: number; freeWhen?: TrustCondition; effects?: ChoiceEffects },

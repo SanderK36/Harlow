@@ -1,10 +1,11 @@
+import { findActiveCharacter } from "@/game/activeCharacter";
 import type { SceneCharacter } from "@/game/scenes";
 import { RAIN_WEATHER, SANATORIUM_ONE_WINDOW, sanatoriumShowsOneWindow, type Scene } from "@/game/scenes";
 import { elrodRachelPlate, isRainPlate } from "@/game/scenePlate";
 import { rachelDrawn } from "@/game/chapter1";
 import { emilyFolderOnDesk } from "@/game/clues";
 import type { QuestProgress, StoryFlag } from "@/game/quests";
-import type { Weather } from "@/game/types";
+import type { DayOfWeek, Weather } from "@/game/types";
 import { isNightTime } from "@/game/utils";
 
 export function resolveSceneArt(input: {
@@ -12,6 +13,7 @@ export function resolveSceneArt(input: {
   time: number;
   weather: Weather;
   dayOfWeek: string;
+  dayNumber: number;
   storyFlags: Partial<Record<StoryFlag, boolean>>;
   activeCharacter: SceneCharacter | undefined;
   quests: QuestProgress[];
@@ -20,11 +22,15 @@ export function resolveSceneArt(input: {
 }) {
   const { scene, time, weather } = input;
   const sceneIsNight = isNightTime(time);
-  const isWeekend = input.dayOfWeek === "Saturday" || input.dayOfWeek === "Sunday";
   const momInKitchen =
-    scene.id === "kitchen" &&
-    ((time >= 450 && time < 540)
-      || (isWeekend && time >= 720 && time < 1140));
+    scene.id === "kitchen"
+    && findActiveCharacter(scene.characters, {
+      time,
+      day: input.dayOfWeek as DayOfWeek,
+      dayNumber: input.dayNumber,
+      marleneActive: false,
+      hasFlag: (flag) => Boolean(input.storyFlags[flag]),
+    })?.name === "Linda";
   // Daylit weather art (weatherDayOnly) gives way to the night art after dark.
   // Night weather art (weatherNightOnly) gives way to the day art before dark.
   const weatherImage =

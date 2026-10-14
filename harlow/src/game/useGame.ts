@@ -47,7 +47,11 @@ import {
   FIGURE_STAY,
   FIGURE_THOUGHT,
   flagsForConnections,
+  CEMETERY_DARK,
+  CEMETERY_EMPTY,
   cemeteryLunchDue,
+  cemeterySundayGate,
+  cemeteryTripIsDark,
   earlCashDue,
   folderLook,
   folderSnoopDue,
@@ -70,6 +74,7 @@ import {
   gravelWalkDue,
   HILL_LIGHT_OUT,
   nightCallRings,
+  phoneHomeWeather,
   PHONE_ANSWER_LINES,
   PHONE_ANSWER_THOUGHT,
   PHONE_IGNORE_THOUGHT,
@@ -145,6 +150,7 @@ import {
   notebookPeople,
   personFromOpening,
   pricedEffects,
+  pricedLabel,
   shouldMarkRachelWaited,
   unseenNotebookPeople,
   type TrustMap,
@@ -675,8 +681,10 @@ export function useGame() {
     phoneIntercept.current = false;
     const hallway = scenes.hallway;
     phoneMorning.current = phoneResumeSleep.current ? { ...state, time: 7 * 60 } : null;
+    applyFlags("nightCallClear");
+    const weather = phoneHomeWeather(state.weather);
     setCurrentScene(hallway);
-    setGameState({ ...state, time: 2 * 60, location: hallway.location });
+    setGameState({ ...state, time: 2 * 60, weather, location: hallway.location });
     dayRef.current = state.dayNumber;
     setPhonePhase("ring");
     setFigureActive(false);
@@ -699,11 +707,9 @@ export function useGame() {
   }
 
   function finishNightCall(answered: boolean) {
+    harlowAudio().stopReceiverRain();
     applyFlags("nightCallHeard");
-    if (answered) {
-      applyFlags("nightCallClear");
-      harlowAudio().setAmbience({ indoor: true, weather: "Cloudy" });
-    }
+    if (answered) applyFlags("nightCallClear");
     setPhonePhase(null);
     const resume = phoneResumeSleep.current;
     const thought = answered ? PHONE_ANSWER_THOUGHT : PHONE_IGNORE_THOUGHT;
@@ -719,13 +725,34 @@ export function useGame() {
     applyFlags("cemeteryLunchHeard");
   }
 
+  function finishPhoneAnswer() {
+    harlowAudio().stopReceiverRain();
+    applyFlags("nightCallHeard");
+    setPhonePhase(null);
+    setConversationActive(false);
+    setConversationEnding(false);
+    conversationActiveRef.current = false;
+    setCatchEntrance(false);
+    setConversation([]);
+    setActiveConversation(null);
+    setCurrentThought(PHONE_ANSWER_THOUGHT);
+    if (phoneResumeSleep.current) window.setTimeout(continueSleepAfterCall, 2200);
+  }
+
+  function holdPhoneLine(index: number) {
+    if (index === 0) harlowAudio().playReceiverRain();
+  }
+
+  function advancePhoneLine(index: number) {
+    if (index >= 2) harlowAudio().stopReceiverRain();
+  }
+
   function showHillPrintHint(sceneId: string, time: number, dayNumber: number) {
     const flags = storyFlagsRef.current;
     if (!hillPrintMissedDue({
       sceneId,
       dayNumber,
       time,
-      quests: questsRef.current,
       flags,
       heard: Boolean(flags.hillPrintHint),
     })) return false;
@@ -736,6 +763,10 @@ export function useGame() {
 
   function noticeArrivals(sceneId: string, time: number, dayNumber: number) {
     const flags = storyFlagsRef.current;
+    if (sceneId === "cementary" && cemeterySundayGate(dayNumber, time) === "day") {
+      setCurrentThought(CEMETERY_EMPTY);
+      return;
+    }
     if (porchNeedlesDue({ sceneId, dayNumber, time, seen: Boolean(flags.porchNeedlesSeen) })) {
       applyFlags("porchNeedlesSeen");
       setCurrentThought(PINE_NEEDLE_LINES[0]);
@@ -1282,6 +1313,11 @@ export function useGame() {
   }
 
   function handleTravel(choice: Choice) {
+    if (choice.nextScene === "cementary" && cemeteryTripIsDark(gameState.dayNumber, gameState.time, choice.timeCost)) {
+      setCurrentThought(CEMETERY_DARK);
+      setShowTravel(true);
+      return;
+    }
     // Travel waits for the overlay before applying its time cost and effects.
     const destination = scenes[choice.nextScene as keyof typeof scenes]?.location ?? "Unknown";
     const destinationScene = scenes[choice.nextScene as keyof typeof scenes];
@@ -1356,7 +1392,6 @@ export function useGame() {
 
     if ("action" in choice && choice.action === "answerNightCall") {
       setPhonePhase("talk");
-      harlowAudio().setAmbience({ indoor: true, weather: "Rainy" });
       setCatchEntrance(false);
       setConversationPerson(null);
       setActiveConversation({ opening: PHONE_ANSWER_LINES, choices: [] });
@@ -1364,10 +1399,15 @@ export function useGame() {
       setConversationEnding(true);
       setConversationActive(true);
       conversationActiveRef.current = true;
-      afterConversationRef.current = () => {
-        harlowAudio().playSfx("door");
-        finishNightCall(true);
-      };
+      return;
+    }
+    if (
+      "action" in choice
+      && (choice.action === "enterCemetery" || choice.action === "goCemeteryBackside")
+      && cemeterySundayGate(gameState.dayNumber, gameState.time) === "dark"
+    ) {
+      setCurrentThought(CEMETERY_DARK);
+      setShowTravel(true);
       return;
     }
     if ("action" in choice && choice.action === "ignoreNightCall") {
@@ -1910,6 +1950,7 @@ export function useGame() {
     setUsedConversationChoices([]);
     setTravelingTo(null);
     setNewDayAnnouncement(null);
+    harlowAudio().stopReceiverRain();
     setPhonePhase(null);
     setFigureActive(false);
     setCatchEntrance(false);
@@ -1997,6 +2038,7 @@ export function useGame() {
     setUsedConversationChoices([]);
     setTravelingTo(null);
     setNewDayAnnouncement(null);
+    harlowAudio().stopReceiverRain();
     setPhonePhase(null);
     setFigureActive(false);
     setCatchEntrance(false);
@@ -2053,7 +2095,7 @@ export function useGame() {
     }) !== null;
   }
 
-  const activeChoices = replyPending || conversationEnding ? [] : conversationActive
+  const activeChoices = phonePhase === "talk" || replyPending || conversationEnding ? [] : conversationActive
     ? (activeConversation?.choices ?? []).filter((choice) =>
         conversationChoiceVisible(choice, {
           // The ref wins if this turn already set a flag the state snapshot
@@ -2075,7 +2117,9 @@ export function useGame() {
       )
       .map((choice) => {
         const effects = pricedEffects(choice, trust);
-        return effects === choice.effects ? choice : { ...choice, effects };
+        const label = pricedLabel(choice, trust);
+        if (effects === choice.effects && label === choice.label) return choice;
+        return { ...choice, effects, label };
       })
     : phonePhase === "ring"
       ? PHONE_RING_CHOICES
@@ -2201,6 +2245,9 @@ export function useGame() {
     conversation,
     conversationActive,
     finishConversation: conversationEnding ? closeConversation : undefined,
+    finishPhoneAnswer,
+    holdPhoneLine,
+    advancePhoneLine,
     onReplySettled: revealPendingCloseup,
     showDinerBoardHint,
     activeCharacter,

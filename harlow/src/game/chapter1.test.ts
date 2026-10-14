@@ -6,6 +6,10 @@ import {
   CEMETERY_LUNCH,
   cemeteryCrossVisible,
   cemeteryLunchDue,
+  CEMETERY_DARK,
+  CEMETERY_EMPTY,
+  cemeterySundayGate,
+  cemeteryTripIsDark,
   dayCardLine,
   daysSinceEmilyVanished,
   displayedClock,
@@ -32,13 +36,21 @@ import {
   homeNightWeather,
   isHomeScene,
   nightCallRings,
+  PHONE_ANSWER_LINES,
+  PHONE_RECEIVER_MS,
+  PHONE_SILENCE_MS,
+  PHONE_WHO_HOLD_MS,
   porchNeedlesDue,
   PINE_NEEDLE_LINES,
   rachelDrawn,
   sidePanelDate,
   syncChapterQuests,
   titleCardDate,
+  titleCardFor,
 } from "./chapter1.ts";
+import { dialoguePauseMs } from "./dialoguePause.ts";
+import { choiceKeptInList } from "../app/sceneHotspots.ts";
+import { isNightPaper } from "./utils.ts";
 import { isChoiceAvailable } from "./choiceAvailability.ts";
 import { shouldNoticeHill } from "./hill.ts";
 import { momConversation } from "./scene/home.ts";
@@ -112,6 +124,22 @@ describe("opening date", () => {
     assert.equal(sidePanelDate("Saturday", "October", 2), "Saturday, October 2");
     assert.equal(titleCardDate("Saturday", "October", 2), "Saturday, October 2, 1982");
     assert.equal(dayCardLine("Sunday", "October", 3), "SUNDAY, OCTOBER 3, 1982");
+  });
+
+  it("builds a later morning card from the in-game date", () => {
+    const monday = titleCardFor("October", 4);
+    assert.ok(monday);
+    assert.equal(monday.weekday, "Monday");
+    assert.equal(monday.line, "MONDAY, OCTOBER 4, 1982");
+    assert.equal(monday.title, "Monday, October 4, 1982");
+    assert.equal(monday.count, "Day 3,654");
+    assert.equal(titleCardFor("October", 2)?.line, "SATURDAY, OCTOBER 2, 1982");
+    assert.equal(titleCardFor("October", 2)?.count, "Day 3,652");
+    assert.equal(titleCardFor("October", 3)?.count, "Day 3,653");
+    const november = titleCardFor("November", 1);
+    assert.equal(november?.weekday, "Monday");
+    assert.equal(november?.line, "MONDAY, NOVEMBER 1, 1982");
+    assert.equal(november?.count, emilyDayCount("November", 1));
   });
 
   it("counts the days since Emily vanished, with October 2 1972 as day 0", () => {
@@ -283,6 +311,7 @@ describe("hill gate", () => {
       heard: false,
     };
     assert.equal(hillPrintMissedDue(blocked), true);
+    assert.equal(hillPrintMissedDue({ ...blocked, flags: {} }), true);
     assert.equal(
       HILL_PRINT_MISSED,
       "The hill's dark. Maybe I missed something in Mrs. Elrod's yard.",
@@ -293,9 +322,8 @@ describe("hill gate", () => {
     assert.equal(hillPrintMissedDue({ ...blocked, dayNumber: 4 }), false);
     assert.equal(hillPrintMissedDue({ ...blocked, time: 17 * 60 }), false);
     assert.equal(hillPrintMissedDue({ ...blocked, sceneId: "street" }), false);
-    assert.equal(hillPrintMissedDue({ ...blocked, quests: [] }), false);
-    const started: QuestProgress[] = [...ready, { id: "light-on-the-hill", status: "active" }];
-    assert.equal(hillPrintMissedDue({ ...blocked, quests: started }), false);
+    assert.equal(shouldNoticeHill("front-yard", 19 * 60, [], { bootPrintSeen: true }, 4), false);
+    assert.equal(shouldNoticeHill("front-yard", 19 * 60, ready, { bootPrintSeen: true }, 4), true);
   });
 });
 
@@ -489,7 +517,7 @@ describe("time hints", () => {
   });
 
   it("uses the approved lines and leaves the action alone inside its window", () => {
-    assert.equal(hint("talkToMom", { sceneId: "kitchen", time: 6 * 60 }), "Mom's not up yet. Or she's already gone.");
+    assert.equal(hint("talkToMom", { sceneId: "kitchen", time: 6 * 60 }), null);
     assert.equal(hint("talkToMom", { sceneId: "kitchen", time: 8 * 60 }), null);
     assert.equal(hint("goToSleep", { sceneId: "ethan-room", time: 21 * 60 }), "Too early. I wouldn't sleep anyway.");
     assert.equal(hint("goToSleep", { sceneId: "ethan-room", time: 22 * 60 }), null);
@@ -521,7 +549,7 @@ describe("time hints", () => {
       "The folder's gone. He moved it.",
     );
     assert.equal(hint("enterDiner", { time: 6 * 60 }), "Closed. Margaret's not in yet.");
-    assert.equal(hint("talkToJohnny", { time: 15 * 60 }), "Sign says back in five. It always says that.");
+    assert.equal(hint("talkToJohnny", { time: 15 * 60 }), null);
     assert.equal(
       hint("workNeedleGrooveShift", { time: 9 * 60, job: "needle-groove" }),
       "Johnny doesn't need me now.",
@@ -532,6 +560,30 @@ describe("time hints", () => {
       "The butt's gone. Somebody came back for it.",
     );
     assert.equal(WAITING_TIRED_HINT, "I can barely keep my eyes open. Go home, Ethan.");
+  });
+
+  it("lists a talk choice only while that NPC is in the scene, and keeps the button", () => {
+    const talk = (action: string, partial: Parameters<typeof choiceCtx>[0]) => isChoiceAvailable(
+      { label: action, action, nextScene: partial.sceneId ?? "kitchen", timeCost: 0 },
+      choiceCtx(partial),
+    );
+    assert.equal(talk("talkToMom", { sceneId: "kitchen", dayOfWeek: "Sunday", time: 7 * 60 }), false);
+    assert.equal(talk("talkToMom", { sceneId: "kitchen", dayOfWeek: "Sunday", time: 7 * 60 + 30 }), true);
+    assert.equal(talk("talkToMom", { sceneId: "kitchen", dayOfWeek: "Sunday", time: 9 * 60 }), false);
+    assert.equal(talk("talkToMom", { sceneId: "kitchen", dayOfWeek: "Sunday", time: 12 * 60 }), true);
+    assert.equal(talk("talkToMom", { sceneId: "kitchen", dayOfWeek: "Monday", time: 12 * 60 }), false);
+    assert.equal(talk("talkToMom", { sceneId: "living-room", dayOfWeek: "Monday", time: 10 * 60 }), true);
+    assert.equal(talk("talkToMom", { sceneId: "living-room", dayOfWeek: "Sunday", time: 7 * 60 }), false);
+    assert.equal(talk("talkToJohnny", { sceneId: "needle-and-groove-inside", time: 8 * 60 }), true);
+    assert.equal(talk("talkToJohnny", { sceneId: "needle-and-groove-inside", time: 14 * 60 }), false);
+    assert.equal(talk("talkToMargaret", { sceneId: "diner-inside", time: 7 * 60 }), true);
+    assert.equal(talk("talkToMargaret", { sceneId: "diner-inside", time: 15 * 60 }), false);
+    assert.equal(talk("talkToEarl", { sceneId: "motel-inside", time: 8 * 60 }), true);
+    assert.equal(talk("talkToEarl", { sceneId: "motel-inside", time: 17 * 60 }), false);
+    assert.equal(talk("talkToWalter", { sceneId: "sheriff-office", time: 8 * 60 }), true);
+    assert.equal(talk("talkToWalter", { sceneId: "sheriff-office", time: 16 * 60 }), false);
+    assert.equal(choiceKeptInList("talkToMom", ["talkToMom"], false), true);
+    assert.equal(choiceKeptInList("makeCoffee", ["makeCoffee"], false), false);
   });
 
   it("keeps a time-hint button listed while the action itself stays unavailable", () => {
@@ -555,5 +607,38 @@ describe("time hints", () => {
       walterStationTalk: true,
       quests: [{ id: "what-walter-said", status: "completed" }],
     }), true);
+  });
+});
+
+describe("sunday cemetery", () => {
+  it("is empty by day, closed after dark, and ordinary on later days", () => {
+    assert.equal(cemeterySundayGate(3, 10 * 60), "day");
+    assert.equal(cemeterySundayGate(3, 15 * 60), null);
+    assert.equal(cemeterySundayGate(3, 19 * 60), "dark");
+    assert.equal(cemeterySundayGate(3, 0), "dark");
+    assert.equal(cemeterySundayGate(3, 6 * 60), "day");
+    assert.equal(cemeterySundayGate(4, 19 * 60), null);
+    assert.equal(cemeteryTripIsDark(3, 17 * 60 + 40, 35), true);
+    assert.equal(cemeteryTripIsDark(3, 13 * 60, 35), false);
+    assert.equal(CEMETERY_EMPTY, "Nobody here. Fresh tire tracks by the gate, though.");
+    assert.equal(CEMETERY_DARK, "Not after dark. Not here.");
+  });
+});
+
+describe("night paper and the phone hold", () => {
+  it("keeps midnight inside 18:00–06:00 and holds the receiver pauses", () => {
+    assert.equal(isNightPaper(0), true);
+    assert.equal(isNightPaper(5 * 60 + 59), true);
+    assert.equal(isNightPaper(6 * 60), false);
+    assert.equal(isNightPaper(17 * 60 + 59), false);
+    assert.equal(isNightPaper(18 * 60), true);
+    assert.equal(dialoguePauseMs(PHONE_RECEIVER_MS, true, true, 520), PHONE_RECEIVER_MS);
+    assert.equal(dialoguePauseMs(PHONE_RECEIVER_MS, true, false, 520), 0);
+    assert.equal(PHONE_ANSWER_LINES[0]?.text, "Hello?");
+    assert.equal(PHONE_ANSWER_LINES[0]?.type === "conversation" && PHONE_ANSWER_LINES[0].pauseAfter, PHONE_RECEIVER_MS);
+    assert.equal(PHONE_ANSWER_LINES[1]?.text, "Who is this?");
+    assert.equal(PHONE_ANSWER_LINES[1]?.type === "conversation" && PHONE_ANSWER_LINES[1].pauseAfter, PHONE_WHO_HOLD_MS);
+    assert.equal(PHONE_ANSWER_LINES[2]?.text, "Click.");
+    assert.equal(PHONE_ANSWER_LINES[2]?.type === "narration" && PHONE_ANSWER_LINES[2].pauseAfter, PHONE_SILENCE_MS);
   });
 });

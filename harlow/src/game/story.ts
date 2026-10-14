@@ -14,6 +14,8 @@ export type StoryEntry =
       type: "narration";
       text: string;
       condition?: ThoughtCondition;
+      /** Hold after this line, then show the next without a click. */
+      pauseAfter?: number;
     }
   | {
       type: "thought";

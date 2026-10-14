@@ -28,17 +28,16 @@ import CharacterWindow from "@/components/CharacterWindow/CharacterWindow";
 import QuestWindow from "@/components/QuestWindow/QuestWindow";
 
 import { useReducedMotion } from "@/components/DialogueScene/typewriter";
-import { isNightTime } from "@/game/utils";
+import { isNightPaper, isNightTime } from "@/game/utils";
 import { isTiredWindow } from "@/game/lateNight";
 import { isQuestActive } from "@/game/quests";
 import {
   CEMETERY_LUNCH,
   cemeteryCrossVisible,
   cemeteryLunchDue,
-  dayCardLine,
   displayedClock,
-  emilyDayCount,
   homeNightWeather,
+  titleCardFor,
 } from "@/game/chapter1";
 import { useGame } from "@/game/useGame";
 import { storyEntryApplies } from "@/game/story";
@@ -76,6 +75,7 @@ import { resolveSceneArt } from "./sceneArt";
 import {
   OUTDOOR_SCENE_IDS,
   adminDestinations,
+  choiceKeptInList,
   hotspotActionsFor,
   hotspotKind,
   hotspotLabels,
@@ -140,6 +140,9 @@ export default function Home() {
     conversation,
     conversationActive,
     finishConversation,
+    finishPhoneAnswer,
+    holdPhoneLine,
+    advancePhoneLine,
     onReplySettled,
     showDinerBoardHint,
     activeChoices,
@@ -421,14 +424,13 @@ export default function Home() {
   useEffect(() => {
     const audio = harlowAudio();
     if (inGame && !showProductionSplash) {
-      const weather = phonePhase === "talk" ? "Rainy" : displayWeather;
-      audio.setAmbience({ indoor: sceneIsIndoor, weather });
-      audio.setAmbienceSlot(ambienceSlotForScene(currentScene.id, weather, gameState.time));
+      audio.setAmbience({ indoor: sceneIsIndoor, weather: displayWeather });
+      audio.setAmbienceSlot(ambienceSlotForScene(currentScene.id, displayWeather, gameState.time));
     } else {
       audio.setAmbience(null);
       audio.setAmbienceSlot(null);
     }
-  }, [inGame, showProductionSplash, sceneIsIndoor, displayWeather, phonePhase, gameState.time, currentScene.id]);
+  }, [inGame, showProductionSplash, sceneIsIndoor, displayWeather, gameState.time, currentScene.id]);
 
   useEffect(() => () => {
     harlowAudio().setAmbience(null);
@@ -492,6 +494,7 @@ export default function Home() {
     time: gameState.time,
     weather: displayWeather,
     dayOfWeek: gameState.dayOfWeek,
+    dayNumber: gameState.dayNumber,
     storyFlags,
     activeCharacter,
     quests,
@@ -583,10 +586,11 @@ export default function Home() {
   );
   const choicesWithoutHotspotActions = visibleChoices.filter((choice) => {
     if ("response" in choice) return true;
-    // The diner board is a hotspot and a button. The button stays until
-    // posterFound (excludesStoryFlag on the choice).
-    if (choice.action === "lookAtDinerBulletin") return true;
-    return !hotspotActions.includes(choice.action) && !choice.hotspots?.length;
+    return choiceKeptInList(
+      choice.action,
+      hotspotActions,
+      Boolean(choice.hotspots?.length),
+    );
   });
   const bottomThought =
     lateNightActionThought ??
@@ -662,7 +666,10 @@ export default function Home() {
     );
   }
 
-  const nightUi = isNightTime(gameState.time) && !textSettings.highContrast;
+  const nightUi = isNightPaper(gameState.time) && !textSettings.highContrast;
+  const morningCard = newDayAnnouncement
+    ? titleCardFor(newDayAnnouncement.currentMonth, newDayAnnouncement.dayNumber)
+    : null;
 
   return (
     <main className="game" data-night-ui={nightUi ? "on" : undefined}>
@@ -961,7 +968,10 @@ export default function Home() {
                 entries={conversation}
                 active={conversationActive}
                 staticCaller={phonePhase === "talk"}
-                onFinish={finishConversation}
+                keepPauses={phonePhase === "talk"}
+                onLineHeld={phonePhase === "talk" ? holdPhoneLine : undefined}
+                onLineAdvance={phonePhase === "talk" ? advancePhoneLine : undefined}
+                onFinish={phonePhase === "talk" ? finishPhoneAnswer : finishConversation}
                 onSettled={onReplySettled}
                 choices={
                   conversationActive && askAboutOpen
@@ -1055,6 +1065,7 @@ export default function Home() {
           <TownMap
             originId={currentScene.id}
             time={gameState.time}
+            dayNumber={gameState.dayNumber}
             momTalked={momTalked}
             lightOnTheHillActive={isQuestActive(quests, "light-on-the-hill")}
             availableIds={travelDestinations}
@@ -1163,17 +1174,10 @@ export default function Home() {
         {settingsOpen && <SettingsScreen onBack={() => setSettingsOpen(false)} />}
         <AutosaveIndicator />
 
-        {newDayAnnouncement && (
+        {newDayAnnouncement && morningCard && (
           <DayCard
-            line={dayCardLine(
-              newDayAnnouncement.dayOfWeek,
-              newDayAnnouncement.currentMonth,
-              newDayAnnouncement.dayNumber,
-            )}
-            count={emilyDayCount(
-              newDayAnnouncement.currentMonth,
-              newDayAnnouncement.dayNumber,
-            )}
+            line={morningCard.line}
+            count={morningCard.count}
             onDone={dismissNewDayAnnouncement}
           />
         )}

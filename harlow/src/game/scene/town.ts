@@ -141,7 +141,7 @@ export const margaretConversation: Conversation = {
       ],
     },
     {
-      label: "Coffee.",
+      label: "Coffee ($1)",
       repeatable: true,
       price: 1,
       freeWhen: { person: "margaret", min: 2 },

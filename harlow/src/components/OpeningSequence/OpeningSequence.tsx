@@ -6,7 +6,7 @@ import { preload } from "react-dom";
 import styles from "./OpeningSequence.module.css";
 import { useReducedMotion } from "@/components/DialogueScene/typewriter";
 import Prologue from "@/components/Prologue/Prologue";
-import { emilyDayCount, sidePanelDate, titleCardDate } from "@/game/chapter1";
+import { titleCardFor } from "@/game/chapter1";
 import type { Month } from "@/game/types";
 import { PROLOGUE_IMAGES } from "@/game/prologue";
 
@@ -166,9 +166,10 @@ export default function OpeningSequence({
     preload(PROLOGUE_IMAGES.comic, { as: "image", fetchPriority: "low" });
     preload(PROLOGUE_IMAGES.reading, { as: "image", fetchPriority: "low" });
   }
-  const cornerDate = sidePanelDate(dayOfWeek, month, dayNumber);
-  const date = titleCardDate(dayOfWeek, month, dayNumber);
-  const since = emilyDayCount(month, dayNumber);
+  const card = titleCardFor(month, dayNumber);
+  const cornerDate = card?.side ?? `${dayOfWeek}, ${month} ${dayNumber}`;
+  const date = card?.title ?? `${cornerDate}, 1982`;
+  const since = card?.count ?? "";
 
   return (
     <div

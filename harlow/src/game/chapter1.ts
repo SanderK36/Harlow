@@ -6,8 +6,8 @@ import {
   type StoryFlag,
 } from "@/game/quests";
 import { narration, ethan, npc, type StoryEntry } from "@/game/story";
-import { shouldNoticeHill } from "@/game/hill";
 import type { Month, Weather } from "@/game/types";
+import { weekdayFor1982 } from "@/game/utils";
 
 /** Chapter 1 opens Saturday, October 2, 1982. Day 2 is Sunday, October 3. */
 export const OPENING_DAY_NUMBER = 2;
@@ -60,6 +60,22 @@ function grouped(value: number) {
 /** "Day 3,652" under a title card. Counts up with the in-game date. */
 export function emilyDayCount(month: Month, dayNumber: number, year = OPENING_YEAR) {
   return `Day ${grouped(daysSinceEmilyVanished(month, dayNumber, year))}`;
+}
+
+/**
+ * Weekday, title line, and day count for any in-game date.
+ * October 4, 1982 is Monday, day 3,654 since Emily vanished.
+ */
+export function titleCardFor(month: Month, dayNumber: number) {
+  const weekday = weekdayFor1982(month, dayNumber);
+  if (!weekday) return null;
+  return {
+    weekday,
+    side: sidePanelDate(weekday, month, dayNumber),
+    title: titleCardDate(weekday, month, dayNumber),
+    line: dayCardLine(weekday, month, dayNumber),
+    count: emilyDayCount(month, dayNumber),
+  };
 }
 
 /** Calendar dayNumber 3 is Sunday, October 3 — chapter day 2. Later days stay open. */
@@ -161,17 +177,27 @@ export function nightCallRings(input: {
 export const PHONE_THOUGHT = "Two in the morning. Nobody calls at two in the morning.";
 export const PHONE_ANSWER_THOUGHT = "It's not raining here.";
 export const PHONE_IGNORE_THOUGHT = "Twelve rings. Then nothing. Somehow that's worse.";
+/** Rain in the receiver after "Hello?". */
+export const PHONE_RECEIVER_MS = 2500;
+/** Quiet receiver after "Who is this?" before the click. */
+export const PHONE_WHO_HOLD_MS = 2000;
+/** Silence after "Click." before the thought. Kept even when motion is reduced. */
 export const PHONE_SILENCE_MS = 1500;
 
 export const PHONE_ANSWER_LINES: StoryEntry[] = [
-  ethan("Hello?"),
-  ethan("Who is this?"),
-  narration("Click."),
+  { type: "conversation", character: "Ethan", text: "Hello?", pauseAfter: PHONE_RECEIVER_MS },
+  { type: "conversation", character: "Ethan", text: "Who is this?", pauseAfter: PHONE_WHO_HOLD_MS },
+  { type: "narration", text: "Click.", pauseAfter: PHONE_SILENCE_MS },
 ];
 
 const WET = new Set<Weather>(["Rainy", "Heavy rain", "Thunderstorm"]);
 
-/** After he answers, the house stays dry until morning. The town can still be wet. */
+/** The 02:00 call is dry at the Parker house. Rain is only in the receiver. */
+export function phoneHomeWeather(weather: Weather): Weather {
+  return WET.has(weather) ? "Cloudy" : weather;
+}
+
+/** Once the phone has rung, the house stays dry until morning. The town can still be wet. */
 export function homeNightWeather(
   weather: Weather,
   sceneId: string,
@@ -224,25 +250,45 @@ export function hillDarkDue(input: {
 }
 
 /**
- * Sunday evening in the yard. Light on the Hill would start, except the
- * boot print is still missing. Once.
+ * Sunday evening in the yard, once, when the boot print is still missing.
+ * Other quests do not gate this. Later days stay playable without the hill.
  */
 export function hillPrintMissedDue(input: {
   sceneId: string;
   dayNumber: number;
   time: number;
-  quests: QuestProgress[];
   flags: Partial<Record<StoryFlag, boolean>>;
   heard: boolean;
 }) {
-  if (input.heard || input.dayNumber !== 3 || input.flags.bootPrintSeen) return false;
-  return shouldNoticeHill(
-    input.sceneId,
-    input.time,
-    input.quests,
-    { ...input.flags, bootPrintSeen: true },
-    input.dayNumber,
+  return (
+    input.sceneId === "front-yard"
+    && input.dayNumber === 3
+    && input.time >= 18 * 60
+    && !input.heard
+    && !input.flags.bootPrintSeen
   );
+}
+
+export const CEMETERY_EMPTY = "Nobody here. Fresh tire tracks by the gate, though.";
+export const CEMETERY_DARK = "Not after dark. Not here.";
+
+/**
+ * Sunday only, outside Walter's 14:00–17:00 visit.
+ * "day" is the empty cemetery. "dark" refuses the trip. Other days are null.
+ */
+export function cemeterySundayGate(dayNumber: number, time: number): "day" | "dark" | null {
+  if (dayNumber !== 3) return null;
+  if (time >= 14 * 60 && time < 17 * 60) return null;
+  if (time >= 18 * 60 || time < 6 * 60) return "dark";
+  return "day";
+}
+
+/** True when leaving now, or arriving after the walk, would be Sunday after dark. */
+export function cemeteryTripIsDark(dayNumber: number, time: number, travelMinutes = 0) {
+  if (cemeterySundayGate(dayNumber, time) === "dark") return true;
+  const arrive = time + travelMinutes;
+  if (arrive >= 1440) return cemeterySundayGate(dayNumber + 1, arrive - 1440) === "dark";
+  return cemeterySundayGate(dayNumber, arrive) === "dark";
 }
 
 export const FIGURE_THOUGHT = "There. By the trees. Same hood.";

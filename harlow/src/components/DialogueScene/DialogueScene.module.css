@@ -147,17 +147,13 @@
   z-index: 2;
   flex: 0 0 auto;
   padding: clamp(24px, 2.6vw, 30px) clamp(18px, 2.4vw, 30px) clamp(14px, 1.8vw, 20px);
-  color: #f4e9e2;
-  background:
-    radial-gradient(120% 140% at 0% 0%, rgba(169, 22, 36, 0.16), transparent 55%),
-    linear-gradient(180deg, rgba(24, 13, 14, 0.9), rgba(9, 5, 6, 0.95));
-  border: 1px solid rgba(237, 85, 98, 0.3);
+  color: #2a1c14;
+  background: #f4efe4;
+  border: 1px solid rgba(90, 62, 36, 0.28);
   border-radius: 12px;
   box-shadow:
-    0 -12px 44px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 220, 205, 0.08);
-  -webkit-backdrop-filter: blur(8px) saturate(1.1);
-  backdrop-filter: blur(8px) saturate(1.1);
+    0 16px 36px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 252, 245, 0.8);
   pointer-events: auto;
   animation: boxEnter 360ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
@@ -169,7 +165,7 @@
   right: 14%;
   left: 14%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 120, 120, 0.85), transparent);
+  background: linear-gradient(90deg, transparent, rgba(90, 60, 40, 0.45), transparent);
   content: "";
 }
 
@@ -217,7 +213,7 @@
   min-width: 44px;
   min-height: 36px;
   padding: 8px 10px;
-  color: rgba(251, 230, 214, 0.9);
+  color: rgba(42, 28, 20, 0.72);
   font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 600;
@@ -238,8 +234,8 @@
 .history:hover,
 .history:focus-visible,
 .history[aria-pressed="true"] {
-  color: #fbe6d6;
-  border-color: rgba(255, 196, 178, 0.35);
+  color: #2a1c14;
+  border-color: rgba(90, 60, 40, 0.4);
   outline: none;
 }
 
@@ -271,11 +267,10 @@
   font-weight: 400;
   line-height: 1.5;
   text-wrap: pretty;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .lineNarration {
-  color: #dccbc3;
+  color: #3a2a20;
   font-style: italic;
 }
 
@@ -299,6 +294,20 @@
 
 :global(.game[data-night-ui="on"]) .lineNarration {
   color: #3a2a20;
+}
+
+:global(html[data-contrast="high"]) .box {
+  color: #ffffff;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(169, 22, 36, 0.16), transparent 55%),
+    linear-gradient(180deg, rgba(24, 13, 14, 0.9), rgba(9, 5, 6, 0.95));
+  border-color: #ffffff;
+}
+
+:global(html[data-contrast="high"]) .line,
+:global(html[data-contrast="high"]) .lineNarration,
+:global(html[data-contrast="high"]) .history {
+  color: #ffffff;
 }
 
 .unrevealed {

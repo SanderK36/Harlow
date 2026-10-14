@@ -18,6 +18,7 @@ import styles from "./TownMap.module.css";
 type TownMapProps = {
   originId: string;
   time: number;
+  dayNumber?: number;
   momTalked: boolean;
   lightOnTheHillActive: boolean;
   availableIds: readonly string[];
@@ -82,6 +83,7 @@ function PinGlyph({ here, closed }: { here: boolean; closed: boolean }) {
 export default function TownMap({
   originId,
   time,
+  dayNumber,
   momTalked,
   lightOnTheHillActive,
   availableIds,
@@ -104,6 +106,7 @@ export default function TownMap({
   const pins = mapPinViews({
     originId,
     time,
+    dayNumber,
     momTalked,
     lightOnTheHillActive,
     availableIds,

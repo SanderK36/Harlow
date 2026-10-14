@@ -16,21 +16,13 @@ export type TimeHintInput = {
   knifeTaken: boolean;
 };
 
-function momAtKitchen(time: number, day: string) {
-  if (time >= 450 && time < 540) return true;
-  return (day === "Saturday" || day === "Sunday") && time >= 12 * 60 && time < 19 * 60;
-}
-
 /**
  * A thought for an action Ethan can still press outside its window.
  * Null when the action should run, or when there is nothing to try.
+ * Talk choices are omitted here: the button exists only while that NPC is in the scene.
  */
 export function timeHint(input: TimeHintInput): string | null {
   const { action, time, flags } = input;
-
-  if (action === "talkToMom" && input.sceneId === "kitchen" && !momAtKitchen(time, input.dayOfWeek)) {
-    return "Mom's not up yet. Or she's already gone.";
-  }
 
   if (action === "goToSleep" && input.sceneId === "ethan-room") {
     const canSleep = time >= 22 * 60 || time < 7 * 60;
@@ -81,10 +73,6 @@ export function timeHint(input: TimeHintInput): string | null {
 
   if (action === "enterDiner" && time < 7 * 60) {
     return "Closed. Margaret's not in yet.";
-  }
-
-  if (action === "talkToJohnny" && (time < 8 * 60 || time >= 14 * 60)) {
-    return "Sign says back in five. It always says that.";
   }
 
   if (action === "workNeedleGrooveShift" && input.job === "needle-groove") {
