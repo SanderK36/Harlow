@@ -132,6 +132,7 @@ describe("map pins", () => {
         ["front-yard", "Home"],
         ["motel", "Motel"],
         ["scrapyard", "Scrapyard"],
+        ["miller-lake", "Miller Lake"],
       ],
     );
     const pinIds: string[] = MAP_PINS.map((item) => item.id);

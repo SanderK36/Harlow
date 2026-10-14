@@ -30,7 +30,8 @@ import QuestWindow from "@/components/QuestWindow/QuestWindow";
 import { useReducedMotion } from "@/components/DialogueScene/typewriter";
 import { isNightPaper, isNightTime } from "@/game/utils";
 import { isTiredWindow } from "@/game/lateNight";
-import { isQuestActive } from "@/game/quests";
+import { isQuestActive, isQuestCompleted } from "@/game/quests";
+import { millerLakeUnlocked, STALKER_FIGURE } from "@/game/slasher";
 import {
   CEMETERY_LUNCH,
   cemeteryCrossVisible,
@@ -56,6 +57,7 @@ import { useGameSettings } from "@/game/useSettings";
 import Atmosphere from "@/components/Atmosphere/Atmosphere";
 import StormLightning from "@/components/StormLightning/StormLightning";
 import CloseupOverlay from "@/components/CloseupOverlay/CloseupOverlay";
+import EndingSequence from "@/components/EndingSequence/EndingSequence";
 import CaptionPlacer from "@/components/CaptionPlacer/CaptionPlacer";
 import MainMenu from "@/components/MainMenu/MainMenu";
 import PauseMenu from "@/components/PauseMenu/PauseMenu";
@@ -171,6 +173,12 @@ export default function Home() {
     markCemeteryLunch,
     phonePhase,
     figureActive,
+    stalkerMode,
+    escapeOpen,
+    escapeMode,
+    chooseEscape,
+    finishEscape,
+    finishNightWhisper,
     catchEntrance,
     trust,
     metPeople,
@@ -416,7 +424,7 @@ export default function Home() {
   );
   const displayGameState = {
     ...(displayWeather === gameState.weather ? gameState : { ...gameState, weather: displayWeather }),
-    time: displayedClock(gameState.time, phonePhase !== null),
+    time: displayedClock(gameState.time, phonePhase === "ring" || phonePhase === "talk"),
   };
 
   // Rain follows the weather and whether Ethan is inside.
@@ -500,6 +508,7 @@ export default function Home() {
     quests,
     sceneIsIndoor,
     hasConversationOverlay,
+    woodsFigure: figureActive && currentScene.id === "elrod-backyard",
   });
   const {
     momInKitchen,
@@ -511,6 +520,7 @@ export default function Home() {
     interimRain,
     interimRainNight,
     syntheticNight,
+    imageFallback,
   } = art;
 
   const reducedMotion = useReducedMotion();
@@ -752,6 +762,11 @@ export default function Home() {
               alt=""
               className="scene-image"
               style={visual.scene.image.objectPosition ? { objectPosition: visual.scene.image.objectPosition } : undefined}
+              onError={(event) => {
+                if (!imageFallback || event.currentTarget.dataset.fallback === "1") return;
+                event.currentTarget.dataset.fallback = "1";
+                event.currentTarget.src = imageFallback;
+              }}
             />
             {!reducedMotion && incomingSceneImage && (
               <img
@@ -781,6 +796,16 @@ export default function Home() {
               </div>
             )}
             {figureActive && <div className="figure-vignette" aria-hidden="true" />}
+            {stalkerMode && (
+              <img
+                src={STALKER_FIGURE}
+                alt=""
+                className="stalker-figure"
+                onError={(event) => {
+                  event.currentTarget.hidden = true;
+                }}
+              />
+            )}
             <StormLightning
               weather={displayWeather}
               indoor={sceneIsIndoor}
@@ -792,7 +817,8 @@ export default function Home() {
             </div>
             {!(showOpeningThought || showVinylThought || tvNewsLine !== null)
               && !phonePhase
-              && !figureActive &&
+              && !figureActive
+              && !stalkerMode &&
               visual.hotspots.flatMap((sceneHotspot) =>
                 (sceneHotspot.hotspots ?? [undefined]).map((region, index) => {
                   const hint = choiceAffordance(sceneHotspot);
@@ -967,11 +993,17 @@ export default function Home() {
               <DialogueScene
                 entries={conversation}
                 active={conversationActive}
-                staticCaller={phonePhase === "talk"}
-                keepPauses={phonePhase === "talk"}
+                staticCaller={phonePhase === "talk" || phonePhase === "whisper"}
+                keepPauses={phonePhase === "talk" || phonePhase === "whisper"}
                 onLineHeld={phonePhase === "talk" ? holdPhoneLine : undefined}
                 onLineAdvance={phonePhase === "talk" ? advancePhoneLine : undefined}
-                onFinish={phonePhase === "talk" ? finishPhoneAnswer : finishConversation}
+                onFinish={
+                  phonePhase === "talk"
+                    ? finishPhoneAnswer
+                    : phonePhase === "whisper"
+                      ? finishNightWhisper
+                      : finishConversation
+                }
                 onSettled={onReplySettled}
                 choices={
                   conversationActive && askAboutOpen
@@ -1077,6 +1109,11 @@ export default function Home() {
               time: gameState.time,
               momTalked,
             })}
+            millerLake={millerLakeUnlocked({
+              has1966: Boolean(storyFlags.dad1966Told),
+              oldFriendsDone: Boolean(storyFlags.oldFriendsDone)
+                || isQuestCompleted(quests, "old-friends"),
+            })}
             onTravel={(choice) => {
               setShowTravel(false);
               setMapNote(null);
@@ -1116,6 +1153,15 @@ export default function Home() {
                   : null
             }
             rainNight={isNightTime(gameState.time)}
+          />
+        )}
+
+        {(escapeOpen || escapeMode) && (
+          <EndingSequence
+            choosing={escapeOpen}
+            mode={escapeMode}
+            onChoose={chooseEscape}
+            onDone={finishEscape}
           />
         )}
 

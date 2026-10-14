@@ -21,6 +21,8 @@ export type GameSettings = {
   reducedMotion: boolean | null;
   highContrast: boolean;
   skipSeenText: boolean;
+  /** The sanatorium choice is the only timed one. Off leaves it up until he picks. */
+  timedChoices: boolean;
 };
 
 /** Root size for in-game reading text. */
@@ -39,6 +41,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   reducedMotion: null,
   highContrast: false,
   skipSeenText: false,
+  timedChoices: true,
 };
 
 export type SettingsStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
@@ -71,6 +74,7 @@ export function readSettings(storage: SettingsStorage): GameSettings {
       reducedMotion: typeof data.reducedMotion === "boolean" ? data.reducedMotion : null,
       highContrast: data.highContrast === true,
       skipSeenText: data.skipSeenText === true,
+      timedChoices: data.timedChoices !== false,
     };
   } catch {
     return { ...DEFAULT_SETTINGS };
@@ -87,6 +91,7 @@ export function writeSettings(settings: GameSettings, storage: SettingsStorage) 
     reducedMotion: typeof settings.reducedMotion === "boolean" ? settings.reducedMotion : null,
     highContrast: settings.highContrast === true,
     skipSeenText: settings.skipSeenText === true,
+    timedChoices: settings.timedChoices !== false,
   };
   storage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(next));
 }

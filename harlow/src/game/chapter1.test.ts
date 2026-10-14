@@ -524,7 +524,7 @@ describe("night two and the road home", () => {
 });
 
 describe("ending order", () => {
-  it("puts the hair tie, then the figure, then one line per optional clue", () => {
+  it("puts the hair tie, then the figure, before the choice", () => {
     const frames = endingFrames([
       "room-6",
       "every-sunday",
@@ -538,18 +538,11 @@ describe("ending order", () => {
       "That's hers.",
       "Ten years. Somebody kept it ten years.",
       "Someone's here.",
-      ...endingThoughts([
-        "room-6",
-        "every-sunday",
-        "fresh-flowers",
-        "year-1966",
-        "the-woods-road",
-        "trail-up-the-hill",
-      ]),
     ]);
     assert.equal(frames[0]?.flags?.[0], "hairTieFound");
     assert.equal(frames[0]?.split?.left, "/images/misc/oldEmilyEthanPhoto.png");
     assert.equal(frames[3]?.thought, "Someone's here.");
+    assert.equal(frames[3]?.after, "timed-choice");
     assert.deepEqual(endingThoughts(["room-6", "every-sunday"]), [
       "Every Sunday. He still goes.",
       "Room 6. Mud on the carpet. Friday.",

@@ -29,6 +29,8 @@ export type CloseupContent = {
    * arrives half a second later. No fade, including under reduced motion.
    */
   windowLight?: { thought: string };
+  /** Dismissing this plate opens the timed Hide / Run choice. */
+  after?: "timed-choice";
 };
 
 type CloseupOverlayProps = {

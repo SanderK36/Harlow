@@ -202,6 +202,15 @@
   outline-offset: 2px;
 }
 
+.pinPencil {
+  font-family: var(--font-handwriting);
+  font-size: 20px;
+}
+
+.pencilPin svg {
+  overflow: visible;
+}
+
 .pencilCross {
   position: absolute;
   top: -2px;

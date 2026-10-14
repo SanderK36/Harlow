@@ -42,6 +42,7 @@ import {
   emilyDoorAjarDue,
   EMILY_BOX_THOUGHT,
   EMILY_DOOR_THOUGHT,
+  endingAfterEscape,
   endingFrames,
   FIGURE_FOLLOW,
   FIGURE_STAY,
@@ -87,6 +88,32 @@ import {
   syncChapterQuests,
 } from "@/game/chapter1";
 import { hillCheckScene, HILL_THOUGHT, shouldNoticeHill } from "@/game/hill";
+import {
+  EARL_TOWEL,
+  LINDA_SHEET_LINES,
+  LOCK_JOKE,
+  MARGARET_DEADBOLT,
+  MILLER_ARRIVAL,
+  NAME_WHISPER_THOUGHT,
+  NIGHT_WHISPER_LINES,
+  SHEET_LINE_MS,
+  SHEET_LINES,
+  STREET_STALKER_GONE,
+  STREET_STALKER_THOUGHT,
+  earlTowelDue,
+  emilyGraveStoneImage,
+  lindaSheetDue,
+  margaretDeadboltDue,
+  nextStalkerCount,
+  nightWhisperDue,
+  restoredStalkerCount,
+  sheetStalkerDue,
+  stalkerMinute,
+  streetStalkerDue,
+  woodsFigureDue,
+  woodsSightingCounts,
+  type StalkerContext,
+} from "@/game/slasher";
 import { timeHint, WAITING_TIRED_HINT } from "@/game/timeHints";
 import {
   actionMinutes,
@@ -167,6 +194,10 @@ const PHONE_RING_CHOICES: Choice[] = [
 const FIGURE_CHOICES: Choice[] = [
   { label: "Follow him", action: "followDaytimeFigure", nextScene: "elrod-backyard", timeCost: 0 },
   { label: "Stay put", action: "stayDaytimeFigure", nextScene: "elrod-backyard", timeCost: 0 },
+];
+
+const STREET_STALKER_CHOICES: Choice[] = [
+  { label: "Look again", action: "lookAgainStalker", nextScene: "street", timeCost: 0 },
 ];
 
 const CONVERSATION_ACTIONS = new Set([
@@ -354,8 +385,22 @@ export function useGame() {
   const phoneIntercept = useRef(false);
   const phoneResumeSleep = useRef(false);
   const afterConversationRef = useRef<(() => void) | null>(null);
-  const [phonePhase, setPhonePhase] = useState<null | "ring" | "talk">(null);
+  const [phonePhase, setPhonePhase] = useState<null | "ring" | "talk" | "whisper">(null);
   const [figureActive, setFigureActive] = useState(false);
+  const [stalkerMode, setStalkerMode] = useState<null | "street" | "sheet">(null);
+  const [sheetHold, setSheetHold] = useState(false);
+  const [stalkerSightings, setStalkerSightings] = useState(() =>
+    restoredStalkerCount(sessionSave?.stalkerSightings, sessionSave?.storyFlags ?? {}),
+  );
+  const [stalkerSeenAt, setStalkerSeenAt] = useState<number | null>(
+    sessionSave?.stalkerSeenAt ?? null,
+  );
+  const stalkerCountRef = useRef(stalkerSightings);
+  const stalkerAtRef = useRef<number | null>(stalkerSeenAt);
+  const sheetTimers = useRef<number[]>([]);
+  const [escapeOpen, setEscapeOpen] = useState(false);
+  const [escapeMode, setEscapeMode] = useState<null | "hide" | "run">(null);
+  const escapeResolved = useRef(false);
   const [catchEntrance, setCatchEntrance] = useState(false);
   const [gravelHold, setGravelHold] = useState(false);
   const gravelTimers = useRef<number[]>([]);
@@ -544,7 +589,40 @@ export function useGame() {
     if (pending.flags) applyFlags(pending.flags);
   }
 
+  function chooseEscape(choice: "hide" | "run") {
+    if (escapeResolved.current) return;
+    escapeResolved.current = true;
+    applyFlags(choice === "hide" ? "endingHid" : "endingRan");
+    setEscapeOpen(false);
+    setEscapeMode(choice);
+  }
+
+  function finishEscape() {
+    setEscapeMode(null);
+    harlowAudio().stopHeartbeat();
+    const frames = endingAfterEscape(cluesRef.current);
+    const [first, ...rest] = frames;
+    if (!first) {
+      if (pendingChapterEnd.current) {
+        pendingChapterEnd.current = false;
+        showChapterEndScreen();
+      }
+      return;
+    }
+    closeupQueue.current = rest;
+    closeupRef.current = first;
+    pauseNoticesForOverlay();
+    setCloseup(first);
+  }
+
   function dismissCloseup() {
+    if (closeupRef.current?.after === "timed-choice") {
+      closeupRef.current = null;
+      setCloseup(null);
+      escapeResolved.current = false;
+      setEscapeOpen(true);
+      return;
+    }
     const queued = closeupQueue.current.shift();
     if (queued) {
       closeupRef.current = queued;
@@ -633,8 +711,10 @@ export function useGame() {
       clueConnections,
       cluesSeen,
       askedAbout,
+      stalkerSightings,
+      stalkerSeenAt,
     };
-  }, [gameState, playerState, currentScene, busStopReturnSceneId, marleneActive, deskCigarettesPickedUp, scrapyardKnifePickedUp, garageFlashlightPickedUp, momTalked, momJobConcernHeard, job, jobQuestTarget, quests, storyFlags, chapter, trust, metPeople, peopleSeenTrust, trustGainedOnDay, clues, clueConnections, cluesSeen, askedAbout]);
+  }, [gameState, playerState, currentScene, busStopReturnSceneId, marleneActive, deskCigarettesPickedUp, scrapyardKnifePickedUp, garageFlashlightPickedUp, momTalked, momJobConcernHeard, job, jobQuestTarget, quests, storyFlags, chapter, trust, metPeople, peopleSeenTrust, trustGainedOnDay, clues, clueConnections, cluesSeen, askedAbout, stalkerSightings, stalkerSeenAt]);
 
   // This is a temporary, per-tab resume point. It survives refreshes but is
   // automatically cleared when the browser tab is closed.
@@ -690,6 +770,36 @@ export function useGame() {
     setFigureActive(false);
     setCurrentThought(PHONE_THOUGHT);
     setCurrentEffects([]);
+  }
+
+  function beginNightWhisper(state: GameState) {
+    applyFlags("nameWhispered");
+    const hallway = scenes.hallway;
+    setCurrentScene(hallway);
+    setGameState({ ...state, location: hallway.location });
+    setPhonePhase("whisper");
+    clearStalkerLayer();
+    setFigureActive(false);
+    setCatchEntrance(false);
+    setConversationPerson(null);
+    setActiveConversation({ opening: NIGHT_WHISPER_LINES, choices: [] });
+    setConversation(NIGHT_WHISPER_LINES);
+    setConversationEnding(true);
+    setConversationActive(true);
+    conversationActiveRef.current = true;
+    setCurrentThought(null);
+    setCurrentEffects([]);
+  }
+
+  function finishNightWhisper() {
+    setPhonePhase(null);
+    setConversationActive(false);
+    setConversationEnding(false);
+    conversationActiveRef.current = false;
+    setCatchEntrance(false);
+    setConversation([]);
+    setActiveConversation(null);
+    setCurrentThought(NAME_WHISPER_THOUGHT);
   }
 
   function continueSleepAfterCall() {
@@ -761,6 +871,88 @@ export function useGame() {
     return true;
   }
 
+  function clearSheetTimers() {
+    for (const id of sheetTimers.current) window.clearTimeout(id);
+    sheetTimers.current = [];
+  }
+
+  function stalkerContext(sceneId: string, time: number, dayNumber: number): StalkerContext {
+    return {
+      sceneId,
+      dayNumber,
+      time,
+      sightings: stalkerCountRef.current,
+      lastAt: stalkerAtRef.current,
+      inConversation: conversationActiveRef.current,
+    };
+  }
+
+  function noteStalker(dayNumber: number, time: number) {
+    const next = nextStalkerCount(stalkerCountRef.current);
+    stalkerCountRef.current = next;
+    setStalkerSightings(next);
+    const at = stalkerMinute(dayNumber, time);
+    stalkerAtRef.current = at;
+    setStalkerSeenAt(at);
+  }
+
+  function gateHasStarted() {
+    return (
+      questsRef.current.some((quest) => quest.id === "the-gate")
+      || Boolean(storyFlagsRef.current.margaretGossipHeard)
+    );
+  }
+
+  function beginSheetLines() {
+    clearSheetTimers();
+    setStalkerMode("sheet");
+    setSheetHold(true);
+    setCurrentThought(SHEET_LINES[0]);
+    sheetTimers.current = [
+      window.setTimeout(() => setCurrentThought(SHEET_LINES[1]), SHEET_LINE_MS),
+      window.setTimeout(() => setCurrentThought(SHEET_LINES[2]), SHEET_LINE_MS * 2),
+      window.setTimeout(() => {
+        setStalkerMode(null);
+        setSheetHold(false);
+      }, SHEET_LINE_MS * 3),
+    ];
+  }
+
+  function clearStalkerLayer() {
+    clearSheetTimers();
+    setStalkerMode(null);
+    setSheetHold(false);
+  }
+
+  /**
+   * Sightings 1 and 2. Returns true when a line was just put on screen, so a
+   * scene thought does not replace it.
+   */
+  function noticeStalker(fromScene: string, sceneId: string, time: number, dayNumber: number) {
+    if (conversationActiveRef.current || closeupRef.current) return false;
+    const flags = storyFlagsRef.current;
+    const ctx = stalkerContext(sceneId, time, dayNumber);
+    if (streetStalkerDue({
+      ...ctx,
+      fromScene,
+      gateStarted: gateHasStarted(),
+      seen: Boolean(flags.streetStalkerSeen),
+    })) {
+      applyFlags("streetStalkerSeen");
+      noteStalker(dayNumber, time);
+      setStalkerMode("street");
+      setCurrentThought(STREET_STALKER_THOUGHT);
+      return true;
+    }
+    if (sheetStalkerDue({ ...ctx, seen: Boolean(flags.sheetStalkerSeen) })) {
+      applyFlags("sheetStalkerSeen");
+      noteStalker(dayNumber, time);
+      beginSheetLines();
+      return true;
+    }
+    return false;
+  }
+
   function noticeArrivals(sceneId: string, time: number, dayNumber: number) {
     const flags = storyFlagsRef.current;
     if (sceneId === "cementary" && cemeterySundayGate(dayNumber, time) === "day") {
@@ -789,13 +981,13 @@ export function useGame() {
       setCurrentThought(EMILY_DOOR_THOUGHT);
       return;
     }
-    if (daytimeFigureDue({
-      sceneId,
-      dayNumber,
-      time,
+    const woods = {
+      ...stalkerContext(sceneId, time, dayNumber),
       bootPrintSeen: Boolean(flags.bootPrintSeen),
       seen: Boolean(flags.daytimeFigureSeen),
-    })) {
+    };
+    if (woodsFigureDue(woods)) {
+      if (woodsSightingCounts(woods)) noteStalker(dayNumber, time);
       applyFlags("daytimeFigureSeen");
       setFigureActive(true);
       setCurrentThought(FIGURE_THOUGHT);
@@ -901,6 +1093,7 @@ export function useGame() {
       applyFlags("emilyDoorAjar");
       setCurrentThought(EMILY_DOOR_THOUGHT);
     }
+    if (stayed) noticeStalker(currentScene.id, currentScene.id, played.time, played.dayNumber);
 
     return played;
   }
@@ -919,6 +1112,8 @@ export function useGame() {
       return;
     }
 
+    clearStalkerLayer();
+
     if (phoneIntercept.current) {
       beginPhone({
         ...gameState,
@@ -927,6 +1122,24 @@ export function useGame() {
         dayOfWeek: day,
         dayNumber: dayRef.current,
         location: scenes.hallway.location,
+      });
+      return;
+    }
+
+    if (nightWhisperDue({
+      answered: Boolean(storyFlagsRef.current.nightCallClear),
+      heard: Boolean(storyFlagsRef.current.nameWhispered),
+      dayNumber: dayRef.current,
+      time,
+      fromScene: currentScene.id,
+      toScene: sceneId,
+    })) {
+      beginNightWhisper({
+        ...gameState,
+        time,
+        weather,
+        dayOfWeek: day,
+        dayNumber: dayRef.current,
       });
       return;
     }
@@ -951,6 +1164,11 @@ export function useGame() {
     }
     if (hillNow) openHillQuest();
     noticeArrivals(sceneId, time, dayRef.current);
+    const stalkerSpoke = noticeStalker(currentScene.id, sceneId, time, dayRef.current);
+    if (sceneId === "miller-lake" && !questsRef.current.some((quest) => quest.id === "miller-lake")) {
+      applyQuestHooks({ startsQuest: "miller-lake" });
+      if (!stalkerSpoke) setCurrentThought(MILLER_ARRIVAL);
+    }
 
     if (
       sceneId === "diner-inside"
@@ -1086,6 +1304,34 @@ export function useGame() {
     ) {
       spoken = [npc("Earl", EARL_CASH_LINE)];
       applyFlags("earlCashHeard");
+    }
+    if (lindaSheetDue({
+      sceneId: currentScene.id,
+      dayNumber: gameState.dayNumber,
+      time: gameState.time,
+      sheetSeen: Boolean(heard.sheetStalkerSeen),
+      heard: Boolean(heard.sheetMissing),
+    })) {
+      spoken = [...LINDA_SHEET_LINES, ...spoken];
+      applyFlags("sheetMissing");
+    }
+    if (person === "margaret" && margaretDeadboltDue({
+      dayNumber: gameState.dayNumber,
+      heard: Boolean(heard.margaretDeadbolts),
+    })) {
+      spoken = [...spoken, npc("Margaret", MARGARET_DEADBOLT)];
+      applyFlags("margaretDeadbolts");
+    }
+    if (
+      currentScene.id === "motel-inside"
+      && earlTowelDue({
+        dayNumber: gameState.dayNumber,
+        room6Heard: Boolean(heard.room6Heard),
+        heard: Boolean(heard.earlTowels),
+      })
+    ) {
+      spoken = [...spoken, npc("Earl", EARL_TOWEL)];
+      applyFlags("earlTowels");
     }
     trustSpentRef.current = {};
 
@@ -1424,6 +1670,16 @@ export function useGame() {
       setShowTravel(true);
       return;
     }
+    if ("action" in choice && choice.action === "lookAgainStalker") {
+      setStalkerMode(null);
+      setCurrentThought(STREET_STALKER_GONE);
+      return;
+    }
+    if ("action" in choice && choice.action === "tryElrodDoor") {
+      applyFlags("lockCheckHeard");
+      setCurrentThought(LOCK_JOKE);
+      return;
+    }
     if ("action" in choice && choice.action === "ignoreNightCall") {
       finishNightCall(false);
       return;
@@ -1566,7 +1822,9 @@ export function useGame() {
           image: plateUrl(
             choice.action === "lookAtElrodBootPrint"
               ? bootPrintImage(gameState.weather)
-              : choice.closeup.image,
+              : choice.action === "lookAtEmilyStone"
+                ? emilyGraveStoneImage(gameState.weather, gameState.time)
+                : choice.closeup.image,
           ),
           video: choice.closeup.video ? plateUrl(choice.closeup.video) : undefined,
           thought: lid ? EMILY_BOX_THOUGHT : choice.closeup.thought,
@@ -1587,6 +1845,9 @@ export function useGame() {
               label: choice.closeup.next.label,
               disableWeatherFilter: choice.closeup.next.disableWeatherFilter,
               inscriptions: choice.closeup.next.inscriptions,
+              fallbackImage: choice.closeup.next.fallbackImage
+                ? plateUrl(choice.closeup.next.fallbackImage)
+                : undefined,
               flags: choice.closeup.next.setsFlags,
             }
           : undefined,
@@ -1920,6 +2181,7 @@ export function useGame() {
     commitQuests(restoredQuests, { autosave: false });
     storyFlagsRef.current = restoredFlags;
     setStoryFlags(restoredFlags);
+    const loadedCount = restoredStalkerCount(save.stalkerSightings, restoredFlags);
     setChapter(save.chapter ?? 1);
     const restoredTrust = migrateTrust(save);
     const restoredMet = migrateMet(save);
@@ -1967,6 +2229,15 @@ export function useGame() {
     harlowAudio().stopReceiverRain();
     setPhonePhase(null);
     setFigureActive(false);
+    clearStalkerLayer();
+    stalkerCountRef.current = loadedCount;
+    setStalkerSightings(loadedCount);
+    stalkerAtRef.current = save.stalkerSeenAt ?? null;
+    setStalkerSeenAt(save.stalkerSeenAt ?? null);
+    escapeResolved.current = false;
+    setEscapeOpen(false);
+    setEscapeMode(null);
+    harlowAudio().stopHeartbeat();
     setCatchEntrance(false);
     phoneIntercept.current = false;
     phoneResumeSleep.current = false;
@@ -2055,6 +2326,15 @@ export function useGame() {
     harlowAudio().stopReceiverRain();
     setPhonePhase(null);
     setFigureActive(false);
+    clearStalkerLayer();
+    stalkerCountRef.current = 0;
+    setStalkerSightings(0);
+    stalkerAtRef.current = null;
+    setStalkerSeenAt(null);
+    escapeResolved.current = false;
+    setEscapeOpen(false);
+    setEscapeMode(null);
+    harlowAudio().stopHeartbeat();
     setCatchEntrance(false);
     phoneIntercept.current = false;
     phoneResumeSleep.current = false;
@@ -2084,6 +2364,8 @@ export function useGame() {
       clueConnections: [],
       cluesSeen: [],
       askedAbout: {},
+      stalkerSightings: 0,
+      stalkerSeenAt: null,
     });
   }
 
@@ -2129,10 +2411,12 @@ export function useGame() {
       })
     : phonePhase === "ring"
       ? PHONE_RING_CHOICES
+      : stalkerMode === "street"
+        ? STREET_STALKER_CHOICES
       : figureActive
         ? FIGURE_CHOICES
         : currentScene.choices.filter(sceneChoiceListed);
-  const choicesWhileGravel = gravelHold ? [] : activeChoices;
+  const choicesWhileGravel = gravelHold || sheetHold ? [] : activeChoices;
 
   const askTopics = conversationActive && conversationPerson
     ? askTopicsFor(conversationPerson, clues, clueConnections)
@@ -2292,6 +2576,12 @@ export function useGame() {
     noteHoodedMan,
     phonePhase,
     figureActive,
+    stalkerMode,
+    escapeOpen,
+    escapeMode,
+    chooseEscape,
+    finishEscape,
+    finishNightWhisper,
     catchEntrance,
     closeup,
     dismissCloseup,

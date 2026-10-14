@@ -28,6 +28,8 @@ type TownMapProps = {
   openingThought?: string | null;
   /** Pencil cross beside the cemetery pin. No label. */
   cemeteryCross?: boolean;
+  /** Miller Lake is drawn in pencil once 1966 or Old Friends is known. */
+  millerLake?: boolean;
   onTravel: (choice: Choice) => void;
   onClose: () => void;
 };
@@ -65,6 +67,24 @@ function nameClass(side: MapPinView["labelSide"]) {
   return styles.nameRight;
 }
 
+function PencilPin({ here, closed }: { here: boolean; closed: boolean }) {
+  return (
+    <span className={`${styles.glyph} ${styles.pencilPin} ${here ? styles.glyphHere : ""} ${closed ? styles.glyphClosed : ""}`}>
+      <svg className={styles.pinSvg} viewBox="0 0 32 42" aria-hidden="true" focusable="false">
+        <path
+          d="M16.4 39.2c.4-4.2-2.2-8.4-.2-13.1C18.6 20.4 15.2 16.6 16 11.8 16.6 8.2 14.4 4.6 16.2 2.4c1.2 2.6-.2 6.2.6 9.2 1.2 4.6-1.8 8.8.2 13.6 1.6 3.8-.8 8.2-.6 13.9"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+        <circle cx="16" cy="14" r="2.2" fill="none" stroke="currentColor" strokeWidth="1.3" />
+      </svg>
+      {closed && <LockMark />}
+    </span>
+  );
+}
+
 function PinGlyph({ here, closed }: { here: boolean; closed: boolean }) {
   return (
     <span className={`${styles.glyph} ${here ? styles.glyphHere : ""} ${closed ? styles.glyphClosed : ""}`}>
@@ -91,6 +111,7 @@ export default function TownMap({
   night,
   openingThought = null,
   cemeteryCross = false,
+  millerLake = false,
   onTravel,
   onClose,
 }: TownMapProps) {
@@ -110,6 +131,7 @@ export default function TownMap({
     momTalked,
     lightOnTheHillActive,
     availableIds,
+    millerLake,
   });
   const byWalk = mapPinsByWalkTime(pins);
   const standingOnPin = pins.some((pin) => pin.here);
@@ -247,7 +269,7 @@ export default function TownMap({
                 >
                   <button
                     type="button"
-                    className={`${styles.pin} ${pin.here ? styles.pinHere : pin.open ? styles.pinOpen : styles.pinClosed}`}
+                    className={`${styles.pin} ${pin.id === "miller-lake" ? styles.pinPencil : ""} ${pin.here ? styles.pinHere : pin.open ? styles.pinOpen : styles.pinClosed}`}
                     data-pin={pin.id}
                     data-open={pin.open ? "true" : "false"}
                     aria-current={pin.here ? "location" : undefined}
@@ -280,7 +302,11 @@ export default function TownMap({
                         </svg>
                       </span>
                     )}
-                    <PinGlyph here={pin.here} closed={!pin.open && !pin.here} />
+                    {pin.id === "miller-lake" ? (
+                      <PencilPin here={pin.here} closed={!pin.open && !pin.here} />
+                    ) : (
+                      <PinGlyph here={pin.here} closed={!pin.open && !pin.here} />
+                    )}
                     <span className={`${styles.name} ${nameClass(pin.labelSide)}`}>{pin.label}</span>
                     {pin.here && <span className={styles.hereLabel}>You are here</span>}
                     {!pin.open && !pin.here && <span className={styles.srOnly}>Closed</span>}

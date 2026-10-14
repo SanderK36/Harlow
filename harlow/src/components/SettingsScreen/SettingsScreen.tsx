@@ -161,6 +161,14 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
             />
             <span>Skip seen text</span>
           </label>
+          <label className={styles.check}>
+            <input
+              type="checkbox"
+              checked={!settings.timedChoices}
+              onChange={() => updateSettings({ timedChoices: !settings.timedChoices })}
+            />
+            <span>Timed choices: off</span>
+          </label>
         </fieldset>
       </div>
     </div>

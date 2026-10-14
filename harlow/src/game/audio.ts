@@ -95,6 +95,7 @@ class HarlowAudio {
   private footToken = 0;
   private receiverSource: AudioBufferSourceNode | null = null;
   private receiverToken = 0;
+  private heartTimer: number | null = null;
   private clipCache = new Map<string, AudioBuffer>();
   private clipMiss = new Set<string>();
   private clipLoading = new Map<string, Promise<AudioBuffer | null>>();
@@ -241,6 +242,24 @@ class HarlowAudio {
       source.start();
       this.footSource = source;
     });
+  }
+
+  /** Closet crack. Two quiet thumps, then a rest. No file. */
+  loopHeartbeat() {
+    this.stopHeartbeat();
+    const beat = () => {
+      this.blip(62, 0.045, 0.09);
+      window.setTimeout(() => this.blip(48, 0.03, 0.07), 150);
+    };
+    beat();
+    this.heartTimer = window.setInterval(beat, 920);
+  }
+
+  stopHeartbeat() {
+    if (this.heartTimer != null) {
+      window.clearInterval(this.heartTimer);
+      this.heartTimer = null;
+    }
   }
 
   stopFootsteps() {

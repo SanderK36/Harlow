@@ -310,6 +310,11 @@
   color: #ffffff;
 }
 
+.whisper {
+  font-style: italic;
+  font-size: 0.82em;
+}
+
 .unrevealed {
   color: transparent;
   text-shadow: none;

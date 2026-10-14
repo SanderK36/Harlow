@@ -32,7 +32,8 @@ export type QuestId =
   | "old-friends"
   | "emilys-stone"
   | "before-everything"
-  | "rachel-remembers";
+  | "rachel-remembers"
+  | "miller-lake";
 
 export type QuestStatus = "active" | "completed";
 
@@ -141,7 +142,27 @@ export type StoryFlag =
   /** He went inside the sanatorium. The gravel walk home never plays. */
   | "sanatoriumEntered"
   /** Footsteps on the road home, once. */
-  | "gravelFootsteps";
+  | "gravelFootsteps"
+  /** Sighting 1. Across the street, the first time outside after The Gate. */
+  | "streetStalkerSeen"
+  /** Sighting 2. Behind the neighbour's sheet. */
+  | "sheetStalkerSeen"
+  /** Linda's sheet is gone. Once, after sighting 2. */
+  | "sheetMissing"
+  /** Night 2. He heard his name in the receiver. */
+  | "nameWhispered"
+  /** The sanatorium closet. */
+  | "endingHid"
+  /** He ran. */
+  | "endingRan"
+  /** The dry algebra book under the dock. */
+  | "algebraBookFound"
+  /** Once, at a door that does not open. */
+  | "lockCheckHeard"
+  /** Margaret, Sunday, once. */
+  | "margaretDeadbolts"
+  /** Earl, Sunday, after Room 6, once. */
+  | "earlTowels";
 
 export type QuestDef = {
   id: QuestId;
@@ -265,6 +286,14 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
     objectives: {
       default: "Rachel was ten. She saw something.",
       done: "The woods road. Walking up.",
+    },
+  },
+  "miller-lake": {
+    id: "miller-lake",
+    title: "Miller Lake",
+    objectives: {
+      default: "Dad and Walter's spot. Nobody fishes there anymore.",
+      done: "Her algebra book. Dry. Somebody put it there.",
     },
   },
 };

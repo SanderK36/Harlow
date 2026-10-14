@@ -529,10 +529,14 @@ export type EndingFrame = {
   label: string;
   split?: { left: string; right: string };
   flags?: StoryFlag[];
+  /** After this plate, the only timed choice in the game. */
+  after?: "timed-choice";
 };
 
-/** After the cigarette: hair tie, the figure, then whatever optional clues he kept. */
-export function endingFrames(clues: readonly ClueId[]): EndingFrame[] {
+export const LET_GO_THOUGHT = "He let me go. Why did he let me go?";
+
+/** After the cigarette: hair tie, then the figure. The choice follows that plate. */
+export function endingFrames(_clues: readonly ClueId[]): EndingFrame[] {
   const hair = HAIR_TIE_THOUGHTS.map((thought, index) => ({
     image: HAIR_TIE_RIGHT,
     thought,
@@ -544,13 +548,24 @@ export function endingFrames(clues: readonly ClueId[]): EndingFrame[] {
     image: FIGURE_PLATE,
     thought: "Someone's here.",
     label: "Someone in the lobby",
+    after: "timed-choice",
+  };
+  return [...hair, figure];
+}
+
+/** After Hide or Run. The question, then one line per optional clue he kept. */
+export function endingAfterEscape(clues: readonly ClueId[]): EndingFrame[] {
+  const letGo: EndingFrame = {
+    image: FIGURE_PLATE,
+    thought: LET_GO_THOUGHT,
+    label: "Ethan",
   };
   const after = endingThoughts(clues).map((thought) => ({
     image: FIGURE_PLATE,
     thought,
     label: "Ethan",
   }));
-  return [...hair, figure, ...after];
+  return [letGo, ...after];
 }
 
 export function connectionStartsOldFriends(id: ClueConnectionId) {

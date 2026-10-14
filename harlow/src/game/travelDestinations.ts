@@ -41,5 +41,9 @@ export function travelDestinationIds(ctx: {
     ...(ctx.jobQuestTarget === "scrapyard" || ctx.job === "scrapyard"
       ? ["scrapyard"]
       : []),
+    ...(ctx.hasFlag("dad1966Told") || ctx.hasFlag("oldFriendsDone")
+      || isQuestCompleted(ctx.quests, "old-friends")
+      ? ["miller-lake"]
+      : []),
   ];
 }

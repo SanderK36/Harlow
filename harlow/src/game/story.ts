@@ -16,6 +16,8 @@ export type StoryEntry =
       condition?: ThoughtCondition;
       /** Hold after this line, then show the next without a click. */
       pauseAfter?: number;
+      /** Italic and smaller. The line is not spoken, and it has no quotes. */
+      whisper?: boolean;
     }
   | {
       type: "thought";
