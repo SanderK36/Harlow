@@ -144,9 +144,8 @@ export const margaretConversation: Conversation = {
       label: "Coffee ($1)",
       repeatable: true,
       price: 1,
-      freeWhen: { person: "margaret", min: 2 },
       trust: { person: "margaret", amount: 1, oncePerDay: true },
-      response: [ethan("Coffee.")],
+      response: [ethan("Coffee ($1)")],
     },
     {
       label: "Have people been talking about Mrs. Elrod?",

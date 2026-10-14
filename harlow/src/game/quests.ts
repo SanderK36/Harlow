@@ -77,6 +77,8 @@ export type StoryFlag =
   | "sanatoriumEntranceFear"
   | "sanatoriumHallwayFear"
   | "tapeSeen"
+  /** Once, after Rachel's first talk is heard through and the tape is still unseen. Locks nothing. */
+  | "rachelTapeStare"
   /** Earl told Ethan to look somewhere else. Hides "Just looking." */
   | "earlLookElsewhere"
   | "chapter1Complete"

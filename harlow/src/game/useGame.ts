@@ -29,7 +29,7 @@ import {
   type ClueConnectionId,
   type ClueId,
 } from "@/game/clues";
-import { conversationChoiceVisible } from "@/game/conversationChoices";
+import { replyList } from "@/game/conversationChoices";
 import { repeatVisitOpening, visitHasNothingNew } from "@/game/repeatVisits";
 import {
   dialogueLineCount,
@@ -67,6 +67,8 @@ import {
   hillDarkDue,
   hillPrintMissedDue,
   HILL_DARK_TONIGHT,
+  rachelTapeStareDue,
+  RACHEL_TAPE_STARE,
   HILL_PRINT_MISSED,
   GRAVEL_LINE_MS,
   GRAVEL_LINES,
@@ -114,7 +116,7 @@ import {
   writeSessionSave,
 } from "@/game/save";
 import type { Choice, GameChoice } from "@/game/choices";
-import { npc, type Conversation, type ConversationChoice, type StoryEntry } from "@/game/story";
+import { npc, thought, type Conversation, type ConversationChoice, type StoryEntry } from "@/game/story";
 import {
   advanceGatePrint,
   completeQuest,
@@ -149,8 +151,6 @@ import {
   migrateTrust,
   notebookPeople,
   personFromOpening,
-  pricedEffects,
-  pricedLabel,
   shouldMarkRachelWaited,
   unseenNotebookPeople,
   type TrustMap,
@@ -1184,7 +1184,21 @@ export function useGame() {
   function finishConversationChoice(choice: ConversationChoice) {
     // conversationRef, not the state closed over by the click. By the time
     // Walter's reply is committed, Ethan's lead-in is already in the log.
-    const next = [...conversationRef.current, ...choice.response];
+    const nextLabels = [...usedConversationChoices, choice.label];
+    const stare =
+      activeConversation === rachelElrodConversation
+      && rachelTapeStareDue({
+        labels: nextLabels,
+        tapeSeen: Boolean(storyFlagsRef.current.tapeSeen),
+        heard: Boolean(storyFlagsRef.current.rachelTapeStare),
+      });
+    const next = [
+      ...conversationRef.current,
+      ...choice.response,
+      ...(stare ? [thought(RACHEL_TAPE_STARE)] : []),
+    ];
+    if (stare) applyFlags("rachelTapeStare");
+    conversationRef.current = next;
     setConversation(next);
     if (choice.closeup) {
       const armed: ArmedConversationCloseup = { armedAt: dialogueLineCount(next) };
@@ -2096,30 +2110,22 @@ export function useGame() {
   }
 
   const activeChoices = phonePhase === "talk" || replyPending || conversationEnding ? [] : conversationActive
-    ? (activeConversation?.choices ?? []).filter((choice) =>
-        conversationChoiceVisible(choice, {
-          // The ref wins if this turn already set a flag the state snapshot
-          // has not rendered yet (goodbye, then the choice list rebuilds).
-          storyFlags,
-          quests,
-          job,
-          jobQuestTarget,
-          usedLabels: usedConversationChoices,
-          openedAsEmployee,
-          inventory: playerState.inventory,
-          trust,
-          money: playerState.money,
-          sceneId: currentScene.id,
-          time: gameState.time,
-          dayNumber: gameState.dayNumber,
-          clues,
-        }),
-      )
-      .map((choice) => {
-        const effects = pricedEffects(choice, trust);
-        const label = pricedLabel(choice, trust);
-        if (effects === choice.effects && label === choice.label) return choice;
-        return { ...choice, effects, label };
+    ? replyList(activeConversation?.opening ?? [], activeConversation?.choices ?? [], {
+        // The ref wins if this turn already set a flag the state snapshot
+        // has not rendered yet (goodbye, then the choice list rebuilds).
+        storyFlags,
+        quests,
+        job,
+        jobQuestTarget,
+        usedLabels: usedConversationChoices,
+        openedAsEmployee,
+        inventory: playerState.inventory,
+        trust,
+        money: playerState.money,
+        sceneId: currentScene.id,
+        time: gameState.time,
+        dayNumber: gameState.dayNumber,
+        clues,
       })
     : phonePhase === "ring"
       ? PHONE_RING_CHOICES

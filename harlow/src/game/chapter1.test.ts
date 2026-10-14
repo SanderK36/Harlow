@@ -24,6 +24,9 @@ import {
   margaretDay2Due,
   RACHEL_DAY2_LINES,
   rachelDay2Due,
+  RACHEL_TAPE_CYCLE,
+  RACHEL_TAPE_STARE,
+  rachelTapeStareDue,
   daytimeFigureDue,
   emilyDoorAjarDue,
   endingFrames,
@@ -54,6 +57,7 @@ import { isNightPaper } from "./utils.ts";
 import { isChoiceAvailable } from "./choiceAvailability.ts";
 import { shouldNoticeHill } from "./hill.ts";
 import { momConversation } from "./scene/home.ts";
+import { rachelElrodConversation } from "./scene/outdoors.ts";
 import { timeHint, WAITING_TIRED_HINT } from "./timeHints.ts";
 import { defaultTrust } from "./trust.ts";
 import type { GameState } from "./types.ts";
@@ -178,6 +182,41 @@ describe("flavour lines", () => {
     assert.equal(rachelDay2Due({ dayNumber: 2, heard: false }), false);
     assert.equal(RACHEL_DAY2_LINES[0]?.type === "conversation" && RACHEL_DAY2_LINES[0].text, "Couldn't sleep. Kept thinking I heard her gate.");
     assert.equal(RACHEL_DAY2_LINES[1]?.type === "conversation" && RACHEL_DAY2_LINES[1].text, "It's been taped shut since Saturday, Ethan.");
+    assert.equal(
+      rachelTapeStareDue({ labels: [...RACHEL_TAPE_CYCLE], tapeSeen: false, heard: false }),
+      true,
+    );
+    assert.equal(
+      rachelTapeStareDue({ labels: RACHEL_TAPE_CYCLE.slice(0, 3), tapeSeen: false, heard: false }),
+      false,
+    );
+    assert.equal(
+      rachelTapeStareDue({ labels: [...RACHEL_TAPE_CYCLE], tapeSeen: true, heard: false }),
+      false,
+    );
+    assert.equal(
+      rachelTapeStareDue({ labels: [...RACHEL_TAPE_CYCLE], tapeSeen: false, heard: true }),
+      false,
+    );
+    assert.equal(RACHEL_TAPE_STARE, "Can't stop staring at that tape. I need a closer look.");
+    const cycle = rachelElrodConversation.choices
+      .filter((choice) => !choice.endsConversation && choice.requiresStoryFlag !== "tapeSeen")
+      .map((choice) => choice.label);
+    assert.deepEqual(cycle, [...RACHEL_TAPE_CYCLE]);
+    assert.equal(
+      rachelElrodConversation.choices.some((choice) => choice.label === RACHEL_TAPE_STARE),
+      false,
+    );
+    assert.equal(
+      rachelElrodConversation.choices
+        .filter((choice) => (RACHEL_TAPE_CYCLE as readonly string[]).includes(choice.label))
+        .every((choice) => choice.trust == null),
+      true,
+    );
+    const closer = rachelElrodConversation.choices.find((choice) => choice.excludesStoryFlag === "tapeSeen");
+    const station = rachelElrodConversation.choices.find((choice) => choice.requiresStoryFlag === "tapeSeen");
+    assert.equal(closer?.endsConversation, true);
+    assert.equal(station?.startsQuest, "down-to-the-station");
     assert.equal(margaretDay2Due({ dayNumber: 3, heard: false }), true);
     assert.equal(margaretDay2Due({ dayNumber: 3, heard: true }), false);
     assert.equal(
@@ -319,11 +358,25 @@ describe("hill gate", () => {
     assert.equal(hillPrintMissedDue({ ...blocked, flags: print }), false);
     assert.equal(hillPrintMissedDue({ ...blocked, heard: true }), false);
     assert.equal(hillPrintMissedDue({ ...blocked, dayNumber: 2 }), false);
-    assert.equal(hillPrintMissedDue({ ...blocked, dayNumber: 4 }), false);
+    assert.equal(hillPrintMissedDue({ ...blocked, dayNumber: 4 }), true);
     assert.equal(hillPrintMissedDue({ ...blocked, time: 17 * 60 }), false);
     assert.equal(hillPrintMissedDue({ ...blocked, sceneId: "street" }), false);
     assert.equal(shouldNoticeHill("front-yard", 19 * 60, [], { bootPrintSeen: true }, 4), false);
     assert.equal(shouldNoticeHill("front-yard", 19 * 60, ready, { bootPrintSeen: true }, 4), true);
+  });
+
+  it("names Elrod's yard on day 4 evening when the boot print is still missing", () => {
+    const monday = {
+      sceneId: "front-yard",
+      dayNumber: 4,
+      time: 18 * 60,
+      flags: {},
+      heard: false,
+    };
+    assert.equal(hillPrintMissedDue(monday), true);
+    assert.equal(hillPrintMissedDue({ ...monday, flags: print }), false);
+    assert.equal(hillPrintMissedDue({ ...monday, heard: true }), false);
+    assert.equal(hillPrintMissedDue({ ...monday, time: 17 * 60 }), false);
   });
 });
 

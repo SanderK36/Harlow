@@ -250,8 +250,8 @@ export function hillDarkDue(input: {
 }
 
 /**
- * Sunday evening in the yard, once, when the boot print is still missing.
- * Other quests do not gate this. Later days stay playable without the hill.
+ * Evening in the yard, from Sunday on, once, when the boot print is still missing.
+ * Monday and later still get the hint. Other quests do not gate it.
  */
 export function hillPrintMissedDue(input: {
   sceneId: string;
@@ -262,7 +262,7 @@ export function hillPrintMissedDue(input: {
 }) {
   return (
     input.sceneId === "front-yard"
-    && input.dayNumber === 3
+    && input.dayNumber >= 3
     && input.time >= 18 * 60
     && !input.heard
     && !input.flags.bootPrintSeen
@@ -367,6 +367,32 @@ export const RACHEL_DAY2_LINES: StoryEntry[] = [
 /** First talk with Rachel on Sunday. Once. */
 export function rachelDay2Due(input: { dayNumber: number; heard: boolean }) {
   return input.dayNumber === 3 && !input.heard;
+}
+
+/** Lines in Rachel's first talk that stay on the list. The tape goodbye is not one of them. */
+export const RACHEL_TAPE_CYCLE = [
+  "Didn't sleep. Sirens all night.",
+  "You okay, Rach?",
+  "Who'd do this to her?",
+  "This feels like Emily all over again.",
+] as const;
+
+export const RACHEL_TAPE_STARE = "Can't stop staring at that tape. I need a closer look.";
+
+/**
+ * After those lines have each been used once, and the tape still hasn't been
+ * looked at. Once. No trust change and no quest lock.
+ */
+export function rachelTapeStareDue(input: {
+  labels: readonly string[];
+  tapeSeen: boolean;
+  heard: boolean;
+}) {
+  return (
+    !input.tapeSeen
+    && !input.heard
+    && RACHEL_TAPE_CYCLE.every((label) => input.labels.includes(label))
+  );
 }
 
 export const MARGARET_DAY2_LINES: StoryEntry[] = [

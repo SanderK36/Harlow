@@ -1,5 +1,5 @@
 import type { ClueId } from "@/game/clues";
-import type { ConversationChoice } from "@/game/story";
+import type { ConversationChoice, StoryEntry } from "@/game/story";
 import {
   isQuestActive,
   isQuestCompleted,
@@ -11,6 +11,7 @@ import {
   canAffordPricedChoice,
   defaultTrust,
   meetsTrust,
+  presentConversationChoice,
   type TrustMap,
 } from "@/game/trust";
 
@@ -101,4 +102,27 @@ export function conversationChoiceVisible(
     && canAffordPricedChoice(choice, trust, money)
     && (choice.repeatable || choice.endsConversation || !ctx.usedLabels.includes(choice.label))
   );
+}
+
+/** Spoken greetings are not replies. The same label is listed once. */
+export function replyList(
+  opening: readonly StoryEntry[],
+  choices: readonly ConversationChoice[],
+  ctx: ConversationChoiceContext,
+): ConversationChoice[] {
+  const spoken = new Set(
+    opening.flatMap((entry) => (entry.type === "conversation" ? [entry.text] : [])),
+  );
+  const trust = ctx.trust ?? defaultTrust();
+  const seen = new Set<string>();
+  const listed: ConversationChoice[] = [];
+  for (const choice of choices) {
+    if (!conversationChoiceVisible(choice, ctx)) continue;
+    if (spoken.has(choice.label)) continue;
+    const presented = presentConversationChoice(choice, trust);
+    if (spoken.has(presented.label) || seen.has(presented.label)) continue;
+    seen.add(presented.label);
+    listed.push(presented);
+  }
+  return listed;
 }
