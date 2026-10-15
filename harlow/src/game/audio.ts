@@ -96,6 +96,7 @@ class HarlowAudio {
   private receiverSource: AudioBufferSourceNode | null = null;
   private receiverToken = 0;
   private heartTimer: number | null = null;
+  private musicBoxNodes: OscillatorNode[] = [];
   private clipCache = new Map<string, AudioBuffer>();
   private clipMiss = new Set<string>();
   private clipLoading = new Map<string, Promise<AudioBuffer | null>>();
@@ -242,6 +243,44 @@ class HarlowAudio {
       source.start();
       this.footSource = source;
     });
+  }
+
+  /**
+   * Faint music box in the receiver. No file has been delivered, so this
+   * is a short sine phrase on the SFX bus. A later file can replace it.
+   */
+  playMusicBox() {
+    this.stopMusicBox();
+    const context = this.ready();
+    if (!context || !this.sfx) return;
+    const notes = [1046.5, 1174.7, 1318.5, 1568, 1318.5, 1174.7, 1046.5, 880];
+    const start = context.currentTime + 0.05;
+    const step = 0.48;
+    for (const [index, freq] of notes.entries()) {
+      const at = start + index * step;
+      const osc = context.createOscillator();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, at);
+      const gain = context.createGain();
+      gain.gain.setValueAtTime(0.0001, at);
+      gain.gain.exponentialRampToValueAtTime(0.03, at + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.4);
+      osc.connect(gain).connect(this.sfx);
+      osc.start(at);
+      osc.stop(at + 0.42);
+      this.musicBoxNodes.push(osc);
+    }
+  }
+
+  stopMusicBox() {
+    for (const osc of this.musicBoxNodes) {
+      try {
+        osc.stop();
+      } catch {
+        // Already stopped.
+      }
+    }
+    this.musicBoxNodes = [];
   }
 
   /** Closet crack. Two quiet thumps, then a rest. No file. */

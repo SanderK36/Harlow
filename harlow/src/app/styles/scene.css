@@ -802,6 +802,24 @@
   user-select: none;
 }
 
+/* Diner glass. The same figure, mirrored, sitting in the window. Cut, no fade. */
+.stalker-figure-window {
+  position: absolute;
+  left: 36%;
+  top: 27%;
+  z-index: 4;
+  height: 34%;
+  width: auto;
+  pointer-events: none;
+  user-select: none;
+  transform: scaleX(-1);
+  opacity: 0.35;
+  filter: blur(1px);
+  mix-blend-mode: screen;
+  transition: none;
+  animation: none;
+}
+
 .figure-vignette {
   position: absolute;
   inset: 0;

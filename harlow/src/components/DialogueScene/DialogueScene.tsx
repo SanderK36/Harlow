@@ -24,7 +24,6 @@ type DialogueLine = {
   speaker: string | null;
   text: string;
   pauseAfter?: number;
-  whisper?: boolean;
 };
 
 type DialogueSceneProps = {
@@ -70,7 +69,6 @@ function toDialogueLines(entries: StoryEntry[]): DialogueLine[] {
         speaker: null,
         text: entry.text,
         pauseAfter: entry.pauseAfter,
-        whisper: entry.whisper,
       }];
     }
     // Ethan's inner line mid-conversation (e.g. remembering the porch light).
@@ -423,7 +421,7 @@ export default function DialogueScene({
         >
           <span
             key={lineIndex}
-            className={`${styles.line} ${line.speaker && focus !== "thought" ? "" : styles.lineNarration} ${line.whisper ? styles.whisper : ""}`}
+            className={`${styles.line} ${line.speaker && focus !== "thought" ? "" : styles.lineNarration}`}
             aria-hidden="true"
           >
             {line.text.slice(0, shown)}

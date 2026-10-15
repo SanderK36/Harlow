@@ -1,5 +1,5 @@
 import { daytimeFigureDue, isChapterDay2, isHomeScene, PHONE_SILENCE_MS } from "@/game/chapter1";
-import { ethan, npc, type StoryEntry } from "@/game/story";
+import { ethan, npc, thought, type StoryEntry } from "@/game/story";
 import { isExteriorScene } from "@/game/scene/travel";
 import type { StoryFlag } from "@/game/quests";
 import { isNightTime } from "@/game/utils";
@@ -22,20 +22,16 @@ export const HOODED_FALLBACK = "/images/locations/sanatorium/sanatoriumMainFloor
 export const STREET_STALKER_THOUGHT = "Him. Across the street. Not moving.";
 export const STREET_STALKER_GONE = "Gone. Didn't even hear a car.";
 
-export const SHEET_LINES = [
-  "Somebody behind the sheets on the line.",
-  "Just a sheet. Just the wind.",
-  "There's no wind.",
-] as const;
+export const WINDOW_FROM = 8 * 60;
+export const WINDOW_UNTIL = 12 * 60;
+export const WINDOW_STALKER_THOUGHT = "In the glass. Right behind me.";
+export const WINDOW_STALKER_GONE = "Nobody. Just the street.";
 
-export const SHEET_LINE_MS = 2600;
-export const SHEET_FROM = 8 * 60;
-export const SHEET_UNTIL = 12 * 60;
-
-export const LINDA_SHEET_LINES: StoryEntry[] = [
-  npc("Linda", "Have you seen my good white sheet? The one off the line?"),
+export const LINDA_BACK_DOOR_LINES: StoryEntry[] = [
+  npc("Linda", "Did you leave the back door open last night, honey?"),
   ethan("No."),
-  npc("Linda", "Funny. It was there last night."),
+  npc("Linda", "Huh. Must've been the wind."),
+  thought("Mrs. Elrod heard footsteps in her yard the day before. Nobody believed her either."),
 ];
 
 export const LOCK_JOKE = "Great. Now I check locks. I'm my mother.";
@@ -53,10 +49,14 @@ export const MILLER_DOCK = "Something under the dock. I'm not checking.";
 export const MILLER_CHECK = "...I'm checking.";
 export const MILLER_BOOK = "Her algebra book. Her name inside. It's dry. Ten years, and it's dry.";
 export const MILLER_RECENT = "Somebody put this here. Recently.";
-export const BOOK_WOODS_THOUGHT = "Same road. Same woods. He keeps bringing me back here.";
+export const BOOK_WOODS_THOUGHT = "She walked up that road with this book. Somebody brought it back down.";
 
-export const NAME_WHISPER_THOUGHT = "He knows my name.";
-export const NIGHT_WHISPER_NAME = "...Ethan.";
+export const MUSIC_BOX_HOLD_MS = 4200;
+export const MUSIC_BOX_THOUGHT_MS = 2800;
+export const MUSIC_BOX_THOUGHTS = [
+  "That was her music box.",
+  "It's upstairs. I'd hear it.",
+] as const;
 
 export const TIMED_CHOICE_MS = 6000;
 export const TIMED_CHOICE_STEPS = 6;
@@ -181,12 +181,12 @@ export function streetStalkerDue(input: StalkerContext & {
   return stalkerAllowed(input);
 }
 
-/** Sighting 2. Sunday morning, the neighbour's line, from the street. */
-export function sheetStalkerDue(input: StalkerContext & { seen: boolean }) {
+/** Sighting 2. Sunday morning, his reflection in the diner window. */
+export function dinerWindowDue(input: StalkerContext & { seen: boolean }) {
   if (input.seen) return false;
-  if (input.sceneId !== "street") return false;
+  if (input.sceneId !== "diner") return false;
   if (input.dayNumber !== 3) return false;
-  if (input.time < SHEET_FROM || input.time >= SHEET_UNTIL) return false;
+  if (input.time < WINDOW_FROM || input.time >= WINDOW_UNTIL) return false;
   return stalkerAllowed(input);
 }
 
@@ -229,24 +229,24 @@ export function restoredStalkerCount(
     return Math.max(0, Math.min(STALKER_MAX, Math.trunc(stored)));
   }
   const fromFlags = Number(Boolean(flags.streetStalkerSeen))
-    + Number(Boolean(flags.sheetStalkerSeen))
+    + Number(Boolean(flags.dinerWindowSeen))
     + Number(Boolean(flags.daytimeFigureSeen));
   return Math.min(STALKER_MAX, fromFlags);
 }
 
-/** Sunday after noon, in the kitchen, only once the sheet sighting happened. */
-export function lindaSheetDue(input: {
+/** Sunday after noon, in the kitchen, only once the diner window happened. */
+export function lindaBackDoorDue(input: {
   sceneId: string;
   dayNumber: number;
   time: number;
-  sheetSeen: boolean;
+  windowSeen: boolean;
   heard: boolean;
 }) {
   return (
     input.sceneId === "kitchen"
     && input.dayNumber === 3
     && input.time >= 12 * 60
-    && input.sheetSeen
+    && input.windowSeen
     && !input.heard
   );
 }
@@ -271,7 +271,7 @@ export function millerTripClosed(time: number, travelMinutes: number) {
  * Night 2. He answered the first call, then comes home after 20:00 on Sunday.
  * Already being home does not ring it. Leaving and coming back does, once.
  */
-export function nightWhisperDue(input: {
+export function musicBoxCallDue(input: {
   answered: boolean;
   heard: boolean;
   dayNumber: number;
@@ -284,9 +284,9 @@ export function nightWhisperDue(input: {
   return isHomeScene(input.toScene) && !isHomeScene(input.fromScene);
 }
 
-export const NIGHT_WHISPER_LINES: StoryEntry[] = [
-  { type: "narration", text: "Breathing.", pauseAfter: 2200 },
-  { type: "narration", text: NIGHT_WHISPER_NAME, pauseAfter: 1600, whisper: true },
+/** Breathing, then the tune (sound only, no line), then the click. */
+export const MUSIC_BOX_LINES: StoryEntry[] = [
+  { type: "narration", text: "Breathing.", pauseAfter: MUSIC_BOX_HOLD_MS },
   { type: "narration", text: "Click.", pauseAfter: PHONE_SILENCE_MS },
 ];
 

@@ -164,7 +164,7 @@ export const CLUE_CONNECTIONS: readonly ClueConnection[] = [
     id: "book-woods",
     a: "algebra-book",
     b: "the-woods-road",
-    thought: "Same road. Same woods. He keeps bringing me back here.",
+    thought: "She walked up that road with this book. Somebody brought it back down.",
   },
 ];
 

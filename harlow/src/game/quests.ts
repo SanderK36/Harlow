@@ -145,12 +145,12 @@ export type StoryFlag =
   | "gravelFootsteps"
   /** Sighting 1. Across the street, the first time outside after The Gate. */
   | "streetStalkerSeen"
-  /** Sighting 2. Behind the neighbour's sheet. */
-  | "sheetStalkerSeen"
-  /** Linda's sheet is gone. Once, after sighting 2. */
-  | "sheetMissing"
-  /** Night 2. He heard his name in the receiver. */
-  | "nameWhispered"
+  /** Sighting 2. His reflection in the diner window. */
+  | "dinerWindowSeen"
+  /** Linda's back door. Once, after the diner window. */
+  | "backDoorOpen"
+  /** Night 2. The music box in the receiver. */
+  | "musicBoxCall"
   /** The sanatorium closet. */
   | "endingHid"
   /** He ran. */

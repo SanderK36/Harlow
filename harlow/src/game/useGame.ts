@@ -90,24 +90,25 @@ import {
 import { hillCheckScene, HILL_THOUGHT, shouldNoticeHill } from "@/game/hill";
 import {
   EARL_TOWEL,
-  LINDA_SHEET_LINES,
+  LINDA_BACK_DOOR_LINES,
   LOCK_JOKE,
   MARGARET_DEADBOLT,
   MILLER_ARRIVAL,
-  NAME_WHISPER_THOUGHT,
-  NIGHT_WHISPER_LINES,
-  SHEET_LINE_MS,
-  SHEET_LINES,
+  MUSIC_BOX_LINES,
+  MUSIC_BOX_THOUGHT_MS,
+  MUSIC_BOX_THOUGHTS,
   STREET_STALKER_GONE,
   STREET_STALKER_THOUGHT,
+  WINDOW_STALKER_GONE,
+  WINDOW_STALKER_THOUGHT,
+  dinerWindowDue,
   earlTowelDue,
   emilyGraveStoneImage,
-  lindaSheetDue,
+  lindaBackDoorDue,
   margaretDeadboltDue,
+  musicBoxCallDue,
   nextStalkerCount,
-  nightWhisperDue,
   restoredStalkerCount,
-  sheetStalkerDue,
   stalkerMinute,
   streetStalkerDue,
   woodsFigureDue,
@@ -198,6 +199,10 @@ const FIGURE_CHOICES: Choice[] = [
 
 const STREET_STALKER_CHOICES: Choice[] = [
   { label: "Look again", action: "lookAgainStalker", nextScene: "street", timeCost: 0 },
+];
+
+const WINDOW_STALKER_CHOICES: Choice[] = [
+  { label: "Turn around", action: "turnFromWindow", nextScene: "diner", timeCost: 0 },
 ];
 
 const CONVERSATION_ACTIONS = new Set([
@@ -385,10 +390,9 @@ export function useGame() {
   const phoneIntercept = useRef(false);
   const phoneResumeSleep = useRef(false);
   const afterConversationRef = useRef<(() => void) | null>(null);
-  const [phonePhase, setPhonePhase] = useState<null | "ring" | "talk" | "whisper">(null);
+  const [phonePhase, setPhonePhase] = useState<null | "ring" | "talk" | "music">(null);
   const [figureActive, setFigureActive] = useState(false);
-  const [stalkerMode, setStalkerMode] = useState<null | "street" | "sheet">(null);
-  const [sheetHold, setSheetHold] = useState(false);
+  const [stalkerMode, setStalkerMode] = useState<null | "street" | "window">(null);
   const [stalkerSightings, setStalkerSightings] = useState(() =>
     restoredStalkerCount(sessionSave?.stalkerSightings, sessionSave?.storyFlags ?? {}),
   );
@@ -397,7 +401,7 @@ export function useGame() {
   );
   const stalkerCountRef = useRef(stalkerSightings);
   const stalkerAtRef = useRef<number | null>(stalkerSeenAt);
-  const sheetTimers = useRef<number[]>([]);
+  const musicBoxThoughtTimer = useRef<number | null>(null);
   const [escapeOpen, setEscapeOpen] = useState(false);
   const [escapeMode, setEscapeMode] = useState<null | "hide" | "run">(null);
   const escapeResolved = useRef(false);
@@ -772,18 +776,25 @@ export function useGame() {
     setCurrentEffects([]);
   }
 
-  function beginNightWhisper(state: GameState) {
-    applyFlags("nameWhispered");
+  function clearMusicBoxThought() {
+    if (musicBoxThoughtTimer.current != null) {
+      window.clearTimeout(musicBoxThoughtTimer.current);
+      musicBoxThoughtTimer.current = null;
+    }
+  }
+
+  function beginMusicBoxCall(state: GameState) {
+    applyFlags("musicBoxCall");
     const hallway = scenes.hallway;
     setCurrentScene(hallway);
     setGameState({ ...state, location: hallway.location });
-    setPhonePhase("whisper");
+    setPhonePhase("music");
     clearStalkerLayer();
     setFigureActive(false);
     setCatchEntrance(false);
     setConversationPerson(null);
-    setActiveConversation({ opening: NIGHT_WHISPER_LINES, choices: [] });
-    setConversation(NIGHT_WHISPER_LINES);
+    setActiveConversation({ opening: MUSIC_BOX_LINES, choices: [] });
+    setConversation(MUSIC_BOX_LINES);
     setConversationEnding(true);
     setConversationActive(true);
     conversationActiveRef.current = true;
@@ -791,7 +802,16 @@ export function useGame() {
     setCurrentEffects([]);
   }
 
-  function finishNightWhisper() {
+  function holdMusicBox(index: number) {
+    if (index === 0) harlowAudio().playMusicBox();
+  }
+
+  function advanceMusicBox(index: number) {
+    if (index === 0) harlowAudio().stopMusicBox();
+  }
+
+  function finishMusicBoxCall() {
+    harlowAudio().stopMusicBox();
     setPhonePhase(null);
     setConversationActive(false);
     setConversationEnding(false);
@@ -799,7 +819,12 @@ export function useGame() {
     setCatchEntrance(false);
     setConversation([]);
     setActiveConversation(null);
-    setCurrentThought(NAME_WHISPER_THOUGHT);
+    clearMusicBoxThought();
+    setCurrentThought(MUSIC_BOX_THOUGHTS[0]);
+    musicBoxThoughtTimer.current = window.setTimeout(() => {
+      musicBoxThoughtTimer.current = null;
+      setCurrentThought(MUSIC_BOX_THOUGHTS[1]);
+    }, MUSIC_BOX_THOUGHT_MS);
   }
 
   function continueSleepAfterCall() {
@@ -871,11 +896,6 @@ export function useGame() {
     return true;
   }
 
-  function clearSheetTimers() {
-    for (const id of sheetTimers.current) window.clearTimeout(id);
-    sheetTimers.current = [];
-  }
-
   function stalkerContext(sceneId: string, time: number, dayNumber: number): StalkerContext {
     return {
       sceneId,
@@ -903,25 +923,8 @@ export function useGame() {
     );
   }
 
-  function beginSheetLines() {
-    clearSheetTimers();
-    setStalkerMode("sheet");
-    setSheetHold(true);
-    setCurrentThought(SHEET_LINES[0]);
-    sheetTimers.current = [
-      window.setTimeout(() => setCurrentThought(SHEET_LINES[1]), SHEET_LINE_MS),
-      window.setTimeout(() => setCurrentThought(SHEET_LINES[2]), SHEET_LINE_MS * 2),
-      window.setTimeout(() => {
-        setStalkerMode(null);
-        setSheetHold(false);
-      }, SHEET_LINE_MS * 3),
-    ];
-  }
-
   function clearStalkerLayer() {
-    clearSheetTimers();
     setStalkerMode(null);
-    setSheetHold(false);
   }
 
   /**
@@ -946,10 +949,11 @@ export function useGame() {
       setCurrentThought(STREET_STALKER_THOUGHT);
       return true;
     }
-    if (sheetStalkerDue({ ...ctx, seen: Boolean(flags.sheetStalkerSeen) })) {
-      applyFlags("sheetStalkerSeen");
+    if (dinerWindowDue({ ...ctx, seen: Boolean(flags.dinerWindowSeen) })) {
+      applyFlags("dinerWindowSeen");
       noteStalker(dayNumber, time);
-      beginSheetLines();
+      setStalkerMode("window");
+      setCurrentThought(WINDOW_STALKER_THOUGHT);
       return true;
     }
     return false;
@@ -1128,15 +1132,16 @@ export function useGame() {
       return;
     }
 
-    if (nightWhisperDue({
+    clearMusicBoxThought();
+    if (musicBoxCallDue({
       answered: Boolean(storyFlagsRef.current.nightCallClear),
-      heard: Boolean(storyFlagsRef.current.nameWhispered),
+      heard: Boolean(storyFlagsRef.current.musicBoxCall),
       dayNumber: dayRef.current,
       time,
       fromScene: currentScene.id,
       toScene: sceneId,
     })) {
-      beginNightWhisper({
+      beginMusicBoxCall({
         ...gameState,
         time,
         weather,
@@ -1307,15 +1312,15 @@ export function useGame() {
       spoken = [npc("Earl", EARL_CASH_LINE)];
       applyFlags("earlCashHeard");
     }
-    if (lindaSheetDue({
+    if (lindaBackDoorDue({
       sceneId: currentScene.id,
       dayNumber: gameState.dayNumber,
       time: gameState.time,
-      sheetSeen: Boolean(heard.sheetStalkerSeen),
-      heard: Boolean(heard.sheetMissing),
+      windowSeen: Boolean(heard.dinerWindowSeen),
+      heard: Boolean(heard.backDoorOpen),
     })) {
-      spoken = [...LINDA_SHEET_LINES, ...spoken];
-      applyFlags("sheetMissing");
+      spoken = [...LINDA_BACK_DOOR_LINES, ...spoken];
+      applyFlags("backDoorOpen");
     }
     if (person === "margaret" && margaretDeadboltDue({
       dayNumber: gameState.dayNumber,
@@ -1675,6 +1680,11 @@ export function useGame() {
     if ("action" in choice && choice.action === "lookAgainStalker") {
       setStalkerMode(null);
       setCurrentThought(STREET_STALKER_GONE);
+      return;
+    }
+    if ("action" in choice && choice.action === "turnFromWindow") {
+      setStalkerMode(null);
+      setCurrentThought(WINDOW_STALKER_GONE);
       return;
     }
     if ("action" in choice && choice.action === "tryElrodDoor") {
@@ -2229,6 +2239,8 @@ export function useGame() {
     setTravelingTo(null);
     setNewDayAnnouncement(null);
     harlowAudio().stopReceiverRain();
+    harlowAudio().stopMusicBox();
+    clearMusicBoxThought();
     setPhonePhase(null);
     setFigureActive(false);
     clearStalkerLayer();
@@ -2326,6 +2338,8 @@ export function useGame() {
     setTravelingTo(null);
     setNewDayAnnouncement(null);
     harlowAudio().stopReceiverRain();
+    harlowAudio().stopMusicBox();
+    clearMusicBoxThought();
     setPhonePhase(null);
     setFigureActive(false);
     clearStalkerLayer();
@@ -2415,10 +2429,12 @@ export function useGame() {
       ? PHONE_RING_CHOICES
       : stalkerMode === "street"
         ? STREET_STALKER_CHOICES
+      : stalkerMode === "window"
+        ? WINDOW_STALKER_CHOICES
       : figureActive
         ? FIGURE_CHOICES
         : currentScene.choices.filter(sceneChoiceListed);
-  const choicesWhileGravel = gravelHold || sheetHold ? [] : activeChoices;
+  const choicesWhileGravel = gravelHold ? [] : activeChoices;
 
   const askTopics = conversationActive && conversationPerson
     ? askTopicsFor(conversationPerson, clues, clueConnections)
@@ -2540,6 +2556,8 @@ export function useGame() {
     finishPhoneAnswer,
     holdPhoneLine,
     advancePhoneLine,
+    holdMusicBox,
+    advanceMusicBox,
     onReplySettled: revealPendingCloseup,
     showDinerBoardHint,
     activeCharacter,
@@ -2583,7 +2601,7 @@ export function useGame() {
     escapeMode,
     chooseEscape,
     finishEscape,
-    finishNightWhisper,
+    finishMusicBoxCall,
     catchEntrance,
     closeup,
     dismissCloseup,

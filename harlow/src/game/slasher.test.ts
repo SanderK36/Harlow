@@ -10,7 +10,7 @@ import {
   HIDE_BLACK_MS,
   HIDE_LINES,
   HOODED_FALLBACK,
-  LINDA_SHEET_LINES,
+  LINDA_BACK_DOOR_LINES,
   LOCK_JOKE,
   MARGARET_DEADBOLT,
   MILLER_ARRIVAL,
@@ -22,12 +22,13 @@ import {
   MILLER_FALLBACK,
   MILLER_PLATES,
   MILLER_RECENT,
-  NAME_WHISPER_THOUGHT,
-  NIGHT_WHISPER_LINES,
-  NIGHT_WHISPER_NAME,
+  MUSIC_BOX_HOLD_MS,
+  MUSIC_BOX_LINES,
+  MUSIC_BOX_THOUGHTS,
   RUN_FIGURE_MS,
   RUN_LINES,
-  SHEET_LINES,
+  WINDOW_STALKER_GONE,
+  WINDOW_STALKER_THOUGHT,
   STALKER_FIGURE,
   STALKER_MAX,
   STREET_STALKER_GONE,
@@ -39,15 +40,15 @@ import {
   earlTowelDue,
   elrodShadowPlate,
   emilyGraveStoneImage,
-  lindaSheetDue,
+  dinerWindowDue,
+  lindaBackDoorDue,
   margaretDeadboltDue,
   millerClosed,
   millerLakeUnlocked,
   millerTripClosed,
+  musicBoxCallDue,
   nextStalkerCount,
-  nightWhisperDue,
   restoredStalkerCount,
-  sheetStalkerDue,
   stalkerAllowed,
   streetStalkerDue,
   timedChoiceEnabled,
@@ -108,43 +109,45 @@ describe("the watcher", () => {
     assert.equal(nextStalkerCount(STALKER_MAX), STALKER_MAX);
   });
 
-  it("hides the second sighting behind the Sunday sheet, then Linda asks", () => {
-    const sheet = {
+  it("puts the second sighting in the diner window, then Linda asks about the door", () => {
+    const window = {
       ...quiet,
-      sceneId: "street",
+      sceneId: "diner",
       dayNumber: 3,
       time: 8 * 60,
       seen: false,
     };
-    assert.equal(sheetStalkerDue(sheet), true);
-    assert.equal(sheetStalkerDue({ ...sheet, time: 12 * 60 }), false);
-    assert.equal(sheetStalkerDue({ ...sheet, dayNumber: 2 }), false);
-    assert.equal(sheetStalkerDue({ ...sheet, sceneId: "front-yard" }), false);
-    assert.equal(sheetStalkerDue({ ...sheet, seen: true }), false);
-    assert.deepEqual([...SHEET_LINES], [
-      "Somebody behind the sheets on the line.",
-      "Just a sheet. Just the wind.",
-      "There's no wind.",
-    ]);
+    assert.equal(dinerWindowDue(window), true);
+    assert.equal(dinerWindowDue({ ...window, time: 12 * 60 }), false);
+    assert.equal(dinerWindowDue({ ...window, dayNumber: 2 }), false);
+    assert.equal(dinerWindowDue({ ...window, sceneId: "street" }), false);
+    assert.equal(dinerWindowDue({ ...window, sceneId: "diner-inside" }), false);
+    assert.equal(dinerWindowDue({ ...window, seen: true }), false);
+    assert.equal(WINDOW_STALKER_THOUGHT, "In the glass. Right behind me.");
+    assert.equal(WINDOW_STALKER_GONE, "Nobody. Just the street.");
     const ask = {
       sceneId: "kitchen",
       dayNumber: 3,
       time: 12 * 60,
-      sheetSeen: true,
+      windowSeen: true,
       heard: false,
     };
-    assert.equal(lindaSheetDue(ask), true);
-    assert.equal(lindaSheetDue({ ...ask, sheetSeen: false }), false);
-    assert.equal(lindaSheetDue({ ...ask, time: 12 * 60 - 1 }), false);
-    assert.equal(lindaSheetDue({ ...ask, heard: true }), false);
+    assert.equal(lindaBackDoorDue(ask), true);
+    assert.equal(lindaBackDoorDue({ ...ask, windowSeen: false }), false);
+    assert.equal(lindaBackDoorDue({ ...ask, time: 12 * 60 - 1 }), false);
+    assert.equal(lindaBackDoorDue({ ...ask, heard: true }), false);
     assert.equal(
-      LINDA_SHEET_LINES[0]?.type === "conversation" && LINDA_SHEET_LINES[0].text,
-      "Have you seen my good white sheet? The one off the line?",
+      LINDA_BACK_DOOR_LINES[0]?.type === "conversation" && LINDA_BACK_DOOR_LINES[0].text,
+      "Did you leave the back door open last night, honey?",
     );
-    assert.equal(LINDA_SHEET_LINES[1]?.type === "conversation" && LINDA_SHEET_LINES[1].text, "No.");
+    assert.equal(LINDA_BACK_DOOR_LINES[1]?.type === "conversation" && LINDA_BACK_DOOR_LINES[1].text, "No.");
     assert.equal(
-      LINDA_SHEET_LINES[2]?.type === "conversation" && LINDA_SHEET_LINES[2].text,
-      "Funny. It was there last night.",
+      LINDA_BACK_DOOR_LINES[2]?.type === "conversation" && LINDA_BACK_DOOR_LINES[2].text,
+      "Huh. Must've been the wind.",
+    );
+    assert.equal(
+      LINDA_BACK_DOOR_LINES[3]?.type === "thought" && LINDA_BACK_DOOR_LINES[3].text,
+      "Mrs. Elrod heard footsteps in her yard the day before. Nobody believed her either.",
     );
   });
 
@@ -167,7 +170,7 @@ describe("the watcher", () => {
     assert.equal(woodsSightingCounts({ ...woods, dayNumber: 4 }), false);
     assert.equal(restoredStalkerCount(undefined, {
       streetStalkerSeen: true,
-      sheetStalkerSeen: true,
+      dinerWindowSeen: true,
       daytimeFigureSeen: true,
     }), 3);
     assert.equal(restoredStalkerCount(1, { daytimeFigureSeen: true }), 1);
@@ -228,6 +231,10 @@ describe("Miller Lake", () => {
     assert.equal(MILLER_CHECK, "...I'm checking.");
     assert.equal(MILLER_BOOK, "Her algebra book. Her name inside. It's dry. Ten years, and it's dry.");
     assert.equal(MILLER_RECENT, "Somebody put this here. Recently.");
+    assert.equal(
+      BOOK_WOODS_THOUGHT,
+      "She walked up that road with this book. Somebody brought it back down.",
+    );
     assert.equal(CLUE_DEFS["algebra-book"].name, "Her algebra book");
     assert.equal(CLUE_DEFS["algebra-book"].caption, "Emily P.");
     assert.equal(CLUE_DEFS["algebra-book"].worn, true);
@@ -238,7 +245,7 @@ describe("Miller Lake", () => {
 });
 
 describe("the second phone and the ending", () => {
-  it("whispers his name the first time he comes home after 20:00 on day 2", () => {
+  it("plays the music box the first time he comes home after 20:00 on day 2", () => {
     const home = {
       answered: true,
       heard: false,
@@ -247,15 +254,37 @@ describe("the second phone and the ending", () => {
       fromScene: "street",
       toScene: "front-yard",
     };
-    assert.equal(nightWhisperDue(home), true);
-    assert.equal(nightWhisperDue({ ...home, answered: false }), false);
-    assert.equal(nightWhisperDue({ ...home, heard: true }), false);
-    assert.equal(nightWhisperDue({ ...home, time: 20 * 60 - 1 }), false);
-    assert.equal(nightWhisperDue({ ...home, dayNumber: 2 }), false);
-    assert.equal(nightWhisperDue({ ...home, fromScene: "kitchen", toScene: "hallway" }), false);
-    assert.equal(NIGHT_WHISPER_LINES[1]?.type === "narration" && NIGHT_WHISPER_LINES[1].text, NIGHT_WHISPER_NAME);
-    assert.equal(NIGHT_WHISPER_LINES[1]?.type === "narration" && NIGHT_WHISPER_LINES[1].whisper, true);
-    assert.equal(NAME_WHISPER_THOUGHT, "He knows my name.");
+    assert.equal(musicBoxCallDue(home), true);
+    assert.equal(musicBoxCallDue({ ...home, answered: false }), false);
+    assert.equal(musicBoxCallDue({ ...home, heard: true }), false);
+    assert.equal(musicBoxCallDue({ ...home, time: 20 * 60 - 1 }), false);
+    assert.equal(musicBoxCallDue({ ...home, dayNumber: 2 }), false);
+    assert.equal(musicBoxCallDue({ ...home, fromScene: "kitchen", toScene: "hallway" }), false);
+    assert.deepEqual(
+      MUSIC_BOX_LINES.map((line) => line.type === "narration" ? line.text : ""),
+      ["Breathing.", "Click."],
+    );
+    assert.equal(
+      MUSIC_BOX_LINES[0]?.type === "narration" && MUSIC_BOX_LINES[0].pauseAfter,
+      MUSIC_BOX_HOLD_MS,
+    );
+    assert.equal(MUSIC_BOX_LINES.some((line) => "whisper" in line), false);
+    assert.deepEqual([...MUSIC_BOX_THOUGHTS], [
+      "That was her music box.",
+      "It's upstairs. I'd hear it.",
+    ]);
+  });
+
+  it("never lets the figure speak", () => {
+    const lines = [...MUSIC_BOX_LINES, ...LINDA_BACK_DOOR_LINES];
+    for (const line of lines) {
+      if (line.type !== "conversation") continue;
+      assert.ok(line.character === "Linda" || line.character === "Ethan", line.character);
+      assert.equal(line.text.includes("...Ethan"), false);
+    }
+    assert.equal(MUSIC_BOX_LINES.some((line) => line.type === "narration" && "whisper" in line), false);
+    assert.equal(JSON.stringify(lines).includes("...Ethan"), false);
+    assert.equal(JSON.stringify(lines).includes("He knows my name"), false);
   });
 
   it("runs the only timed choice for six seconds and hides when nobody answers", () => {

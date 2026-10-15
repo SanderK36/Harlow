@@ -145,6 +145,8 @@ export default function Home() {
     finishPhoneAnswer,
     holdPhoneLine,
     advancePhoneLine,
+    holdMusicBox,
+    advanceMusicBox,
     onReplySettled,
     showDinerBoardHint,
     activeChoices,
@@ -178,7 +180,7 @@ export default function Home() {
     escapeMode,
     chooseEscape,
     finishEscape,
-    finishNightWhisper,
+    finishMusicBoxCall,
     catchEntrance,
     trust,
     metPeople,
@@ -800,7 +802,7 @@ export default function Home() {
               <img
                 src={STALKER_FIGURE}
                 alt=""
-                className="stalker-figure"
+                className={stalkerMode === "window" ? "stalker-figure-window" : "stalker-figure"}
                 onError={(event) => {
                   event.currentTarget.hidden = true;
                 }}
@@ -993,15 +995,23 @@ export default function Home() {
               <DialogueScene
                 entries={conversation}
                 active={conversationActive}
-                staticCaller={phonePhase === "talk" || phonePhase === "whisper"}
-                keepPauses={phonePhase === "talk" || phonePhase === "whisper"}
-                onLineHeld={phonePhase === "talk" ? holdPhoneLine : undefined}
-                onLineAdvance={phonePhase === "talk" ? advancePhoneLine : undefined}
+                staticCaller={phonePhase === "talk" || phonePhase === "music"}
+                keepPauses={phonePhase === "talk" || phonePhase === "music"}
+                onLineHeld={
+                  phonePhase === "talk" ? holdPhoneLine : phonePhase === "music" ? holdMusicBox : undefined
+                }
+                onLineAdvance={
+                  phonePhase === "talk"
+                    ? advancePhoneLine
+                    : phonePhase === "music"
+                      ? advanceMusicBox
+                      : undefined
+                }
                 onFinish={
                   phonePhase === "talk"
                     ? finishPhoneAnswer
-                    : phonePhase === "whisper"
-                      ? finishNightWhisper
+                    : phonePhase === "music"
+                      ? finishMusicBoxCall
                       : finishConversation
                 }
                 onSettled={onReplySettled}
