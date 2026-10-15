@@ -459,6 +459,15 @@ describe("save migration", () => {
     assert.equal(alreadyDone.find((quest) => quest.id === "miller-lake")?.step, "done");
     assert.equal(withoutRetiredFlags({ algebraBookFound: true, bootPrintSeen: true }).algebraBookFound, undefined);
     assert.equal(withoutRetiredFlags({ algebraBookFound: true, bootPrintSeen: true }).bootPrintSeen, true);
+    const blood = withoutRetiredFlags({
+      hairTieFound: true,
+      emilyPolaroidSeen: true,
+      bootPrintSeen: true,
+    });
+    assert.equal(blood.hairTieFound, undefined);
+    assert.equal(blood.bloodFound, true);
+    assert.equal(blood.emilyPolaroidSeen, true);
+    assert.equal(withoutRetiredFlags({ bloodFound: true, emilyPolaroidSeen: true }).emilyPolaroidSeen, true);
     assert.equal(quests.find((quest) => quest.id === "emilys-room")?.status, "active");
     assert.equal(
       questObjective(quests.find((quest) => quest.id === "emilys-room")!),

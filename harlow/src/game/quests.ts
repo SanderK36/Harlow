@@ -105,8 +105,8 @@ export type StoryFlag =
   | "nightCallHeard"
   /** He answered. No rain at home until morning. */
   | "nightCallClear"
-  /** Hair tie beside the sanatorium cigarette. */
-  | "hairTieFound"
+  /** Blood on the sanatorium tiles, beside the cigarette. */
+  | "bloodFound"
   /** Emily's headstone, day 2. */
   | "emilyStoneSeen"
   | "freshFlowersSeen"
@@ -507,6 +507,10 @@ export function withoutRetiredFlags(
   if (!flags) return {};
   const next: Partial<Record<string, boolean>> = { ...flags };
   delete next.algebraBookFound;
+  if (next.hairTieFound) {
+    next.bloodFound = true;
+    delete next.hairTieFound;
+  }
   return next as Partial<Record<StoryFlag, boolean>>;
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import ActionButton from "@/components/ActionButton/ActionButton";
 import ClueBoard from "@/components/QuestWindow/ClueBoard";
@@ -76,7 +76,7 @@ const MONTH_SHORT: Record<Month, string> = {
   December: "Dec.",
 };
 
-function HandLine({ text, animate, script = false }: { text: string; animate: boolean; script?: boolean }) {
+function HandLine({ text, animate }: { text: string; animate: boolean }) {
   const reduced = useReducedMotion();
   const [count, setCount] = useState(0);
   const reveal = animate && !reduced;
@@ -95,7 +95,7 @@ function HandLine({ text, animate, script = false }: { text: string; animate: bo
   }, [reveal, text]);
 
   return (
-    <p className={script ? `${styles.hand} ${styles.handScript}` : styles.hand}>
+    <p className={styles.hand}>
       {reveal ? text.slice(0, count) : text}
     </p>
   );
@@ -135,8 +135,6 @@ export default function QuestWindow({
 }: QuestWindowProps) {
   const [tab, setTab] = useState<"quests" | "clues" | "people">("quests");
   const [writing, setWriting] = useState<TrustPerson[]>([]);
-  const [writingEmily, setWritingEmily] = useState(false);
-  const emilyInked = useRef(false);
   const [writingClues, setWritingClues] = useState<ClueId[]>([]);
   const [logPlate, setLogPlate] = useState(false);
   const objectiveCtx = { inventory, storyFlags };
@@ -152,10 +150,6 @@ export default function QuestWindow({
     if (tab !== "people") {
       setWriting(unseenPeople);
       onPeopleViewed();
-    }
-    if (storyFlags.hairTieFound && !emilyInked.current) {
-      emilyInked.current = true;
-      setWritingEmily(true);
     }
     setTab("people");
   }
@@ -288,27 +282,6 @@ export default function QuestWindow({
                     </li>
                   );
                 })}
-                {storyFlags.hairTieFound && (
-                  <li className={`${styles.person} ${styles.tiltB}`}>
-                    <article className={styles.card} aria-label="Emily Parker. She was there.">
-                      <div className={styles.polaroidWrap}>
-                        <div className={styles.polaroid}>
-                          <Image
-                            className={styles.photo}
-                            src="/images/characters/emilyParker/emilyParker.png"
-                            alt=""
-                            width={64}
-                            height={58}
-                          />
-                        </div>
-                      </div>
-                      <div className={styles.personCopy} aria-hidden="true">
-                        <h3 className={styles.personName}>Emily Parker</h3>
-                        <HandLine text="She was there." animate={writingEmily} script />
-                      </div>
-                    </article>
-                  </li>
-                )}
               </ul>
           ) : (
           <>

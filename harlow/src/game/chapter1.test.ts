@@ -28,9 +28,16 @@ import {
   RACHEL_TAPE_STARE,
   rachelTapeStareDue,
   daytimeFigureDue,
+  BLOOD_BEAT_MS,
+  BLOOD_PLATE,
+  BLOOD_THOUGHTS,
+  closeupBeat,
   emilyDoorAjarDue,
+  endingAfterEscape,
   endingFrames,
   endingThoughts,
+  LET_GO_THOUGHT,
+  WHOSE_BLOOD_THOUGHT,
   folderLook,
   gravelWalkDue,
   hillDarkDue,
@@ -524,7 +531,7 @@ describe("night two and the road home", () => {
 });
 
 describe("ending order", () => {
-  it("puts the hair tie, then the figure, before the choice", () => {
+  it("puts the blood, then the figure, before the choice", () => {
     const frames = endingFrames([
       "room-6",
       "every-sunday",
@@ -533,16 +540,25 @@ describe("ending order", () => {
       "the-woods-road",
       "trail-up-the-hill",
     ]);
-    assert.deepEqual(frames.map((frame) => frame.thought), [
-      "Next to the cigarette. A hair tie. Pink, little flowers.",
-      "That's hers.",
-      "Ten years. Somebody kept it ten years.",
-      "Someone's here.",
-    ]);
-    assert.equal(frames[0]?.flags?.[0], "hairTieFound");
-    assert.equal(frames[0]?.split?.left, "/images/misc/oldEmilyEthanPhoto.png");
-    assert.equal(frames[3]?.thought, "Someone's here.");
-    assert.equal(frames[3]?.after, "timed-choice");
+    assert.equal(frames[0]?.image, BLOOD_PLATE);
+    assert.deepEqual(frames[0]?.thoughts, [...BLOOD_THOUGHTS]);
+    assert.equal(frames[0]?.flags?.[0], "bloodFound");
+    assert.equal("split" in (frames[0] ?? {}), false);
+    assert.equal(JSON.stringify(frames).includes("hair tie"), false);
+    assert.equal(JSON.stringify(frames).includes("oldEmilyEthanPhoto"), false);
+    assert.equal(frames[1]?.thought, "Someone's here.");
+    assert.equal(frames[1]?.after, "timed-choice");
+    assert.equal(closeupBeat(BLOOD_THOUGHTS, BLOOD_THOUGHTS[0], 0).text, BLOOD_THOUGHTS[0]);
+    assert.equal(closeupBeat(BLOOD_THOUGHTS, BLOOD_THOUGHTS[0], 0).canDismiss, false);
+    assert.equal(closeupBeat(BLOOD_THOUGHTS, BLOOD_THOUGHTS[0], BLOOD_BEAT_MS).text, "It's blood.");
+    assert.equal(closeupBeat(BLOOD_THOUGHTS, BLOOD_THOUGHTS[0], BLOOD_BEAT_MS).canDismiss, false);
+    assert.equal(closeupBeat(BLOOD_THOUGHTS, BLOOD_THOUGHTS[0], BLOOD_BEAT_MS * 2).text, "It's still wet.");
+    assert.equal(closeupBeat(BLOOD_THOUGHTS, BLOOD_THOUGHTS[0], BLOOD_BEAT_MS * 2).canDismiss, true);
+    assert.equal(closeupBeat(undefined, "Still burning. Someone was just here.", 0).canDismiss, true);
+    const after = endingAfterEscape(["room-6", "every-sunday"]);
+    assert.equal(after[0]?.thought, LET_GO_THOUGHT);
+    assert.equal(after[1]?.thought, WHOSE_BLOOD_THOUGHT);
+    assert.deepEqual(after.slice(2).map((frame) => frame.thought), endingThoughts(["room-6", "every-sunday"]));
     assert.deepEqual(endingThoughts(["room-6", "every-sunday"]), [
       "Every Sunday. He still goes.",
       "Room 6. Mud on the carpet. Friday.",

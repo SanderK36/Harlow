@@ -487,15 +487,39 @@ export function flagsForConnections(
   return { ...flags, waltParkerLinked: true };
 }
 
-export const HAIR_TIE_THOUGHTS = [
-  "Next to the cigarette. A hair tie. Pink, little flowers.",
-  "That's hers.",
-  "Ten years. Somebody kept it ten years.",
+export const BLOOD_THOUGHTS = [
+  "Next to the cigarette. Something dark on the tiles.",
+  "It's blood.",
+  "It's still wet.",
 ] as const;
 
-export const HAIR_TIE_LEFT = "/images/misc/oldEmilyEthanPhoto.png";
-export const HAIR_TIE_RIGHT = "/images/locations/sanatorium/sanatoriumRoom2NightCigarette.png";
+/** How long each blood line sits before the next one. The plate does not move. */
+export const BLOOD_BEAT_MS = 2800;
+
+export const BLOOD_PLATE = "/images/locations/sanatorium/sanatoriumBlood.png";
 export const FIGURE_PLATE = "/images/locations/sanatorium/sanatoriumMainFloorNightShadow.png";
+export const WHOSE_BLOOD_THOUGHT = "And whose blood was that?";
+
+/**
+ * One line at a time. The dismiss control stays hidden until the last line
+ * is already on screen.
+ */
+export function closeupBeat(
+  thoughts: readonly string[] | undefined,
+  thought: string,
+  elapsedMs: number,
+) {
+  const lines = thoughts && thoughts.length > 0 ? thoughts : [thought];
+  const index = Math.min(
+    lines.length - 1,
+    Math.max(0, Math.floor(elapsedMs / BLOOD_BEAT_MS)),
+  );
+  return {
+    text: lines[index] ?? thought,
+    index,
+    canDismiss: index >= lines.length - 1,
+  };
+}
 
 const ENDING_LINES: Partial<Record<ClueId, string>> = {
   "every-sunday": "Every Sunday. He still goes.",
@@ -526,8 +550,9 @@ export function endingThoughts(clues: readonly ClueId[]): string[] {
 export type EndingFrame = {
   image: string;
   thought: string;
+  /** Replaces `thought` one line at a time. Same plate, no cut between lines. */
+  thoughts?: readonly string[];
   label: string;
-  split?: { left: string; right: string };
   flags?: StoryFlag[];
   /** After this plate, the only timed choice in the game. */
   after?: "timed-choice";
@@ -535,37 +560,32 @@ export type EndingFrame = {
 
 export const LET_GO_THOUGHT = "He let me go. Why did he let me go?";
 
-/** After the cigarette: hair tie, then the figure. The choice follows that plate. */
+/** After the cigarette: blood on the tiles, then the figure. The choice follows that plate. */
 export function endingFrames(_clues: readonly ClueId[]): EndingFrame[] {
-  const hair = HAIR_TIE_THOUGHTS.map((thought, index) => ({
-    image: HAIR_TIE_RIGHT,
-    thought,
-    label: "Hair tie",
-    split: { left: HAIR_TIE_LEFT, right: HAIR_TIE_RIGHT },
-    flags: index === 0 ? ["hairTieFound" as const] : undefined,
-  }));
+  const blood: EndingFrame = {
+    image: BLOOD_PLATE,
+    thought: BLOOD_THOUGHTS[0],
+    thoughts: BLOOD_THOUGHTS,
+    label: "The tiles",
+    flags: ["bloodFound"],
+  };
   const figure: EndingFrame = {
     image: FIGURE_PLATE,
     thought: "Someone's here.",
     label: "Someone in the lobby",
     after: "timed-choice",
   };
-  return [...hair, figure];
+  return [blood, figure];
 }
 
-/** After Hide or Run. The question, then one line per optional clue he kept. */
+/** After Hide or Run. The question, the blood, then one line per optional clue he kept. */
 export function endingAfterEscape(clues: readonly ClueId[]): EndingFrame[] {
-  const letGo: EndingFrame = {
-    image: FIGURE_PLATE,
-    thought: LET_GO_THOUGHT,
-    label: "Ethan",
-  };
-  const after = endingThoughts(clues).map((thought) => ({
+  const lines = [LET_GO_THOUGHT, WHOSE_BLOOD_THOUGHT, ...endingThoughts(clues)];
+  return lines.map((thought) => ({
     image: FIGURE_PLATE,
     thought,
     label: "Ethan",
   }));
-  return [letGo, ...after];
 }
 
 export function connectionStartsOldFriends(id: ClueConnectionId) {

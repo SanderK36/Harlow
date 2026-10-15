@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from "react";
 
-import { HILL_LIGHT_ON_MS, HILL_LIGHT_THOUGHT_DELAY_MS } from "@/game/chapter1";
+import {
+  BLOOD_BEAT_MS,
+  closeupBeat,
+  HILL_LIGHT_ON_MS,
+  HILL_LIGHT_THOUGHT_DELAY_MS,
+} from "@/game/chapter1";
 
 import PlateImage from "@/components/ImageText/PlateImage";
 import type { Inscription } from "@/components/ImageText/imageText";
@@ -20,8 +25,11 @@ export type CloseupContent = {
   disableWeatherFilter?: boolean;
   /** Headline, caption, or note drawn on the picture. */
   inscriptions?: Inscription[];
-  /** Two crops, side by side. The thought stays under the frame. */
-  split?: { left: string; right: string };
+  /**
+   * Shown one at a time on the same plate. The dismiss control stays hidden
+   * until the last line is up. A clean cut: no flash, no shake.
+   */
+  thoughts?: readonly string[];
   /** Used when `image` is not on disk yet. The overlay stays. */
   fallbackImage?: string;
   /**
@@ -52,54 +60,62 @@ type CloseupOverlayProps = {
 export default function CloseupOverlay({ closeup, onDismiss, rain = null, rainNight = false }: CloseupOverlayProps) {
   const [lit, setLit] = useState(Boolean(closeup.windowLight));
   const [thought, setThought] = useState(closeup.thought);
+  const [elapsed, setElapsed] = useState(0);
+  const beat = closeupBeat(closeup.thoughts, closeup.thought, elapsed);
+  const line = closeup.windowLight ? thought : beat.text;
+  const canDismiss = closeup.windowLight ? true : beat.canDismiss;
+  const sequenced = Boolean(closeup.thoughts && closeup.thoughts.length > 1);
 
   useEffect(() => {
     setThought(closeup.thought);
     setLit(Boolean(closeup.windowLight));
-    if (!closeup.windowLight) return;
-    const off = window.setTimeout(() => setLit(false), HILL_LIGHT_ON_MS);
-    const line = window.setTimeout(
-      () => setThought(closeup.windowLight?.thought ?? closeup.thought),
-      HILL_LIGHT_ON_MS + HILL_LIGHT_THOUGHT_DELAY_MS,
-    );
+    setElapsed(0);
+    const timers: number[] = [];
+    if (closeup.windowLight) {
+      timers.push(window.setTimeout(() => setLit(false), HILL_LIGHT_ON_MS));
+      timers.push(window.setTimeout(
+        () => setThought(closeup.windowLight?.thought ?? closeup.thought),
+        HILL_LIGHT_ON_MS + HILL_LIGHT_THOUGHT_DELAY_MS,
+      ));
+    }
+    const lines = closeup.thoughts;
+    if (lines && lines.length > 1) {
+      for (let index = 1; index < lines.length; index += 1) {
+        timers.push(window.setTimeout(() => setElapsed(BLOOD_BEAT_MS * index), BLOOD_BEAT_MS * index));
+      }
+    }
     return () => {
-      window.clearTimeout(off);
-      window.clearTimeout(line);
+      for (const id of timers) window.clearTimeout(id);
     };
   }, [closeup]);
+
+  function dismiss() {
+    if (!canDismiss) return;
+    onDismiss();
+  }
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === " " || event.key === "Enter" || event.key === "Escape") {
         event.preventDefault();
-        onDismiss();
+        dismiss();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onDismiss]);
+  }, [onDismiss, canDismiss]);
 
   return (
     <div
-      className={styles.overlay}
+      className={`${styles.overlay}${sequenced ? ` ${styles.cut}` : ""}${canDismiss ? "" : ` ${styles.holding}`}`}
       role="dialog"
       aria-modal="true"
       aria-label={closeup.label ?? "Closeup"}
-      onClick={onDismiss}
+      onClick={dismiss}
     >
-      <p className={styles.hint}>Click or press Space</p>
+      {canDismiss && <p className={styles.hint}>Click or press Space</p>}
       <div className={styles.frame} onClick={(event) => event.stopPropagation()}>
         <div className={styles.art}>
-          {closeup.split ? (
-            <div className={styles.split}>
-              <div className={styles.splitPane}>
-                <img src={closeup.split.left} alt="" className={styles.splitLeft} />
-              </div>
-              <div className={styles.splitPane}>
-                <img src={closeup.split.right} alt="" className={styles.splitRight} />
-              </div>
-            </div>
-          ) : (
           <PlateImage
             key={closeup.image}
             src={closeup.image}
@@ -117,18 +133,17 @@ export default function CloseupOverlay({ closeup, onDismiss, rain = null, rainNi
                 }`
                 : ""
             }`}
-            onClick={onDismiss}
+            onClick={dismiss}
           />
-          )}
           {closeup.windowLight && (
             <div className={styles.hillLight} aria-hidden="true">
               {lit ? <div className={styles.hillGlow} /> : <div className={styles.hillShutter} />}
             </div>
           )}
-          {rain === "exterior" && !closeup.split && <div className={styles.overcast} aria-hidden="true" />}
-          {rain === "exterior" && !closeup.split && <div className={styles.rainGlass} aria-hidden="true" />}
+          {rain === "exterior" && <div className={styles.overcast} aria-hidden="true" />}
+          {rain === "exterior" && <div className={styles.rainGlass} aria-hidden="true" />}
         </div>
-        <p className={styles.thought}>{thought}</p>
+        <p className={styles.thought}>{line}</p>
       </div>
     </div>
   );

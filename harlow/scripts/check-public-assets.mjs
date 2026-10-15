@@ -17,7 +17,7 @@ const OPTIONAL = new Set([
   "images/ui/questLogBackground.png",
   "images/locations/cemetery/emilyStone.png",
   "images/ui/stalkerFigure.png",
-  "images/ui/hairTie.png",
+  "images/locations/sanatorium/sanatoriumBlood.png",
   "images/locations/home/hallwayPhone.png",
   "images/locations/millerLake/millerLakeSunny.png",
   "images/locations/millerLake/millerLakeNight.png",

@@ -1,7 +1,14 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { endingAfterEscape, endingFrames, LET_GO_THOUGHT } from "./chapter1.ts";
+import {
+  BLOOD_PLATE,
+  BLOOD_THOUGHTS,
+  endingAfterEscape,
+  endingFrames,
+  LET_GO_THOUGHT,
+  WHOSE_BLOOD_THOUGHT,
+} from "./chapter1.ts";
 import { CLUE_IDS, CONNECTION_IDS } from "./clues.ts";
 import { millerLakeAfterCabin, QUEST_DEFS } from "./quests.ts";
 import { millerCabin, millerCamp, millerLake } from "./scene/miller.ts";
@@ -305,18 +312,17 @@ describe("the second phone and the ending", () => {
     assert.equal(run[run.length - 1]?.black, true);
   });
 
-  it("puts the hair tie and the figure before the choice, then the question, then the clues", () => {
+  it("puts the blood and the figure before the choice, then both questions, then the clues", () => {
     const frames = endingFrames(["the-woods-road", "room-6"]);
-    assert.deepEqual(frames.map((frame) => frame.thought), [
-      "Next to the cigarette. A hair tie. Pink, little flowers.",
-      "That's hers.",
-      "Ten years. Somebody kept it ten years.",
-      "Someone's here.",
-    ]);
-    assert.equal(frames[3]?.after, "timed-choice");
+    assert.equal(frames[0]?.image, BLOOD_PLATE);
+    assert.deepEqual(frames[0]?.thoughts, [...BLOOD_THOUGHTS]);
+    assert.equal(frames[1]?.thought, "Someone's here.");
+    assert.equal(frames[1]?.after, "timed-choice");
+    assert.equal(JSON.stringify(frames).includes("hair"), false);
     const after = endingAfterEscape(["the-woods-road", "room-6"]);
     assert.equal(after[0]?.thought, LET_GO_THOUGHT);
-    assert.deepEqual(after.slice(1).map((frame) => frame.thought), [
+    assert.equal(after[1]?.thought, WHOSE_BLOOD_THOUGHT);
+    assert.deepEqual(after.slice(2).map((frame) => frame.thought), [
       "She was walking up. Not down.",
       "Room 6. Mud on the carpet. Friday.",
     ]);
