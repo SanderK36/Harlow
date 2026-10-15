@@ -114,7 +114,6 @@ const SCENE_DISTANCE: Record<string, number> = {
   "sanatorium-room-2": 12,
   "miller-lake": 9,
   "miller-camp": 10,
-  "miller-dock": 10,
   "miller-cabin": 11,
 };
 

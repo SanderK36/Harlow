@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { connectionStartsOldFriends, endingAfterEscape, endingFrames, LET_GO_THOUGHT } from "./chapter1.ts";
-import { CLUE_CONNECTIONS, CLUE_DEFS } from "./clues.ts";
+import { endingAfterEscape, endingFrames, LET_GO_THOUGHT } from "./chapter1.ts";
+import { CLUE_IDS, CONNECTION_IDS } from "./clues.ts";
+import { millerLakeAfterCabin, QUEST_DEFS } from "./quests.ts";
+import { millerCabin, millerCamp, millerLake } from "./scene/miller.ts";
 import {
-  BOOK_WOODS_THOUGHT,
   EARL_TOWEL,
   escapeSteps,
   HIDE_BLACK_MS,
@@ -14,14 +15,10 @@ import {
   LOCK_JOKE,
   MARGARET_DEADBOLT,
   MILLER_ARRIVAL,
-  MILLER_BOOK,
   MILLER_CABIN,
   MILLER_CAMP,
-  MILLER_CHECK,
-  MILLER_DOCK,
   MILLER_FALLBACK,
   MILLER_PLATES,
-  MILLER_RECENT,
   MUSIC_BOX_HOLD_MS,
   MUSIC_BOX_LINES,
   MUSIC_BOX_THOUGHTS,
@@ -223,24 +220,25 @@ describe("Miller Lake", () => {
     assert.equal(millerTripClosed(12 * 60, 45), false);
   });
 
-  it("keeps the book dry and connects it to the woods road without a quest", () => {
+  it("finishes at the cabin, with no dock and no algebra book", () => {
     assert.equal(MILLER_ARRIVAL, "Miller Lake. Dad and Walter's spot. Nobody fishes here anymore.");
     assert.equal(MILLER_CAMP, "CAMP PINEWOOD. Closed since '72. Of course it is.");
     assert.equal(MILLER_CABIN, "Somebody's been sleeping here. Blanket's still warm.");
-    assert.equal(MILLER_DOCK, "Something under the dock. I'm not checking.");
-    assert.equal(MILLER_CHECK, "...I'm checking.");
-    assert.equal(MILLER_BOOK, "Her algebra book. Her name inside. It's dry. Ten years, and it's dry.");
-    assert.equal(MILLER_RECENT, "Somebody put this here. Recently.");
-    assert.equal(
-      BOOK_WOODS_THOUGHT,
-      "She walked up that road with this book. Somebody brought it back down.",
-    );
-    assert.equal(CLUE_DEFS["algebra-book"].name, "Her algebra book");
-    assert.equal(CLUE_DEFS["algebra-book"].caption, "Emily P.");
-    assert.equal(CLUE_DEFS["algebra-book"].worn, true);
-    const link = CLUE_CONNECTIONS.find((item) => item.id === "book-woods");
-    assert.equal(link?.thought, BOOK_WOODS_THOUGHT);
-    assert.equal(connectionStartsOldFriends("book-woods"), false);
+    assert.equal(millerCabin.story.some((line) => line.type === "thought" && line.text === MILLER_CABIN), true);
+    assert.deepEqual(millerLake.choices.map((choice) => choice.nextScene), ["miller-camp"]);
+    assert.deepEqual(millerCamp.choices.map((choice) => choice.nextScene), ["miller-cabin", "miller-lake"]);
+    assert.equal(JSON.stringify([millerLake, millerCamp, millerCabin]).includes("dock"), false);
+    assert.equal(JSON.stringify([millerLake, millerCamp, millerCabin]).includes("algebra"), false);
+    assert.equal((CLUE_IDS as readonly string[]).includes("algebra-book"), false);
+    assert.equal((CONNECTION_IDS as readonly string[]).includes("book-woods"), false);
+    assert.equal(QUEST_DEFS["miller-lake"].objectives.done, "The cabin. Blanket's still warm.");
+    const active = [{ id: "miller-lake" as const, status: "active" as const }];
+    const done = millerLakeAfterCabin(active, "miller-cabin");
+    assert.equal(done[0]?.status, "completed");
+    assert.equal(done[0]?.step, "done");
+    assert.equal(millerLakeAfterCabin(active, "miller-lake")[0]?.status, "active");
+    assert.equal(Object.values(MILLER_PLATES).some((path) => path.includes("Dock") || path.includes("Tackle") || path.includes("algebra")), false);
+    assert.equal(Object.values(MILLER_FALLBACK).some((path) => path.includes("Tackle")), false);
   });
 });
 

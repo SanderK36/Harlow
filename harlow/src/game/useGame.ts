@@ -152,8 +152,10 @@ import {
   finishGate,
   isQuestActive,
   isQuestCompleted,
+  millerLakeAfterCabin,
   migrateQuestsFromLegacy,
   resolveMomTalked,
+  withoutRetiredFlags,
   setQuestStep,
   startEmilyRoom,
   startQuest,
@@ -250,9 +252,9 @@ export function useGame() {
     const weather = loaded.weather;
     const day = loaded.dayOfWeek;
     const migrated = migrateQuestsFromLegacy(sessionSave ?? { momTalked: true });
-    const flags = sessionSave?.storyFlags ?? (
+    const flags = withoutRetiredFlags(sessionSave?.storyFlags ?? (
       sessionSave?.momJobConcernHeard ? { momJobConcern: true } : {}
-    );
+    ));
     if (shouldNoticeHill(sceneId, time, migrated, flags, loaded.dayNumber)) return HILL_THOUGHT;
     return getSceneThought(sceneId, time, weather, day);
   });
@@ -327,9 +329,9 @@ export function useGame() {
     const migrated = migrateQuestsFromLegacy(sessionSave ?? { momTalked: true });
     const sceneId = sessionScene?.id ?? ethanRoom.id;
     const time = sessionSave?.gameState.time ?? initialGameState.time;
-    const flags = sessionSave?.storyFlags ?? (
+    const flags = withoutRetiredFlags(sessionSave?.storyFlags ?? (
       sessionSave?.momJobConcernHeard ? { momJobConcern: true } : {}
-    );
+    ));
     const dayNumber = withCanonWeekday(sessionSave?.gameState ?? initialGameState).dayNumber;
     const connections = migrateClues(sessionSave).connections;
     const linked = flagsForConnections(flags, connections);
@@ -337,6 +339,7 @@ export function useGame() {
     if (shouldNoticeHill(sceneId, time, next, linked, dayNumber)) {
       next = startQuest(next, "light-on-the-hill");
     }
+    next = millerLakeAfterCabin(next, sceneId);
     return syncChapterQuests(next, dayNumber, connections);
   });
   // React applies setQuests after this handler returns. A second update in the
@@ -376,9 +379,9 @@ export function useGame() {
   }
   const [storyFlags, setStoryFlags] = useState<Partial<Record<StoryFlag, boolean>>>(
     () => flagsForConnections(
-      sessionSave?.storyFlags ?? (
+      withoutRetiredFlags(sessionSave?.storyFlags ?? (
         sessionSave?.momJobConcernHeard ? { momJobConcern: true } : {}
-      ),
+      )),
       migrateClues(sessionSave).connections,
     ),
   );
@@ -1175,6 +1178,9 @@ export function useGame() {
     if (sceneId === "miller-lake" && !questsRef.current.some((quest) => quest.id === "miller-lake")) {
       applyQuestHooks({ startsQuest: "miller-lake" });
       if (!stalkerSpoke) setCurrentThought(MILLER_ARRIVAL);
+    }
+    if (sceneId === "miller-cabin" && isQuestActive(questsRef.current, "miller-lake")) {
+      applyQuestHooks({ completesQuest: "miller-lake", questStep: "done" });
     }
 
     if (
@@ -2156,7 +2162,7 @@ export function useGame() {
     dayRef.current = alignedState.dayNumber;
     connectionsRef.current = restoredClues.connections;
     const restoredFlags = flagsForConnections(
-      save.storyFlags ?? (save.momJobConcernHeard ? { momJobConcern: true } : {}),
+      withoutRetiredFlags(save.storyFlags ?? (save.momJobConcernHeard ? { momJobConcern: true } : {})),
       restoredClues.connections,
     );
     let restoredQuests = migrateQuestsFromLegacy(save);
@@ -2168,6 +2174,7 @@ export function useGame() {
       alignedState.dayNumber,
     );
     if (restoredHill) restoredQuests = startQuest(restoredQuests, "light-on-the-hill");
+    restoredQuests = millerLakeAfterCabin(restoredQuests, savedScene.id);
 
     setCurrentScene(savedScene);
     setCurrentThought(

@@ -124,7 +124,6 @@ export const OUTDOOR_SCENE_IDS = new Set([
   "elrod-house",
   "elrod-backyard",
   "miller-camp",
-  "miller-dock",
 ]);
 
 /**

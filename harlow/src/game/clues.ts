@@ -32,7 +32,6 @@ export const CLUE_IDS = [
   "the-woods-road",
   "trail-up-the-hill",
   "room-6",
-  "algebra-book",
 ] as const;
 
 export type ClueId = (typeof CLUE_IDS)[number];
@@ -43,10 +42,6 @@ export type ClueDef = {
   note: string;
   /** Public image path. Omitted clues are pinned notes. */
   image?: string;
-  /** Handwritten on the polaroid. */
-  caption?: string;
-  /** Water-damaged edge. The caption still reads if the file is missing. */
-  worn?: boolean;
 };
 
 export const CLUE_DEFS: Record<ClueId, ClueDef> = {
@@ -120,17 +115,9 @@ export const CLUE_DEFS: Record<ClueId, ClueDef> = {
     name: "Room 6",
     note: "Room 6. Paid cash Friday. Muddy boots.",
   },
-  "algebra-book": {
-    id: "algebra-book",
-    name: "Her algebra book",
-    note: "Her name inside. It's dry. Ten years, and it's dry.",
-    image: "/images/misc/algebraBook.png",
-    caption: "Emily P.",
-    worn: true,
-  },
 };
 
-export const CONNECTION_IDS = ["hood-boot", "walt-parker", "flowers-walt", "book-woods"] as const;
+export const CONNECTION_IDS = ["hood-boot", "walt-parker", "flowers-walt"] as const;
 
 export type ClueConnectionId = (typeof CONNECTION_IDS)[number];
 
@@ -159,12 +146,6 @@ export const CLUE_CONNECTIONS: readonly ClueConnection[] = [
     a: "fresh-flowers",
     b: "walt-and-me",
     thought: "Walter. He never stopped coming.",
-  },
-  {
-    id: "book-woods",
-    a: "algebra-book",
-    b: "the-woods-road",
-    thought: "She walked up that road with this book. Somebody brought it back down.",
   },
 ];
 
@@ -198,7 +179,6 @@ const FLAG_CLUES: Record<string, ClueId> = {
   woodsRoadTold: "the-woods-road",
   trailFollowed: "trail-up-the-hill",
   room6Heard: "room-6",
-  algebraBookFound: "algebra-book",
 };
 
 export function isClueId(value: string): value is ClueId {

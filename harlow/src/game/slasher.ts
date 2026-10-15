@@ -45,12 +45,6 @@ export const MILLER_DARK = "Not after dark. Not out there.";
 export const MILLER_ARRIVAL = "Miller Lake. Dad and Walter's spot. Nobody fishes here anymore.";
 export const MILLER_CAMP = "CAMP PINEWOOD. Closed since '72. Of course it is.";
 export const MILLER_CABIN = "Somebody's been sleeping here. Blanket's still warm.";
-export const MILLER_DOCK = "Something under the dock. I'm not checking.";
-export const MILLER_CHECK = "...I'm checking.";
-export const MILLER_BOOK = "Her algebra book. Her name inside. It's dry. Ten years, and it's dry.";
-export const MILLER_RECENT = "Somebody put this here. Recently.";
-export const BOOK_WOODS_THOUGHT = "She walked up that road with this book. Somebody brought it back down.";
-
 export const MUSIC_BOX_HOLD_MS = 4200;
 export const MUSIC_BOX_THOUGHT_MS = 2800;
 export const MUSIC_BOX_THOUGHTS = [
@@ -87,7 +81,6 @@ const EXTRA_OUTDOOR = new Set([
   "elrod-house",
   "elrod-backyard",
   "miller-camp",
-  "miller-dock",
 ]);
 
 export function isSanatoriumScene(sceneId: string) {
@@ -425,15 +418,10 @@ export const MILLER_PLATES = {
   shoreThunder: "/images/locations/millerLake/millerLakeThunder.png",
   camp: "/images/locations/millerLake/millerCamp.png",
   cabin: "/images/locations/millerLake/millerCabin.png",
-  dock: "/images/locations/millerLake/millerDock.png",
-  tackle: "/images/locations/millerLake/millerTackle.png",
-  book: "/images/misc/algebraBook.png",
 } as const;
 
 export const MILLER_FALLBACK = {
   shore: "/images/misc/flashbackEthanPovForest.png",
   camp: "/images/misc/flashbackEthanPovForest.png",
   cabin: "/images/locations/sanatorium/sanatoriumRoom1Day.png",
-  dock: "/images/locations/cemetery/cemeteryBacksideDay.png",
-  tackle: "/images/misc/oldPhotoWalterFishing.png",
 } as const;

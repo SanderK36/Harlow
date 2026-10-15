@@ -155,8 +155,6 @@ export type StoryFlag =
   | "endingHid"
   /** He ran. */
   | "endingRan"
-  /** The dry algebra book under the dock. */
-  | "algebraBookFound"
   /** Once, at a door that does not open. */
   | "lockCheckHeard"
   /** Margaret, Sunday, once. */
@@ -293,7 +291,7 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
     title: "Miller Lake",
     objectives: {
       default: "Dad and Walter's spot. Nobody fishes there anymore.",
-      done: "Her algebra book. Dry. Somebody put it there.",
+      done: "The cabin. Blanket's still warm.",
     },
   },
 };
@@ -382,6 +380,12 @@ export function isQuestActive(quests: QuestProgress[], id: QuestId) {
   return quests.some((quest) => quest.id === id && quest.status === "active");
 }
 
+/** The cabin is the last beat. A save already standing there is finished. */
+export function millerLakeAfterCabin(quests: QuestProgress[], sceneId: string | undefined) {
+  if (sceneId !== "miller-cabin" || !isQuestActive(quests, "miller-lake")) return quests;
+  return completeQuest(quests, "miller-lake", "done");
+}
+
 export function isQuestCompleted(quests: QuestProgress[], id: QuestId) {
   return quests.some((quest) => quest.id === id && quest.status === "completed");
 }
@@ -404,7 +408,8 @@ export function migrateQuestsFromLegacy(save: {
   job?: JobId | null;
   jobQuestTarget?: JobId | null;
   quests?: QuestProgress[];
-  storyFlags?: Partial<Record<StoryFlag, boolean>>;
+  storyFlags?: Partial<Record<string, boolean>>;
+  clues?: readonly string[] | null;
   askedAbout?: {
     rachel?: readonly string[];
     walter?: readonly string[];
@@ -479,7 +484,30 @@ export function migrateQuestsFromLegacy(save: {
     quests.push({ id: "faded-poster", status: "active" });
   }
 
-  return migrateSideQuests(quests, save.storyFlags, save.askedAbout);
+  let next = migrateSideQuests(quests, save.storyFlags as Partial<Record<StoryFlag, boolean>> | undefined, save.askedAbout);
+  if (saveHadAlgebraBook(save)) next = completeQuest(next, "miller-lake", "done");
+  return next;
+}
+
+/** The algebra book is gone. A save that already found it finished Miller Lake. */
+export function saveHadAlgebraBook(save: {
+  clues?: readonly string[] | null;
+  storyFlags?: Partial<Record<string, boolean>> | null;
+}) {
+  return Boolean(
+    save.storyFlags?.algebraBookFound
+    || save.clues?.includes("algebra-book"),
+  );
+}
+
+/** Drop flags that no longer exist so they are not written back out. */
+export function withoutRetiredFlags(
+  flags: Partial<Record<string, boolean>> | undefined,
+): Partial<Record<StoryFlag, boolean>> {
+  if (!flags) return {};
+  const next: Partial<Record<string, boolean>> = { ...flags };
+  delete next.algebraBookFound;
+  return next as Partial<Record<StoryFlag, boolean>>;
 }
 
 function askedAboutBootPrint(asked: {

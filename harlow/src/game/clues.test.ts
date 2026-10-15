@@ -32,6 +32,8 @@ import {
   finishGate,
   migrateQuestsFromLegacy,
   questObjective,
+  saveHadAlgebraBook,
+  withoutRetiredFlags,
   startEmilyRoom,
   startTheGate,
   type QuestProgress,
@@ -417,6 +419,46 @@ describe("save migration", () => {
     });
     assert.equal(quests.find((quest) => quest.id === "the-gate")?.status, "completed");
     assert.equal(quests.find((quest) => quest.id === "the-tape")?.status, "active");
+
+    const dropped = migrateClues({
+      clues: ["man-in-a-hood", "algebra-book"],
+      clueConnections: ["book-woods"],
+      cluesSeen: ["algebra-book", "man-in-a-hood"],
+      askedAbout: { walter: ["algebra-book"] },
+      storyFlags: { algebraBookFound: true },
+    });
+    assert.deepEqual(dropped.clues, ["man-in-a-hood"]);
+    assert.deepEqual(dropped.connections, []);
+    assert.deepEqual(dropped.cluesSeen, ["man-in-a-hood"]);
+    assert.equal(dropped.askedAbout.walter, undefined);
+    assert.equal(saveHadAlgebraBook({
+      clues: ["algebra-book"],
+      storyFlags: {},
+    }), true);
+    assert.equal(saveHadAlgebraBook({ storyFlags: { algebraBookFound: true } }), true);
+    assert.equal(saveHadAlgebraBook({ clues: ["man-in-a-hood"] }), false);
+    const finished = migrateQuestsFromLegacy({
+      momTalked: true,
+      quests: [
+        { id: "talk-to-mom", status: "completed" },
+        { id: "miller-lake", status: "active" },
+      ],
+      clues: ["algebra-book"],
+      storyFlags: { algebraBookFound: true },
+    });
+    assert.equal(finished.find((quest) => quest.id === "miller-lake")?.status, "completed");
+    const alreadyDone = migrateQuestsFromLegacy({
+      momTalked: true,
+      quests: [
+        { id: "talk-to-mom", status: "completed" },
+        { id: "miller-lake", status: "completed", step: "done" },
+      ],
+      storyFlags: { algebraBookFound: true },
+    });
+    assert.equal(alreadyDone.find((quest) => quest.id === "miller-lake")?.status, "completed");
+    assert.equal(alreadyDone.find((quest) => quest.id === "miller-lake")?.step, "done");
+    assert.equal(withoutRetiredFlags({ algebraBookFound: true, bootPrintSeen: true }).algebraBookFound, undefined);
+    assert.equal(withoutRetiredFlags({ algebraBookFound: true, bootPrintSeen: true }).bootPrintSeen, true);
     assert.equal(quests.find((quest) => quest.id === "emilys-room")?.status, "active");
     assert.equal(
       questObjective(quests.find((quest) => quest.id === "emilys-room")!),

@@ -239,11 +239,8 @@ export default function ClueBoard({
                   {pinned ? (
                     <span className={styles.pin} aria-hidden="true" />
                   ) : (
-                    <span className={`${styles.polaroidFrame} ${clue.worn ? styles.wornFrame : ""}`}>
+                    <span className={styles.polaroidFrame}>
                       <CluePhoto src={clue.image} />
-                      {clue.caption && (
-                        <span className={styles.handCaption}>{clue.caption}</span>
-                      )}
                     </span>
                   )}
                   <span className={styles.clueCopy}>

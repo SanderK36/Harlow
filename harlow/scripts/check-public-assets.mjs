@@ -19,15 +19,12 @@ const OPTIONAL = new Set([
   "images/ui/stalkerFigure.png",
   "images/ui/hairTie.png",
   "images/locations/home/hallwayPhone.png",
-  "images/misc/algebraBook.png",
   "images/locations/millerLake/millerLakeSunny.png",
   "images/locations/millerLake/millerLakeNight.png",
   "images/locations/millerLake/millerLakeRainy.png",
   "images/locations/millerLake/millerLakeThunder.png",
   "images/locations/millerLake/millerCamp.png",
   "images/locations/millerLake/millerCabin.png",
-  "images/locations/millerLake/millerDock.png",
-  "images/locations/millerLake/millerTackle.png",
 ]);
 
 const QUOTED = /["'`]([^"'`\n]+\.(?:png|jpe?g|webp|gif|svg|mp3|wav|ogg|mp4|mov))["'`]/g;

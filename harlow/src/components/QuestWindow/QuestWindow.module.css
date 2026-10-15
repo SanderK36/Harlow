@@ -596,28 +596,6 @@
   background: #1a1210;
 }
 
-.wornFrame .cluePhoto,
-.wornFrame .photoMissing {
-  clip-path: polygon(
-    0% 3%, 12% 0%, 28% 4%, 46% 0%, 63% 3%, 81% 0%, 100% 4%,
-    98% 22%, 100% 48%, 96% 71%, 100% 88%,
-    84% 100%, 61% 94%, 38% 100%, 16% 95%, 0% 100%
-  );
-  filter: sepia(0.45) contrast(0.92);
-}
-
-.handCaption {
-  position: absolute;
-  right: 8px;
-  bottom: 6px;
-  color: #2a1c14;
-  font-family: var(--font-handwriting);
-  font-size: 18px;
-  line-height: 1;
-  transform: rotate(-6deg);
-  text-shadow: 0 0 1px rgba(255, 248, 230, 0.65);
-}
-
 .cluePhoto,
 .photoMissing {
   display: block;

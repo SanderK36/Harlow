@@ -60,7 +60,7 @@ import {
   sanatoriumRoom1,
   sanatoriumRoom2,
 } from "./sanatorium";
-import { millerCabin, millerCamp, millerDock, millerLake } from "./miller";
+import { millerCabin, millerCamp, millerLake } from "./miller";
 
 export function getSceneThought(
   sceneId: string,
@@ -149,5 +149,4 @@ export const scenes = {
   "miller-lake": millerLake,
   "miller-camp": millerCamp,
   "miller-cabin": millerCabin,
-  "miller-dock": millerDock,
 };
