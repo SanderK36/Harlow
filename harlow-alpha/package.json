@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check-assets": "node scripts/check-public-assets.mjs",
+    "test": "node --experimental-strip-types --import ./scripts/strip-ts-extensions.mjs --test src/game/assets.test.ts src/game/autosave.test.ts src/game/chapter1.test.ts src/game/clues.test.ts src/game/hill.test.ts src/game/imageText.test.ts src/game/map.test.ts src/game/round3.test.ts src/game/round4.test.ts src/game/round5.test.ts src/game/round6.test.ts src/game/settings.test.ts src/game/slasher.test.ts src/game/statLabels.test.ts src/game/trust.test.ts"
   },
   "dependencies": {
     "next": "16.3.4",
