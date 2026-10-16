@@ -400,6 +400,13 @@ export const elrodHouse: Scene = {
       timeCost: 2,
     },
     {
+      label: "Try the door",
+      action: "tryElrodDoor",
+      nextScene: "elrod-house",
+      timeCost: 0,
+      excludesStoryFlag: "lockCheckHeard",
+    },
+    {
       label: "Look at the tape",
       action: "lookAtElrodTape",
       nextScene: "elrod-house",

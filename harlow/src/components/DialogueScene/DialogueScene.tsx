@@ -65,7 +65,11 @@ function toDialogueLines(entries: StoryEntry[]): DialogueLine[] {
       return [{ speaker: entry.character, text: entry.text, pauseAfter: entry.pauseAfter }];
     }
     if (entry.type === "narration") {
-      return [{ speaker: null, text: entry.text, pauseAfter: entry.pauseAfter }];
+      return [{
+        speaker: null,
+        text: entry.text,
+        pauseAfter: entry.pauseAfter,
+      }];
     }
     // Ethan's inner line mid-conversation (e.g. remembering the porch light).
     if (entry.type === "thought") {

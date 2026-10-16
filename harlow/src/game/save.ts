@@ -47,6 +47,10 @@ export type SavedGame = {
   cluesSeen?: ClueId[];
   /** Clues Ethan has already asked this person about. */
   askedAbout?: AskedAbout;
+  /** Hidden watcher count, 0–3. Missing on older saves. */
+  stalkerSightings?: number;
+  /** Absolute minute of the last sighting. Two hours have to pass. */
+  stalkerSeenAt?: number | null;
 };
 
 export type SavedGameSlot = {

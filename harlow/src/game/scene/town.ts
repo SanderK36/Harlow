@@ -8,6 +8,7 @@ import {
 import type { Scene } from "./types";
 import { rainArt, RAIN, STORM } from "./weather";
 import { EMILY_STONE_INSCRIPTION } from "../clues";
+import { WALTER_AT_STONE, emilyGraveStoneImage } from "../slasher";
 
 export const walterConversation: Conversation = {
   opening: [npc("Walter", "Ethan. Figured you'd turn up.")],
@@ -464,6 +465,7 @@ export const cementaryInside: Scene = {
       minDay: 3,
       requiresFlags: ["waltParkerLinked"],
       excludesFlags: ["oldFriendsDone"],
+      image: WALTER_AT_STONE,
     },
   ],
   conversation: walterAtStoneConversation,
@@ -480,7 +482,7 @@ export const cementaryInside: Scene = {
       nextScene: "cementary-inside",
       timeCost: 0,
       closeup: {
-        image: "./images/locations/cemetery/emilyStone.png",
+        image: emilyGraveStoneImage("Sunny", 10 * 60),
         fallbackImage: "./images/locations/cemetery/cemeteryInsideDay.png",
         thought: "No second date. Mom wouldn't let them carve one.",
         label: "Emily's stone",

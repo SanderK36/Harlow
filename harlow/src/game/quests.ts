@@ -32,7 +32,8 @@ export type QuestId =
   | "old-friends"
   | "emilys-stone"
   | "before-everything"
-  | "rachel-remembers";
+  | "rachel-remembers"
+  | "miller-lake";
 
 export type QuestStatus = "active" | "completed";
 
@@ -104,8 +105,8 @@ export type StoryFlag =
   | "nightCallHeard"
   /** He answered. No rain at home until morning. */
   | "nightCallClear"
-  /** Hair tie beside the sanatorium cigarette. */
-  | "hairTieFound"
+  /** Blood on the sanatorium tiles, beside the cigarette. */
+  | "bloodFound"
   /** Emily's headstone, day 2. */
   | "emilyStoneSeen"
   | "freshFlowersSeen"
@@ -141,7 +142,25 @@ export type StoryFlag =
   /** He went inside the sanatorium. The gravel walk home never plays. */
   | "sanatoriumEntered"
   /** Footsteps on the road home, once. */
-  | "gravelFootsteps";
+  | "gravelFootsteps"
+  /** Sighting 1. Across the street, the first time outside after The Gate. */
+  | "streetStalkerSeen"
+  /** Sighting 2. His reflection in the diner window. */
+  | "dinerWindowSeen"
+  /** Linda's back door. Once, after the diner window. */
+  | "backDoorOpen"
+  /** Night 2. The music box in the receiver. */
+  | "musicBoxCall"
+  /** The sanatorium closet. */
+  | "endingHid"
+  /** He ran. */
+  | "endingRan"
+  /** Once, at a door that does not open. */
+  | "lockCheckHeard"
+  /** Margaret, Sunday, once. */
+  | "margaretDeadbolts"
+  /** Earl, Sunday, after Room 6, once. */
+  | "earlTowels";
 
 export type QuestDef = {
   id: QuestId;
@@ -267,6 +286,14 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
       done: "The woods road. Walking up.",
     },
   },
+  "miller-lake": {
+    id: "miller-lake",
+    title: "Miller Lake",
+    objectives: {
+      default: "Dad and Walter's spot. Nobody fishes there anymore.",
+      done: "The cabin. Blanket's still warm.",
+    },
+  },
 };
 
 export type QuestObjectiveContext = {
@@ -353,6 +380,12 @@ export function isQuestActive(quests: QuestProgress[], id: QuestId) {
   return quests.some((quest) => quest.id === id && quest.status === "active");
 }
 
+/** The cabin is the last beat. A save already standing there is finished. */
+export function millerLakeAfterCabin(quests: QuestProgress[], sceneId: string | undefined) {
+  if (sceneId !== "miller-cabin" || !isQuestActive(quests, "miller-lake")) return quests;
+  return completeQuest(quests, "miller-lake", "done");
+}
+
 export function isQuestCompleted(quests: QuestProgress[], id: QuestId) {
   return quests.some((quest) => quest.id === id && quest.status === "completed");
 }
@@ -375,7 +408,8 @@ export function migrateQuestsFromLegacy(save: {
   job?: JobId | null;
   jobQuestTarget?: JobId | null;
   quests?: QuestProgress[];
-  storyFlags?: Partial<Record<StoryFlag, boolean>>;
+  storyFlags?: Partial<Record<string, boolean>>;
+  clues?: readonly string[] | null;
   askedAbout?: {
     rachel?: readonly string[];
     walter?: readonly string[];
@@ -450,7 +484,34 @@ export function migrateQuestsFromLegacy(save: {
     quests.push({ id: "faded-poster", status: "active" });
   }
 
-  return migrateSideQuests(quests, save.storyFlags, save.askedAbout);
+  let next = migrateSideQuests(quests, save.storyFlags as Partial<Record<StoryFlag, boolean>> | undefined, save.askedAbout);
+  if (saveHadAlgebraBook(save)) next = completeQuest(next, "miller-lake", "done");
+  return next;
+}
+
+/** The algebra book is gone. A save that already found it finished Miller Lake. */
+export function saveHadAlgebraBook(save: {
+  clues?: readonly string[] | null;
+  storyFlags?: Partial<Record<string, boolean>> | null;
+}) {
+  return Boolean(
+    save.storyFlags?.algebraBookFound
+    || save.clues?.includes("algebra-book"),
+  );
+}
+
+/** Drop flags that no longer exist so they are not written back out. */
+export function withoutRetiredFlags(
+  flags: Partial<Record<string, boolean>> | undefined,
+): Partial<Record<StoryFlag, boolean>> {
+  if (!flags) return {};
+  const next: Partial<Record<string, boolean>> = { ...flags };
+  delete next.algebraBookFound;
+  if (next.hairTieFound) {
+    next.bloodFound = true;
+    delete next.hairTieFound;
+  }
+  return next as Partial<Record<StoryFlag, boolean>>;
 }
 
 function askedAboutBootPrint(asked: {

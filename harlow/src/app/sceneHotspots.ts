@@ -123,6 +123,7 @@ export const OUTDOOR_SCENE_IDS = new Set([
   "sanatorium-entrance",
   "elrod-house",
   "elrod-backyard",
+  "miller-camp",
 ]);
 
 /**

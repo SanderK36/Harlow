@@ -9,6 +9,19 @@
   cursor: pointer;
 }
 
+/* Blood lines sit on one plate. No fade, no red flash, no shake. */
+.cut,
+.cut .frame,
+.cut .art,
+.cut .image {
+  animation: none;
+  transition: none;
+}
+
+.holding {
+  cursor: default;
+}
+
 .frame {
   position: relative;
   display: flex;
@@ -98,35 +111,6 @@
   }
 }
 
-.split {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  width: min(92vw, 860px);
-  height: min(52vh, 480px);
-  gap: 2px;
-}
-
-.splitPane {
-  overflow: hidden;
-  background: #120c0e;
-  border: 1px solid rgba(255, 220, 180, 0.18);
-}
-
-.splitLeft,
-.splitRight {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* The pink tie is on the desk, just left of the polaroid. */
-.splitLeft {
-  object-position: 41% 43%;
-  transform: scale(3.1);
-  transform-origin: 41% 43%;
-}
-
 .hillLight {
   position: absolute;
   left: 34.4%;
@@ -155,11 +139,6 @@
   width: 56%;
   height: 52%;
   background: #1a120c;
-}
-
-.splitRight {
-  object-position: 50% 62%;
-  transform: scale(1.35);
 }
 
 .thought {
