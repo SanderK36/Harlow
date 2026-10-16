@@ -13,6 +13,7 @@ const exteriorDestinations = [
   { id: "diner", label: "the diner", walkMinutes: 25 },
   { id: "scrapyard", label: "the scrapyard", walkMinutes: 40 },
   { id: "sanatorium", label: "the sanatorium", walkMinutes: 40 },
+  { id: "miller-lake", label: "Miller Lake", walkMinutes: 45 },
 ];
 
 export function isExteriorScene(sceneId: string): boolean {

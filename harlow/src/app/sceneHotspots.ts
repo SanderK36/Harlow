@@ -123,7 +123,22 @@ export const OUTDOOR_SCENE_IDS = new Set([
   "sanatorium-entrance",
   "elrod-house",
   "elrod-backyard",
+  "miller-camp",
 ]);
+
+/**
+ * Talk stays a labeled choice. A hotspot with no rectangle was swallowing
+ * the button the moment the NPC walked in.
+ */
+export function choiceKeptInList(
+  action: string,
+  hotspotActions: readonly string[],
+  hasRects: boolean,
+) {
+  if (action.startsWith("talkTo")) return true;
+  if (action === "lookAtDinerBulletin") return true;
+  return !hotspotActions.includes(action) && !hasRects;
+}
 
 /** Which cursor a hotspot gets: look, go, talk or take (see globals.css). */
 export function hotspotKind(action: string) {

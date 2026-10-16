@@ -14,6 +14,8 @@ export type StoryEntry =
       type: "narration";
       text: string;
       condition?: ThoughtCondition;
+      /** Hold after this line, then show the next without a click. */
+      pauseAfter?: number;
     }
   | {
       type: "thought";
@@ -24,6 +26,8 @@ export type StoryEntry =
       type: "conversation";
       character: string;
       text: string;
+      /** Hold after this line, then show the next without a click. */
+      pauseAfter?: number;
     }
   | {
       type: "effect";
@@ -97,6 +101,15 @@ export type ConversationChoice = {
   completesQuest?: import("./quests").QuestId;
   /** Show only while this quest is active. */
   requiresQuestActive?: import("./quests").QuestId;
+  /** Show only in this scene (Mom's kitchen talk, not the living room). */
+  sceneId?: string;
+  /** Minutes after midnight. Hidden outside the window. */
+  from?: number;
+  until?: number;
+  /** Chapter day, using the October dayNumber (3 = Sunday). */
+  minDay?: number;
+  /** Show when Ethan already has any one of these clues. */
+  requiresAnyClue?: import("./clues").ClueId[];
   /** Optional quest step id to set while the quest is active. */
   questStep?: string;
   /** Show this reply only when hidden trust is inside this range. Never a quest gate. */

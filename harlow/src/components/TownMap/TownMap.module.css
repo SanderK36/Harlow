@@ -202,6 +202,31 @@
   outline-offset: 2px;
 }
 
+.pinPencil {
+  font-family: var(--font-handwriting);
+  font-size: 20px;
+}
+
+.pencilPin svg {
+  overflow: visible;
+}
+
+.pencilCross {
+  position: absolute;
+  top: -2px;
+  left: -14px;
+  width: 16px;
+  height: 16px;
+  color: #4e463e;
+  pointer-events: none;
+}
+
+.pencilCross svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .glyph {
   position: relative;
   display: grid;

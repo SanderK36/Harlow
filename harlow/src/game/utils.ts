@@ -102,6 +102,14 @@ export function isNightTime(minutes: number) {
   return minutes >= 1080 || minutes < 360;
 }
 
+/**
+ * Dialogue paper and the scene vignette. 18:00 inclusive, 06:00 exclusive,
+ * so midnight stays inside the night span. Scene art keeps isNightTime.
+ */
+export function isNightPaper(minutes: number) {
+  return minutes >= 18 * 60 || minutes < 6 * 60;
+}
+
 /** The status line. Stored weather stays Sunny; after dark that word is Clear. */
 export function weatherStatusLabel(weather: string, time: number) {
   if (weather === "Sunny" && isNightTime(time)) return "Clear";

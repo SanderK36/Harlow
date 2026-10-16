@@ -17,6 +17,8 @@ export type SceneCharacter = {
   requiresFlags?: StoryFlag[];
   /** Hidden once any listed story flag is set. */
   excludesFlags?: StoryFlag[];
+  /** Hidden until this October dayNumber. Sunday the 3rd is 3. */
+  minDay?: number;
 };
 
 export type Scene = {
@@ -41,6 +43,8 @@ export type Scene = {
      * at 10:35.
      */
     weatherNightOnly?: boolean;
+    /** Shown when `day` / `night` / weather art has not been delivered. */
+    fallback?: string;
     /**
      * No night art yet: `night` is the day plate. After dark the scene is
      * dimmed and cooled instead of showing daylight. Set this on any scene

@@ -1,4 +1,6 @@
-import { atticHotspotVisible, bootPrintHotspotHidden, emilyFolderOnDesk, gazetteOnPorch } from "./clues";
+import { findActiveCharacter } from "./activeCharacter";
+import { folderLook, rachelDrawn } from "./chapter1";
+import { atticHotspotVisible, bootPrintHotspotHidden, gazetteOnPorch } from "./clues";
 import type { Choice } from "./choices";
 import { TIRED_END } from "./lateNight";
 import {
@@ -9,8 +11,34 @@ import {
   type QuestProgress,
   type StoryFlag,
 } from "./quests";
+import { scenes } from "./scenes";
 import type { GameState } from "./types";
 import { isNightTime } from "./utils";
+
+/** Talk actions follow the NPC standing in the scene, not a second clock. */
+const NPC_FOR_TALK: Record<string, string> = {
+  talkToMom: "Linda",
+  talkToJohnny: "Johnny Dalton",
+  talkToWalter: "Walter Harrington",
+  talkToWalterAtStone: "Walter Harrington",
+  talkToMargaret: "Margaret Sullivan",
+  talkToEarl: "Earl",
+  talkToBigRoy: "Big Roy",
+  talkToRay: "Ray Mercer",
+  talkToTommy: "Tommy Vance",
+  talkToMarlene: "Marlene",
+};
+
+function npcIsHere(name: string, ctx: ChoiceContext) {
+  const scene = scenes[ctx.currentSceneId as keyof typeof scenes];
+  return findActiveCharacter(scene?.characters, {
+    time: ctx.gameState.time,
+    day: ctx.gameState.dayOfWeek,
+    dayNumber: ctx.gameState.dayNumber,
+    marleneActive: ctx.marleneActive,
+    hasFlag: ctx.hasFlag,
+  })?.name === name;
+}
 
 const BEDTIME_START = 1320;
 
@@ -66,33 +94,27 @@ export function isChoiceAvailable(choice: Choice, ctx: ChoiceContext) {
     return sceneId === "living-room";
   }
 
-  if (action === "talkToMom") {
-    const weekend = dayOfWeek === "Saturday" || dayOfWeek === "Sunday";
-    if (sceneId === "kitchen") {
-      return (time >= 450 && time < 540)
-        || (weekend && time >= 720 && time < 1140);
-    }
-    if (sceneId === "living-room") {
-      return weekend
-        ? time >= 540 && time < 1320
-        : time >= 540 && time < 1080;
-    }
-    return false;
-  }
-  if (action === "talkToJohnny") return time >= 480 && time < 840;
+  if (NPC_FOR_TALK[action]) return npcIsHere(NPC_FOR_TALK[action], ctx);
   if (action === "workNeedleGrooveShift") {
     return ctx.job === "needle-groove" && time >= 600 && time < 1140;
   }
-  if (action === "talkToWalter") return time >= 480 && time < 960;
-  if (action === "lookAtEmilyFolder") return emilyFolderOnDesk(time, ctx.storyFlags);
-  if (action === "talkToMargaret") return time >= 420 && time < 900;
-  if (action === "talkToEarl") return time >= 480 && time < 1020;
-  if (action === "talkToBigRoy") return time >= 420 && time < 900;
-  if (action === "talkToRay") return time >= 540 && time < 1380;
-  if (action === "talkToTommy") return time >= 480 && time < 1020;
+  if (action === "lookAtEmilyStone") {
+    return sceneId === "cementary-inside" && ctx.gameState.dayNumber >= 3 && !ctx.hasFlag("emilyStoneSeen");
+  }
+  if (action === "lookAtRoom6") return ctx.hasFlag("room6Heard");
+  if (action === "lookAtEmilyFolder") {
+    const look = folderLook({
+      time,
+      fileDrawerSeen: ctx.storyFlags.fileDrawerSeen,
+      emilyFileOpened: ctx.storyFlags.emilyFileOpened,
+      folderLockedToday: ctx.storyFlags.folderLockedToday,
+      rachelFolderCover: ctx.storyFlags.rachelFolderCover,
+    });
+    return look === "open" || look === "caught";
+  }
   if (action === "openShop") return time >= 540 && time < 1380;
   if (action === "goToMarleneCounter") return !ctx.marleneActive;
-  if (action === "talkToMarlene" || action === "leaveMarleneCounter") return ctx.marleneActive;
+  if (action === "leaveMarleneCounter") return ctx.marleneActive;
   if (ctx.marleneActive && (action === "leaveHospital" || action === "goToHospitalRoom")) return false;
   if (action === "pickUpCigarettes") return !ctx.deskCigarettesPickedUp;
   // Roy works in the scrapyard from 07:00 to 15:00, so Ethan cannot
@@ -118,18 +140,14 @@ export function isChoiceAvailable(choice: Choice, ctx: ChoiceContext) {
     );
   }
   if (action === "talkToRachel") {
-    // Elrod: Rachel is out 07:00–19:00. She stays after What Walter Said
-    // so a return visit still has a line, and Ask about can reach her.
+    // Elrod: 07:00–18:00, and only while she is actually on the porch.
     if (sceneId !== "elrod-house") return false;
-    if (time < 420 || time >= 1140) return false;
-    return (
-      !ctx.hasFlag("rachelMet")
-      || (
-        ctx.hasFlag("walterStationTalk")
-        && isQuestActive(ctx.quests, "what-walter-said")
-      )
-      || isQuestCompleted(ctx.quests, "what-walter-said")
-    );
+    return rachelDrawn({
+      time,
+      rachelMet: ctx.hasFlag("rachelMet"),
+      walterStationTalk: ctx.hasFlag("walterStationTalk"),
+      quests: ctx.quests,
+    });
   }
   if (action === "lookAtSanatoriumHill") {
     const night = time >= 1080 || time < 360;
@@ -154,7 +172,9 @@ export function isChoiceAvailable(choice: Choice, ctx: ChoiceContext) {
   }
   if (action === "lookAtElrodTape") return true;
   if (action === "lookAtElrodBootPrint") {
-    return ctx.hasFlag("margaretGossipHeard") && !bootPrintHotspotHidden(time);
+    const told =
+      ctx.hasFlag("margaretGossipHeard") || ctx.hasFlag("hillPrintHint");
+    return told && !bootPrintHotspotHidden(time);
   }
   if (action === "lookInDadsBox") return atticHotspotVisible(ctx.storyFlags);
   if (

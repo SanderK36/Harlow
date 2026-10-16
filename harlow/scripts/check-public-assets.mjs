@@ -13,7 +13,19 @@ const publicDir = path.join(harlowRoot, "public");
 const srcDir = path.join(harlowRoot, "src");
 
 /** Referenced on purpose, and safe when the file has not been delivered yet. */
-const OPTIONAL = new Set(["images/ui/questLogBackground.png"]);
+const OPTIONAL = new Set([
+  "images/ui/questLogBackground.png",
+  "images/locations/cemetery/emilyStone.png",
+  "images/ui/stalkerFigure.png",
+  "images/locations/sanatorium/sanatoriumBlood.png",
+  "images/locations/home/hallwayPhone.png",
+  "images/locations/millerLake/millerLakeSunny.png",
+  "images/locations/millerLake/millerLakeNight.png",
+  "images/locations/millerLake/millerLakeRainy.png",
+  "images/locations/millerLake/millerLakeThunder.png",
+  "images/locations/millerLake/millerCamp.png",
+  "images/locations/millerLake/millerCabin.png",
+]);
 
 const QUOTED = /["'`]([^"'`\n]+\.(?:png|jpe?g|webp|gif|svg|mp3|wav|ogg|mp4|mov))["'`]/g;
 

@@ -94,7 +94,11 @@ function HandLine({ text, animate }: { text: string; animate: boolean }) {
     return () => cancelAnimationFrame(frame);
   }, [reveal, text]);
 
-  return <p className={styles.hand}>{reveal ? text.slice(0, count) : text}</p>;
+  return (
+    <p className={styles.hand}>
+      {reveal ? text.slice(0, count) : text}
+    </p>
+  );
 }
 
 /** Notebook date line, e.g. "Sat., Oct. 2, 1982". */

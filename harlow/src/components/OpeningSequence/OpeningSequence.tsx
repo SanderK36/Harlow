@@ -6,13 +6,15 @@ import { preload } from "react-dom";
 import styles from "./OpeningSequence.module.css";
 import { useReducedMotion } from "@/components/DialogueScene/typewriter";
 import Prologue from "@/components/Prologue/Prologue";
+import { titleCardFor } from "@/game/chapter1";
+import type { Month } from "@/game/types";
 import { PROLOGUE_IMAGES } from "@/game/prologue";
 
 type OpeningSequenceProps = {
   /** e.g. "Monday" */
   dayOfWeek: string;
   /** e.g. "October" */
-  month: string;
+  month: Month;
   dayNumber: number;
   /** Minutes after midnight. */
   time: number;
@@ -25,7 +27,6 @@ type OpeningSequenceProps = {
 
 type Phase = "splash" | "splashOut" | "prologue" | "title" | "titleOut";
 
-const YEAR = 1982;
 // The studio's .mov first; browsers that won't take a QuickTime file (Chrome
 // reports it can't) fall through to the same H.264/AAC streams in an .mp4.
 const SPLASH_SOURCES = [
@@ -165,7 +166,10 @@ export default function OpeningSequence({
     preload(PROLOGUE_IMAGES.comic, { as: "image", fetchPriority: "low" });
     preload(PROLOGUE_IMAGES.reading, { as: "image", fetchPriority: "low" });
   }
-  const date = `${dayOfWeek}, ${month} ${dayNumber}, ${YEAR}`;
+  const card = titleCardFor(month, dayNumber);
+  const cornerDate = card?.side ?? `${dayOfWeek}, ${month} ${dayNumber}`;
+  const date = card?.title ?? `${cornerDate}, 1982`;
+  const since = card?.count ?? "";
 
   return (
     <div
@@ -225,13 +229,15 @@ export default function OpeningSequence({
       {phase === "prologue" && <Prologue onDone={() => setPhase("title")} />}
 
       {(phase === "title" || phase === "titleOut") && (
-        <div className={styles.titleCard} role="status" aria-label={`Harlow. ${date}, ${formatClock(time)}, ${location}.`}>
+        <div className={styles.titleCard} role="status" aria-label={`Harlow. ${date}. ${since}. ${formatClock(time)}, ${location}.`}>
+          <p className={styles.cornerDate}>{cornerDate}</p>
           <div className={styles.rain} aria-hidden="true" />
           <div className={styles.vignette} aria-hidden="true" />
           <div className={styles.titleContent} aria-hidden="true">
             <h1 className={styles.title}>Harlow</h1>
             <span className={styles.rule} />
             <p className={styles.date}>{date}</p>
+            <p className={styles.since}>{since}</p>
             <p className={styles.place}>
               {formatClock(time)}
               <span className={styles.dot}>·</span>

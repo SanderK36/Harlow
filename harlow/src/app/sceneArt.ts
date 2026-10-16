@@ -1,9 +1,12 @@
+import { findActiveCharacter } from "@/game/activeCharacter";
 import type { SceneCharacter } from "@/game/scenes";
 import { RAIN_WEATHER, SANATORIUM_ONE_WINDOW, sanatoriumShowsOneWindow, type Scene } from "@/game/scenes";
-import { elrodRachelPlate, isRainPlate } from "@/game/scenePlate";
+import { elrodRachelPlate, isRainPlate, plateUrl } from "@/game/scenePlate";
+import { elrodShadowPlate } from "@/game/slasher";
+import { rachelDrawn } from "@/game/chapter1";
 import { emilyFolderOnDesk } from "@/game/clues";
 import type { QuestProgress, StoryFlag } from "@/game/quests";
-import type { Weather } from "@/game/types";
+import type { DayOfWeek, Weather } from "@/game/types";
 import { isNightTime } from "@/game/utils";
 
 export function resolveSceneArt(input: {
@@ -11,19 +14,26 @@ export function resolveSceneArt(input: {
   time: number;
   weather: Weather;
   dayOfWeek: string;
+  dayNumber: number;
   storyFlags: Partial<Record<StoryFlag, boolean>>;
   activeCharacter: SceneCharacter | undefined;
   quests: QuestProgress[];
   sceneIsIndoor: boolean;
   hasConversationOverlay: boolean;
+  /** Sunday woods figure. The painted plate replaces the empty yard. */
+  woodsFigure?: boolean;
 }) {
   const { scene, time, weather } = input;
   const sceneIsNight = isNightTime(time);
-  const isWeekend = input.dayOfWeek === "Saturday" || input.dayOfWeek === "Sunday";
   const momInKitchen =
-    scene.id === "kitchen" &&
-    ((time >= 450 && time < 540)
-      || (isWeekend && time >= 720 && time < 1140));
+    scene.id === "kitchen"
+    && findActiveCharacter(scene.characters, {
+      time,
+      day: input.dayOfWeek as DayOfWeek,
+      dayNumber: input.dayNumber,
+      marleneActive: false,
+      hasFlag: (flag) => Boolean(input.storyFlags[flag]),
+    })?.name === "Linda";
   // Daylit weather art (weatherDayOnly) gives way to the night art after dark.
   // Night weather art (weatherNightOnly) gives way to the day art before dark.
   const weatherImage =
@@ -35,16 +45,14 @@ export function resolveSceneArt(input: {
   // and again for the post-Walter follow-up. Her rain and thunder plates are
   // daylit too, so after dark the night plate shows.
   // During her talk the empty house is the backdrop so she isn't on screen twice.
-  const walterFollowUpActive =
-    input.storyFlags.walterStationTalk
-    && input.quests.some(
-      (quest) => quest.id === "what-walter-said" && quest.status === "active",
-    );
   const elrodWithRachel =
     scene.id === "elrod-house"
-    && (!input.storyFlags.rachelMet || walterFollowUpActive)
-    && time >= 420
-    && time < 1140;
+    && rachelDrawn({
+      time,
+      rachelMet: input.storyFlags.rachelMet,
+      walterStationTalk: input.storyFlags.walterStationTalk,
+      quests: input.quests,
+    });
   const elrodRachel = elrodWithRachel
     ? elrodRachelPlate(time, weather)
     : null;
@@ -102,6 +110,8 @@ export function resolveSceneArt(input: {
       && emilyFolderOnDesk(time, input.storyFlags)
       && !input.activeCharacter
       ? "./images/locations/policeStation/emilyFolderOnDeskClosed.png"
+    : input.woodsFigure && scene.id === "elrod-backyard"
+      ? elrodShadowPlate(weather, time)
     : elrodWithRachel || elrodRachel
       ? weather === "Thunderstorm"
         ? "./images/locations/neighbourhood/elrodHouse/elrodHouseRachelOutsideThunder.png"
@@ -135,5 +145,6 @@ export function resolveSceneArt(input: {
     interimRain,
     interimRainNight,
     syntheticNight,
+    imageFallback: scene.image.fallback ? plateUrl(scene.image.fallback) : null,
   };
 }

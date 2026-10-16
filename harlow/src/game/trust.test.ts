@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { conversationChoiceVisible } from "./conversationChoices.ts";
+import { conversationChoiceVisible, replyList } from "./conversationChoices.ts";
+import { applyEffects } from "./effects.ts";
+import player from "./player.ts";
+import { choiceAffordance } from "./statLabels.ts";
 import type { ConversationChoice } from "./story.ts";
 import {
   momConversation,
@@ -27,7 +30,9 @@ import {
   notebookPeople,
   NOTEBOOK_NAME,
   unseenNotebookPeople,
+  presentConversationChoice,
   pricedEffects,
+  pricedLabel,
   returnGreeting,
   shouldMarkRachelWaited,
   type TrustLedger,
@@ -109,16 +114,16 @@ describe("Margaret's coffee", () => {
     assert.equal(nextDay.trust.margaret, 2);
   });
 
-  it("lets her first chapter 1 coffee reach +2, and the next one that day is free", () => {
+  it("lets her first chapter 1 coffee reach +2, and that cup still costs a dollar", () => {
     const bought = step(ledger(defaultTrust()), coffee);
     assert.equal(bought.trust.margaret, 2);
     const again = step({ ...bought, spent: {} }, coffee);
     assert.equal(again.trust.margaret, 2);
+    const order = margaretConversation.choices.find((choice) => choice.label === "Coffee ($1)");
+    assert.ok(order);
+    assert.deepEqual(pricedEffects(order, bought.trust), { money: -1 });
+    assert.deepEqual(pricedEffects(order, defaultTrust()), { money: -1 });
     assert.equal(pricedEffects({ price: 1, freeWhen: { person: "margaret", min: 2 } }, bought.trust), undefined);
-    assert.deepEqual(
-      pricedEffects({ price: 1, freeWhen: { person: "margaret", min: 2 } }, defaultTrust()),
-      { money: -1 },
-    );
   });
 });
 
@@ -152,17 +157,20 @@ describe("trust gates", () => {
   });
 
   it("hides a priced coffee Ethan cannot buy, and keeps it once it is free", () => {
-    const order = margaretConversation.choices.find((choice) => choice.label === "Coffee.");
+    const order = margaretConversation.choices.find((choice) => choice.label === "Coffee ($1)");
     assert.ok(order);
     const base = {
       storyFlags: {},
       quests: [],
       job: null,
       jobQuestTarget: null,
-      usedLabels: ["Coffee."],
+      usedLabels: ["Coffee ($1)"],
       openedAsEmployee: false,
       inventory: [] as string[],
     };
+    assert.equal(pricedLabel(order, defaultTrust()), "Coffee ($1)");
+    assert.equal(pricedLabel(order, { ...defaultTrust(), margaret: 2 }), "Coffee ($1)");
+    assert.equal(choiceAffordance({ ...order, effects: { money: -1 } }), "");
     assert.equal(canAffordPricedChoice(order, defaultTrust(), 0), false);
     assert.equal(
       conversationChoiceVisible(order, { ...base, trust: defaultTrust(), money: 0 }),
@@ -173,6 +181,14 @@ describe("trust gates", () => {
         ...base,
         trust: { ...defaultTrust(), margaret: 2 },
         money: 0,
+      }),
+      false,
+    );
+    assert.equal(
+      conversationChoiceVisible(order, {
+        ...base,
+        trust: { ...defaultTrust(), margaret: 2 },
+        money: 9,
       }),
       true,
     );
@@ -441,9 +457,60 @@ describe("chapter 1 trust choices", () => {
       { person: "walter", amount: 1 },
     );
 
-    const order = margaretConversation.choices.find((choice) => choice.label === "Coffee.");
+    const order = margaretConversation.choices.find((choice) => choice.label === "Coffee ($1)");
     assert.deepEqual(order?.trust, { person: "margaret", amount: 1, oncePerDay: true });
     assert.equal(order?.price, 1);
-    assert.deepEqual(order?.freeWhen, { person: "margaret", min: 2 });
+    assert.equal(order?.freeWhen, undefined);
+  });
+});
+
+describe("Margaret's counter", () => {
+  const opening = "Ethan, there you are. Sit wherever you like, honey. It's quiet enough that I can keep an eye on you.";
+  const context = {
+    storyFlags: { coffeeErrandHeard: true, posterFound: true },
+    quests: [],
+    job: null,
+    jobQuestTarget: null,
+    usedLabels: [] as string[],
+    openedAsEmployee: false,
+    inventory: [] as string[],
+    trust: defaultTrust(),
+    money: 10,
+  };
+
+  it("sells one Coffee ($1), says that line, and takes a dollar", () => {
+    const cups = margaretConversation.choices.filter((choice) =>
+      choice.label === "Coffee ($1)" || choice.label === "Coffee.",
+    );
+    assert.equal(cups.length, 1);
+    const order = cups[0];
+    assert.ok(order);
+    const paid = presentConversationChoice(order, defaultTrust());
+    const again = presentConversationChoice(order, { ...defaultTrust(), margaret: 2 });
+    assert.equal(paid.label, "Coffee ($1)");
+    assert.equal(again.label, "Coffee ($1)");
+    assert.equal(paid.response?.[0]?.type === "conversation" ? paid.response[0].text : "", "Coffee ($1)");
+    assert.equal(again.response?.[0]?.type === "conversation" ? again.response[0].text : "", "Coffee ($1)");
+    assert.deepEqual(paid.effects, { money: -1 });
+    assert.deepEqual(again.effects, { money: -1 });
+    assert.equal(applyEffects({ ...player, money: 10 }, paid.effects!).money, 9);
+    assert.equal(applyEffects({ ...player, money: 9 }, again.effects!).money, 8);
+
+    const listed = replyList(margaretConversation.opening, [
+      ...margaretConversation.choices,
+      { ...order },
+      { label: opening, response: [{ type: "conversation", character: "Margaret", text: opening }] },
+    ], context);
+    assert.equal(listed.filter((choice) => choice.label === "Coffee ($1)").length, 1);
+    assert.equal(listed.some((choice) => choice.label === "Coffee."), false);
+    assert.equal(listed.some((choice) => choice.label === opening), false);
+
+    const errand = margaretConversation.choices.find((choice) => choice.givesItem === "Coffee");
+    assert.equal(errand?.questStep, "coffee");
+    assert.equal(errand?.label, "Mom sent me for coffee. She said to put it on her tab.");
+    const poster = margaretConversation.choices.find((choice) => choice.requiresStoryFlag === "posterFound");
+    assert.equal(poster?.label, "That poster on the board. Emily Parker.");
+    assert.ok(listed.some((choice) => choice.label === errand?.label));
+    assert.ok(listed.some((choice) => choice.label === poster?.label));
   });
 });

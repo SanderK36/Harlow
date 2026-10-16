@@ -57,12 +57,15 @@ export type Choice = {
     disableWeatherFilter?: boolean;
     /** Words drawn on the picture. The plate stays readable if the file is missing. */
     inscriptions?: import("@/components/ImageText/imageText").Inscription[];
+    /** Plate used when `image` has not been delivered. The overlay still draws. */
+    fallbackImage?: string;
     next?: {
       image: string;
       thought: string;
       label?: string;
       disableWeatherFilter?: boolean;
       inscriptions?: import("@/components/ImageText/imageText").Inscription[];
+      fallbackImage?: string;
       /** Set when this follow-up closeup is shown, not when the first one opens. */
       setsFlags?: import("./quests").StoryFlag[];
     };

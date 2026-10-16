@@ -1,4 +1,15 @@
 import type { Inscription } from "@/components/ImageText/imageText";
+
+/** Cut into the stone. The painting stays blank; this overlay is the inscription. */
+export const EMILY_STONE_INSCRIPTION: Inscription = {
+  id: "emily-parker",
+  kind: "engraved",
+  text: "EMILY PARKER · 1955 –",
+  top: 46,
+  left: 8,
+  width: 84,
+  rotate: 0,
+};
 import type { TrustPerson } from "@/game/trust";
 
 /**
@@ -15,6 +26,12 @@ export const CLUE_IDS = [
   "boot-print",
   "walt-and-me",
   "the-gazette",
+  "every-sunday",
+  "fresh-flowers",
+  "year-1966",
+  "the-woods-road",
+  "trail-up-the-hill",
+  "room-6",
 ] as const;
 
 export type ClueId = (typeof CLUE_IDS)[number];
@@ -68,9 +85,39 @@ export const CLUE_DEFS: Record<ClueId, ClueDef> = {
     note: "Front page. \"Stay calm.\" Sure.",
     image: "/images/misc/newspaperElrod.png",
   },
+  "every-sunday": {
+    id: "every-sunday",
+    name: "Every Sunday",
+    note: "Walter. Fresh flowers. Every Sunday, he says.",
+  },
+  "fresh-flowers": {
+    id: "fresh-flowers",
+    name: "Fresh flowers",
+    note: "Fresh flowers on Emily's stone. Not from Mom.",
+  },
+  "year-1966": {
+    id: "year-1966",
+    name: "1966",
+    note: "Dad came home from Miller Lake and stopped talking. Gone a week later.",
+  },
+  "the-woods-road": {
+    id: "the-woods-road",
+    name: "The woods road",
+    note: "Rachel saw her on the woods road. Walking up the hill.",
+  },
+  "trail-up-the-hill": {
+    id: "trail-up-the-hill",
+    name: "Trail up the hill",
+    note: "A trail through the woods. Straight up to the sanatorium.",
+  },
+  "room-6": {
+    id: "room-6",
+    name: "Room 6",
+    note: "Room 6. Paid cash Friday. Muddy boots.",
+  },
 };
 
-export const CONNECTION_IDS = ["hood-boot", "walt-parker"] as const;
+export const CONNECTION_IDS = ["hood-boot", "walt-parker", "flowers-walt"] as const;
 
 export type ClueConnectionId = (typeof CONNECTION_IDS)[number];
 
@@ -93,6 +140,12 @@ export const CLUE_CONNECTIONS: readonly ClueConnection[] = [
     a: "walt-and-me",
     b: "parker-e",
     thought: "He knew Dad. And he kept her file.",
+  },
+  {
+    id: "flowers-walt",
+    a: "fresh-flowers",
+    b: "walt-and-me",
+    thought: "Walter. He never stopped coming.",
   },
 ];
 
@@ -120,6 +173,12 @@ const FLAG_CLUES: Record<string, ClueId> = {
   bootPrintSeen: "boot-print",
   waltPhotoSeen: "walt-and-me",
   gazetteFound: "the-gazette",
+  everySundayHeard: "every-sunday",
+  freshFlowersSeen: "fresh-flowers",
+  dad1966Told: "year-1966",
+  woodsRoadTold: "the-woods-road",
+  trailFollowed: "trail-up-the-hill",
+  room6Heard: "room-6",
 };
 
 export function isClueId(value: string): value is ClueId {

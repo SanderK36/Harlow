@@ -49,6 +49,7 @@ describe("settings persistence", () => {
       reducedMotion: true,
       highContrast: true,
       skipSeenText: true,
+      timedChoices: false,
     };
     writeSettings(next, storage);
     assert.deepEqual(readSettings(storage), next);
@@ -77,6 +78,7 @@ describe("settings persistence", () => {
     assert.equal(settings.reducedMotion, null);
     assert.equal(settings.highContrast, false);
     assert.equal(settings.skipSeenText, false);
+    assert.equal(settings.timedChoices, true);
   });
 
   it("keeps an explicit reduced-motion choice", () => {

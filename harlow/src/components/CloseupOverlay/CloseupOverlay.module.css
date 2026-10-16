@@ -9,6 +9,19 @@
   cursor: pointer;
 }
 
+/* Blood lines sit on one plate. No fade, no red flash, no shake. */
+.cut,
+.cut .frame,
+.cut .art,
+.cut .image {
+  animation: none;
+  transition: none;
+}
+
+.holding {
+  cursor: default;
+}
+
 .frame {
   position: relative;
   display: flex;
@@ -90,6 +103,42 @@
   .rainGlass {
     animation: none;
   }
+
+  .hillGlow,
+  .hillShutter {
+    transition: none;
+    animation: none;
+  }
+}
+
+.hillLight {
+  position: absolute;
+  left: 34.4%;
+  top: 11.4%;
+  width: 3.6%;
+  height: 5.8%;
+  pointer-events: none;
+}
+
+.hillGlow {
+  position: absolute;
+  inset: -110% -80%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 220, 150, 0.95) 0%,
+    rgba(255, 160, 60, 0.5) 40%,
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+}
+
+.hillShutter {
+  position: absolute;
+  left: 22%;
+  top: 24%;
+  width: 56%;
+  height: 52%;
+  background: #1a120c;
 }
 
 .thought {

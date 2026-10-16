@@ -1,3 +1,5 @@
+import { CEMETERY_DARK, cemeteryTripIsDark } from "./chapter1";
+import { MILLER_DARK, millerTripClosed } from "./slasher";
 import type { Choice } from "./choices";
 import { isTiredWindow, lateNightChoiceAllowed } from "./lateNight";
 import {
@@ -43,6 +45,7 @@ export const MAP_PINS = [
   { id: "front-yard", label: "Home", x: 16, y: 78, labelSide: "right" },
   { id: "motel", label: "Motel", x: 90, y: 64, labelSide: "left" },
   { id: "scrapyard", label: "Scrapyard", x: 40, y: 84, labelSide: "top" },
+  { id: "miller-lake", label: "Miller Lake", x: 8, y: 36, labelSide: "right" },
 ] as const;
 
 export type MapPinId = (typeof MAP_PINS)[number]["id"];
@@ -59,6 +62,10 @@ export type MapContext = {
   momTalked: boolean;
   lightOnTheHillActive: boolean;
   availableIds: readonly string[];
+  /** Sunday (day 3) closes the cemetery after dark. Other days ignore it. */
+  dayNumber?: number;
+  /** The lake pin is drawn only after 1966 or Old Friends. */
+  millerLake?: boolean;
 };
 
 export type MapPinView = {
@@ -94,10 +101,25 @@ export function mapTripChoice(
   return choices.find((choice) => choice.nextScene === destinationId) ?? null;
 }
 
+/** Sunday arrival would be after dark, or it already is. */
+export function cemeteryClosedAfterDark(pinId: string, ctx: MapContext) {
+  if (pinId !== "cementary" || ctx.dayNumber == null) return false;
+  const walk = mapTripChoice(ctx.originId, pinId, "walk", ctx.availableIds);
+  return cemeteryTripIsDark(ctx.dayNumber, ctx.time, walk?.timeCost ?? 0);
+}
+
 /** Open when travelDestinationIds lists it and lateNightChoiceAllowed agrees. */
+export function millerClosedForTrip(pinId: string, ctx: MapContext) {
+  if (pinId !== "miller-lake") return false;
+  const walk = mapTripChoice(ctx.originId, pinId, "walk", ctx.availableIds);
+  return millerTripClosed(ctx.time, walk?.timeCost ?? 0);
+}
+
 export function mapPinOpen(pinId: string, ctx: MapContext) {
   if (pinId === ctx.originId) return false;
   if (!ctx.momTalked) return false;
+  if (cemeteryClosedAfterDark(pinId, ctx)) return false;
+  if (millerClosedForTrip(pinId, ctx)) return false;
   if (!ctx.availableIds.includes(pinId)) return false;
   const walk = mapTripChoice(ctx.originId, pinId, "walk", ctx.availableIds);
   if (!walk) return false;
@@ -112,12 +134,15 @@ export function closedPinThought(pinId: string, ctx: MapContext): string | null 
   if (pinId === ctx.originId) return null;
   if (mapPinOpen(pinId, ctx)) return null;
   if (!ctx.momTalked) return MOM_MAP_THOUGHT;
+  if (cemeteryClosedAfterDark(pinId, ctx)) return CEMETERY_DARK;
+  if (millerClosedForTrip(pinId, ctx)) return MILLER_DARK;
   if (isTiredWindow(ctx.time) && pinId !== "front-yard") return LATE_NIGHT_MAP_THOUGHT;
   return CLOSED_LOCATION_THOUGHTS[pinId] ?? null;
 }
 
 export function mapPinViews(ctx: MapContext): MapPinView[] {
-  return MAP_PINS.map((pin) => {
+  const pins = MAP_PINS.filter((pin) => pin.id !== "miller-lake" || ctx.millerLake);
+  return pins.map((pin) => {
     const here = pin.id === ctx.originId;
     return {
       id: pin.id,

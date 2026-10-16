@@ -1,4 +1,5 @@
-import type { ConversationChoice } from "@/game/story";
+import type { ClueId } from "@/game/clues";
+import type { ConversationChoice, StoryEntry } from "@/game/story";
 import {
   isQuestActive,
   isQuestCompleted,
@@ -10,6 +11,7 @@ import {
   canAffordPricedChoice,
   defaultTrust,
   meetsTrust,
+  presentConversationChoice,
   type TrustMap,
 } from "@/game/trust";
 
@@ -23,6 +25,10 @@ export type ConversationChoiceContext = {
   inventory: string[];
   trust?: TrustMap;
   money?: number;
+  sceneId?: string;
+  time?: number;
+  dayNumber?: number;
+  clues?: readonly ClueId[];
 };
 
 function flagList(flags: StoryFlag | StoryFlag[] | undefined) {
@@ -88,7 +94,35 @@ export function conversationChoiceVisible(
     && (!choice.requiresItem || ctx.inventory.includes(choice.requiresItem))
     && (!choice.excludesItem || !ctx.inventory.includes(choice.excludesItem))
     && (!choice.requiresQuestActive || isQuestActive(ctx.quests, choice.requiresQuestActive))
+    && (!choice.sceneId || choice.sceneId === ctx.sceneId)
+    && (choice.minDay === undefined || (ctx.dayNumber ?? 0) >= choice.minDay)
+    && (choice.from === undefined || (ctx.time ?? -1) >= choice.from)
+    && (choice.until === undefined || (ctx.time ?? 9999) < choice.until)
+    && (!choice.requiresAnyClue || choice.requiresAnyClue.some((id) => ctx.clues?.includes(id)))
     && canAffordPricedChoice(choice, trust, money)
     && (choice.repeatable || choice.endsConversation || !ctx.usedLabels.includes(choice.label))
   );
+}
+
+/** Spoken greetings are not replies. The same label is listed once. */
+export function replyList(
+  opening: readonly StoryEntry[],
+  choices: readonly ConversationChoice[],
+  ctx: ConversationChoiceContext,
+): ConversationChoice[] {
+  const spoken = new Set(
+    opening.flatMap((entry) => (entry.type === "conversation" ? [entry.text] : [])),
+  );
+  const trust = ctx.trust ?? defaultTrust();
+  const seen = new Set<string>();
+  const listed: ConversationChoice[] = [];
+  for (const choice of choices) {
+    if (!conversationChoiceVisible(choice, ctx)) continue;
+    if (spoken.has(choice.label)) continue;
+    const presented = presentConversationChoice(choice, trust);
+    if (spoken.has(presented.label) || seen.has(presented.label)) continue;
+    seen.add(presented.label);
+    listed.push(presented);
+  }
+  return listed;
 }

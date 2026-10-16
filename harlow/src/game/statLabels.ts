@@ -29,12 +29,15 @@ export function choiceAffordance(
   choice: {
     effects?: ChoiceEffects;
     timeCost?: number;
+    /** When the label already names the price, the button does not add "-$1". */
+    price?: number;
   },
   options?: { showTime?: boolean },
 ) {
   const parts: string[] = [];
   if (choice.effects) {
     for (const [stat, amount] of Object.entries(choice.effects)) {
+      if (stat === "money" && typeof choice.price === "number") continue;
       if (typeof amount === "number" && amount !== 0) {
         parts.push(formatStatDelta(stat, amount));
       }

@@ -17,11 +17,13 @@ import StoryLog from "@/components/StoryLog/StoryLog";
 import { markTextSeen } from "@/game/seenText";
 import { textRevealsInstantly, textSpeedScale } from "@/game/settings";
 import { useGameSettings } from "@/game/useSettings";
+import { dialoguePauseMs } from "@/game/dialoguePause";
 import { prefersReducedMotion, revealDelay, useReducedMotion, useSeenLine } from "./typewriter";
 
 type DialogueLine = {
   speaker: string | null;
   text: string;
+  pauseAfter?: number;
 };
 
 type DialogueSceneProps = {
@@ -38,6 +40,14 @@ type DialogueSceneProps = {
    *  Receives how many lines are in the log, so a close-up armed for a later
    *  reply cannot open on an earlier settled beat. */
   onSettled?: (lineCount: number) => void;
+  /** The caller has no face: an empty frame, faint static, nameplate "—". */
+  staticCaller?: boolean;
+  /** Phone holds stay when reduced motion is on. */
+  keepPauses?: boolean;
+  /** A line with pauseAfter has finished typing and is holding. */
+  onLineHeld?: (index: number) => void;
+  /** The hold ended and the next line is about to show. */
+  onLineAdvance?: (index: number) => void;
 };
 
 // Ethan's own (already chosen) line steps aside on its own for the NPC reply.
@@ -52,10 +62,14 @@ export function closingReadTime(text: string) {
 function toDialogueLines(entries: StoryEntry[]): DialogueLine[] {
   return entries.flatMap((entry): DialogueLine[] => {
     if (entry.type === "conversation") {
-      return [{ speaker: entry.character, text: entry.text }];
+      return [{ speaker: entry.character, text: entry.text, pauseAfter: entry.pauseAfter }];
     }
     if (entry.type === "narration") {
-      return [{ speaker: null, text: entry.text }];
+      return [{
+        speaker: null,
+        text: entry.text,
+        pauseAfter: entry.pauseAfter,
+      }];
     }
     // Ethan's inner line mid-conversation (e.g. remembering the porch light).
     if (entry.type === "thought") {
@@ -92,6 +106,10 @@ export default function DialogueScene({
   choiceKey = "",
   onFinish,
   onSettled,
+  staticCaller = false,
+  keepPauses = false,
+  onLineHeld,
+  onLineAdvance,
 }: DialogueSceneProps) {
   const lines = toDialogueLines(entries);
   const reducedMotion = useReducedMotion();
@@ -139,7 +157,7 @@ export default function DialogueScene({
     setHeldKey(choiceKey);
     setHeldChoices(choices);
   }
-  const shownChoices = choicesReady ? choices : heldChoices;
+  const shownChoices = staticCaller ? null : choicesReady ? choices : heldChoices;
   const speakerIsEthan = isEthan(line?.speaker ?? null);
   const focus = dialogueFocus(line?.speaker ?? null);
   const canFinish = active && !!onFinish && lineComplete && !hasQueuedLines;
@@ -150,9 +168,15 @@ export default function DialogueScene({
   // parent render re-fired it while a line was already settled, which opened
   // Walter's file in the middle of the talk.
   const onSettledRef = useRef(onSettled);
+  const onFinishRef = useRef(onFinish);
+  const onHeldRef = useRef(onLineHeld);
+  const onAdvanceRef = useRef(onLineAdvance);
   useEffect(() => {
     onSettledRef.current = onSettled;
-  }, [onSettled]);
+    onFinishRef.current = onFinish;
+    onHeldRef.current = onLineHeld;
+    onAdvanceRef.current = onLineAdvance;
+  }, [onSettled, onFinish, onLineHeld, onLineAdvance]);
   useEffect(() => {
     if (!beatSettled) return;
     onSettledRef.current?.(lines.length);
@@ -175,25 +199,34 @@ export default function DialogueScene({
   // Ethan's line has already been chosen by the player; once it has been
   // spoken, move on to the queued reply without asking for another click.
   useEffect(() => {
-    if (!active || !lineComplete || !hasQueuedLines || !speakerIsEthan) return;
+    if (!active || !lineComplete || !hasQueuedLines) return;
+    const held = line?.pauseAfter;
+    if (!speakerIsEthan && held == null) return;
+    const delay = dialoguePauseMs(held, reducedMotion, keepPauses, ETHAN_AUTO_ADVANCE);
+    if (held != null) onHeldRef.current?.(lineIndex);
     const timer = window.setTimeout(() => {
-      setCursor(lineIndex + 1);
+      const next = lineIndex + 1;
+      onAdvanceRef.current?.(next);
+      setCursor(next);
       setRevealed(0);
-    }, reducedMotion ? 0 : ETHAN_AUTO_ADVANCE);
+    }, delay);
     return () => window.clearTimeout(timer);
-  }, [active, hasQueuedLines, lineComplete, lineIndex, reducedMotion, speakerIsEthan]);
+  }, [active, hasQueuedLines, keepPauses, lineComplete, lineIndex, line?.pauseAfter, reducedMotion, speakerIsEthan]);
 
   // A closing choice whose last line is Ethan's own leaves on its own, the
   // same way his chosen lines step aside for a reply.
   useEffect(() => {
-    if (!canFinish || !speakerIsEthan || !onFinish) return;
-    const timer = window.setTimeout(onFinish, reducedMotion ? 0 : ETHAN_AUTO_ADVANCE);
+    if (!canFinish) return;
+    const held = line?.pauseAfter;
+    if (held == null && !speakerIsEthan) return;
+    const delay = dialoguePauseMs(held, reducedMotion, keepPauses, ETHAN_AUTO_ADVANCE);
+    const timer = window.setTimeout(() => onFinishRef.current?.(), delay);
     return () => window.clearTimeout(timer);
-  }, [canFinish, onFinish, reducedMotion, speakerIsEthan]);
+  }, [canFinish, keepPauses, line?.pauseAfter, reducedMotion, speakerIsEthan]);
 
   // A closing NPC reply: once it has fully typed out, close after a reading
   // delay. A click, tap or key press (advance) still closes it sooner.
-  const closingText = canFinish && !speakerIsEthan ? line?.text ?? "" : null;
+  const closingText = canFinish && !speakerIsEthan && line?.pauseAfter == null ? line?.text ?? "" : null;
   useEffect(() => {
     if (closingText === null || !onFinish) return;
     const timer = window.setTimeout(onFinish, closingReadTime(closingText));
@@ -206,8 +239,11 @@ export default function DialogueScene({
       setRevealed(fullLength);
       return;
     }
+    if (keepPauses && line?.pauseAfter != null) return;
     if (hasQueuedLines) {
-      setCursor(lineIndex + 1);
+      const next = lineIndex + 1;
+      onAdvanceRef.current?.(next);
+      setCursor(next);
       setRevealed(0);
       return;
     }
@@ -286,14 +322,16 @@ export default function DialogueScene({
 
   if (!line) return null;
 
-  const awaitingContinue = lineComplete && hasQueuedLines && !speakerIsEthan;
+  const awaitingContinue = lineComplete && hasQueuedLines && !speakerIsEthan && line?.pauseAfter == null;
 
   return (
     <div ref={stageRef} className={styles.stage}>
       <div className={styles.cast} aria-hidden="true">
-        {partner && (
+        {(staticCaller || partner) && (
           <div
             className={`${styles.portrait} ${styles.partnerPortrait} ${
+              staticCaller ? styles.staticFrame : ""
+            } ${
               focus === "thought"
                 ? styles.portraitThought
                 : focus === "partner"
@@ -301,32 +339,38 @@ export default function DialogueScene({
                   : styles.portraitIdle
             }`}
           >
+            {staticCaller ? (
+              <span className={styles.staticNoise} />
+            ) : (
+              <Image
+                src={getPortrait(partner ?? "Ethan")}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 45vw, 360px"
+                loading="eager"
+              />
+            )}
+          </div>
+        )}
+        {!staticCaller && (
+          <div
+            className={`${styles.portrait} ${styles.ethanPortrait} ${
+              focus === "thought"
+                ? styles.portraitThought
+                : focus === "ethan"
+                  ? styles.portraitSpeaking
+                  : styles.portraitIdle
+            }`}
+          >
             <Image
-              src={getPortrait(partner)}
+              src={getPortrait("Ethan")}
               alt=""
               fill
-              sizes="(max-width: 640px) 45vw, 360px"
+              sizes="(max-width: 640px) 40vw, 300px"
               loading="eager"
             />
           </div>
         )}
-        <div
-          className={`${styles.portrait} ${styles.ethanPortrait} ${
-            focus === "thought"
-              ? styles.portraitThought
-              : focus === "ethan"
-                ? styles.portraitSpeaking
-                : styles.portraitIdle
-          }`}
-        >
-          <Image
-            src={getPortrait("Ethan")}
-            alt=""
-            fill
-            sizes="(max-width: 640px) 40vw, 300px"
-            loading="eager"
-          />
-        </div>
       </div>
 
       <div
@@ -335,14 +379,18 @@ export default function DialogueScene({
           line.speaker && focus !== "thought" ? "" : styles.boxNarration
         }`}
       >
-        {line.speaker && (
+        {(line.speaker || staticCaller) && (
           <div
-            key={`${lineIndex}-${line.speaker}`}
-            className={`${styles.namePlate} ${speakerIsEthan ? styles.namePlateEthan : ""} ${
-              focus === "thought" ? styles.namePlateThought : ""
-            }`}
+            key={`${lineIndex}-${line.speaker ?? "caller"}`}
+            className={`${styles.namePlate} ${
+              !staticCaller && speakerIsEthan ? styles.namePlateEthan : ""
+            } ${focus === "thought" ? styles.namePlateThought : ""}`}
           >
-            {focus === "thought" ? "Ethan · Inner thought" : line.speaker}
+            {staticCaller
+              ? "—"
+              : focus === "thought"
+                ? "Ethan · Inner thought"
+                : line.speaker}
           </div>
         )}
 

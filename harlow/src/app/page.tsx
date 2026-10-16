@@ -17,6 +17,7 @@ import StoryLog from "@/components/StoryLog/StoryLog";
 import CharacterLine from "@/components/CharacterLine/CharacterLine";
 import DialogueScene from "@/components/DialogueScene/DialogueScene";
 import ThoughtPanel from "@/components/ThoughtPanel/ThoughtPanel";
+import DayCard from "@/components/DayCard/DayCard";
 import OpeningSequence from "@/components/OpeningSequence/OpeningSequence";
 import TravelOverlay from "@/components/TravelOverlay/TravelOverlay";
 import TownMap from "@/components/TownMap/TownMap";
@@ -27,9 +28,18 @@ import CharacterWindow from "@/components/CharacterWindow/CharacterWindow";
 import QuestWindow from "@/components/QuestWindow/QuestWindow";
 
 import { useReducedMotion } from "@/components/DialogueScene/typewriter";
-import { isNightTime } from "@/game/utils";
+import { isNightPaper, isNightTime } from "@/game/utils";
 import { isTiredWindow } from "@/game/lateNight";
-import { isQuestActive } from "@/game/quests";
+import { isQuestActive, isQuestCompleted } from "@/game/quests";
+import { millerLakeUnlocked, STALKER_FIGURE } from "@/game/slasher";
+import {
+  CEMETERY_LUNCH,
+  cemeteryCrossVisible,
+  cemeteryLunchDue,
+  displayedClock,
+  homeNightWeather,
+  titleCardFor,
+} from "@/game/chapter1";
 import { useGame } from "@/game/useGame";
 import { storyEntryApplies } from "@/game/story";
 import { DINER_BOARD_HINT, isExteriorScene, RAIN_WEATHER, sanatoriumNarration } from "@/game/scenes";
@@ -47,6 +57,7 @@ import { useGameSettings } from "@/game/useSettings";
 import Atmosphere from "@/components/Atmosphere/Atmosphere";
 import StormLightning from "@/components/StormLightning/StormLightning";
 import CloseupOverlay from "@/components/CloseupOverlay/CloseupOverlay";
+import EndingSequence from "@/components/EndingSequence/EndingSequence";
 import CaptionPlacer from "@/components/CaptionPlacer/CaptionPlacer";
 import MainMenu from "@/components/MainMenu/MainMenu";
 import PauseMenu from "@/components/PauseMenu/PauseMenu";
@@ -66,6 +77,7 @@ import { resolveSceneArt } from "./sceneArt";
 import {
   OUTDOOR_SCENE_IDS,
   adminDestinations,
+  choiceKeptInList,
   hotspotActionsFor,
   hotspotKind,
   hotspotLabels,
@@ -105,6 +117,7 @@ export default function Home() {
   );
   const showPlaytestControls = process.env.NODE_ENV !== "production" || playtestDebug;
   const [showProductionSplash, setShowProductionSplash] = useState(false);
+  const [mapNote, setMapNote] = useState<string | null>(null);
   // Index into OPENING_THOUGHTS while Ethan's first thoughts play, else null.
   const [openingThoughtIndex, setOpeningThoughtIndex] = useState<number | null>(null);
   const showOpeningThought = openingThoughtIndex !== null;
@@ -129,6 +142,11 @@ export default function Home() {
     conversation,
     conversationActive,
     finishConversation,
+    finishPhoneAnswer,
+    holdPhoneLine,
+    advancePhoneLine,
+    holdMusicBox,
+    advanceMusicBox,
     onReplySettled,
     showDinerBoardHint,
     activeChoices,
@@ -141,7 +159,6 @@ export default function Home() {
     doorTransition,
     adminTravel,
     wait,
-    waitingLocked,
     travelingTo,
     showTravel,
     setShowTravel,
@@ -155,6 +172,16 @@ export default function Home() {
     showChapterEnd,
     dismissChapterEnd,
     storyFlags,
+    markCemeteryLunch,
+    phonePhase,
+    figureActive,
+    stalkerMode,
+    escapeOpen,
+    escapeMode,
+    chooseEscape,
+    finishEscape,
+    finishMusicBoxCall,
+    catchEntrance,
     trust,
     metPeople,
     unseenPeople,
@@ -391,33 +418,34 @@ export default function Home() {
     isExteriorScene(currentScene.id) || OUTDOOR_SCENE_IDS.has(currentScene.id)
   );
   const sceneIsNight = isNightTime(gameState.time);
+  const displayWeather = homeNightWeather(
+    gameState.weather,
+    currentScene.id,
+    gameState.time,
+    Boolean(storyFlags.nightCallClear),
+  );
+  const displayGameState = {
+    ...(displayWeather === gameState.weather ? gameState : { ...gameState, weather: displayWeather }),
+    time: displayedClock(gameState.time, phonePhase === "ring" || phonePhase === "talk"),
+  };
 
   // Rain follows the weather and whether Ethan is inside.
   // The intro film carries its own soundtrack, so the beds wait for it.
   useEffect(() => {
     const audio = harlowAudio();
     if (inGame && !showProductionSplash) {
-      audio.setAmbience({ indoor: sceneIsIndoor, weather: gameState.weather });
-      audio.setAmbienceSlot(ambienceSlotForScene(currentScene.id, gameState.weather, gameState.time));
+      audio.setAmbience({ indoor: sceneIsIndoor, weather: displayWeather });
+      audio.setAmbienceSlot(ambienceSlotForScene(currentScene.id, displayWeather, gameState.time));
     } else {
       audio.setAmbience(null);
       audio.setAmbienceSlot(null);
     }
-  }, [inGame, showProductionSplash, sceneIsIndoor, gameState.weather, gameState.time, currentScene.id]);
+  }, [inGame, showProductionSplash, sceneIsIndoor, displayWeather, gameState.time, currentScene.id]);
 
   useEffect(() => () => {
     harlowAudio().setAmbience(null);
     harlowAudio().setAmbienceSlot(null);
   }, []);
-
-  useEffect(() => {
-    if (!newDayAnnouncement) {
-      return;
-    }
-
-    const dismissTimer = window.setTimeout(dismissNewDayAnnouncement, 3400);
-    return () => window.clearTimeout(dismissTimer);
-  }, [newDayAnnouncement, dismissNewDayAnnouncement]);
 
   const isLateNight = isTiredWindow(gameState.time);
 
@@ -474,13 +502,15 @@ export default function Home() {
   const art = resolveSceneArt({
     scene: currentScene,
     time: gameState.time,
-    weather: gameState.weather,
+    weather: displayWeather,
     dayOfWeek: gameState.dayOfWeek,
+    dayNumber: gameState.dayNumber,
     storyFlags,
     activeCharacter,
     quests,
     sceneIsIndoor,
     hasConversationOverlay,
+    woodsFigure: figureActive && currentScene.id === "elrod-backyard",
   });
   const {
     momInKitchen,
@@ -492,6 +522,7 @@ export default function Home() {
     interimRain,
     interimRainNight,
     syntheticNight,
+    imageFallback,
   } = art;
 
   const reducedMotion = useReducedMotion();
@@ -567,10 +598,11 @@ export default function Home() {
   );
   const choicesWithoutHotspotActions = visibleChoices.filter((choice) => {
     if ("response" in choice) return true;
-    // The diner board is a hotspot and a button. The button stays until
-    // posterFound (excludesStoryFlag on the choice).
-    if (choice.action === "lookAtDinerBulletin") return true;
-    return !hotspotActions.includes(choice.action) && !choice.hotspots?.length;
+    return choiceKeptInList(
+      choice.action,
+      hotspotActions,
+      Boolean(choice.hotspots?.length),
+    );
   });
   const bottomThought =
     lateNightActionThought ??
@@ -588,7 +620,17 @@ export default function Home() {
         Boolean(choice.leadQuest)
         && !quests.some((quest) => quest.id === choice.leadQuest)
       }
-      onOpenMap={() => setShowTravel(true)}
+      onOpenMap={() => {
+        const due = cemeteryLunchDue({
+          dayNumber: gameState.dayNumber,
+          time: gameState.time,
+          momTalked,
+          heard: Boolean(storyFlags.cemeteryLunchHeard),
+        });
+        setMapNote(due ? CEMETERY_LUNCH : null);
+        if (due) markCemeteryLunch();
+        setShowTravel(true);
+      }}
       mapButtonRef={mapButtonRef}
       canTravel={isExteriorScene(currentScene.id)}
       playerMoney={playerState.money}
@@ -636,8 +678,13 @@ export default function Home() {
     );
   }
 
+  const nightUi = isNightPaper(gameState.time) && !textSettings.highContrast;
+  const morningCard = newDayAnnouncement
+    ? titleCardFor(newDayAnnouncement.currentMonth, newDayAnnouncement.dayNumber)
+    : null;
+
   return (
-    <main className="game">
+    <main className="game" data-night-ui={nightUi ? "on" : undefined}>
       {showProductionSplash && (
         <OpeningSequence
           dayOfWeek={gameState.dayOfWeek}
@@ -664,9 +711,9 @@ export default function Home() {
           onSaveWindowChange={setSaveWindowOpen}
         />
 
-        <GameStatus
+          <GameStatus
           player={playerState}
-          gameState={gameState}
+          gameState={displayGameState}
           notices={statNotices}
           onStatsClick={() => setShowStats(true)}
           onInventoryClick={(opener) => {
@@ -717,6 +764,11 @@ export default function Home() {
               alt=""
               className="scene-image"
               style={visual.scene.image.objectPosition ? { objectPosition: visual.scene.image.objectPosition } : undefined}
+              onError={(event) => {
+                if (!imageFallback || event.currentTarget.dataset.fallback === "1") return;
+                event.currentTarget.dataset.fallback = "1";
+                event.currentTarget.src = imageFallback;
+              }}
             />
             {!reducedMotion && incomingSceneImage && (
               <img
@@ -739,8 +791,25 @@ export default function Home() {
             {visual.interimRain && visualOutdoors && (
               <div className="scene-rain-glass" aria-hidden="true" />
             )}
+            {nightUi && <div className="night-scene-vignette" aria-hidden="true" />}
+            {phonePhase && (
+              <div className="phone-dim" aria-hidden="true">
+                <div className="phone-dim-hole" />
+              </div>
+            )}
+            {figureActive && <div className="figure-vignette" aria-hidden="true" />}
+            {stalkerMode && (
+              <img
+                src={STALKER_FIGURE}
+                alt=""
+                className={stalkerMode === "window" ? "stalker-figure-window" : "stalker-figure"}
+                onError={(event) => {
+                  event.currentTarget.hidden = true;
+                }}
+              />
+            )}
             <StormLightning
-              weather={gameState.weather}
+              weather={displayWeather}
               indoor={sceneIsIndoor}
               active={!showProductionSplash}
             />
@@ -748,7 +817,10 @@ export default function Home() {
             <div className="scene-spotlight" aria-hidden="true">
               <div className="scene-spotlight-hole" />
             </div>
-            {!(showOpeningThought || showVinylThought || tvNewsLine !== null) &&
+            {!(showOpeningThought || showVinylThought || tvNewsLine !== null)
+              && !phonePhase
+              && !figureActive
+              && !stalkerMode &&
               visual.hotspots.flatMap((sceneHotspot) =>
                 (sceneHotspot.hotspots ?? [undefined]).map((region, index) => {
                   const hint = choiceAffordance(sceneHotspot);
@@ -817,7 +889,7 @@ export default function Home() {
                         storyEntryApplies(
                           entry,
                           gameState.time,
-                          gameState.weather,
+                          displayWeather,
                           gameState.dayOfWeek,
                         ),
                     )
@@ -917,13 +989,31 @@ export default function Home() {
           )}
           {hasConversationOverlay && (
             <div
-              className={`conversation-overlay${conversationActive ? " conversation-overlay-active" : ""}`}
+              className={`conversation-overlay${conversationActive ? " conversation-overlay-active" : ""}${catchEntrance ? " conversation-overlay-instant" : ""}`}
               aria-hidden={!conversationActive}
             >
               <DialogueScene
                 entries={conversation}
                 active={conversationActive}
-                onFinish={finishConversation}
+                staticCaller={phonePhase === "talk" || phonePhase === "music"}
+                keepPauses={phonePhase === "talk" || phonePhase === "music"}
+                onLineHeld={
+                  phonePhase === "talk" ? holdPhoneLine : phonePhase === "music" ? holdMusicBox : undefined
+                }
+                onLineAdvance={
+                  phonePhase === "talk"
+                    ? advancePhoneLine
+                    : phonePhase === "music"
+                      ? advanceMusicBox
+                      : undefined
+                }
+                onFinish={
+                  phonePhase === "talk"
+                    ? finishPhoneAnswer
+                    : phonePhase === "music"
+                      ? finishMusicBoxCall
+                      : finishConversation
+                }
                 onSettled={onReplySettled}
                 choices={
                   conversationActive && askAboutOpen
@@ -1017,22 +1107,37 @@ export default function Home() {
           <TownMap
             originId={currentScene.id}
             time={gameState.time}
+            dayNumber={gameState.dayNumber}
             momTalked={momTalked}
             lightOnTheHillActive={isQuestActive(quests, "light-on-the-hill")}
             availableIds={travelDestinations}
             money={playerState.money}
             night={isNightTime(gameState.time)}
+            openingThought={mapNote}
+            cemeteryCross={cemeteryCrossVisible({
+              dayNumber: gameState.dayNumber,
+              time: gameState.time,
+              momTalked,
+            })}
+            millerLake={millerLakeUnlocked({
+              has1966: Boolean(storyFlags.dad1966Told),
+              oldFriendsDone: Boolean(storyFlags.oldFriendsDone)
+                || isQuestCompleted(quests, "old-friends"),
+            })}
             onTravel={(choice) => {
               setShowTravel(false);
+              setMapNote(null);
               handleChoice(choice);
             }}
-            onClose={closeMap}
+            onClose={() => {
+              setMapNote(null);
+              closeMap();
+            }}
           />
         )}
 
         {showPlaytestControls && (
           <PlaytestControls
-            waitingLocked={waitingLocked}
             onWait={wait}
             showAdminTravel={showAdminTravel}
             onToggleAdminTravel={() => setShowAdminTravel((visible) => !visible)}
@@ -1051,13 +1156,22 @@ export default function Home() {
             rain={
               closeup.disableWeatherFilter
                 ? null
-                : RAIN_WEATHER.includes(gameState.weather)
+                : RAIN_WEATHER.includes(displayWeather)
                   ? sceneIsIndoor
                     ? "interior"
                     : "exterior"
                   : null
             }
             rainNight={isNightTime(gameState.time)}
+          />
+        )}
+
+        {(escapeOpen || escapeMode) && (
+          <EndingSequence
+            choosing={escapeOpen}
+            mode={escapeMode}
+            onChoose={chooseEscape}
+            onDone={finishEscape}
           />
         )}
 
@@ -1087,7 +1201,7 @@ export default function Home() {
             location={travelingTo.location}
             method={travelingTo.method}
             isNight={travelingTo.isNight}
-            weather={gameState.weather}
+            weather={displayWeather}
             rainy={travelingTo.rainy}
           />
         )}
@@ -1116,21 +1230,12 @@ export default function Home() {
         {settingsOpen && <SettingsScreen onBack={() => setSettingsOpen(false)} />}
         <AutosaveIndicator />
 
-        {newDayAnnouncement && (
-          <div
-            className="new-day-screen"
-            role="status"
-            aria-live="polite"
-            aria-labelledby="new-day-title"
-          >
-            <div className="new-day-screen-content">
-              <p>Morning has come</p>
-              <h2 id="new-day-title">{newDayAnnouncement.dayOfWeek}</h2>
-              <span>
-                {newDayAnnouncement.currentMonth} {newDayAnnouncement.dayNumber}
-              </span>
-            </div>
-          </div>
+        {newDayAnnouncement && morningCard && (
+          <DayCard
+            line={morningCard.line}
+            count={morningCard.count}
+            onDone={dismissNewDayAnnouncement}
+          />
         )}
       </div>
     </main>

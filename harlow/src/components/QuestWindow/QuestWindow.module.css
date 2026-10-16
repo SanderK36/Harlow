@@ -584,6 +584,7 @@
 
 .polaroidFrame {
   display: block;
+  position: relative;
   background: #1a1210;
 }
 

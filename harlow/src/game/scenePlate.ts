@@ -7,7 +7,7 @@ const ELROD_RACHEL_RAIN = "./images/locations/neighbourhood/elrodHouse/elrodHous
 const ELROD_RACHEL_THUNDER = "./images/locations/neighbourhood/elrodHouse/elrodHouseRachelOutsideThunder.png";
 
 /**
- * Rachel is painted into the daytime Elrod plates until 19:00.
+ * Rachel is painted into the daytime Elrod plates until 18:00.
  * Those plates are daylit, including the rain and thunder ones, so after
  * dark the caller uses the empty house (the night plate).
  */

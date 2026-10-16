@@ -332,6 +332,45 @@ export function buildNpcOpening(input: {
   return { opening: [...withGreeting, ...margaretGossipLines()], gossipShown: true };
 }
 
+/** Button text. A priced line keeps its price unless `freeWhen` says otherwise. */
+export function pricedLabel(
+  choice: { label: string; price?: number; freeWhen?: TrustCondition },
+  trust: TrustMap,
+) {
+  if (choice.price == null || !choice.freeWhen || !meetsTrust(trust, choice.freeWhen)) {
+    return choice.label;
+  }
+  const stripped = choice.label.replace(/\s*\(\$[^)]+\)\s*$/, "").trim();
+  if (!stripped) return choice.label;
+  return stripped.endsWith(".") ? stripped : `${stripped}.`;
+}
+
+/**
+ * What the player sees and pays. Margaret's cup stays "Coffee ($1)" and
+ * Ethan's line uses that same text. `freeWhen` still waives a price when set.
+ */
+export function presentConversationChoice<T extends {
+  label: string;
+  price?: number;
+  freeWhen?: TrustCondition;
+  effects?: ChoiceEffects;
+  response?: StoryEntry[];
+}>(choice: T, trust: TrustMap): T {
+  const effects = pricedEffects(choice, trust);
+  const label = pricedLabel(choice, trust);
+  const response = choice.price == null || !choice.response
+    ? choice.response
+    : choice.response.map((entry) => {
+      if (entry.type !== "conversation" || entry.character !== "Ethan") return entry;
+      if (choice.response!.filter((line) => line.type === "conversation" && line.character === "Ethan").length !== 1) {
+        return entry;
+      }
+      return { ...entry, text: label };
+    });
+  if (effects === choice.effects && label === choice.label && response === choice.response) return choice;
+  return { ...choice, effects, label, response };
+}
+
 /** Money a priced reply actually takes. Margaret's coffee is free at +2. */
 export function pricedEffects(
   choice: { price?: number; freeWhen?: TrustCondition; effects?: ChoiceEffects },

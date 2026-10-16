@@ -28,7 +28,12 @@ export type QuestId =
   | "faded-poster"
   | "light-on-the-hill"
   | "the-gate"
-  | "emilys-room";
+  | "emilys-room"
+  | "old-friends"
+  | "emilys-stone"
+  | "before-everything"
+  | "rachel-remembers"
+  | "miller-lake";
 
 export type QuestStatus = "active" | "completed";
 
@@ -73,6 +78,8 @@ export type StoryFlag =
   | "sanatoriumEntranceFear"
   | "sanatoriumHallwayFear"
   | "tapeSeen"
+  /** Once, after Rachel's first talk is heard through and the tape is still unseen. Locks nothing. */
+  | "rachelTapeStare"
   /** Earl told Ethan to look somewhere else. Hides "Just looking." */
   | "earlLookElsewhere"
   | "chapter1Complete"
@@ -85,7 +92,75 @@ export type StoryFlag =
   | "emilyNoteRead"
   | "waltPhotoSeen"
   /** Saturday's Harlow Gazette, picked up off the porch step. */
-  | "gazetteFound";
+  | "gazetteFound"
+  /** Corkboard link Walt & me + PARKER, E. Old Friends can start. */
+  | "waltParkerLinked"
+  /** Sunday morning pine needles by the Parkers' door. */
+  | "porchNeedlesSeen"
+  /** Saturday night. The hill is only dark; the quest waits for Sunday. */
+  | "hillDarkTonight"
+  /** Sunday evening. The hill stayed dark because the boot print is still missing. */
+  | "hillPrintHint"
+  /** The 02:00 call on the first night. Once, whether he answered or not. */
+  | "nightCallHeard"
+  /** He answered. No rain at home until morning. */
+  | "nightCallClear"
+  /** Blood on the sanatorium tiles, beside the cigarette. */
+  | "bloodFound"
+  /** Emily's headstone, day 2. */
+  | "emilyStoneSeen"
+  | "freshFlowersSeen"
+  | "everySundayHeard"
+  | "woodsRoadTold"
+  | "dad1966Told"
+  | "daytimeFigureSeen"
+  | "trailFollowed"
+  | "room6Heard"
+  /** Walter walked in on the folder. Locked until the next day. */
+  | "folderLockedToday"
+  /** He has been caught at the folder at least once. */
+  | "folderCaught"
+  /** The second time Walter caught him. */
+  | "folderSnoopHeard"
+  /** Linda asked about the 02:00 call, Sunday morning. */
+  | "lindaPhoneHeard"
+  /** Rachel's first talk on Sunday. */
+  | "rachelDay2Talk"
+  /** Margaret, once on Sunday. */
+  | "margaretShotgun"
+  /** Earl, the visit after Room 6. */
+  | "earlCashHeard"
+  /** Sunday afternoon map, once. */
+  | "cemeteryLunchHeard"
+  /** Rachel bought one look at the folder. */
+  | "rachelFolderCover"
+  | "oldFriendsDone"
+  /** Sunday night, upstairs. Her door is open. Locks nothing. */
+  | "emilyDoorAjar"
+  /** The music-box lid line, once, after the door. */
+  | "emilyMusicBoxLid"
+  /** He went inside the sanatorium. The gravel walk home never plays. */
+  | "sanatoriumEntered"
+  /** Footsteps on the road home, once. */
+  | "gravelFootsteps"
+  /** Sighting 1. Across the street, the first time outside after The Gate. */
+  | "streetStalkerSeen"
+  /** Sighting 2. His reflection in the diner window. */
+  | "dinerWindowSeen"
+  /** Linda's back door. Once, after the diner window. */
+  | "backDoorOpen"
+  /** Night 2. The music box in the receiver. */
+  | "musicBoxCall"
+  /** The sanatorium closet. */
+  | "endingHid"
+  /** He ran. */
+  | "endingRan"
+  /** Once, at a door that does not open. */
+  | "lockCheckHeard"
+  /** Margaret, Sunday, once. */
+  | "margaretDeadbolts"
+  /** Earl, Sunday, after Room 6, once. */
+  | "earlTowels";
 
 export type QuestDef = {
   id: QuestId;
@@ -179,6 +254,46 @@ export const QUEST_DEFS: Record<QuestId, QuestDef> = {
       done: "Walter was already a cop. Dad's face is scratched out.",
     },
   },
+  "old-friends": {
+    id: "old-friends",
+    title: "Old Friends",
+    objectives: {
+      default: "Walter and Dad. The cemetery, Sunday afternoon.",
+      done: "Every Sunday. Somebody should.",
+    },
+  },
+  "emilys-stone": {
+    id: "emilys-stone",
+    title: "Emily's Stone",
+    objectives: {
+      default: "Her stone. No second date.",
+      done: "Fresh flowers. Not from Mom.",
+    },
+  },
+  "before-everything": {
+    id: "before-everything",
+    title: "Before Everything",
+    objectives: {
+      default: "Ask Mom why Dad left.",
+      done: "Spring of '66. Or all she'll say.",
+    },
+  },
+  "rachel-remembers": {
+    id: "rachel-remembers",
+    title: "Rachel Remembers",
+    objectives: {
+      default: "Rachel was ten. She saw something.",
+      done: "The woods road. Walking up.",
+    },
+  },
+  "miller-lake": {
+    id: "miller-lake",
+    title: "Miller Lake",
+    objectives: {
+      default: "Dad and Walter's spot. Nobody fishes there anymore.",
+      done: "The cabin. Blanket's still warm.",
+    },
+  },
 };
 
 export type QuestObjectiveContext = {
@@ -265,6 +380,12 @@ export function isQuestActive(quests: QuestProgress[], id: QuestId) {
   return quests.some((quest) => quest.id === id && quest.status === "active");
 }
 
+/** The cabin is the last beat. A save already standing there is finished. */
+export function millerLakeAfterCabin(quests: QuestProgress[], sceneId: string | undefined) {
+  if (sceneId !== "miller-cabin" || !isQuestActive(quests, "miller-lake")) return quests;
+  return completeQuest(quests, "miller-lake", "done");
+}
+
 export function isQuestCompleted(quests: QuestProgress[], id: QuestId) {
   return quests.some((quest) => quest.id === id && quest.status === "completed");
 }
@@ -287,7 +408,8 @@ export function migrateQuestsFromLegacy(save: {
   job?: JobId | null;
   jobQuestTarget?: JobId | null;
   quests?: QuestProgress[];
-  storyFlags?: Partial<Record<StoryFlag, boolean>>;
+  storyFlags?: Partial<Record<string, boolean>>;
+  clues?: readonly string[] | null;
   askedAbout?: {
     rachel?: readonly string[];
     walter?: readonly string[];
@@ -362,7 +484,34 @@ export function migrateQuestsFromLegacy(save: {
     quests.push({ id: "faded-poster", status: "active" });
   }
 
-  return migrateSideQuests(quests, save.storyFlags, save.askedAbout);
+  let next = migrateSideQuests(quests, save.storyFlags as Partial<Record<StoryFlag, boolean>> | undefined, save.askedAbout);
+  if (saveHadAlgebraBook(save)) next = completeQuest(next, "miller-lake", "done");
+  return next;
+}
+
+/** The algebra book is gone. A save that already found it finished Miller Lake. */
+export function saveHadAlgebraBook(save: {
+  clues?: readonly string[] | null;
+  storyFlags?: Partial<Record<string, boolean>> | null;
+}) {
+  return Boolean(
+    save.storyFlags?.algebraBookFound
+    || save.clues?.includes("algebra-book"),
+  );
+}
+
+/** Drop flags that no longer exist so they are not written back out. */
+export function withoutRetiredFlags(
+  flags: Partial<Record<string, boolean>> | undefined,
+): Partial<Record<StoryFlag, boolean>> {
+  if (!flags) return {};
+  const next: Partial<Record<string, boolean>> = { ...flags };
+  delete next.algebraBookFound;
+  if (next.hairTieFound) {
+    next.bloodFound = true;
+    delete next.hairTieFound;
+  }
+  return next as Partial<Record<StoryFlag, boolean>>;
 }
 
 function askedAboutBootPrint(asked: {

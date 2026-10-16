@@ -12,11 +12,15 @@ export function travelDestinationIds(ctx: {
   jobQuestTarget: JobId | null;
   quests: QuestProgress[];
   hasFlag: (flag: StoryFlag) => boolean;
+  /** October day. Cemetery stays shut until Sunday the 3rd. */
+  dayNumber?: number;
 }) {
+  const dayNumber = ctx.dayNumber ?? 2;
   return [
     "front-yard",
     "hospital",
-    ...(ctx.momTalked ? ["diner"] : []),
+    ...(ctx.momTalked ? ["diner", "motel"] : []),
+    ...(ctx.momTalked && dayNumber >= 3 ? ["cementary"] : []),
     ...(ctx.hasFlag("rachelMet")
       || isQuestActive(ctx.quests, "down-to-the-station")
       || isQuestCompleted(ctx.quests, "down-to-the-station")
@@ -36,6 +40,10 @@ export function travelDestinationIds(ctx: {
       : []),
     ...(ctx.jobQuestTarget === "scrapyard" || ctx.job === "scrapyard"
       ? ["scrapyard"]
+      : []),
+    ...(ctx.hasFlag("dad1966Told") || ctx.hasFlag("oldFriendsDone")
+      || isQuestCompleted(ctx.quests, "old-friends")
+      ? ["miller-lake"]
       : []),
   ];
 }

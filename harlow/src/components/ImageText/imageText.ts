@@ -5,7 +5,7 @@
  * A slight tilt and multiply blending keep the words in the paper, not on it.
  */
 
-export type InscriptionKind = "headline" | "subline" | "body" | "caption" | "note";
+export type InscriptionKind = "headline" | "subline" | "body" | "caption" | "note" | "engraved";
 
 export type Inscription = {
   id: string;
@@ -27,6 +27,8 @@ const DEFAULTS: Record<InscriptionKind, { rotate: number; font: "body" | "handwr
   body: { rotate: 0, font: "body", weight: 400 },
   caption: { rotate: -2, font: "handwriting", weight: 500 },
   note: { rotate: -3.5, font: "handwriting", weight: 500 },
+  /** Cut into stone: level, no handwriting tilt. */
+  engraved: { rotate: 0, font: "body", weight: 600 },
 };
 
 export function inscriptionPresentation(kind: InscriptionKind, rotate?: number) {

@@ -1,14 +1,12 @@
 import ActionButton from "@/components/ActionButton/ActionButton";
 
 export default function PlaytestControls({
-  waitingLocked,
   onWait,
   showAdminTravel,
   onToggleAdminTravel,
   destinations,
   onTravel,
 }: {
-  waitingLocked: boolean;
   onWait: (minutes: number) => void;
   showAdminTravel: boolean;
   onToggleAdminTravel: () => void;
@@ -19,11 +17,11 @@ export default function PlaytestControls({
     <>
       <div className="waitControls">
         <span>Pass time</span>
-        <ActionButton label="Wait 1 min" disabled={waitingLocked} onClick={() => onWait(1)} />
-        <ActionButton label="Wait 5 min" disabled={waitingLocked} onClick={() => onWait(5)} />
-        <ActionButton label="Wait 10 min" disabled={waitingLocked} onClick={() => onWait(10)} />
-        <ActionButton label="Wait 30 min" disabled={waitingLocked} onClick={() => onWait(30)} />
-        <ActionButton label="Wait 1 hour" disabled={waitingLocked} onClick={() => onWait(60)} />
+        <ActionButton label="Wait 1 min" onClick={() => onWait(1)} />
+        <ActionButton label="Wait 5 min" onClick={() => onWait(5)} />
+        <ActionButton label="Wait 10 min" onClick={() => onWait(10)} />
+        <ActionButton label="Wait 30 min" onClick={() => onWait(30)} />
+        <ActionButton label="Wait 1 hour" onClick={() => onWait(60)} />
       </div>
       <div className="adminTravelControls">
         <ActionButton

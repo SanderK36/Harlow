@@ -91,6 +91,12 @@ class HarlowAudio {
   private listeners = new Set<Listener>();
   private lastHover = 0;
   private doorSource: AudioBufferSourceNode | null = null;
+  private footSource: AudioBufferSourceNode | null = null;
+  private footToken = 0;
+  private receiverSource: AudioBufferSourceNode | null = null;
+  private receiverToken = 0;
+  private heartTimer: number | null = null;
+  private musicBoxNodes: OscillatorNode[] = [];
   private clipCache = new Map<string, AudioBuffer>();
   private clipMiss = new Set<string>();
   private clipLoading = new Map<string, Promise<AudioBuffer | null>>();
@@ -182,6 +188,128 @@ class HarlowAudio {
       return;
     }
     this.playFile(SFX_FILES[name], SFX_LEVEL[name]);
+  }
+
+  /**
+   * Rain heard in the phone, not the room. Quiet and low-passed.
+   * A second call while it is already playing leaves it running.
+   */
+  playReceiverRain() {
+    if (this.receiverSource) return;
+    const token = ++this.receiverToken;
+    const context = this.ready();
+    if (!context || !this.sfx) return;
+    void this.loadClip(AMBIENCE_FILES.rain).then((buffer) => {
+      if (token !== this.receiverToken || !buffer || !this.sfx || !this.context) return;
+      const source = this.context.createBufferSource();
+      source.buffer = buffer;
+      source.loop = true;
+      const filter = this.context.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.value = 480;
+      const gain = this.context.createGain();
+      gain.gain.value = 0.08;
+      source.connect(filter).connect(gain).connect(this.sfx);
+      source.start();
+      this.receiverSource = source;
+    });
+  }
+
+  stopReceiverRain() {
+    this.receiverToken += 1;
+    const source = this.receiverSource;
+    this.receiverSource = null;
+    try {
+      source?.stop();
+    } catch {
+      // Already stopped.
+    }
+  }
+
+  /** Gravel behind Ethan. loops footsteps.mp3 until stopFootsteps. */
+  loopFootsteps() {
+    const token = ++this.footToken;
+    const context = this.ready();
+    if (!context || !this.sfx) return;
+    void this.loadClip(SFX_FILES.footsteps).then((buffer) => {
+      if (token !== this.footToken || !buffer || !this.sfx || !this.context) return;
+      this.footSource?.stop();
+      const source = this.context.createBufferSource();
+      source.buffer = buffer;
+      source.loop = true;
+      const gain = this.context.createGain();
+      gain.gain.value = SFX_LEVEL.footsteps;
+      source.connect(gain).connect(this.sfx);
+      source.start();
+      this.footSource = source;
+    });
+  }
+
+  /**
+   * Faint music box in the receiver. No file has been delivered, so this
+   * is a short sine phrase on the SFX bus. A later file can replace it.
+   */
+  playMusicBox() {
+    this.stopMusicBox();
+    const context = this.ready();
+    if (!context || !this.sfx) return;
+    const notes = [1046.5, 1174.7, 1318.5, 1568, 1318.5, 1174.7, 1046.5, 880];
+    const start = context.currentTime + 0.05;
+    const step = 0.48;
+    for (const [index, freq] of notes.entries()) {
+      const at = start + index * step;
+      const osc = context.createOscillator();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, at);
+      const gain = context.createGain();
+      gain.gain.setValueAtTime(0.0001, at);
+      gain.gain.exponentialRampToValueAtTime(0.03, at + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.4);
+      osc.connect(gain).connect(this.sfx);
+      osc.start(at);
+      osc.stop(at + 0.42);
+      this.musicBoxNodes.push(osc);
+    }
+  }
+
+  stopMusicBox() {
+    for (const osc of this.musicBoxNodes) {
+      try {
+        osc.stop();
+      } catch {
+        // Already stopped.
+      }
+    }
+    this.musicBoxNodes = [];
+  }
+
+  /** Closet crack. Two quiet thumps, then a rest. No file. */
+  loopHeartbeat() {
+    this.stopHeartbeat();
+    const beat = () => {
+      this.blip(62, 0.045, 0.09);
+      window.setTimeout(() => this.blip(48, 0.03, 0.07), 150);
+    };
+    beat();
+    this.heartTimer = window.setInterval(beat, 920);
+  }
+
+  stopHeartbeat() {
+    if (this.heartTimer != null) {
+      window.clearInterval(this.heartTimer);
+      this.heartTimer = null;
+    }
+  }
+
+  stopFootsteps() {
+    this.footToken += 1;
+    const source = this.footSource;
+    this.footSource = null;
+    try {
+      source?.stop();
+    } catch {
+      // Already stopped.
+    }
   }
 
   /**

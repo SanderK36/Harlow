@@ -58,6 +58,19 @@
 
 /* ---------- Title card ---------- */
 
+.cornerDate {
+  position: absolute;
+  top: max(22px, env(safe-area-inset-top));
+  left: max(22px, env(safe-area-inset-left));
+  z-index: 2;
+  margin: 0;
+  color: rgba(245, 225, 215, 0.9);
+  font-family: var(--font-ui);
+  font-size: clamp(13px, 1.4vw, 16px);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
 .titleCard {
   position: absolute;
   inset: 0;
@@ -148,6 +161,15 @@
   text-indent: 0.34em;
   text-transform: uppercase;
   animation: lineIn 1100ms ease 1500ms both;
+}
+
+.since {
+  margin: 12px 0 0;
+  color: rgba(232, 214, 196, 0.8);
+  font-family: var(--font-typewriter);
+  font-size: clamp(12px, 1.35vw, 16px);
+  letter-spacing: 0.08em;
+  animation: lineIn 1100ms ease 1750ms both;
 }
 
 .place {

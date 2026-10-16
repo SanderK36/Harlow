@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 import { isChoiceAvailable, type ChoiceContext } from "./choiceAvailability.ts";
 import {
   CLUE_DEFS,
+  EMILY_STONE_INSCRIPTION,
   EMILY_THOUGHTS,
   NEWSPAPER,
   WRONG_CONNECTION_LINES,
@@ -31,6 +32,8 @@ import {
   finishGate,
   migrateQuestsFromLegacy,
   questObjective,
+  saveHadAlgebraBook,
+  withoutRetiredFlags,
   startEmilyRoom,
   startTheGate,
   type QuestProgress,
@@ -39,7 +42,7 @@ import {
 import { attic, emilyRoom, momConversation } from "./scene/home.ts";
 import { elrodBackyard, frontYard, rachelFrontYardConversation } from "./scene/outdoors.ts";
 import { sanatoriumRoom2 } from "./scene/sanatorium.ts";
-import { sheriffOffice, walterConversation } from "./scene/town.ts";
+import { cementaryInside, sheriffOffice, walterConversation } from "./scene/town.ts";
 import { defaultTrust, type TrustMap } from "./trust.ts";
 import type { GameState } from "./types.ts";
 
@@ -368,6 +371,17 @@ describe("sidequests", () => {
       true,
     );
   });
+
+  it("opens the boot print without Margaret's gossip after the hill hint", () => {
+    const print = elrodBackyard.choices.find((choice) => choice.action === "lookAtElrodBootPrint");
+    const scene = "elrod-backyard";
+    const flags = { hillPrintHint: true } as const;
+    assert.equal(isChoiceAvailable(print!, availability({ scene, time: 10 * 60, flags })), true);
+    assert.equal(isChoiceAvailable(print!, availability({ scene, time: 2 * 60, flags })), true);
+    assert.equal(isChoiceAvailable(print!, availability({ scene, time: 3 * 60, flags })), false);
+    assert.equal(isChoiceAvailable(print!, availability({ scene, time: 7 * 60 - 1, flags })), false);
+    assert.equal(isChoiceAvailable(print!, availability({ scene, time: 7 * 60, flags })), true);
+  });
 });
 
 describe("save migration", () => {
@@ -405,6 +419,55 @@ describe("save migration", () => {
     });
     assert.equal(quests.find((quest) => quest.id === "the-gate")?.status, "completed");
     assert.equal(quests.find((quest) => quest.id === "the-tape")?.status, "active");
+
+    const dropped = migrateClues({
+      clues: ["man-in-a-hood", "algebra-book"],
+      clueConnections: ["book-woods"],
+      cluesSeen: ["algebra-book", "man-in-a-hood"],
+      askedAbout: { walter: ["algebra-book"] },
+      storyFlags: { algebraBookFound: true },
+    });
+    assert.deepEqual(dropped.clues, ["man-in-a-hood"]);
+    assert.deepEqual(dropped.connections, []);
+    assert.deepEqual(dropped.cluesSeen, ["man-in-a-hood"]);
+    assert.equal(dropped.askedAbout.walter, undefined);
+    assert.equal(saveHadAlgebraBook({
+      clues: ["algebra-book"],
+      storyFlags: {},
+    }), true);
+    assert.equal(saveHadAlgebraBook({ storyFlags: { algebraBookFound: true } }), true);
+    assert.equal(saveHadAlgebraBook({ clues: ["man-in-a-hood"] }), false);
+    const finished = migrateQuestsFromLegacy({
+      momTalked: true,
+      quests: [
+        { id: "talk-to-mom", status: "completed" },
+        { id: "miller-lake", status: "active" },
+      ],
+      clues: ["algebra-book"],
+      storyFlags: { algebraBookFound: true },
+    });
+    assert.equal(finished.find((quest) => quest.id === "miller-lake")?.status, "completed");
+    const alreadyDone = migrateQuestsFromLegacy({
+      momTalked: true,
+      quests: [
+        { id: "talk-to-mom", status: "completed" },
+        { id: "miller-lake", status: "completed", step: "done" },
+      ],
+      storyFlags: { algebraBookFound: true },
+    });
+    assert.equal(alreadyDone.find((quest) => quest.id === "miller-lake")?.status, "completed");
+    assert.equal(alreadyDone.find((quest) => quest.id === "miller-lake")?.step, "done");
+    assert.equal(withoutRetiredFlags({ algebraBookFound: true, bootPrintSeen: true }).algebraBookFound, undefined);
+    assert.equal(withoutRetiredFlags({ algebraBookFound: true, bootPrintSeen: true }).bootPrintSeen, true);
+    const blood = withoutRetiredFlags({
+      hairTieFound: true,
+      emilyPolaroidSeen: true,
+      bootPrintSeen: true,
+    });
+    assert.equal(blood.hairTieFound, undefined);
+    assert.equal(blood.bloodFound, true);
+    assert.equal(blood.emilyPolaroidSeen, true);
+    assert.equal(withoutRetiredFlags({ bloodFound: true, emilyPolaroidSeen: true }).emilyPolaroidSeen, true);
     assert.equal(quests.find((quest) => quest.id === "emilys-room")?.status, "active");
     assert.equal(
       questObjective(quests.find((quest) => quest.id === "emilys-room")!),
@@ -559,5 +622,14 @@ describe("chapter finds", () => {
       }),
       false,
     );
+  });
+
+  it("carves Emily's name onto the stone plate, and onto the fallback plate", () => {
+    const stone = cementaryInside.choices.find((choice) => choice.action === "lookAtEmilyStone");
+    assert.equal(stone?.closeup?.image, "/images/locations/cemetery/emilyGraveStoneSunny.png");
+    assert.equal(stone?.closeup?.fallbackImage, "./images/locations/cemetery/cemeteryInsideDay.png");
+    assert.equal(stone?.closeup?.inscriptions?.[0]?.text, "EMILY PARKER · 1955 –");
+    assert.equal(stone?.closeup?.inscriptions?.[0]?.kind, "engraved");
+    assert.equal(stone?.closeup?.inscriptions?.[0], EMILY_STONE_INSCRIPTION);
   });
 });
