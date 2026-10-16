@@ -32,6 +32,11 @@ import {
   BLOOD_PLATE,
   BLOOD_THOUGHTS,
   closeupBeat,
+  HALL_BLOOD_THOUGHT,
+  hallBloodFrame,
+  lobbyBloodFrame,
+  sanatoriumArrivalPlates,
+  withBloodBeforeRoom,
   emilyDoorAjarDue,
   endingAfterEscape,
   endingFrames,
@@ -531,7 +536,48 @@ describe("night two and the road home", () => {
 });
 
 describe("ending order", () => {
-  it("puts the blood, then the figure, before the choice", () => {
+  it("plays the blood in the lobby, the drops in the hall, then the figure after the cigarette", () => {
+    const lobby = lobbyBloodFrame();
+    assert.equal(lobby.image, BLOOD_PLATE);
+    assert.deepEqual(lobby.thoughts, [...BLOOD_THOUGHTS]);
+    assert.equal(lobby.flags?.[0], "bloodFound");
+    assert.equal(hallBloodFrame().thought, HALL_BLOOD_THOUGHT);
+    assert.deepEqual(hallBloodFrame().flags, ["bloodFound", "bloodDropsSeen"]);
+    assert.deepEqual(
+      sanatoriumArrivalPlates({
+        sceneId: "sanatorium-main-floor",
+        fromSceneId: "sanatorium-entrance",
+        bloodFound: false,
+        dropsSeen: false,
+      }).map((frame) => frame.thought),
+      [BLOOD_THOUGHTS[0]],
+    );
+    assert.deepEqual(
+      sanatoriumArrivalPlates({
+        sceneId: "sanatorium-hallway",
+        fromSceneId: "sanatorium-main-floor",
+        bloodFound: true,
+        dropsSeen: false,
+      }).map((frame) => frame.thought),
+      [HALL_BLOOD_THOUGHT],
+    );
+    assert.deepEqual(
+      sanatoriumArrivalPlates({
+        sceneId: "sanatorium-hallway",
+        fromSceneId: "sanatorium-entrance",
+        bloodFound: false,
+        dropsSeen: false,
+      }).map((frame) => frame.label),
+      ["The tiles", "The hall"],
+    );
+    assert.deepEqual(sanatoriumArrivalPlates({
+      sceneId: "sanatorium-main-floor",
+      fromSceneId: "sanatorium-main-floor",
+      bloodFound: false,
+      dropsSeen: false,
+    }), []);
+    assert.equal(withBloodBeforeRoom("sanatorium-room-2", {}).bloodFound, true);
+    assert.equal(withBloodBeforeRoom("sanatorium-hallway", {}).bloodFound, undefined);
     const frames = endingFrames([
       "room-6",
       "every-sunday",
@@ -540,14 +586,11 @@ describe("ending order", () => {
       "the-woods-road",
       "trail-up-the-hill",
     ]);
-    assert.equal(frames[0]?.image, BLOOD_PLATE);
-    assert.deepEqual(frames[0]?.thoughts, [...BLOOD_THOUGHTS]);
-    assert.equal(frames[0]?.flags?.[0], "bloodFound");
-    assert.equal("split" in (frames[0] ?? {}), false);
+    assert.equal(frames.length, 1);
+    assert.equal(frames[0]?.thought, "Someone's here.");
+    assert.equal(frames[0]?.after, "timed-choice");
+    assert.equal(JSON.stringify(frames).includes("blood"), false);
     assert.equal(JSON.stringify(frames).includes("hair tie"), false);
-    assert.equal(JSON.stringify(frames).includes("oldEmilyEthanPhoto"), false);
-    assert.equal(frames[1]?.thought, "Someone's here.");
-    assert.equal(frames[1]?.after, "timed-choice");
     assert.equal(closeupBeat(BLOOD_THOUGHTS, BLOOD_THOUGHTS[0], 0).text, BLOOD_THOUGHTS[0]);
     assert.equal(closeupBeat(BLOOD_THOUGHTS, BLOOD_THOUGHTS[0], 0).canDismiss, false);
     assert.equal(closeupBeat(BLOOD_THOUGHTS, BLOOD_THOUGHTS[0], BLOOD_BEAT_MS).text, "It's blood.");

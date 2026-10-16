@@ -1,5 +1,5 @@
-/* Ethan's notebook. Paper is drawn here because
-   public/images/ui/questLogBackground.png is not in the repo yet. */
+/* Ethan's notebook. The open book is ui/questBook.png.
+   Copy sits on the right-hand page, 8% clear of the edges and the spine. */
 
 .overlay {
   position: fixed;
@@ -15,33 +15,65 @@
 
 .window {
   position: relative;
+  /* One page. The lit right-hand page is portrait (320×460 of the plate). */
+  width: min(480px, calc(100vw - 24px), calc((100vh - 24px) * 320 / 460));
+  aspect-ratio: 320 / 460;
+  max-height: calc(100vh - 24px);
+  overflow: hidden;
+  color: #2a1f14;
+  background-color: #c4a574;
+  background-repeat: no-repeat;
+  border: 0;
+  border-radius: 2px;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.7);
+  animation: modalEnter 0.22s ease-out;
+}
+
+/*
+  Crop to the contrast-safe right page of ui/questBook.png (1254²).
+  Plate pixels x 760–1080, y 180–640. Ink #2a1f14 stays ≥4.5:1 there.
+  The sheet's 8% inset is inside that page, clear of the spine and the cover.
+*/
+.windowPlate {
+  background-color: #c4a574;
+  background-image: url("/images/ui/questBook.png");
+  background-size: 391.875% 272.609%;
+  background-position: 81.37% 22.67%;
+}
+
+.sheet {
+  position: absolute;
+  top: 8%;
+  right: 8%;
+  bottom: 8%;
+  left: 8%;
   display: flex;
   flex-direction: column;
-  width: min(680px, calc(100vw - 40px), calc((100vh - 40px) * 1.35));
-  max-height: min(90vh, 720px);
-  overflow: hidden;
-  color: #2a1a12;
-  background-color: #d8c4a0;
-  background-image:
-    linear-gradient(180deg, rgba(255, 248, 230, 0.55), rgba(196, 164, 118, 0.2)),
-    linear-gradient(125deg, rgba(90, 50, 20, 0.08) 0%, transparent 42%),
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 27px,
-      rgba(90, 60, 30, 0.07) 27px,
-      rgba(90, 60, 30, 0.07) 28px
-    );
-  background-size: auto, auto, auto;
-  background-position: center;
-  background-repeat: no-repeat;
-  border: 1px solid rgba(70, 40, 18, 0.55);
-  border-radius: 10px;
-  box-shadow:
-    0 28px 80px rgba(0, 0, 0, 0.7),
-    inset 0 0 0 1px rgba(255, 240, 210, 0.35),
-    inset 0 0 60px rgba(90, 50, 20, 0.12);
-  animation: modalEnter 0.22s ease-out;
+  min-width: 0;
+  min-height: 0;
+  color: #2a1f14;
+}
+
+.sheet,
+.sheet .caseLabel,
+.sheet .title,
+.sheet .date,
+.sheet .pageTab,
+.sheet .pageTab[aria-selected="true"],
+.sheet .sectionLabel,
+.sheet .entryTitle,
+.sheet .entryTitleDone,
+.sheet .note,
+.sheet .noteDone,
+.sheet .empty,
+.sheet .personName,
+.sheet .hand,
+.sheet .jobNote,
+.sheet .jobNote strong,
+.sheet .check,
+.sheet .clueName,
+.sheet .clueNote {
+  color: #2a1f14;
 }
 
 .header {
@@ -110,7 +142,7 @@
 
 .people {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 12px 14px;
   margin: 4px 0 0;
   padding: 0;
@@ -259,12 +291,11 @@
 .entryDone {
   position: relative;
   margin: 0 0 7px;
-  padding: 7px 12px 7px 14px;
-  background: rgba(255, 248, 230, 0.45);
-  border: 1px solid rgba(90, 55, 25, 0.22);
-  border-left: 3px solid #a85a28;
-  border-radius: 2px 8px 8px 2px;
-  box-shadow: 1px 2px 0 rgba(90, 55, 25, 0.08);
+  padding: 4px 8px 4px 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .tab {
@@ -297,9 +328,7 @@
 }
 
 .entryDone {
-  opacity: 0.62;
-  background: rgba(220, 200, 170, 0.35);
-  border-left-color: rgba(90, 55, 25, 0.35);
+  background: transparent;
 }
 
 .entryDone .tab {
@@ -362,20 +391,14 @@
   flex: 0 0 auto;
   display: flex;
   justify-content: flex-end;
-  padding: 8px 18px 12px;
-  border-top: 1px dashed rgba(90, 55, 25, 0.28);
-  background: linear-gradient(
-    180deg,
-    rgba(216, 196, 160, 0.95),
-    rgba(200, 176, 140, 0.98)
-  );
+  padding: 8px 0 0;
 }
 
 /* Dark ink on paper — ActionButton defaults are light-on-dark. */
 .closeButton button {
   min-width: 110px;
   min-height: 44px;
-  color: #24150e !important;
+  color: #2a1f14 !important;
   background: #f3e6c8 !important;
   border: 1.5px solid #5c3a22 !important;
   box-shadow:
@@ -402,16 +425,17 @@
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .overlay {
-    padding: 12px;
-    align-items: flex-end;
+    padding: 8px;
+    align-items: center;
   }
 
   .window {
-    width: 100%;
-    max-height: min(92vh, 820px);
-    border-radius: 12px 12px 8px 8px;
+    width: min(374px, calc(100vw - 16px), calc((100vh - 16px) * 320 / 460));
+    aspect-ratio: 320 / 460;
+    max-height: calc(100vh - 16px);
+    border-radius: 2px;
   }
 
   .header {
@@ -628,13 +652,13 @@
   z-index: 1;
   margin: 14px 0 0;
   padding: 10px 12px;
-  color: #f3e2c8;
+  color: #2a1f14;
   font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.4;
   text-align: center;
-  background: rgba(18, 10, 12, 0.88);
-  border: 1px solid rgba(230, 155, 102, 0.35);
+  background: #f3e6c8;
+  border: 1px solid rgba(42, 31, 20, 0.35);
   border-radius: 8px;
 }
 

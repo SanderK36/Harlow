@@ -3,10 +3,10 @@ import { describe, it } from "node:test";
 
 import {
   BLOOD_PLATE,
-  BLOOD_THOUGHTS,
   endingAfterEscape,
   endingFrames,
   LET_GO_THOUGHT,
+  lobbyBloodFrame,
   WHOSE_BLOOD_THOUGHT,
 } from "./chapter1.ts";
 import { CLUE_IDS, CONNECTION_IDS } from "./clues.ts";
@@ -229,7 +229,7 @@ describe("Miller Lake", () => {
 
   it("finishes at the cabin, with no dock and no algebra book", () => {
     assert.equal(MILLER_ARRIVAL, "Miller Lake. Dad and Walter's spot. Nobody fishes here anymore.");
-    assert.equal(MILLER_CAMP, "CAMP PINEWOOD. Closed since '72. Of course it is.");
+    assert.equal(MILLER_CAMP, "CAMP MILLER. Closed since '72. Of course it is.");
     assert.equal(MILLER_CABIN, "Somebody's been sleeping here. Blanket's still warm.");
     assert.equal(millerCabin.story.some((line) => line.type === "thought" && line.text === MILLER_CABIN), true);
     assert.deepEqual(millerLake.choices.map((choice) => choice.nextScene), ["miller-camp"]);
@@ -244,7 +244,13 @@ describe("Miller Lake", () => {
     assert.equal(done[0]?.status, "completed");
     assert.equal(done[0]?.step, "done");
     assert.equal(millerLakeAfterCabin(active, "miller-lake")[0]?.status, "active");
-    assert.equal(Object.values(MILLER_PLATES).some((path) => path.includes("Dock") || path.includes("Tackle") || path.includes("algebra")), false);
+    assert.equal(MILLER_PLATES.shore, "/images/locations/millerLake/millerLakeDay.png");
+    assert.equal(millerCamp.image.day, "/images/locations/millerLake/campMillerDay.png");
+    assert.equal(millerCamp.image.night, "/images/locations/millerLake/campMillerNight.png");
+    assert.equal(millerCamp.image.weather?.Rainy, "/images/locations/millerLake/campMillerRainy.png");
+    assert.equal(millerCamp.image.weather?.Thunderstorm, "/images/locations/millerLake/campMillerThunder.png");
+    assert.equal(MILLER_PLATES.cabin, "/images/locations/millerLake/campMillerDayInsideCabinet.png");
+    assert.equal(Object.values(MILLER_PLATES).some((path) => path.includes("Dock") || path.includes("Tackle") || path.includes("algebra") || path.includes("Sunny")), false);
     assert.equal(Object.values(MILLER_FALLBACK).some((path) => path.includes("Tackle")), false);
   });
 });
@@ -312,12 +318,11 @@ describe("the second phone and the ending", () => {
     assert.equal(run[run.length - 1]?.black, true);
   });
 
-  it("puts the blood and the figure before the choice, then both questions, then the clues", () => {
+  it("puts the figure after the cigarette, then both questions, then the clues", () => {
     const frames = endingFrames(["the-woods-road", "room-6"]);
-    assert.equal(frames[0]?.image, BLOOD_PLATE);
-    assert.deepEqual(frames[0]?.thoughts, [...BLOOD_THOUGHTS]);
-    assert.equal(frames[1]?.thought, "Someone's here.");
-    assert.equal(frames[1]?.after, "timed-choice");
+    assert.equal(lobbyBloodFrame().image, BLOOD_PLATE);
+    assert.equal(frames[0]?.thought, "Someone's here.");
+    assert.equal(frames[0]?.after, "timed-choice");
     assert.equal(JSON.stringify(frames).includes("hair"), false);
     const after = endingAfterEscape(["the-woods-road", "room-6"]);
     assert.equal(after[0]?.thought, LET_GO_THOUGHT);

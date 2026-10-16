@@ -29,7 +29,7 @@ import type { DayOfWeek, Month } from "@/game/types";
 import styles from "./QuestWindow.module.css";
 
 /** Painted notebook plate. Missing file keeps the CSS paper. */
-const QUEST_LOG_BACKGROUND = "/images/ui/questLogBackground.png";
+const QUEST_LOG_BACKGROUND = "/images/ui/questBook.png";
 
 type QuestWindowProps = {
   quests: QuestProgress[];
@@ -169,17 +169,13 @@ export default function QuestWindow({
   return (
     <div className={styles.overlay} onMouseDown={onClose}>
       <section
-        className={styles.window}
+        className={`${styles.window}${logPlate ? ` ${styles.windowPlate}` : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="quest-log-title"
         onMouseDown={(event) => event.stopPropagation()}
-        style={logPlate ? {
-          backgroundImage: `url("${QUEST_LOG_BACKGROUND}")`,
-          backgroundSize: "100% 100%",
-          backgroundPosition: "center",
-        } : undefined}
       >
+        <div className={styles.sheet}>
         <header className={styles.header}>
           <p className={styles.caseLabel}>E. Parker</p>
           <h2 id="quest-log-title" className={styles.title}>
@@ -339,6 +335,7 @@ export default function QuestWindow({
 
         <div className={styles.closeButton}>
           <ActionButton label="Close" onClick={onClose} />
+        </div>
         </div>
       </section>
     </div>

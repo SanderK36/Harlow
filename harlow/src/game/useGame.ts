@@ -44,6 +44,8 @@ import {
   EMILY_DOOR_THOUGHT,
   endingAfterEscape,
   endingFrames,
+  sanatoriumArrivalPlates,
+  withBloodBeforeRoom,
   FIGURE_FOLLOW,
   FIGURE_STAY,
   FIGURE_THOUGHT,
@@ -378,11 +380,14 @@ export function useGame() {
     return synced;
   }
   const [storyFlags, setStoryFlags] = useState<Partial<Record<StoryFlag, boolean>>>(
-    () => flagsForConnections(
-      withoutRetiredFlags(sessionSave?.storyFlags ?? (
-        sessionSave?.momJobConcernHeard ? { momJobConcern: true } : {}
-      )),
-      migrateClues(sessionSave).connections,
+    () => withBloodBeforeRoom(
+      sessionScene?.id,
+      flagsForConnections(
+        withoutRetiredFlags(sessionSave?.storyFlags ?? (
+          sessionSave?.momJobConcernHeard ? { momJobConcern: true } : {}
+        )),
+        migrateClues(sessionSave).connections,
+      ),
     ),
   );
   // Updated in the same turn as setStoryFlags so a choice list built later
@@ -579,6 +584,25 @@ export function useGame() {
       }
     }
   }
+
+  function openSanatoriumPlates(frames: ReturnType<typeof sanatoriumArrivalPlates>) {
+    const [first, ...rest] = frames;
+    if (!first || closeupRef.current) return;
+    closeupQueue.current = rest;
+    closeupRef.current = first;
+    pauseNoticesForOverlay();
+    setCloseup(first);
+    if (first.flags?.length) applyFlags(first.flags);
+  }
+
+  useEffect(() => {
+    openSanatoriumPlates(sanatoriumArrivalPlates({
+      sceneId: currentScene.id,
+      fromSceneId: "",
+      bloodFound: Boolean(storyFlagsRef.current.bloodFound),
+      dropsSeen: Boolean(storyFlagsRef.current.bloodDropsSeen),
+    }));
+  }, []);
 
   function enqueueCloseup(first: CloseupContent, next?: CloseupContent & { flags?: StoryFlag[] }) {
     closeupQueue.current = next ? [next] : [];
@@ -1181,6 +1205,19 @@ export function useGame() {
     }
     if (sceneId === "miller-cabin" && isQuestActive(questsRef.current, "miller-lake")) {
       applyQuestHooks({ completesQuest: "miller-lake", questStep: "done" });
+    }
+    if (sceneId !== currentScene.id) {
+      const plates = sanatoriumArrivalPlates({
+        sceneId,
+        fromSceneId: currentScene.id,
+        bloodFound: Boolean(storyFlagsRef.current.bloodFound),
+        dropsSeen: Boolean(storyFlagsRef.current.bloodDropsSeen),
+      });
+      if (plates.length) {
+        openSanatoriumPlates(plates);
+      } else if (sceneId === "sanatorium-room-2" && !storyFlagsRef.current.bloodFound) {
+        applyFlags("bloodFound");
+      }
     }
 
     if (
@@ -2161,9 +2198,12 @@ export function useGame() {
     const restoredClues = migrateClues(save);
     dayRef.current = alignedState.dayNumber;
     connectionsRef.current = restoredClues.connections;
-    const restoredFlags = flagsForConnections(
-      withoutRetiredFlags(save.storyFlags ?? (save.momJobConcernHeard ? { momJobConcern: true } : {})),
-      restoredClues.connections,
+    const restoredFlags = withBloodBeforeRoom(
+      savedScene.id,
+      flagsForConnections(
+        withoutRetiredFlags(save.storyFlags ?? (save.momJobConcernHeard ? { momJobConcern: true } : {})),
+        restoredClues.connections,
+      ),
     );
     let restoredQuests = migrateQuestsFromLegacy(save);
     const restoredHill = shouldNoticeHill(
@@ -2264,6 +2304,12 @@ export function useGame() {
     phoneResumeSleep.current = false;
     phoneMorning.current = null;
     clearGravel();
+    openSanatoriumPlates(sanatoriumArrivalPlates({
+      sceneId: savedScene.id,
+      fromSceneId: "",
+      bloodFound: Boolean(storyFlagsRef.current.bloodFound),
+      dropsSeen: Boolean(storyFlagsRef.current.bloodDropsSeen),
+    }));
     return true;
   }
 
