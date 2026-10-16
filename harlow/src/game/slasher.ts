@@ -43,7 +43,7 @@ export const MILLER_OPEN = 7 * 60;
 export const MILLER_CLOSE = 18 * 60;
 export const MILLER_DARK = "Not after dark. Not out there.";
 export const MILLER_ARRIVAL = "Miller Lake. Dad and Walter's spot. Nobody fishes here anymore.";
-export const MILLER_CAMP = "CAMP PINEWOOD. Closed since '72. Of course it is.";
+export const MILLER_CAMP = "CAMP MILLER. Closed since '72. Of course it is.";
 export const MILLER_CABIN = "Somebody's been sleeping here. Blanket's still warm.";
 export const MUSIC_BOX_HOLD_MS = 4200;
 export const MUSIC_BOX_THOUGHT_MS = 2800;
@@ -410,14 +410,16 @@ export function elrodShadowPlate(weather: string, time: number) {
 
 export const WALTER_AT_STONE = "/images/misc/walterAtEmilyGrave.png";
 
-/** Plates the lake still needs. Existing art stands in until they arrive. */
 export const MILLER_PLATES = {
-  shore: "/images/locations/millerLake/millerLakeSunny.png",
+  shore: "/images/locations/millerLake/millerLakeDay.png",
   shoreNight: "/images/locations/millerLake/millerLakeNight.png",
   shoreRain: "/images/locations/millerLake/millerLakeRainy.png",
   shoreThunder: "/images/locations/millerLake/millerLakeThunder.png",
-  camp: "/images/locations/millerLake/millerCamp.png",
-  cabin: "/images/locations/millerLake/millerCabin.png",
+  camp: "/images/locations/millerLake/campMillerDay.png",
+  campNight: "/images/locations/millerLake/campMillerNight.png",
+  campRain: "/images/locations/millerLake/campMillerRainy.png",
+  campThunder: "/images/locations/millerLake/campMillerThunder.png",
+  cabin: "/images/locations/millerLake/campMillerDayInsideCabinet.png",
 } as const;
 
 export const MILLER_FALLBACK = {

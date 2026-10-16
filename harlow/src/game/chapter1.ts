@@ -488,15 +488,17 @@ export function flagsForConnections(
 }
 
 export const BLOOD_THOUGHTS = [
-  "Next to the cigarette. Something dark on the tiles.",
+  "Something dark on the tiles.",
   "It's blood.",
   "It's still wet.",
 ] as const;
 
+export const HALL_BLOOD_THOUGHT = "More of it. Drops, leading down the hall.";
+
 /** How long each blood line sits before the next one. The plate does not move. */
 export const BLOOD_BEAT_MS = 2800;
 
-export const BLOOD_PLATE = "/images/locations/sanatorium/sanatoriumBlood.png";
+export const BLOOD_PLATE = "/images/locations/sanatorium/sanatoriumMainFloorNightBloodOnFloor.png";
 export const FIGURE_PLATE = "/images/locations/sanatorium/sanatoriumMainFloorNightShadow.png";
 export const WHOSE_BLOOD_THOUGHT = "And whose blood was that?";
 
@@ -560,22 +562,65 @@ export type EndingFrame = {
 
 export const LET_GO_THOUGHT = "He let me go. Why did he let me go?";
 
-/** After the cigarette: blood on the tiles, then the figure. The choice follows that plate. */
-export function endingFrames(_clues: readonly ClueId[]): EndingFrame[] {
-  const blood: EndingFrame = {
+/** Lobby floor. Three lines, then the dismiss control. Sets bloodFound. */
+export function lobbyBloodFrame(): EndingFrame {
+  return {
     image: BLOOD_PLATE,
     thought: BLOOD_THOUGHTS[0],
     thoughts: BLOOD_THOUGHTS,
     label: "The tiles",
     flags: ["bloodFound"],
   };
-  const figure: EndingFrame = {
+}
+
+/** Hall drops. Also sets bloodFound so Room 2 never comes first. */
+export function hallBloodFrame(): EndingFrame {
+  return {
+    image: BLOOD_PLATE,
+    thought: HALL_BLOOD_THOUGHT,
+    label: "The hall",
+    flags: ["bloodFound", "bloodDropsSeen"],
+  };
+}
+
+/**
+ * Entering the lobby plays the blood. Entering the hall plays the drops,
+ * and the lobby lines first if that plate was skipped.
+ */
+/** A save already standing in Room 2 still has the lobby flag. */
+export function withBloodBeforeRoom<T extends { bloodFound?: boolean }>(
+  sceneId: string | undefined,
+  flags: T,
+): T {
+  if (sceneId !== "sanatorium-room-2" || flags.bloodFound) return flags;
+  return { ...flags, bloodFound: true };
+}
+
+export function sanatoriumArrivalPlates(input: {
+  sceneId: string;
+  fromSceneId: string;
+  bloodFound: boolean;
+  dropsSeen: boolean;
+}): EndingFrame[] {
+  if (input.sceneId === input.fromSceneId) return [];
+  if (input.sceneId === "sanatorium-main-floor" && !input.bloodFound) {
+    return [lobbyBloodFrame()];
+  }
+  if (input.sceneId !== "sanatorium-hallway") return [];
+  const frames: EndingFrame[] = [];
+  if (!input.bloodFound) frames.push(lobbyBloodFrame());
+  if (!input.dropsSeen) frames.push(hallBloodFrame());
+  return frames;
+}
+
+/** After the cigarette: the figure, then Hide / Run. The blood was already in the lobby. */
+export function endingFrames(_clues: readonly ClueId[]): EndingFrame[] {
+  return [{
     image: FIGURE_PLATE,
     thought: "Someone's here.",
     label: "Someone in the lobby",
     after: "timed-choice",
-  };
-  return [blood, figure];
+  }];
 }
 
 /** After Hide or Run. The question, the blood, then one line per optional clue he kept. */

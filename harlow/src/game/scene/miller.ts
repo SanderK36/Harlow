@@ -44,9 +44,10 @@ export const millerCamp: Scene = {
   location: "Miller Lake",
   image: {
     day: MILLER_PLATES.camp,
-    night: MILLER_PLATES.camp,
+    night: MILLER_PLATES.campNight,
+    weather: rainArt(MILLER_PLATES.campRain, MILLER_PLATES.campThunder),
     fallback: MILLER_FALLBACK.camp,
-    noNightVariant: true,
+    weatherDayOnly: true,
   },
   choices: [
     {

@@ -105,8 +105,10 @@ export type StoryFlag =
   | "nightCallHeard"
   /** He answered. No rain at home until morning. */
   | "nightCallClear"
-  /** Blood on the sanatorium tiles, beside the cigarette. */
+  /** Blood on the sanatorium lobby tiles. */
   | "bloodFound"
+  /** Drops in the hall, after the lobby blood. Once. */
+  | "bloodDropsSeen"
   /** Emily's headstone, day 2. */
   | "emilyStoneSeen"
   | "freshFlowersSeen"
