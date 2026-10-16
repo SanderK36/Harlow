@@ -1,0 +1,28 @@
+/* A cold double flicker over the art, the way lightning stutters. */
+.flash {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: 14px;
+  background:
+    radial-gradient(ellipse 120% 90% at 50% 10%, rgba(232, 240, 255, 0.95), rgba(170, 190, 230, 0.55) 60%, rgba(120, 140, 190, 0.3));
+  mix-blend-mode: screen;
+  opacity: 0;
+  pointer-events: none;
+  animation: strike 1s ease-out forwards;
+}
+
+@keyframes strike {
+  0% { opacity: 0; }
+  4% { opacity: calc(0.85 * var(--strike, 1)); }
+  10% { opacity: calc(0.12 * var(--strike, 1)); }
+  16% { opacity: calc(0.7 * var(--strike, 1)); }
+  30% { opacity: calc(0.28 * var(--strike, 1)); }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flash {
+    display: none;
+  }
+}

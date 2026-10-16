@@ -59,7 +59,8 @@ export type Location =
 "Sheriff's office" |
 "Home front yard"|
 "Home back yard"|
-"Cementary"|
+"Neighbourhood"|
+"Cemetery"|
 "Gas Station" |
 "Gas Station Inside" |
 "Gas Station Garage" |
@@ -68,7 +69,9 @@ export type Location =
 "Diner" |
 "Motel" |
 "Sanatorium" |
-"Scrapyard";
+"Scrapyard" |
+"Elrod House" |
+"Miller Lake";
 
 export type Weather =
 "Sunny" |

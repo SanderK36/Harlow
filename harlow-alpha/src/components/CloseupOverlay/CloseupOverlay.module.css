@@ -1,0 +1,170 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(4, 2, 3, 0.92);
+  cursor: pointer;
+}
+
+/* Blood lines sit on one plate. No fade, no red flash, no shake. */
+.cut,
+.cut .frame,
+.cut .art,
+.cut .image {
+  animation: none;
+  transition: none;
+}
+
+.holding {
+  cursor: default;
+}
+
+.frame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: min(92vw, 720px);
+  max-height: min(92vh, 980px);
+}
+
+.art {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.image {
+  display: block;
+  max-width: 100%;
+  max-height: min(62vh, 680px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border: 1px solid rgba(255, 220, 180, 0.18);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.65);
+}
+
+/* Same interim filter as a dry plate in the rain. No extra wash. */
+.imageRain {
+  filter: saturate(0.4) brightness(0.85);
+}
+
+.imageRainNight {
+  filter: saturate(0.4) brightness(0.95);
+}
+
+/* A wet night exterior should not read as a clear moon or a dry dusk. */
+.imageRainNightExterior {
+  filter: saturate(0.25) brightness(0.5);
+}
+
+.overcast {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(42, 48, 56, 0.88), rgba(42, 48, 56, 0.45) 70%);
+  mix-blend-mode: multiply;
+}
+
+.rainGlass {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(186, 196, 208, 0.05), rgba(90, 100, 112, 0.1)),
+    repeating-linear-gradient(
+      104deg,
+      transparent 0 16px,
+      rgba(226, 234, 242, 0.2) 16px 17px,
+      transparent 17px 34px
+    );
+  background-size: auto, 90px 140px;
+  animation: closeupRainDrift 2.8s linear infinite;
+}
+
+@keyframes closeupRainDrift {
+  from {
+    background-position: 0 0, 0 0;
+  }
+
+  to {
+    background-position: 0 0, -48px 140px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rainGlass {
+    animation: none;
+  }
+
+  .hillGlow,
+  .hillShutter {
+    transition: none;
+    animation: none;
+  }
+}
+
+.hillLight {
+  position: absolute;
+  left: 34.4%;
+  top: 11.4%;
+  width: 3.6%;
+  height: 5.8%;
+  pointer-events: none;
+}
+
+.hillGlow {
+  position: absolute;
+  inset: -110% -80%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 220, 150, 0.95) 0%,
+    rgba(255, 160, 60, 0.5) 40%,
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+}
+
+.hillShutter {
+  position: absolute;
+  left: 22%;
+  top: 24%;
+  width: 56%;
+  height: 52%;
+  background: #1a120c;
+}
+
+.thought {
+  position: relative;
+  width: min(100%, 520px);
+  margin: 0;
+  padding: 12px 16px;
+  color: #f3e2c8;
+  font-family: var(--font-body);
+  font-size: var(--reading-size);
+  line-height: 1.45;
+  text-align: center;
+  background: rgba(18, 10, 12, 0.88);
+  border: 1px solid rgba(230, 155, 102, 0.35);
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.hint {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  margin: 0;
+  color: rgba(243, 226, 200, 0.88);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+}

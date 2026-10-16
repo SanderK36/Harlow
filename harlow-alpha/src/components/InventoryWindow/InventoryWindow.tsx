@@ -9,17 +9,19 @@ type InventoryWindowProps = {
 };
 
 const itemBios: Record<string, string> = {
-  beer: "A bottle of beer to take the edge off. Lowers fear by 10 when consumed.",
-  cigarettes: "A pack of cigarettes for a smoke break. Lowers fear by 5 when consumed.",
-  "house key": "The key to Ethan’s home. No stat effect.",
-  flashlight: "A handheld light for dark places. No stat effect.",
-  knife: "A small, sharp blade found at the scrapyard. No stat effect.",
-  "sturdy crowbar": "A solid tool received for taking the scrapyard job. No stat effect.",
+  beer: "A cold bottle. It takes the edge off. Lowers fear by 10 when consumed.",
+  cigarettes: "A pack for a smoke out back. Lowers fear by 5 when consumed.",
+  "house key": "The key to the house. No stat effect.",
+  flashlight: "A flashlight from the garage bench, for dark places. No stat effect.",
+  knife: "A knife somebody left on a scrapyard desk. No stat effect.",
+  "sturdy crowbar": "The crowbar Roy handed over with the scrapyard job. No stat effect.",
   "steel maiden": "A Steel Maiden record from Needle & Groove. A collectible with no stat effect.",
   "high volts": "A High Volts record from Needle & Groove. A collectible with no stat effect.",
   "leopard hazard": "A Leopard Hazard record from Needle & Groove. A collectible with no stat effect.",
   "puppet masters": "A Puppet Masters record from Needle & Groove. A collectible with no stat effect.",
   "ricky valentine": "A Ricky Valentine record from Needle & Groove. A collectible with no stat effect.",
+  coffee: "A tin of coffee from Margaret's. Mom's waiting on it.",
+  "missing poster": "Emily Parker. Seventeen. Missing since October 1972. Taken from the diner board.",
 };
 
 function getItemImage(item: string) {
@@ -27,37 +29,42 @@ function getItemImage(item: string) {
   // mapping here (or return null to display it without an image).
   switch (item.toLowerCase()) {
     case "house key":
-      return "/images/items/HouseKey.png";
+      return "/images/items/houseKey.png";
 
     case "cigarettes":
-      return "/images/items/Cigarettes.png";
+      return "/images/items/cigarettes.png";
 
     case "flashlight":
-      return "/images/items/Flashlight.png";
+      return "/images/items/flashlight.png";
 
+    case "coffee":
+      return "/images/items/harlowCoffee.png";
+
+    case "missing poster":
+      return "/images/misc/emilyMissingPoster.png";
     case "knife":
-      return "/images/items/Knife.png";
+      return "/images/items/knife.png";
 
     case "beer":
       return "/images/items/beer.png";
 
     case "sturdy crowbar":
-      return null;
+      return "/images/items/crowbar.png";
 
     case "steel maiden":
-      return "/images/locations/NeedleGroove/shop/SteelMaiden.png";
+      return "/images/locations/needleGroove/shop/steelMaiden.png";
 
     case "high volts":
-      return "/images/locations/NeedleGroove/shop/HighVolts.png";
+      return "/images/locations/needleGroove/shop/highVolts.png";
 
     case "leopard hazard":
-      return "/images/locations/NeedleGroove/shop/LeopardHazard.png";
+      return "/images/locations/needleGroove/shop/leopardHazard.png";
 
     case "puppet masters":
-      return "/images/locations/NeedleGroove/shop/PuppetMasters.png";
+      return "/images/locations/needleGroove/shop/puppetMasters.png";
 
     case "ricky valentine":
-      return "/images/locations/NeedleGroove/shop/RickyValentine.png";
+      return "/images/locations/needleGroove/shop/rickyValentine.png";
 
     default:
       return null;
@@ -110,12 +117,14 @@ export default function InventoryWindow({
                 } : undefined}
               >
                 <div className={styles.itemVisual}>
-                  {image && (
+                  {image ? (
                     <img
                       src={image}
                       alt={item}
                       className={styles.itemImage}
                     />
+                  ) : (
+                    <span className={styles.itemFallback}>{item}</span>
                   )}
                   <span className={styles.quantity}>{quantity}</span>
                 </div>
@@ -132,7 +141,7 @@ export default function InventoryWindow({
 
         <dialog ref={feedbackRef} className={styles.feedback} aria-labelledby="beer-feedback-title">
           <h2 id="beer-feedback-title">{consumedItem} consumed</h2>
-          <p>{consumedItem === "Beer" ? "You drank a beer. Your fear lowered by 10" : "You smoked cigarettes. Your fear lowered by 5"} (minimum 0).</p>
+          <p>{consumedItem === "Beer" ? "You drank a beer. Fear dropped by 10. It will not go below 0." : "You smoked. Fear dropped by 5. It will not go below 0."}</p>
           <form method="dialog">
             <button className={styles.dismiss} autoFocus>Continue</button>
           </form>

@@ -30,10 +30,58 @@ export type Choice = {
   hotspots?: { left: number; top: number; width: number; height: number }[];
   /** Uses the travel overlay instead of moving to the scene immediately. */
   travel?: boolean;
-  /** Disable the choice until these conditions are met. Extend this for new rules. */
+  /**
+   * The choice goes through an actual door (a room door, a front or back
+   * door, a shop entrance): the screen dips to black and a door opens and
+   * shuts while the scene changes. Not for stairs, ladders, open doorways,
+   * walking around outside or the travel map.
+   */
+  door?: boolean;
+  /** Hide the choice until these conditions are met. Never render it disabled. */
   requirements?: {
     money?: number;
-  }
+    /** Requires this inventory item. */
+    item?: string;
+    /** Requires every listed story flag. */
+    flags?: import("./quests").StoryFlag[];
+    /** Hidden once any listed story flag is set. */
+    excludesFlags?: import("./quests").StoryFlag[];
+  };
+  /** Show a closeup instead of (or before) moving scenes. */
+  closeup?: {
+    image: string;
+    video?: string;
+    thought: string;
+    label?: string;
+    /** Some memories should bypass the rainy override styling. */
+    disableWeatherFilter?: boolean;
+    /** Words drawn on the picture. The plate stays readable if the file is missing. */
+    inscriptions?: import("@/components/ImageText/imageText").Inscription[];
+    /** Plate used when `image` has not been delivered. The overlay still draws. */
+    fallbackImage?: string;
+    next?: {
+      image: string;
+      thought: string;
+      label?: string;
+      disableWeatherFilter?: boolean;
+      inscriptions?: import("@/components/ImageText/imageText").Inscription[];
+      fallbackImage?: string;
+      /** Set when this follow-up closeup is shown, not when the first one opens. */
+      setsFlags?: import("./quests").StoryFlag[];
+    };
+  };
+  /** Hidden once any listed story flag is set. */
+  excludesStoryFlag?: import("./quests").StoryFlag | import("./quests").StoryFlag[];
+  /** Stat effects applied when this choice is taken (also on ChoiceEffects). */
+  startsQuest?: import("./quests").QuestId;
+  completesQuest?: import("./quests").QuestId;
+  /**
+   * Show the subtle new-lead marker until this quest exists.
+   * Only for a person asking something of Ethan, never a discovery.
+   */
+  leadQuest?: import("./quests").QuestId;
+  questStep?: string;
+  setsFlags?: import("./quests").StoryFlag[];
 };
 
 export type GameChoice = Choice | ConversationChoice;

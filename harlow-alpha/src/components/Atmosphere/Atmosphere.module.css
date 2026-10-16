@@ -1,0 +1,71 @@
+.atmosphere {
+  position: fixed;
+  inset: 0;
+  /* Above the game and its windows, below the opening sequence (100). */
+  z-index: 90;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Fractal noise tile, jittered a few frames a second like projected film. */
+.grain {
+  position: absolute;
+  inset: -50%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1.2 -0.1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+  opacity: 0.075;
+  mix-blend-mode: overlay;
+  animation: grainShift 0.9s steps(6) infinite;
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse 85% 80% at 50% 48%,
+      transparent 58%,
+      rgba(6, 2, 3, 0.34) 82%,
+      rgba(4, 1, 2, 0.62) 100%
+    );
+}
+
+/* At night the dark closes in a little and the picture breathes. */
+.night .vignette {
+  background:
+    radial-gradient(
+      ellipse 80% 76% at 50% 48%,
+      transparent 50%,
+      rgba(6, 2, 3, 0.42) 78%,
+      rgba(3, 1, 2, 0.74) 100%
+    );
+  animation: nightBreath 7s ease-in-out infinite;
+}
+
+.night .grain {
+  opacity: 0.1;
+}
+
+@keyframes grainShift {
+  0% { transform: translate(0, 0); }
+  17% { transform: translate(-6%, 4%); }
+  33% { transform: translate(5%, -7%); }
+  50% { transform: translate(-3%, 9%); }
+  67% { transform: translate(8%, 2%); }
+  83% { transform: translate(-9%, -4%); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes nightBreath {
+  0%, 100% { opacity: 1; }
+  46% { opacity: 0.86; }
+  52% { opacity: 0.97; }
+  57% { opacity: 0.88; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grain,
+  .night .vignette {
+    animation: none;
+  }
+}

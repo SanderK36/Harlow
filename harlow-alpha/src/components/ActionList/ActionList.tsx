@@ -1,15 +1,18 @@
+import type { Ref } from "react";
+
 import ActionButton from "@/components/ActionButton/ActionButton";
 import type { GameChoice } from "@/game/choices";
+import { choiceAffordance } from "@/game/statLabels";
 import styles from "./ActionList.module.css";
 
 type ActionListProps = {
   title: string;
   choices: GameChoice[];
   onChoice: (choice: GameChoice) => void;
-  onWalk: () => void;
-  onBus: () => void;
-  onGoToBusStop: () => void;
-  isBusStop: boolean;
+  /** True when this choice should show the new-lead mark. */
+  leadsQuest?: (choice: GameChoice) => boolean;
+  onOpenMap: () => void;
+  mapButtonRef?: Ref<HTMLButtonElement>;
   canTravel: boolean;
   playerMoney: number;
   layout?: "default" | "home" | "overlay";
@@ -19,13 +22,12 @@ export default function ActionList({
   title,
   choices,
   onChoice,
-  onWalk,
-  onBus,
-  onGoToBusStop,
-  isBusStop,
+  onOpenMap,
+  mapButtonRef,
   canTravel,
   playerMoney,
   layout = "default",
+  leadsQuest,
 }: ActionListProps) {
   const localChoices = choices.filter(
     (choice) => "response" in choice || !choice.travel
@@ -33,8 +35,13 @@ export default function ActionList({
   const isConversation = choices.some(
     (choice) => "response" in choice
   );
+  const hasButtons = localChoices.length > 0 || (!isConversation && canTravel);
+  if (!hasButtons) return null;
 
   function isDisabled(choice: GameChoice) {
+    // Dialogue replies are omitted entirely when they don't apply. A greyed
+    // button would give away a line the player isn't meant to see yet.
+    if ("response" in choice) return false;
     return (
       "requirements" in choice &&
       choice.requirements?.money !== undefined &&
@@ -46,7 +53,7 @@ export default function ActionList({
   return (
     <div
       className={`${styles.actionList} ${
-        layout === "overlay" ? styles.overlayActionList : ""
+        layout === "overlay" ? `${styles.overlayActionList} overlayActionList` : ""
       }`}
     >
       <h2>{title}</h2>
@@ -56,7 +63,7 @@ export default function ActionList({
           layout === "home"
             ? styles.homeActionButtons
             : layout === "overlay"
-              ? styles.overlayActionButtons
+              ? `${styles.overlayActionButtons} overlayActionButtons`
               : ""
         }`}
       >
@@ -64,28 +71,16 @@ export default function ActionList({
           <ActionButton
             key={"response" in choice ? choice.label : choice.action}
             label={choice.label}
+            detail={choiceAffordance(choice)}
             onClick={() => onChoice(choice)}
             disabled={isDisabled(choice)}
+            leadsQuest={leadsQuest?.(choice) ?? false}
           />
         ))}
 
-        {!isConversation && canTravel && isBusStop ? (
-          <>
-            <ActionButton label="Walk" onClick={onWalk} />
-            <ActionButton
-              label="Take the bus"
-              onClick={onBus}
-            />
-          </>
-        ) : !isConversation && canTravel ? (
-          <>
-            <ActionButton label="Walk" onClick={onWalk} />
-            <ActionButton
-              label="Go to bus stop"
-              onClick={onGoToBusStop}
-            />
-          </>
-        ) : null}
+        {!isConversation && canTravel && (
+          <ActionButton label="Map" buttonRef={mapButtonRef} onClick={onOpenMap} />
+        )}
       </div>
     </div>
   );

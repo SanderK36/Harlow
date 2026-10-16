@@ -1,0 +1,468 @@
+"use client";
+
+import {
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import Image from "next/image";
+
+import styles from "./DialogueScene.module.css";
+import type { StoryEntry } from "@/game/story";
+import { dialogueFocus } from "@/game/dialogueFocus";
+import { getPortrait } from "@/game/portraits";
+import StoryLog from "@/components/StoryLog/StoryLog";
+import { markTextSeen } from "@/game/seenText";
+import { textRevealsInstantly, textSpeedScale } from "@/game/settings";
+import { useGameSettings } from "@/game/useSettings";
+import { dialoguePauseMs } from "@/game/dialoguePause";
+import { prefersReducedMotion, revealDelay, useReducedMotion, useSeenLine } from "./typewriter";
+
+type DialogueLine = {
+  speaker: string | null;
+  text: string;
+  pauseAfter?: number;
+};
+
+type DialogueSceneProps = {
+  entries: StoryEntry[];
+  active: boolean;
+  /** Reply buttons; only shown once the latest line has been read. */
+  choices?: ReactNode;
+  /** Stable identity for `choices`, so a new set can wait until the beat ends. */
+  choiceKey?: string;
+  /** Set while a closing reply plays: called once its last line has been
+   *  read and the player clicks on (or right after Ethan's own last line). */
+  onFinish?: () => void;
+  /** The latest line is fully on screen and nothing is queued after it.
+   *  Receives how many lines are in the log, so a close-up armed for a later
+   *  reply cannot open on an earlier settled beat. */
+  onSettled?: (lineCount: number) => void;
+  /** The caller has no face: an empty frame, faint static, nameplate "—". */
+  staticCaller?: boolean;
+  /** Phone holds stay when reduced motion is on. */
+  keepPauses?: boolean;
+  /** A line with pauseAfter has finished typing and is holding. */
+  onLineHeld?: (index: number) => void;
+  /** The hold ended and the next line is about to show. */
+  onLineAdvance?: (index: number) => void;
+};
+
+// Ethan's own (already chosen) line steps aside on its own for the NPC reply.
+const ETHAN_AUTO_ADVANCE = 520;
+
+// A closing reply stays up long enough to read, then the conversation closes
+// by itself: 2.5 s plus 60 ms a character, kept between 3 and 10 seconds.
+export function closingReadTime(text: string) {
+  return Math.min(10_000, Math.max(3_000, 2_500 + text.length * 60));
+}
+
+function toDialogueLines(entries: StoryEntry[]): DialogueLine[] {
+  return entries.flatMap((entry): DialogueLine[] => {
+    if (entry.type === "conversation") {
+      return [{ speaker: entry.character, text: entry.text, pauseAfter: entry.pauseAfter }];
+    }
+    if (entry.type === "narration") {
+      return [{
+        speaker: null,
+        text: entry.text,
+        pauseAfter: entry.pauseAfter,
+      }];
+    }
+    // Ethan's inner line mid-conversation (e.g. remembering the porch light).
+    if (entry.type === "thought") {
+      return [{ speaker: "Thought", text: entry.text }];
+    }
+    return [];
+  });
+}
+
+function isEthan(speaker: string | null) {
+  return speaker?.toLowerCase() === "ethan";
+}
+
+function isThought(speaker: string | null) {
+  return speaker === "Thought";
+}
+
+function isInteractiveTarget(target: EventTarget | null) {
+  return (
+    target instanceof HTMLElement &&
+    !!target.closest("button, a, input, textarea, select, [contenteditable='true']")
+  );
+}
+
+/**
+ * Visual-novel presentation of a conversation: the scene stays behind,
+ * the conversation partner's portrait stands on the left (Ethan's on the
+ * right while he speaks), and the newest line types into a dialogue box.
+ */
+export default function DialogueScene({
+  entries,
+  active,
+  choices,
+  choiceKey = "",
+  onFinish,
+  onSettled,
+  staticCaller = false,
+  keepPauses = false,
+  onLineHeld,
+  onLineAdvance,
+}: DialogueSceneProps) {
+  const lines = toDialogueLines(entries);
+  const reducedMotion = useReducedMotion();
+  const settings = useGameSettings();
+  const [cursor, setCursor] = useState(0);
+  const [revealed, setRevealed] = useState(0);
+  const [knownLineCount, setKnownLineCount] = useState(lines.length);
+  const [showHistory, setShowHistory] = useState(false);
+  const [heldChoices, setHeldChoices] = useState(choices);
+  const [heldKey, setHeldKey] = useState(choiceKey);
+  const choicesRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  const lineIndex = Math.min(cursor, Math.max(0, lines.length - 1));
+  const line = lines[lineIndex];
+  const seenLine = useSeenLine(line?.text ?? "");
+  const hasLine = line !== undefined;
+  const fullLength = line?.text.length ?? 0;
+  const shown = textRevealsInstantly(settings, reducedMotion, seenLine)
+    ? fullLength
+    : Math.min(revealed, fullLength);
+  const lineComplete = shown >= fullLength;
+
+  // New lines arrived (or a new conversation started). Adjusting state while
+  // rendering avoids a flash of the stale line.
+  if (lines.length !== knownLineCount) {
+    setKnownLineCount(lines.length);
+    if (lines.length < knownLineCount) {
+      setCursor(0);
+      setRevealed(0);
+    } else if (lineComplete && lineIndex === knownLineCount - 1 && !isEthan(line?.speaker ?? null)) {
+      // The reader is caught up and waiting, so go straight to the reply.
+      setCursor(knownLineCount);
+      setRevealed(0);
+    }
+  }
+
+  const hasQueuedLines = lineIndex < lines.length - 1;
+  const readyForChoices = active && lineComplete && !hasQueuedLines;
+  const choicesReady = readyForChoices && !!choices;
+  // Store the set only once its beat has finished, so the fade-out keeps the
+  // replies the player just saw instead of swapping mid-line.
+  if (choicesReady && choiceKey !== heldKey) {
+    setHeldKey(choiceKey);
+    setHeldChoices(choices);
+  }
+  const shownChoices = staticCaller ? null : choicesReady ? choices : heldChoices;
+  const speakerIsEthan = isEthan(line?.speaker ?? null);
+  const focus = dialogueFocus(line?.speaker ?? null);
+  const canFinish = active && !!onFinish && lineComplete && !hasQueuedLines;
+  const beatSettled = active && lineComplete && !hasQueuedLines;
+
+  // Keep the latest callback without re-running the settle effect. That
+  // effect used to depend on the callback, and a new function on every
+  // parent render re-fired it while a line was already settled, which opened
+  // Walter's file in the middle of the talk.
+  const onSettledRef = useRef(onSettled);
+  const onFinishRef = useRef(onFinish);
+  const onHeldRef = useRef(onLineHeld);
+  const onAdvanceRef = useRef(onLineAdvance);
+  useEffect(() => {
+    onSettledRef.current = onSettled;
+    onFinishRef.current = onFinish;
+    onHeldRef.current = onLineHeld;
+    onAdvanceRef.current = onLineAdvance;
+  }, [onSettled, onFinish, onLineHeld, onLineAdvance]);
+  useEffect(() => {
+    if (!beatSettled) return;
+    onSettledRef.current?.(lines.length);
+  }, [beatSettled, lineIndex, lines.length]);
+  useEffect(() => {
+    if (lineComplete && line?.text) markTextSeen(line.text);
+  }, [line, lineComplete]);
+  const partner = lines.find((entry) => entry.speaker && !isEthan(entry.speaker) && !isThought(entry.speaker))?.speaker ?? null;
+
+  // Typewriter: reveal one character per tick.
+  useEffect(() => {
+    if (!active || lineComplete || !line) return;
+    const timer = window.setTimeout(
+      () => setRevealed(shown + 1),
+      revealDelay(shown === 0 ? undefined : line.text[shown - 1], textSpeedScale(settings.textSpeed)),
+    );
+    return () => window.clearTimeout(timer);
+  }, [active, line, lineComplete, settings.textSpeed, shown]);
+
+  // Ethan's line has already been chosen by the player; once it has been
+  // spoken, move on to the queued reply without asking for another click.
+  useEffect(() => {
+    if (!active || !lineComplete || !hasQueuedLines) return;
+    const held = line?.pauseAfter;
+    if (!speakerIsEthan && held == null) return;
+    const delay = dialoguePauseMs(held, reducedMotion, keepPauses, ETHAN_AUTO_ADVANCE);
+    if (held != null) onHeldRef.current?.(lineIndex);
+    const timer = window.setTimeout(() => {
+      const next = lineIndex + 1;
+      onAdvanceRef.current?.(next);
+      setCursor(next);
+      setRevealed(0);
+    }, delay);
+    return () => window.clearTimeout(timer);
+  }, [active, hasQueuedLines, keepPauses, lineComplete, lineIndex, line?.pauseAfter, reducedMotion, speakerIsEthan]);
+
+  // A closing choice whose last line is Ethan's own leaves on its own, the
+  // same way his chosen lines step aside for a reply.
+  useEffect(() => {
+    if (!canFinish) return;
+    const held = line?.pauseAfter;
+    if (held == null && !speakerIsEthan) return;
+    const delay = dialoguePauseMs(held, reducedMotion, keepPauses, ETHAN_AUTO_ADVANCE);
+    const timer = window.setTimeout(() => onFinishRef.current?.(), delay);
+    return () => window.clearTimeout(timer);
+  }, [canFinish, keepPauses, line?.pauseAfter, reducedMotion, speakerIsEthan]);
+
+  // A closing NPC reply: once it has fully typed out, close after a reading
+  // delay. A click, tap or key press (advance) still closes it sooner.
+  const closingText = canFinish && !speakerIsEthan && line?.pauseAfter == null ? line?.text ?? "" : null;
+  useEffect(() => {
+    if (closingText === null || !onFinish) return;
+    const timer = window.setTimeout(onFinish, closingReadTime(closingText));
+    return () => window.clearTimeout(timer);
+  }, [closingText, onFinish]);
+
+  function advance() {
+    if (!active) return;
+    if (!lineComplete) {
+      setRevealed(fullLength);
+      return;
+    }
+    if (keepPauses && line?.pauseAfter != null) return;
+    if (hasQueuedLines) {
+      const next = lineIndex + 1;
+      onAdvanceRef.current?.(next);
+      setCursor(next);
+      setRevealed(0);
+      return;
+    }
+    if (onFinish) onFinish();
+  }
+
+  const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
+    if (!active || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+
+    if (event.key === "Escape" && showHistory) {
+      setShowHistory(false);
+      return;
+    }
+    if (showHistory) return;
+
+    if ((event.key === " " || event.key === "Enter") && !isInteractiveTarget(event.target)) {
+      event.preventDefault();
+      advance();
+      return;
+    }
+
+    // Number keys pick a reply once it is on screen.
+    if (readyForChoices && /^[1-9]$/.test(event.key) && !isInteractiveTarget(event.target)) {
+      const buttons = choicesRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)");
+      const choice = buttons?.[Number(event.key) - 1];
+      if (choice) {
+        event.preventDefault();
+        choice.click();
+      }
+    }
+  });
+
+  // On phones the conversation stage is taller than the space left under the
+  // status panel, so bring it into view when a conversation opens.
+  useEffect(() => {
+    if (!active || !window.matchMedia("(max-width: 640px)").matches) return;
+    stageRef.current?.closest(".scene-image-frame")?.scrollIntoView({
+      block: "center",
+      behavior: prefersReducedMotion() ? "auto" : "smooth",
+    });
+  }, [active]);
+
+  // Expose the box height so phone portraits can rest on its top edge
+  // whatever the line length or number of replies.
+  useEffect(() => {
+    const box = boxRef.current;
+    const stage = stageRef.current;
+    if (!box || !stage) return;
+    // On wide screens the box keeps its tallest height for the conversation
+    // (replies vanish while an answer is pending), so the busts behind it never
+    // bob. Phones stack replies, so holding that height would leave a mostly
+    // empty box; there the busts ride the box edge instead.
+    const wide = window.matchMedia("(min-width: 641px)");
+    let tallest = 0;
+    let width = stage.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (stage.clientWidth !== width || !wide.matches) {
+        width = stage.clientWidth;
+        tallest = 0;
+        box.style.minHeight = "";
+      }
+      tallest = wide.matches ? Math.max(tallest, box.offsetHeight) : box.offsetHeight;
+      if (wide.matches) box.style.minHeight = `${tallest}px`;
+      stage.style.setProperty("--dialogue-box-height", `${tallest}px`);
+    });
+    observer.observe(box);
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, [hasLine]);
+
+  useEffect(() => {
+    const listener = (event: KeyboardEvent) => onKeyDown(event);
+    window.addEventListener("keydown", listener);
+    return () => window.removeEventListener("keydown", listener);
+  }, []);
+
+  if (!line) return null;
+
+  const awaitingContinue = lineComplete && hasQueuedLines && !speakerIsEthan && line?.pauseAfter == null;
+
+  return (
+    <div ref={stageRef} className={styles.stage}>
+      <div className={styles.cast} aria-hidden="true">
+        {(staticCaller || partner) && (
+          <div
+            className={`${styles.portrait} ${styles.partnerPortrait} ${
+              staticCaller ? styles.staticFrame : ""
+            } ${
+              focus === "thought"
+                ? styles.portraitThought
+                : focus === "partner"
+                  ? styles.portraitSpeaking
+                  : styles.portraitIdle
+            }`}
+          >
+            {staticCaller ? (
+              <span className={styles.staticNoise} />
+            ) : (
+              <Image
+                src={getPortrait(partner ?? "Ethan")}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 45vw, 360px"
+                loading="eager"
+              />
+            )}
+          </div>
+        )}
+        {!staticCaller && (
+          <div
+            className={`${styles.portrait} ${styles.ethanPortrait} ${
+              focus === "thought"
+                ? styles.portraitThought
+                : focus === "ethan"
+                  ? styles.portraitSpeaking
+                  : styles.portraitIdle
+            }`}
+          >
+            <Image
+              src={getPortrait("Ethan")}
+              alt=""
+              fill
+              sizes="(max-width: 640px) 40vw, 300px"
+              loading="eager"
+            />
+          </div>
+        )}
+      </div>
+
+      <div
+        ref={boxRef}
+        className={`${styles.box} ${speakerIsEthan ? styles.boxEthan : ""} ${
+          line.speaker && focus !== "thought" ? "" : styles.boxNarration
+        }`}
+      >
+        {(line.speaker || staticCaller) && (
+          <div
+            key={`${lineIndex}-${line.speaker ?? "caller"}`}
+            className={`${styles.namePlate} ${
+              !staticCaller && speakerIsEthan ? styles.namePlateEthan : ""
+            } ${focus === "thought" ? styles.namePlateThought : ""}`}
+          >
+            {staticCaller
+              ? "—"
+              : focus === "thought"
+                ? "Ethan · Inner thought"
+                : line.speaker}
+          </div>
+        )}
+
+        <button
+          type="button"
+          className={styles.history}
+          onClick={() => setShowHistory((visible) => !visible)}
+          aria-pressed={showHistory}
+          tabIndex={active ? 0 : -1}
+        >
+          Log
+        </button>
+
+        <button
+          type="button"
+          className={styles.lineButton}
+          onClick={advance}
+          aria-label={
+            lineComplete
+              ? hasQueuedLines
+                ? "Continue to the next line"
+                : canFinish
+                  ? "End the conversation"
+                  : `${line.speaker ?? "Narration"}: ${line.text}`
+              : "Show the full line"
+          }
+          tabIndex={active && (!readyForChoices || canFinish) ? 0 : -1}
+        >
+          <span
+            key={lineIndex}
+            className={`${styles.line} ${line.speaker && focus !== "thought" ? "" : styles.lineNarration}`}
+            aria-hidden="true"
+          >
+            {line.text.slice(0, shown)}
+            {!lineComplete && <span className={styles.caret} />}
+            <span className={styles.unrevealed}>{line.text.slice(shown)}</span>
+          </span>
+          {awaitingContinue && (
+            <span className={styles.prompt} aria-hidden="true">
+              Continue
+              <span className={styles.promptGlyph} />
+            </span>
+          )}
+        </button>
+
+        {/* Screen readers get each finished line once, not every typed character. */}
+        <p className={styles.srOnly} aria-live="polite">
+          {`${focus === "thought" ? "Ethan, inner thought" : line.speaker ?? "Narration"}: ${line.text}`}
+        </p>
+
+        <div
+          key={choiceKey}
+          ref={choicesRef}
+          className={`${styles.choices} ${choicesReady ? styles.choicesVisible : ""}`}
+          inert={!choicesReady}
+        >
+          <div className={styles.choicesInner}>{shownChoices}</div>
+        </div>
+      </div>
+
+      {showHistory && (
+        <div className={styles.historyPanel} role="dialog" aria-label="Conversation log">
+          <StoryLog entries={entries} title="Conversation log" variant="conversation" />
+          <button
+            type="button"
+            className={styles.historyClose}
+            onClick={() => setShowHistory(false)}
+          >
+            Back to conversation
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

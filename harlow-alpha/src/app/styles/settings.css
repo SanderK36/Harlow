@@ -1,0 +1,79 @@
+/* Text size, contrast, and the reduced-motion choice from the settings screen.
+   The OS preference still applies until the player picks, via the media
+   queries elsewhere. data-motion="full" opts back into motion. */
+
+html[data-contrast="high"] {
+  --text: #ffffff;
+  --muted: #ffe8e6;
+  --bg: #000000;
+  --surface: #000000;
+  --surface-raised: #140808;
+  --line: rgba(255, 255, 255, 0.72);
+  --line-strong: #ffffff;
+  --accent: #ff3040;
+  --accent-bright: #ff8b96;
+}
+
+html[data-contrast="high"] body {
+  background: #000000;
+  color: #ffffff;
+}
+
+html[data-contrast="high"] .mainMenu h1,
+html[data-contrast="high"] .mainMenuStart,
+html[data-contrast="high"] .mainMenuContinueCard,
+html[data-contrast="high"] .scene-info-panel .scene-caption-narration p,
+html[data-contrast="high"] button {
+  color: #ffffff;
+}
+
+html[data-contrast="high"] .mainMenuStart,
+html[data-contrast="high"] .mainMenuContinueCard,
+html[data-contrast="high"] .scene-info-panel {
+  border-color: #ffffff;
+}
+
+html[data-contrast="high"] .scene-info-panel {
+  color: #ffffff;
+  background: #000000;
+}
+
+html[data-contrast="high"] .scene-caption-thought p {
+  color: #ffffff;
+}
+
+html[data-motion="reduce"] .mainMenuArtwork,
+html[data-motion="reduce"] .mainMenuContent,
+html[data-motion="reduce"] .scene-image,
+html[data-motion="reduce"] .scene-info-panel,
+html[data-motion="reduce"] .new-day-screen,
+html[data-motion="reduce"] .figure-vignette,
+html[data-motion="reduce"] .conversation-overlay-active,
+html[data-motion="reduce"] .scene-rain-glass,
+html[data-motion="reduce"] .scene-hotspot-cue::before,
+html[data-motion="reduce"] .door-transition-closing,
+html[data-motion="reduce"] .door-transition-opening {
+  animation: none;
+}
+
+html[data-motion="reduce"] .figure-vignette {
+  opacity: 1;
+}
+
+html[data-motion="reduce"] .mainMenuRain {
+  display: none;
+}
+
+html[data-motion="reduce"] .scene-image,
+html[data-motion="reduce"] .scene-info-panel,
+html[data-motion="reduce"] .scene-hotspot,
+html[data-motion="reduce"] .conversation-overlay,
+html[data-motion="reduce"] .scene-ambient {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion="full"]) .mainMenuRain {
+    display: none;
+  }
+}

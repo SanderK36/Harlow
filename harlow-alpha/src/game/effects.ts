@@ -29,9 +29,40 @@ export function applyEffects(
       0,
       player.maxStamina
     ),
-    fear: player.fear + (effects.fear ?? 0),
+    fear: Math.max(0, player.fear + (effects.fear ?? 0)),
     money: clamp(player.money + (effects.money ?? 0), 0, Infinity),
   };
+}
+
+/** A night's sleep fills stamina and health. Other stats stay as they were. */
+export function restAfterSleep(player: Player): Player {
+  return {
+    ...player,
+    health: player.maxHealth,
+    stamina: player.maxStamina,
+  };
+}
+
+type EffectStat = Extract<StoryEntry, { type: "effect" }>["stat"];
+
+const EFFECT_STATS: readonly EffectStat[] = [
+  "courage",
+  "intelligence",
+  "charisma",
+  "athletics",
+  "strength",
+  "health",
+  "stamina",
+  "fear",
+  "money",
+];
+
+/** Actual changes after clamping. A stat that did not move is omitted. */
+export function statDeltas(before: Player, after: Player): StoryEntry[] {
+  return EFFECT_STATS.flatMap((stat) => {
+    const amount = after[stat] - before[stat];
+    return amount === 0 ? [] : [{ type: "effect" as const, stat, amount }];
+  });
 }
 
 export function effectsToStory(effects: ChoiceEffects): StoryEntry[] {
@@ -42,7 +73,8 @@ export function effectsToStory(effects: ChoiceEffects): StoryEntry[] {
         | "health"
         | "stamina"
         | "fear"
-        | "money",
+        | "money"
+        | "courage",
       amount: amount as number,
     })
   );

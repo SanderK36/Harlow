@@ -1,12 +1,21 @@
+import type { DayOfWeek, Weather } from "./types";
+
 export type ThoughtCondition = {
   from?: number;
   until?: number;
+  /** Only in these weather states (the same values as the image weather map). */
+  weather?: Weather[];
+  /** Only on these weekdays. Omit to apply every day. */
+  days?: DayOfWeek[];
 };
 
 export type StoryEntry =
   | {
       type: "narration";
       text: string;
+      condition?: ThoughtCondition;
+      /** Hold after this line, then show the next without a click. */
+      pauseAfter?: number;
     }
   | {
       type: "thought";
@@ -17,10 +26,21 @@ export type StoryEntry =
       type: "conversation";
       character: string;
       text: string;
+      /** Hold after this line, then show the next without a click. */
+      pauseAfter?: number;
     }
   | {
       type: "effect";
-      stat: "health" | "stamina" | "fear" | "money";
+      stat:
+        | "health"
+        | "stamina"
+        | "fear"
+        | "money"
+        | "courage"
+        | "intelligence"
+        | "charisma"
+        | "athletics"
+        | "strength";
       amount: number;
     };
 
@@ -28,32 +48,125 @@ export type ConversationChoice = {
   label: string;
   response: StoryEntry[];
   endsConversation?: boolean;
-  /** Marks a story milestone when this response is selected. */
-  storyFlag?: "momJobConcern";
-  /** Completes the opening objective after this conversation response. */
-  completesMomQuest?: boolean;
-  /** Shows this response only after the matching story milestone. */
-  requiresStoryFlag?: "momJobConcern";
+  /** Marks one or more story milestones when this response is selected. */
+  storyFlag?: import("./quests").StoryFlag | import("./quests").StoryFlag[];
+  /** Shows this response only after every listed story flag is set. */
+  requiresStoryFlag?: import("./quests").StoryFlag | import("./quests").StoryFlag[];
+  /** Hides this response once any listed story flag is set. */
+  excludesStoryFlag?: import("./quests").StoryFlag | import("./quests").StoryFlag[];
+  /** Shows this response only once the choice with this label has been
+   *  picked in the same conversation (to answer a question it raised). */
+  requiresChoice?: string;
+  /** Shows this response once any one of these labels has been picked
+   *  in the same conversation. */
+  requiresAnyChoice?: string[];
+  /** Shows this response only after Ethan has already replied once in
+   *  this conversation. */
+  requiresPriorChoice?: boolean;
+  /** Hides this response once the choice with this label has been picked
+   *  in the same conversation. */
+  excludesChoice?: string;
+  /** Hides this response once any one of these labels has been picked
+   *  in the same conversation. */
+  excludesAnyChoice?: string[];
   /** Applies a permanent job reward when this response is selected. */
   jobOffer?: import("./quests").JobId;
   /** Hide this choice after Ethan has accepted a job. */
   requiresNoJob?: boolean;
   /** Show this choice only when Ethan has this job. */
   requiresJob?: import("./quests").JobId;
+  /** Show this choice only when the conversation opened with jobOpening,
+   *  i.e. on a later visit as an employee, never in the hiring talk. */
+  returningEmployee?: boolean;
+  /** Hide this choice while Ethan has this job (other jobs don't matter). */
+  excludesJob?: import("./quests").JobId;
   /** Show this offer only after selecting its matching flyer. */
   requiresJobQuestTarget?: import("./quests").JobId;
+  /** Requires this exact inventory item name. */
+  requiresItem?: string;
+  /** Adds this item to inventory when selected. */
+  givesItem?: string;
+  /** Removes this inventory item when selected (e.g. handing Mom the coffee). */
+  removesItem?: string;
+  /** Hide once Ethan already carries this item. */
+  excludesItem?: string;
+  /** Starts or advances a quest when selected. */
+  startsQuest?: import("./quests").QuestId;
+  /**
+   * Show the subtle new-lead marker until this quest exists.
+   * Only for a person asking something of Ethan, never a discovery.
+   */
+  leadQuest?: import("./quests").QuestId;
+  /** Completes a quest when selected. */
+  completesQuest?: import("./quests").QuestId;
+  /** Show only while this quest is active. */
+  requiresQuestActive?: import("./quests").QuestId;
+  /** Show only in this scene (Mom's kitchen talk, not the living room). */
+  sceneId?: string;
+  /** Minutes after midnight. Hidden outside the window. */
+  from?: number;
+  until?: number;
+  /** Chapter day, using the October dayNumber (3 = Sunday). */
+  minDay?: number;
+  /** Show when Ethan already has any one of these clues. */
+  requiresAnyClue?: import("./clues").ClueId[];
+  /** Optional quest step id to set while the quest is active. */
+  questStep?: string;
+  /** Show this reply only when hidden trust is inside this range. Never a quest gate. */
+  requiresTrust?: import("./trust").TrustCondition;
+  /** Hide this reply when hidden trust is inside this range. */
+  excludesTrust?: import("./trust").TrustCondition;
+  /** Changes hidden trust when this reply is selected. Net ±1 per person per conversation. */
+  trust?: import("./trust").TrustStep;
+  /** Dollars this reply costs. Dropped when `freeWhen` matches. */
+  price?: number;
+  /** `price` is not taken when hidden trust matches (Margaret's coffee at +2). */
+  freeWhen?: import("./trust").TrustCondition;
+  /** Stays on the list after it has been picked in this conversation. */
+  repeatable?: boolean;
+  /** Stat changes applied with the reply (money for a priced line). */
+  effects?: import("./choices").ChoiceEffects;
+  /** Show a closeup after this reply finishes (drawer, poster, memory). */
+  closeup?: {
+    image: string;
+    thought: string;
+    label?: string;
+    /** Some memories should bypass the rainy override styling. */
+    disableWeatherFilter?: boolean;
+    /** Words drawn on the picture. */
+    inscriptions?: import("@/components/ImageText/imageText").Inscription[];
+    /** Optional follow-up closeup (e.g. drawer shut). */
+    next?: {
+      image: string;
+      thought: string;
+      label?: string;
+      disableWeatherFilter?: boolean;
+      inscriptions?: import("@/components/ImageText/imageText").Inscription[];
+    };
+    /** Set when the close-up is actually shown, not when the line is chosen. */
+    setsFlags?: import("./quests").StoryFlag | import("./quests").StoryFlag[];
+  };
 };
 
 export type Conversation = {
   opening: StoryEntry[];
+  /** Replaces the opening once Ethan works for this NPC. */
+  jobOpening?: { job: import("./quests").JobId; opening: StoryEntry[] };
+  /**
+   * Where a return-visit trust greeting sits.
+   * `replace` swaps the existing greeting. `prepend` keeps a quest question
+   * and puts the greeting ahead of it. First meetings always use `opening`.
+   */
+  returnGreeting?: "replace" | "prepend";
   choices: ConversationChoice[];
 };
 
-export function narration(text: string): StoryEntry {
-  // Scene description without a speaker.
+export function narration(text: string, condition?: ThoughtCondition): StoryEntry {
+  // Scene description without a speaker; an optional time/weather condition.
   return {
     type: "narration",
     text,
+    condition,
   };
 }
 
@@ -61,12 +174,29 @@ export function thought(
   text: string,
   condition?: ThoughtCondition
 ): StoryEntry {
-  // Ethan's internal narration; an optional time condition controls visibility.
+  // Ethan's internal narration; an optional time/weather condition controls visibility.
   return {
     type: "thought",
     text,
     condition,
   };
+}
+
+/** Whether a narration or thought line applies at this time, weather, and weekday. */
+export function storyEntryApplies(
+  entry: StoryEntry,
+  time: number,
+  weather: Weather,
+  day?: DayOfWeek,
+) {
+  if (entry.type !== "narration" && entry.type !== "thought") return true;
+  const condition = entry.condition;
+  if (!condition) return true;
+  const afterStart = condition.from === undefined || time >= condition.from;
+  const beforeEnd = condition.until === undefined || time < condition.until;
+  const weatherMatches = !condition.weather || condition.weather.includes(weather);
+  const dayMatches = !condition.days || (day !== undefined && condition.days.includes(day));
+  return afterStart && beforeEnd && weatherMatches && dayMatches;
 }
 
 export function ethan(text: string): StoryEntry {

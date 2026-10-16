@@ -1,0 +1,147 @@
+/* Contextual cursors on hotspots (desktop pointers): a magnifier to look,
+   an arrow to go, a speech bubble to talk and a hand to take. Bone-white
+   with blood-red accents, like the rest of the HUD. Pointer is the fallback. */
+@media (hover: hover) and (pointer: fine) {
+  .scene-hotspot[data-kind="inspect"] {
+    cursor: url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2732%27%20height=%2732%27%20viewBox=%270%200%2032%2032%27%3E%3Ccircle%20cx=%2713%27%20cy=%2713%27%20r=%278.5%27%20fill=%27rgba%28242%2C228%2C201%2C0.18%29%27%20stroke=%27%231a0a0c%27%20stroke-width=%275%27/%3E%3Ccircle%20cx=%2713%27%20cy=%2713%27%20r=%278.5%27%20fill=%27none%27%20stroke=%27%23f2e4c9%27%20stroke-width=%272.4%27/%3E%3Cpath%20d=%27M19.5%2019.5l8%208%27%20stroke=%27%231a0a0c%27%20stroke-width=%277%27%20stroke-linecap=%27round%27/%3E%3Cpath%20d=%27M19.5%2019.5l8%208%27%20stroke=%27%23c9293a%27%20stroke-width=%273.6%27%20stroke-linecap=%27round%27/%3E%3C/svg%3E") 13 13, pointer;
+  }
+
+  .scene-hotspot[data-kind="go"] {
+    cursor: url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2732%27%20height=%2732%27%20viewBox=%270%200%2032%2032%27%3E%3Cpath%20d=%27M4%2012h13V5l12%2011-12%2011v-7H4z%27%20fill=%27%23f2e4c9%27%20stroke=%27%231a0a0c%27%20stroke-width=%272.4%27%20stroke-linejoin=%27round%27/%3E%3Cpath%20d=%27M4%2012h4v8H4z%27%20fill=%27%23c9293a%27/%3E%3C/svg%3E") 16 16, pointer;
+  }
+
+  .scene-hotspot[data-kind="talk"] {
+    cursor: url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2732%27%20height=%2732%27%20viewBox=%270%200%2032%2032%27%3E%3Cpath%20d=%27M4%205h24v16H14l-7%206v-6H4z%27%20fill=%27%23f2e4c9%27%20stroke=%27%231a0a0c%27%20stroke-width=%272.4%27%20stroke-linejoin=%27round%27/%3E%3Ccircle%20cx=%2710.5%27%20cy=%2713%27%20r=%271.8%27%20fill=%27%23c9293a%27/%3E%3Ccircle%20cx=%2716%27%20cy=%2713%27%20r=%271.8%27%20fill=%27%23c9293a%27/%3E%3Ccircle%20cx=%2721.5%27%20cy=%2713%27%20r=%271.8%27%20fill=%27%23c9293a%27/%3E%3C/svg%3E") 16 13, pointer;
+  }
+
+  .scene-hotspot[data-kind="take"] {
+    cursor: url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2732%27%20height=%2732%27%20viewBox=%270%200%2032%2032%27%3E%3Cpath%20d=%27M9%2015V7.5a2%202%200%200%201%204%200V14V5.5a2%202%200%200%201%204%200V14V6.5a2%202%200%200%201%204%200V15v-5a2%202%200%200%201%204%200v9c0%205-3.5%209-8.5%209h-1.5c-3.5%200-5.5-2-7.5-5l-3-5a2%202%200%200%201%203.4-2.1L9%2018z%27%20fill=%27%23f2e4c9%27%20stroke=%27%231a0a0c%27%20stroke-width=%272.2%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E") 15 10, pointer;
+  }
+
+}
+
+/* Going through a door (see DOOR_FADE_* in useGame): fade to black, hold
+   while the scene swaps, fade back. The overlay also blocks clicks. */
+.door-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #000;
+  opacity: 1;
+  pointer-events: auto;
+  cursor: default;
+}
+
+.door-transition-closing {
+  animation: doorFadeIn 250ms ease-in forwards;
+}
+
+.door-transition-black {
+  opacity: 1;
+}
+
+.door-transition-opening {
+  animation: doorFadeOut 300ms ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes doorFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes doorFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.scene-hotspot-front-yard-goElrodHouse {
+  top: 48%;
+  left: 12%;
+  width: 14%;
+  height: 18%;
+}
+
+.scene-hotspot-front-yard-talkToRachel {
+  top: 42%;
+  left: 55%;
+  width: 12%;
+  height: 40%;
+}
+
+.scene-hotspot-front-yard-lookAtSanatoriumHill {
+  top: 8%;
+  left: 70%;
+  width: 22%;
+  height: 22%;
+}
+
+.scene-hotspot-lookAtElrodTape {
+  top: 42%;
+  left: 28%;
+  width: 44%;
+  height: 28%;
+}
+
+.scene-hotspot-elrod-house-talkToRachel {
+  top: 30%;
+  left: 38%;
+  width: 22%;
+  height: 55%;
+}
+
+.scene-hotspot-lookAtDinerBulletin {
+  top: 18%;
+  left: 8%;
+  width: 14%;
+  height: 42%;
+}
+
+/* One-shot: the brackets brighten so the board reads as something to look at. */
+.scene-hotspot-cue {
+  --bracket: #fff6ee;
+  z-index: 3;
+}
+
+.scene-hotspot-cue::before {
+  animation: hotspotCue 1s ease;
+}
+
+@keyframes hotspotCue {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  45% {
+    opacity: 0.35;
+  }
+}
+
+.scene-hotspot-lookAtSanatoriumCigarette {
+  top: 55%;
+  left: 40%;
+  width: 18%;
+  height: 20%;
+}
+
+/* These animations are declared after the main reduced-motion block, so a
+   rule here is what actually wins. The door classes are also skipped in JS. */
+@media (prefers-reduced-motion: reduce) {
+  .door-transition-closing,
+  .door-transition-opening,
+  .scene-hotspot-cue::before,
+  .chapter-end-screen,
+  .chapter-end-screen-content,
+  .stat-toast,
+  .stat-toast-fading,
+  .scene-frame-arrive .scene-info-panel,
+  .scene-frame-arrive .overlayActionList {
+    animation: none;
+  }
+
+  .chapter-end-screen,
+  .chapter-end-screen-content {
+    opacity: 1;
+  }
+}

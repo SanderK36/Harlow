@@ -1,47 +1,678 @@
+/* Ethan's notebook. The open book is ui/questBook.png.
+   Copy sits on the right-hand page, 8% clear of the edges and the spine. */
+
 .overlay {
   position: fixed;
   inset: 0;
-  z-index: 40;
-  display: grid;
-  place-items: center;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 20px;
-  background: rgba(8, 4, 5, 0.7);
+  background: rgba(8, 3, 4, 0.78);
+  backdrop-filter: blur(8px);
 }
 
 .window {
-  width: min(100%, 440px);
-  padding: 28px;
-  color: var(--text);
-  background: linear-gradient(145deg, #2b1719, #130c0d);
-  border: 1px solid var(--line-strong);
-  border-radius: 12px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  position: relative;
+  /* One page. The lit right-hand page is portrait (320×460 of the plate). */
+  width: min(480px, calc(100vw - 24px), calc((100vh - 24px) * 320 / 460));
+  aspect-ratio: 320 / 460;
+  max-height: calc(100vh - 24px);
+  overflow: hidden;
+  color: #2a1f14;
+  background-color: #c4a574;
+  background-repeat: no-repeat;
+  border: 0;
+  border-radius: 2px;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.7);
+  animation: modalEnter 0.22s ease-out;
 }
 
-.eyebrow {
-  margin: 0 0 6px;
-  color: #e69b66;
+/*
+  Crop to the contrast-safe right page of ui/questBook.png (1254²).
+  Plate pixels x 760–1080, y 180–640. Ink #2a1f14 stays ≥4.5:1 there.
+  The sheet's 8% inset is inside that page, clear of the spine and the cover.
+*/
+.windowPlate {
+  background-color: #c4a574;
+  background-image: url("/images/ui/questBook.png");
+  background-size: 391.875% 272.609%;
+  background-position: 81.37% 22.67%;
+}
+
+.sheet {
+  position: absolute;
+  top: 8%;
+  right: 8%;
+  bottom: 8%;
+  left: 8%;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  color: #2a1f14;
+}
+
+.sheet,
+.sheet .caseLabel,
+.sheet .title,
+.sheet .date,
+.sheet .pageTab,
+.sheet .pageTab[aria-selected="true"],
+.sheet .sectionLabel,
+.sheet .entryTitle,
+.sheet .entryTitleDone,
+.sheet .note,
+.sheet .noteDone,
+.sheet .empty,
+.sheet .personName,
+.sheet .hand,
+.sheet .jobNote,
+.sheet .jobNote strong,
+.sheet .check,
+.sheet .clueName,
+.sheet .clueNote {
+  color: #2a1f14;
+}
+
+.header {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 14px 22px 8px;
+  border-bottom: 1px dashed rgba(90, 55, 25, 0.35);
+}
+
+.caseLabel {
+  margin: 0 0 2px;
+  color: #7a4a28;
+  font-family: var(--font-ui);
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.13em;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
-.window h2 {
-  margin: 0 0 16px;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 28px;
+.title {
+  margin: 0 0 4px;
+  color: #24150e;
+  font-family: var(--font-display);
+  font-size: clamp(20px, 2.8vw, 26px);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.date {
+  margin: 0;
+  color: #5c3a22;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-style: italic;
+  letter-spacing: 0.02em;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 10px 0 0;
+}
+
+.pageTab {
+  min-height: 44px;
+  padding: 8px 14px;
+  color: #6b4a32;
+  font-family: var(--font-typewriter);
+  font-size: 16px;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.pageTab[aria-selected="true"] {
+  color: #24150e;
+  border-bottom-color: #24150e;
+}
+
+.pageTab:focus-visible {
+  outline: 2px solid #5c3a22;
+  outline-offset: 2px;
+}
+
+.people {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px 14px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person {
+  min-height: 44px;
+}
+
+.card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-height: 44px;
+  height: 100%;
+  padding: 10px 10px 10px 8px;
+  background: rgba(255, 248, 230, 0.45);
+  border: 1px solid rgba(90, 55, 25, 0.18);
+}
+
+.polaroidWrap {
+  position: relative;
+  flex: 0 0 72px;
+  width: 72px;
+  height: 72px;
+  transform: rotate(var(--tilt));
+}
+
+.polaroidWrap::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: -4px;
+  left: 22px;
+  width: 28px;
+  height: 10px;
+  background: rgba(214, 196, 150, 0.92);
+  border: 1px solid rgba(90, 70, 40, 0.18);
+  box-shadow: 0 1px 1px rgba(40, 20, 10, 0.12);
+  transform: rotate(-6deg);
+}
+
+.polaroid {
+  width: 72px;
+  height: 72px;
+  padding: 4px 4px 10px;
+  box-sizing: border-box;
+  background: #f4efe4;
+  box-shadow: 0 2px 5px rgba(40, 20, 10, 0.28);
+}
+
+.photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+}
+
+.tiltA {
+  --tilt: -2deg;
+}
+
+.tiltB {
+  --tilt: 2deg;
+}
+
+.personCopy {
+  min-width: 0;
+  flex: 1;
+  padding-top: 1px;
+}
+
+.personName {
+  margin: 0 0 4px;
+  color: #24150e;
+  font-family: var(--font-typewriter);
+  font-size: 15px;
   font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
 }
 
-.window p:not(.eyebrow) {
-  margin: 0 0 16px;
-  line-height: 1.55;
+.hand {
+  min-height: 1.35em;
+  margin: 0;
+  color: #2c1c12;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.35;
+  overflow-wrap: break-word;
 }
 
-.benefit {
-  padding: 12px;
-  color: #ffe1b3;
-  background: rgba(230, 155, 102, 0.12);
-  border-left: 3px solid #e69b66;
+.pages {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 22px 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.empty {
+  margin: 12px 0;
+  color: #6b4a32;
+  font-family: var(--font-handwriting);
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.section {
+  margin: 0 0 10px;
+}
+
+.sectionLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  color: #8a3a28;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.pin {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  background: radial-gradient(circle at 35% 30%, #f0d080, #a85a28 55%, #5a2a10);
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry,
+.entryDone {
+  position: relative;
+  margin: 0 0 7px;
+  padding: 4px 8px 4px 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.tab {
+  position: absolute;
+  top: 8px;
+  right: -1px;
+  width: 10px;
+  height: 20px;
+  background: linear-gradient(180deg, #c45a48, #8a3020);
+  border-radius: 3px 0 0 3px;
+  box-shadow: -1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.entryTitle {
+  margin: 0 0 2px;
+  color: #24150e;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.note {
+  margin: 0;
+  color: #3d2818;
+  font-family: var(--font-handwriting);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.entryDone {
+  background: transparent;
+}
+
+.entryDone .tab {
+  display: none;
+}
+
+.check {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  color: #5a6a40;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.entryTitleDone {
+  margin: 0 0 2px;
+  padding-right: 28px;
+  color: #4a3424;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-decoration: line-through;
+  text-decoration-color: rgba(90, 50, 20, 0.55);
+  text-decoration-thickness: 1.5px;
+}
+
+.noteDone {
+  margin: 0;
+  color: #5a4330;
+  font-family: var(--font-handwriting);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.15;
+  text-decoration: line-through;
+  text-decoration-color: rgba(90, 50, 20, 0.4);
+}
+
+.jobNote {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  color: #3d2818;
+  font-family: var(--font-handwriting);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.2;
+  background: rgba(255, 248, 230, 0.35);
+  border: 1px dashed rgba(90, 55, 25, 0.3);
+  border-radius: 4px;
+}
+
+.jobNote strong {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.closeButton {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 0 0;
+}
+
+/* Dark ink on paper — ActionButton defaults are light-on-dark. */
+.closeButton button {
+  min-width: 110px;
+  min-height: 44px;
+  color: #2a1f14 !important;
+  background: #f3e6c8 !important;
+  border: 1.5px solid #5c3a22 !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 240, 0.55),
+    0 2px 4px rgba(40, 20, 10, 0.2);
+  text-shadow: none !important;
+}
+
+.closeButton button:hover:not(:disabled) {
+  color: #180e08 !important;
+  background: #fff4d8 !important;
+  border-color: #3d2818 !important;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 720px) {
+  .overlay {
+    padding: 8px;
+    align-items: center;
+  }
+
+  .window {
+    width: min(374px, calc(100vw - 16px), calc((100vh - 16px) * 320 / 460));
+    aspect-ratio: 320 / 460;
+    max-height: calc(100vh - 16px);
+    border-radius: 2px;
+  }
+
+  .header {
+    padding: 14px 16px 8px;
+  }
+
+  .title {
+    font-size: 22px;
+  }
+
+  .date {
+    font-size: 15px;
+  }
+
+  .pages {
+    padding: 10px 16px 14px;
+  }
+
+  .people {
+    grid-template-columns: 1fr;
+  }
+
+  .pageTab {
+    flex: 1;
+  }
+
+  .entry,
+  .entryDone {
+    padding: 8px 10px;
+  }
+
+  .entryTitle {
+    font-size: 15px;
+  }
+
+  .note {
+    font-size: 14px;
+  }
+
+  .closeButton {
+    padding: 8px 14px 12px;
+  }
+
+  .closeButton button {
+    width: 100%;
+  }
+}
+
+.inkDot {
+  position: absolute;
+  top: 8px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  background: radial-gradient(circle at 35% 30%, #3a3228, #14110e 72%);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.pageTab {
+  position: relative;
+}
+
+.board {
+  position: relative;
+  min-height: 280px;
+  margin: 0 -6px;
+  padding: 16px 12px 18px;
+  background-color: #7a4a28;
+  background-image:
+    url("/images/ui/corkboard.png"),
+    radial-gradient(ellipse at 18% 12%, rgba(255, 214, 160, 0.2), transparent 42%),
+    repeating-linear-gradient(90deg, rgba(80, 36, 12, 0.16) 0 2px, transparent 2px 6px),
+    repeating-linear-gradient(0deg, rgba(60, 28, 10, 0.12) 0 1px, transparent 1px 5px),
+    linear-gradient(165deg, #c4894e, #6e4124 60%, #8d5a30);
+  background-size: cover, auto, auto, auto, auto;
+  background-position: center;
+  border-radius: 4px;
+  box-shadow: inset 0 0 24px rgba(40, 16, 6, 0.35);
+}
+
+.threads {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.threads path {
+  fill: none;
+  stroke: #c4282a;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.ghostThread {
+  position: absolute;
+  z-index: 3;
+  height: 2.5px;
+  background: #c4282a;
+  border-radius: 2px;
+  transform-origin: 0 50%;
+  pointer-events: none;
+}
+
+.clueGrid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.polaroidCard,
+.pinned {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 8px 10px;
+  color: #24150e;
+  text-align: left;
+  touch-action: none;
+  cursor: pointer;
+  background: transparent;
+  border: 2px solid transparent;
+}
+
+.polaroidCard {
+  background: #f4efe4;
+  box-shadow: 0 3px 8px rgba(40, 16, 8, 0.35);
+  transform: rotate(-1.5deg);
+}
+
+.clueGrid li:nth-child(2n) .polaroidCard,
+.clueGrid li:nth-child(2n) .pinned {
+  transform: rotate(1.6deg);
+}
+
+.pinned {
+  padding: 16px 10px 10px;
+  background: #f3e6c4;
+  box-shadow: 0 2px 6px rgba(40, 16, 8, 0.28);
+}
+
+.pinned .pin {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+}
+
+.clueSelected {
+  z-index: 2;
+  border-color: #a32020;
+  transform: translateY(-6px) rotate(0deg);
+  box-shadow: 0 8px 16px rgba(40, 16, 8, 0.4);
+}
+
+.polaroidFrame {
+  display: block;
+  position: relative;
+  background: #1a1210;
+}
+
+.cluePhoto,
+.photoMissing {
+  display: block;
+  width: 100%;
+  height: 72px;
+  object-fit: cover;
+}
+
+.photoMissing {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(120, 90, 60, 0.35), transparent 60%),
+    #241812;
+}
+
+.clueCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.clueName {
+  font-family: var(--font-typewriter);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.clueNote {
+  min-height: 1.2em;
+  font-family: var(--font-handwriting);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.boardThought {
+  position: relative;
+  z-index: 1;
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  color: #2a1f14;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.4;
+  text-align: center;
+  background: #f3e6c8;
+  border: 1px solid rgba(42, 31, 20, 0.35);
+  border-radius: 8px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.polaroidCard:focus-visible,
+.pinned:focus-visible {
+  outline: 2px solid #f3e6c8;
+  outline-offset: 2px;
 }

@@ -45,8 +45,56 @@
 }
 
 .actionButton:disabled {
-  color: #786868;
+  color: #c9baba;
   background: rgba(255, 255, 255, 0.018);
   border-color: rgba(239, 221, 221, 0.07);
   cursor: not-allowed;
+}
+
+.label {
+  display: block;
+  padding-right: 4px;
+}
+
+.detail {
+  color: var(--muted);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.leadsQuest {
+  padding-right: 36px;
+}
+
+/* The chevron sits in this corner once the pointer is over the button. */
+.leadsQuest::after {
+  content: none;
+}
+
+.leadMark {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  display: grid;
+  width: 14px;
+  height: 14px;
+  color: #f2e4c9;
+  opacity: 0.6;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.leadMark svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }

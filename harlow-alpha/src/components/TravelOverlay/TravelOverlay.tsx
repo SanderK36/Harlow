@@ -1,24 +1,46 @@
 import styles from "./TravelOverlay.module.css";
+import { RAIN_WEATHER } from "@/game/scenes";
+import type { Weather } from "@/game/types";
 
 type TravelOverlayProps = {
   location: string;
   method: "walk" | "bus" | "work";
   isNight: boolean;
+  weather: Weather;
+  /** Current weather is rain and the travel plate is not rain art. */
+  rainy?: boolean;
 };
 
 export default function TravelOverlay({
   location,
   method,
   isNight,
+  weather,
+  rainy = false,
 }: TravelOverlayProps) {
+  const isRainy = rainy || RAIN_WEATHER.includes(weather);
   const image =
     method === "work"
-      ? "/images/locations/NeedleGroove/ethan_working.jpg"
+      ? "/images/locations/needleGroove/ethanWorking.jpg"
       : method === "bus"
-      ? isNight
-        ? "/images/Travel/busTravelNight.png"
-        : "/images/Travel/busTravelDay.png"
-      : "/images/Travel/walking.jpg";
+      ? isRainy
+        ? "/images/travel/busTravelRainy.png"
+        : isNight
+        ? "/images/travel/busTravelNight.png"
+        : "/images/travel/busTravelDay.png"
+      : isRainy
+        ? "/images/travel/walkingRainy.png"
+        : isNight
+          ? "/images/travel/walkingNight.jpg"
+          : "/images/travel/walkingDay.jpg";
+  // The only walk plate is a dry night street. By day it is lifted so 8am
+  // does not read as midnight; rain tints whatever plate is showing.
+  const plateClass = [
+    styles.travelImage,
+    method === "walk" && !isNight ? styles.travelImageDay : "",
+    rainy && isNight ? styles.travelImageRainNight : "",
+    rainy && !isNight ? styles.travelImageRainDay : "",
+  ].filter(Boolean).join(" ");
 
   return (
     <div className={styles.overlay}>
@@ -27,10 +49,16 @@ export default function TravelOverlay({
         style={{ backgroundImage: `url(${image})` }}
       />
       <img
-        className={styles.travelImage}
+        className={plateClass}
         src={image}
         alt=""
       />
+      {rainy && (
+        <div
+          className={`${styles.travelSky} ${isNight ? styles.travelSkyNight : ""}`}
+          aria-hidden="true"
+        />
+      )}
       <div className={styles.shade} />
       <div className={styles.content}>
         <p className={styles.method}>

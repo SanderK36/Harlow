@@ -42,8 +42,9 @@
 .header h2,
 .bio h3 {
   margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 400;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: .04em;
 }
 
 .header h2 {
@@ -51,8 +52,9 @@
 }
 
 .closeButton {
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
+  flex: none;
   color: var(--muted);
   font-size: 24px;
   line-height: 1;
@@ -120,6 +122,12 @@
   background: rgba(169, 22, 36, 0.2);
 }
 
+.bio p:not(.role) {
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.55;
+}
+
 .bio {
   display: grid;
   align-content: start;
@@ -176,8 +184,9 @@
 
   .portraitButton,
   .activePortrait {
-    padding: 4px;
-    font-size: 8px;
+    padding: 6px;
+    font-size: 11px;
+    line-height: 1.2;
   }
 
   .bio {
